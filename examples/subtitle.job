@@ -1,0 +1,61 @@
+{
+    "name" : "subtitile",
+    "debug" : "3",
+    "source" : {
+        "elements" : {
+            "udpsrc" : {
+                "property" : {
+                    "uri" : "udp://127.0.0.1:6003"
+                }
+            },
+            "appsink" : {
+                "property" : {
+                   "sync" : false,
+                   "drop" : true
+                }
+            }
+        },
+        "bins" : [
+            "udpsrc ! queue ! mpegtsdemux name=demuxer",
+            "demuxer.video_0201 ! queue ! h264dec ! queue ! appsink name = video",
+            "demuxer.audio_026d ! queue ! mad ! queue ! appsink name = audio_eng",
+            "demuxer.audio_0271 ! queue ! mad ! queue ! appsink name = audio_tha",
+            "demuxer.private_044f ! queue ! appsink name = subtitle_eng"
+        ]
+    },
+    "encoders" : [
+        {
+            "elements" : {
+                "videoscale" : {
+                    "caps" : "video/x-raw-yuv,width=1280,height=720"
+                },
+                "x264enc" : {
+                    "property" : {
+                        "name" : "x264enc",
+                        "bitrate" : 1500,
+                        "bframes" : 3,
+                        "profile" : "high",
+                        "threads" : 16,
+                        "byte-stream" : "TRUE",
+                        "rc-lookahead" : 25,
+                        "key-int-max" : 300,
+                        "key-int-min" : 25,
+                        "pass" : 17,
+                        "level" : 31,
+                        "mb-tree" : true,
+                        "stats-file" : "/tmp/x264.log",
+                        "option-string" : ":ref=3:me=hex:subme=8:merange=16:nf=1:deblock=1,-2:weightp=1:scenecut=0:lookahead-threads=4:sliced-threads=false:b-pyramid=2:direct=spatial"
+                    }
+                }
+            },
+            "bins" : [
+                    "appsrc name=video ! queue ! videoscale ! queue ! x264enc ! queue ! muxer.",
+                    "appsrc name=audio_eng is-live=TRUE ! queue ! audioconvert ! queue ! faac name=faac1 outputformat=1 ! queue ! muxer.",
+                    "appsrc name=audio_tha is-live=TRUE ! queue ! audioconvert ! queue ! faac name=faac2 outputformat=1 ! queue ! muxer.",
+                    "appsrc name=subtitle_eng ! queue ! muxer.",
+                    "mpegtsmux name=muxer ! queue ! appsink sync=FALSE"
+            ]
+        }
+    ]
+}
+

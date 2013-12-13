@@ -1,0 +1,57 @@
+{
+    "name" : "cctv2",
+    "debug" : "3",
+    "source" : {
+        "elements" : {
+            "udpsrc" : {
+                "property" : {
+                    "uri" : "udp://127.0.0.1:6003"
+                }
+            },
+            "appsink" : {
+                "property" : {
+                   "sync" : false,
+                   "drop" : true
+                }
+            }
+        },
+        "bins" : [
+            "udpsrc ! queue ! mpegtsdemux name=demuxer",
+            "demuxer.video ! queue ! ffdec_h264 ! queue ! appsink name = video",
+            "demuxer.audio ! queue ! mad ! queue ! appsink name = audio",
+            "demuxer.private ! appsink name = subtitle"
+        ]
+    },
+    "encoders" : [
+        {
+            "elements" : {
+                "videoscale" : {
+                    "caps" : "video/x-raw-yuv,width=720,height=576"
+                },
+                "x264enc" : {
+                    "property" : {
+                        "name" : "x264enc",
+                        "bitrate" : 1500,
+                        "bframes" : 3,
+                        "profile" : "high",
+                        "threads" : 4,
+                        "byte-stream" : "TRUE",
+                        "rc-lookahead" : 25,
+                        "pass" : 17,
+                        "mb-tree" : true,
+                        "stats-file" : "/tmp/x264.log",
+                        "option-string" : ":ref=3:me=hex:subme=8:merange=16:nf=1:deblock=1,-2:weightp=1:scenecut=0:lookahead-threads=4:sliced-threads=false:b-pyramid=2:direct=spatial"
+                    }
+                }
+            },
+            "bins" : [
+                    "appsrc name=subtitle ! overlay.",
+                    "appsrc name=video ! overlay.",
+                    "dvbsuboverlay name=overlay ! queue ! videoscale ! queue ! ffmpegcolorspace ! queue ! x264enc ! queue ! muxer.",
+                    "appsrc name=audio ! audioconvert ! faac name=faac1 outputformat=1 ! queue ! muxer.",
+                    "mpegtsmux name=muxer ! queue ! appsink sync=FALSE"
+            ]
+        }
+    ]
+}
+

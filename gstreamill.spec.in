@@ -1,0 +1,44 @@
+Name:		gstreamill
+Version:	@VERSION@
+Release:	0
+Summary:	a gstreamer based stream mill
+
+Group:		Applications/Multimedia
+License:	GPL
+URL:		http://www.itv.cn/
+Source:	        gstreamill-@VERSION@.tar.gz
+BuildRoot:	%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
+
+BuildRequires:	gstreamer
+Requires:	which pkgconfig
+
+%description
+gstreamill is a gstreamer based stream mill.
+
+%prep
+%setup -q
+
+
+%build
+%configure
+make %{?_smp_mflags}
+
+
+%install
+rm -rf %{buildroot}
+make install DESTDIR=%{buildroot}
+
+
+%clean
+rm -rf %{buildroot}
+
+
+%files
+%defattr(-,root,root,-)
+%doc
+/usr/bin/itvencoder
+
+
+
+%changelog
+
