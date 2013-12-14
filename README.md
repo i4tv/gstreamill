@@ -45,21 +45,21 @@ gstreamill have been tested in ubuntu 13.10.
 
     gstreamill -h
 
-    Usage:
-      gstreamill [OPTION...]
-
-      Help Options:
-        -h, --help                        Show help options
-        --help-all                        Show all help options
-        --help-gst                        Show GStreamer Options
-
-      Application Options:
-        -j, --job                         -j /full/path/to/job.file: Specify a job file, full path is must.
-        -l, --log                         -l /full/path/to/log: Specify log path, full path is must.
-        -m, --httpmgmt                    -m http managment service address.
-        -a, --httpstreaming               -a http streaming service address.
-        -s, --stop                        Stop gstreamill.
-        -v, --version                     display version information and exit.
+        Usage:
+          gstreamill [OPTION...]
+    
+          Help Options:
+            -h, --help                        Show help options
+            --help-all                        Show all help options
+            --help-gst                        Show GStreamer Options
+    
+          Application Options:
+            -j, --job                         -j /full/path/to/job.file: Specify a job file, full path is must.
+            -l, --log                         -l /full/path/to/log: Specify log path, full path is must.
+            -m, --httpmgmt                    -m http managment service address.
+            -a, --httpstreaming               -a http streaming service address.
+            -s, --stop                        Stop gstreamill.
+            -v, --version                     display version information and exit.
 
 * start gstreamill
 
