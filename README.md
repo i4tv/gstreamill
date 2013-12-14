@@ -15,13 +15,13 @@ gstreamill is an open source, GPL licensed "stream mill" based on gstreamer-1.0.
 
 ## Application
 
-   IP --------+ 
-              |                      +------- UDP
-   CVBS ------+    +------------+    |
-              +----+ gstreamill +----+------ M3U8
-   SDI -------+    +------------+    |
-              |                      +------ HTTP
-   LIVE ------+
+       IP --------+ 
+                  |                      +------- UDP
+       CVBS ------+    +------------+    |
+                  +----+ gstreamill +----+------ M3U8
+       SDI -------+    +------------+    |
+                  |                      +------ HTTP
+       LIVE ------+
 
 # INSTALL
 
@@ -113,7 +113,7 @@ test.job is job description in json, can be found in examples directory.
 
     udp://@ip:port
 
-## job description
+## JOB DESCRIPTION
 
     {
         "name" : "test",
