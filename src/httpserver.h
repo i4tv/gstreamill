@@ -108,7 +108,8 @@ struct _HTTPServer {
         guint64 total_click; /* total access number, include manage api */
         guint64 encoder_click; /* access number of playing encoder */
 
-        gint listen_port;
+        gchar *node;
+        gchar *service;
         gint max_threads;
         gint listen_sock;
         gint epollfd;

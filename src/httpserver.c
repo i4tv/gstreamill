@@ -23,7 +23,8 @@ GST_DEBUG_CATEGORY_EXTERN (GSTREAMILL);
 
 enum {
         HTTPSERVER_PROP_0,
-        HTTPSERVER_PROP_PORT,
+        HTTPSERVER_PROP_NODE,
+        HTTPSERVER_PROP_SERVICE,
         HTTPSERVER_PROP_MAXTHREADS,
 };
 
@@ -42,16 +43,23 @@ static void httpserver_class_init (HTTPServerClass *httpserverclass)
         g_object_class->set_property = httpserver_set_property;
         g_object_class->get_property = httpserver_get_property;
 
-        param = g_param_spec_int (
-                "port",
-                "portf",
-                "server port",
-                1000,
-                65535,
-                20129,
+        param = g_param_spec_string (
+                "node",
+                "nodef",
+                "address or hostname",
+                "0.0.0.0",
                 G_PARAM_WRITABLE | G_PARAM_READABLE
         );
-        g_object_class_install_property (g_object_class, HTTPSERVER_PROP_PORT, param);
+        g_object_class_install_property (g_object_class, HTTPSERVER_PROP_NODE, param);
+
+        param = g_param_spec_string (
+                "service",
+                "servicef",
+                "port or service name",
+                NULL,
+                G_PARAM_WRITABLE | G_PARAM_READABLE
+        );
+        g_object_class_install_property (g_object_class, HTTPSERVER_PROP_SERVICE, param);
 
         param = g_param_spec_int (
                 "maxthreads",
@@ -119,8 +127,11 @@ static void httpserver_set_property (GObject *obj, guint prop_id, const GValue *
         g_return_if_fail (IS_HTTPSERVER (obj));
 
         switch (prop_id) {
-        case HTTPSERVER_PROP_PORT:
-                HTTPSERVER (obj)->listen_port = g_value_get_int (value);
+        case HTTPSERVER_PROP_NODE:
+                HTTPSERVER (obj)->node = (gchar *)g_value_dup_string (value);
+                break;
+        case HTTPSERVER_PROP_SERVICE:
+                HTTPSERVER (obj)->service = (gchar *)g_value_dup_string (value);
                 break;
         case HTTPSERVER_PROP_MAXTHREADS:
                 HTTPSERVER (obj)->max_threads = g_value_get_int (value);
@@ -136,8 +147,11 @@ static void httpserver_get_property (GObject *obj, guint prop_id, GValue *value,
         HTTPServer *httpserver = HTTPSERVER (obj);
 
         switch (prop_id) {
-        case HTTPSERVER_PROP_PORT:
-                g_value_set_int (value, httpserver->listen_port);
+        case HTTPSERVER_PROP_NODE:
+                g_value_set_string (value, httpserver->node);
+                break;
+        case HTTPSERVER_PROP_SERVICE:
+                g_value_set_string (value, httpserver->service);
                 break;
         case HTTPSERVER_PROP_MAXTHREADS:
                 g_value_set_int (value, httpserver->max_threads);
@@ -409,6 +423,7 @@ static gint accept_socket (HTTPServer *http_server)
                 }
                 GST_DEBUG ("new request arrived, accepted_sock %d", accepted_sock);
                 http_server->total_click += 1;
+
                 int on = 1;
                 setsockopt (accepted_sock, SOL_TCP, TCP_CORK, &on, sizeof (on));
                 set_nonblock (accepted_sock);
@@ -486,7 +501,6 @@ static gpointer listen_thread (gpointer data)
         struct addrinfo hints;
         struct addrinfo *result, *rp;
         gint ret, listen_sock;
-        gchar *port = g_strdup_printf ("%d", http_server->listen_port);
         struct epoll_event event, event_list[kMaxRequests];
         gint n, i;
 
@@ -494,13 +508,13 @@ static gpointer listen_thread (gpointer data)
         hints.ai_family = AF_UNSPEC; /* Return IPv4 and IPv6 choices */
         hints.ai_socktype = SOCK_STREAM; /* We want a TCP socket */
         hints.ai_flags = AI_PASSIVE; /* All interfaces */
-        ret = getaddrinfo (NULL, port, &hints, &result);
+        ret = getaddrinfo (http_server->node, http_server->service, &hints, &result);
         if (ret != 0) {
-                GST_FIXME ("getaddrinfo: %s\n", g_strerror (errno));
+                GST_ERROR ("node %s, service: %s, getaddrinfo error: %s\n", http_server->node, http_server->service, gai_strerror (ret));
                 return NULL;
         }
 
-        GST_INFO ("start http server on port %s", port);
+        GST_INFO ("start http server on %s:%s", http_server->node, http_server->service);
         for (rp = result; rp != NULL; rp = rp->ai_next) {
                 listen_sock = socket (rp->ai_family, rp->ai_socktype, rp->ai_protocol);
                 int opt = 1;
@@ -520,12 +534,11 @@ static gpointer listen_thread (gpointer data)
         }
 
         if (rp == NULL) {
-                GST_ERROR ("Could not bind %s\n", port);
+                GST_ERROR ("Could not bind %s\n", http_server->service);
                 return NULL;
         }
 
         freeaddrinfo (result);
-        g_free (port);
 
         ret = listen (listen_sock, SOMAXCONN);
         if (ret == -1) {

@@ -498,21 +498,21 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
 
 gint httpstreaming_start (HTTPStreaming *httpstreaming, gint maxthreads)
 {
-        gchar **pp;
-        gint port;
+        gchar node[128], service[32];
 
         /* get streaming listen port */
-        pp = g_strsplit (httpstreaming->address, ":", 0);
-        port = atoi (pp[1]);
-        g_strfreev (pp);
-
-        /* start http streaming */
-        httpstreaming->httpserver = httpserver_new ("maxthreads", maxthreads, "port", port, NULL);
-        if (httpserver_start (httpstreaming->httpserver, httpstreaming_dispatcher, httpstreaming) != 0) {
-                GST_ERROR ("Start streaming httpserver error!");
-                exit (0);
+        if (sscanf (httpstreaming->address, "%[^:]:%s", node, service) == EOF) {
+                GST_ERROR ("http streaming address error: %s", httpstreaming->address);
+                return 1;
         }
 
+        /* start http streaming */
+        httpstreaming->httpserver = httpserver_new ("maxthreads", maxthreads, "node", node, "service", service, NULL);
+        if (httpserver_start (httpstreaming->httpserver, httpstreaming_dispatcher, httpstreaming) != 0) {
+                GST_ERROR ("Start streaming httpserver error!");
+                return 1;
+        }
+        
         return 0;
 }
 

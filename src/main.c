@@ -272,12 +272,18 @@ int main (int argc, char *argv[])
 
         /* httpstreaming, pull */
         httpstreaming = httpstreaming_new ("gstreamill", gstreamill, "address", http_streaming, NULL);
-        httpstreaming_start (httpstreaming, 10);
+        if (httpstreaming_start (httpstreaming, 10) != 0) {
+                GST_ERROR ("start httpstreaming error.");
+                exit (0);
+        }
 
         if (!foreground) {
                 /* run in background, management via http */
                 httpmgmt = httpmgmt_new ("gstreamill", gstreamill, "address", http_mgmt, NULL);
-                httpmgmt_start (httpmgmt);
+                if (httpmgmt_start (httpmgmt)) {
+                        GST_ERROR ("start http mangment error.");
+                        exit (0);
+                }
         } else {
 		/* run in foreground, start job */
                 gchar *job, *p;

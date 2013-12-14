@@ -266,19 +266,19 @@ static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
 
 gint httpmgmt_start (HTTPMgmt *httpmgmt)
 {
-        gchar **pp;
-        gint port;
+        gchar node[128], service[32];
 
         /* httpmgmt port */
-        pp = g_strsplit (httpmgmt->address, ":", 0);
-        port = atoi (pp[1]);
-        g_strfreev (pp);
+        if (sscanf (httpmgmt->address, "%[^:]:%s", node, service) == EOF) {
+                GST_ERROR ("http managment address error: %s", httpmgmt->address);
+                return 1;
+        }
 
         /* start httpmgmt */
-        httpmgmt->httpserver = httpserver_new ("maxthreads", 1, "port", port, NULL);
+        httpmgmt->httpserver = httpserver_new ("maxthreads", 1, "node", node, "service", service, NULL);
         if (httpserver_start (httpmgmt->httpserver, httpmgmt_dispatcher, httpmgmt) != 0) {
                 GST_ERROR ("Start mgmt httpserver error!");
-                (void)exit (0);
+                return 1;
         }
 
         return 0;
