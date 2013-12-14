@@ -1,4 +1,4 @@
-# Introduction
+# INTRODUCTION
 
 ## Overview
 
@@ -17,7 +17,7 @@ gstreamill is an open source, GPL licensed "stream mill" based on gstreamer-1.0.
 
    * dvb to ip gateway in ott
 
-# Install from source
+# INSTALL
 
 gstreamill have been tested in ubuntu 13.10.
 
@@ -37,7 +37,7 @@ gstreamill have been tested in ubuntu 13.10.
     make
     make install
 
-# Start using gstreamill
+# USING GSTREAMILL
 
 ## command line
 
