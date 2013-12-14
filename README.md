@@ -63,21 +63,17 @@ test.job is job description in json, can be found in examples directory.
 
     curl http://localhost:20118/stop/job_name
 
-## http progressive streaming
+## output
 
-use vlc
+    * http progressive streaming
 
-    http://localhost:20119/live/job name/encoder/encoder_index
+        http://localhost:20119/live/job name/encoder/encoder_index
 
-##  hls uri
-
-use vlc
+* hls
 
     http://localhost:20119/live/job name/encoder/encoder_index/playlist.m3u8
 
-## udp uri
-
-use vlc
+* udp
 
     udp://@ip:port
 
