@@ -39,29 +39,43 @@ gstreamill have been tested in ubuntu 13.10.
 
 # Start using gstreamill
 
-## help
+## command line
+
+* help
 
     gstreamill -h
 
-## start gstreamill
+* start gstreamill
 
-    gstreamill [--gst-debug=gstreamill:x]
+    gstreamill
 
-for --gst-debug, please reference gst-launch
-
-## stop gstreamill
+* stop gstreamill
 
     gstreamill -s
 
-## start a job over http use curl
+* debug job descript
+
+    gstreamill -j job_descript_file
+
+## management interface
+
+* start a job over http use curl
 
     curl -H "Content-Type: application/json" --data @examples/test.job http://localhost:20118/start
 
 test.job is job description in json, can be found in examples directory.
 
-## stop a job
+* stop a job
 
     curl http://localhost:20118/stop/job_name
+
+* query gstreamill stat:
+
+    curl http://localhost:20118/stat/gstreamill[/sub/item]
+
+* query gstreamer information:
+
+    curl http://localhost:20118/stat/gstreamer[/plugin]
 
 ## output
 
@@ -77,16 +91,3 @@ test.job is job description in json, can be found in examples directory.
 
     udp://@ip:port
 
-## query stat
-
-query gstreamill stat:
-
-    curl http://localhost:20118/stat/gstreamill[/sub/item]
-
-query gstreamer information:
-
-    curl http://localhost:20118/stat/gstreamer[/plugin]
-
-## debug job descript
-
-    gstreamill -j job_descript_file
