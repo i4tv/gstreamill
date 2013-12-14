@@ -15,7 +15,13 @@ gstreamill is an open source, GPL licensed "stream mill" based on gstreamer-1.0.
 
 ## Application
 
-   * dvb to ip gateway in ott
+   IP --------+ 
+              |                      +------- UDP
+   CVBS ------+    +------------+    |
+              +----+ gstreamill +----+------ M3U8
+   SDI -------+    +------------+    |
+              |                      +------ HTTP
+   LIVE ------+
 
 # INSTALL
 
@@ -107,3 +113,68 @@ test.job is job description in json, can be found in examples directory.
 
     udp://@ip:port
 
+## job description
+
+    {
+        "name" : "test",
+        "debug" : "gstreamill:3",
+        "source" : {
+            "elements" : {
+                "videotestsrc" : {
+                    "caps" : "video/x-raw,width=720,height=576,framerate=25/1"
+                },
+                "audiotestsrc" : {
+                    "property" : {
+                        "wave" : 8
+                    }
+                }
+            },
+            "bins" : [
+                "videotestsrc ! appsink name=video",
+                "audiotestsrc ! appsink name=audio"
+            ]
+        },
+        "encoders" : [
+            {
+                "elements": {
+                    "appsrc" : {
+                        "property" : {
+                            "format" : 3,
+                            "is-live" : true
+                        }
+                    },
+                    "x264enc" : {
+                        "property" : {
+                            "bitrate" : 1000,
+                            "byte-stream" : true,
+                            "threads" : 4,
+                            "bframes" : 3
+                        }
+                    },
+                    "faac" : {
+                        "property" : {
+                            "name" : "faac",
+                            "outputformat" : 1
+                        }
+                    },
+                    "appsink" : {
+                        "property" : {
+                            "sync" : false
+                        }
+                    }
+                },
+                "bins" : [
+                    "appsrc name=video ! queue ! x264enc ! queue ! muxer.",
+                    "appsrc name=audio ! audioconvert ! audioresample ! voaacenc ! muxer.",
+                    "mpegtsmux name=muxer ! queue ! appsink"
+                ]
+            }
+        ],
+        "m3u8streaming" : {
+            "version" : 3,
+            "window-size" : 10,
+            "segment-duration" : 3.00
+        }
+    }
+
+There are more examples in examples directory of source.
