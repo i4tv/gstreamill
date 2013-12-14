@@ -500,7 +500,7 @@ static gpointer listen_thread (gpointer data)
                 return NULL;
         }
 
-        GST_INFO ("start http server on port is %s", port);
+        GST_INFO ("start http server on port %s", port);
         for (rp = result; rp != NULL; rp = rp->ai_next) {
                 listen_sock = socket (rp->ai_family, rp->ai_socktype, rp->ai_protocol);
                 int opt = 1;
@@ -509,7 +509,7 @@ static gpointer listen_thread (gpointer data)
                         continue;
                 ret = bind (listen_sock, rp->ai_addr, rp->ai_addrlen);
                 if (ret == 0) {
-                        /* We managed to bind successfully! */
+                        /* bind successfully! */
                         GST_INFO ("listen socket %d", listen_sock);
                         break;
                 } else if (ret == -1) {
