@@ -43,7 +43,7 @@ gstreamill have been tested in ubuntu 13.10.
 
 * help
 
-    gstreamill -h
+    **gstreamill -h**
 
         Usage:
           gstreamill [OPTION...]
@@ -63,11 +63,11 @@ gstreamill have been tested in ubuntu 13.10.
 
 * start gstreamill
 
-    gstreamill
+    **gstreamill**
 
 * stop gstreamill
 
-    gstreamill -s
+    **gstreamill -s**
 
 * debug job descript
 
