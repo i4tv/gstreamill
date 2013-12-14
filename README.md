@@ -65,9 +65,9 @@ test.job is job description in json, can be found in examples directory.
 
 ## output
 
-    * http progressive streaming
+* http progressive streaming
 
-        http://localhost:20119/live/job name/encoder/encoder_index
+    http://localhost:20119/live/job name/encoder/encoder_index
 
 * hls
 
