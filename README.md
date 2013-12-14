@@ -7,12 +7,11 @@ gstreamill is an open source, GPL licensed "stream mill" based on gstreamer-1.0.
 ## Highlight
 
    * hls, http progressive streaminig, udp output.
-   * Multi-Rate with GOP Alignment
-   * based on gstreamer, support all codecs and containers that gstreamer suppport.
-   * extented by gstreamer plugins to support new codec, container and protocol.
+   * Multi-Rate with GOP Alignment.
    * RESTful management interface, allowing easy integration into operator environment.
-   * live job run in subprocess
-   * live job subprocess can be restarted on error
+   * Job is descript in json.
+   * Job run in subprocess, and auto restart on error.
+   * Base on gstreamer and easy to extend.
 
 ## Application
 
