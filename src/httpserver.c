@@ -495,14 +495,12 @@ static gchar * epoll_event_string (struct epoll_event event)
         }
 }
 
-static gpointer listen_thread (gpointer data)
+static gint socket_prepare (HTTPServer *http_server)
 {
-        HTTPServer *http_server = (HTTPServer *)data;
         struct addrinfo hints;
         struct addrinfo *result, *rp;
         gint ret, listen_sock;
-        struct epoll_event event, event_list[kMaxRequests];
-        gint n, i;
+        struct epoll_event event;
 
         memset (&hints, 0, sizeof (struct addrinfo));
         hints.ai_family = AF_UNSPEC; /* Return IPv4 and IPv6 choices */
@@ -511,13 +509,14 @@ static gpointer listen_thread (gpointer data)
         ret = getaddrinfo (http_server->node, http_server->service, &hints, &result);
         if (ret != 0) {
                 GST_ERROR ("node %s, service: %s, getaddrinfo error: %s\n", http_server->node, http_server->service, gai_strerror (ret));
-                return NULL;
+                return 1;
         }
 
         GST_INFO ("start http server on %s:%s", http_server->node, http_server->service);
         for (rp = result; rp != NULL; rp = rp->ai_next) {
-                listen_sock = socket (rp->ai_family, rp->ai_socktype, rp->ai_protocol);
                 int opt = 1;
+
+                listen_sock = socket (rp->ai_family, rp->ai_socktype, rp->ai_protocol);
                 setsockopt (listen_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof (opt));
                 if (listen_sock == -1)
                         continue;
@@ -528,14 +527,14 @@ static gpointer listen_thread (gpointer data)
                         break;
                 } else if (ret == -1) {
                         GST_ERROR ("Bind socket %d error: %s", listen_sock, g_strerror (errno));
-                        exit (0);
+                        return 1;
                 }
                 close_socket_gracefully (listen_sock);
         }
 
         if (rp == NULL) {
                 GST_ERROR ("Could not bind %s\n", http_server->service);
-                return NULL;
+                return 1;
         }
 
         freeaddrinfo (result);
@@ -543,7 +542,7 @@ static gpointer listen_thread (gpointer data)
         ret = listen (listen_sock, SOMAXCONN);
         if (ret == -1) {
                 GST_ERROR ("listen error");
-                return NULL;
+                return 1;
         }
 
         set_nonblock (listen_sock);
@@ -551,7 +550,7 @@ static gpointer listen_thread (gpointer data)
         http_server->epollfd = epoll_create1 (0);
         if (http_server->epollfd == -1) {
                 GST_ERROR ("epoll_create error %s", g_strerror (errno));
-                return NULL;
+                return 1;
         }
 
         event.data.ptr = NULL;
@@ -559,8 +558,17 @@ static gpointer listen_thread (gpointer data)
         ret = epoll_ctl (http_server->epollfd, EPOLL_CTL_ADD, listen_sock, &event);
         if (ret == -1) {
                 GST_ERROR ("epoll_ctl add epollfd error %s", g_strerror (errno));
-                return NULL;
+                return 1;
         }
+
+        return 0;
+}
+
+static gpointer listen_thread (gpointer data)
+{
+        HTTPServer *http_server = (HTTPServer *)data;
+        struct epoll_event event_list[kMaxRequests];
+        gint n, i;
 
         for (;;) {
                 n = epoll_wait (http_server->epollfd, event_list, kMaxRequests, -1);
@@ -606,8 +614,6 @@ static gpointer listen_thread (gpointer data)
                         GST_DEBUG ("event on sock %d events %s", request_data->sock, epoll_event_string (event_list[i]));
                 }
         }
-
-        return NULL;
 }
 
 typedef struct _ForeachFuncData {
@@ -674,8 +680,6 @@ static gpointer idle_thread (gpointer data)
                 }
                 g_mutex_unlock (&(http_server->idle_queue_mutex));
         }
-
-        return NULL;
 }
 
 static void block_queue_foreach_func (gpointer data, gpointer user_data)
@@ -709,8 +713,6 @@ static gpointer block_thread (gpointer data)
                 g_queue_foreach (http_server->block_queue, block_queue_foreach_func, http_server);
                 g_mutex_unlock (&(http_server->block_queue_mutex));
         }
-
-        return NULL;
 }
 
 static void thread_pool_func (gpointer data, gpointer user_data)
@@ -890,9 +892,11 @@ gint httpserver_start (HTTPServer *http_server, http_callback_t user_callback, g
                 g_error_free (err);
                 return -1;
         }
-
         http_server->user_callback = user_callback;
         http_server->user_data = user_data;
+        if (socket_prepare (http_server) != 0) {
+                return 1;
+        }
 
         http_server->listen_thread = g_thread_new ("listen_thread", listen_thread, http_server);
         http_server->idle_thread = g_thread_new ("idle_thread", idle_thread, http_server);

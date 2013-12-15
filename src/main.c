@@ -140,7 +140,7 @@ int main (int argc, char *argv[])
         g_option_context_add_group (ctx, gst_init_get_option_group ());
         if (!g_option_context_parse (ctx, &argc, &argv, &err)) {
                 g_print ("Error initializing: %s\n", GST_STR_NULL (err->message));
-                exit (0);
+                exit (1);
         }
         g_option_context_free (ctx);
         GST_DEBUG_CATEGORY_INIT (GSTREAMILL, "gstreamill", 0, "gstreamill log");
@@ -153,7 +153,7 @@ int main (int argc, char *argv[])
                 g_file_get_contents (PID_FILE, &pid_str, NULL, NULL);
                 if (pid_str == NULL) {
                         g_print ("File %s not found, check if gstreamill is running.\n", PID_FILE);
-                        exit (0);
+                        exit (1);
                 }
                 pid = atoi (pid_str);
                 g_free (pid_str);
@@ -177,7 +177,7 @@ int main (int argc, char *argv[])
 
         if (!foreground && g_file_test (PID_FILE, G_FILE_TEST_EXISTS) && (job_name == NULL)) {
                 g_print ("file %s found, gstreamill already running !!!\n", PID_FILE);
-                exit (0);
+                exit (1);
         }
 
         if (gst_debug_get_default_threshold () < GST_LEVEL_WARNING) {
@@ -202,8 +202,9 @@ int main (int argc, char *argv[])
                 p = mmap (NULL, job_length, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
                 job = g_strdup (p);
 
-                if ((job != NULL) && (!livejobdesc_is_valid (job)))
+                if ((job != NULL) && (!livejobdesc_is_valid (job))) {
                         exit (1);
+                }
 
                 /* launch a livejob. */
                 log_path = g_build_filename (log_dir, job_name, "gstreamill.log", NULL);
@@ -221,10 +222,10 @@ int main (int argc, char *argv[])
 
                 loop = g_main_loop_new (NULL, FALSE);
                 if (livejob_initialize (livejob, TRUE) != 0) {
-                        exit (0);
+                        exit (1);
                 }
                 if (livejob_start (livejob) != 0) {
-                        exit (0);
+                        exit (1);
                 }
                 g_main_loop_run (loop);
 
@@ -239,7 +240,7 @@ int main (int argc, char *argv[])
 		/* daemonize */
                 if (daemon (0, 0) != 0) {
                         g_print ("Failed to daemonize");
-                        exit (0);
+                        exit (1);
                 }
 
 		/* log to file */
@@ -273,16 +274,18 @@ int main (int argc, char *argv[])
         /* httpstreaming, pull */
         httpstreaming = httpstreaming_new ("gstreamill", gstreamill, "address", http_streaming, NULL);
         if (httpstreaming_start (httpstreaming, 10) != 0) {
-                GST_ERROR ("start httpstreaming error.");
-                exit (0);
+                GST_ERROR ("start httpstreaming error, exit.");
+                remove_pid_file ();
+                exit (1);
         }
 
         if (!foreground) {
                 /* run in background, management via http */
                 httpmgmt = httpmgmt_new ("gstreamill", gstreamill, "address", http_mgmt, NULL);
-                if (httpmgmt_start (httpmgmt)) {
-                        GST_ERROR ("start http mangment error.");
-                        exit (0);
+                if (httpmgmt_start (httpmgmt) != 0) {
+                        GST_ERROR ("start http mangment error, exit.");
+                        remove_pid_file ();
+                        exit (1);
                 }
         } else {
 		/* run in foreground, start job */
@@ -290,7 +293,7 @@ int main (int argc, char *argv[])
 
                 if (!g_file_get_contents (job_file, &job, NULL, NULL)) {
                         GST_ERROR ("Read job file %s error.", job_file);
-                        exit (0);
+                        exit (1);
                 }
                 p = gstreamill_job_start (gstreamill, job);
                 GST_WARNING ("start job result: %s.", p);
