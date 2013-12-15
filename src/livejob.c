@@ -1447,15 +1447,13 @@ static gsize status_output_size (LiveJob *livejob)
         size += livejobdesc_streams_count (livejob->job, "source") * sizeof (struct _SourceStreamState);
         for (i = 0; i < livejobdesc_encoders_count (livejob->job); i++) {
                 size += sizeof (GstClockTime); /* encoder heartbeat */
-                pipeline = g_strdup_printf ("encoders.%d", i);
-                size += livejobdesc_streams_count (livejob->job, pipeline) * sizeof (struct _EncoderStreamState); /* state */
+                pipeline = g_strdup_printf ("encoder.%d", i);
+                size += livejobdesc_streams_count (livejob->job, pipeline) * sizeof (struct _EncoderStreamState); /* encoder state */
                 g_free (pipeline);
                 size += sizeof (guint64); /* cache head */
                 size += sizeof (guint64); /* cache tail */
                 size += sizeof (guint64); /* last rap (random access point) */
                 size += sizeof (guint64); /* total count */
-                size += sizeof (M3U8Playlist *); /* m3u8playlist */
-                size += sizeof (GstClockTime); /* last_timestamp */
         }
 
         return size;
@@ -1670,11 +1668,11 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
         if (daemon) {
                 /* daemon, use share memory */
                 fd = shm_open (livejob->name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
-                if (ftruncate (fd, status_output_size (livejob)) == -1) {
+                if (ftruncate (fd, output_size) == -1) {
                         GST_ERROR ("ftruncate error: %s", g_strerror (errno));
                         return 1;
                 }
-                p = mmap (NULL, status_output_size (livejob), PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+                p = mmap (NULL, output_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
         } else {
                 p = g_malloc (output_size);
         }
@@ -1683,7 +1681,7 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
         g_stpcpy (output->job_description, livejob->job);
         p += (strlen (livejob->job) / 8 + 1) * 8;
         output->state = (guint64 *)p;
-        p += sizeof (guint64);
+        p += sizeof (guint64); /* state */
         output->source.sync_error_times = 0;
         output->source.stream_count = livejobdesc_streams_count (livejob->job, "source");
         output->source.streams = (struct _SourceStreamState *)p;
@@ -1700,9 +1698,9 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
                 g_free (name);
                 output->encoders[i].heartbeat = (GstClockTime *)p;
                 *(output->encoders[i].heartbeat) = gst_clock_get_time (livejob->system_clock);
-                p += sizeof (GstClockTime);
+                p += sizeof (GstClockTime); /* encoder heartbeat */
                 output->encoders[i].streams = (struct _EncoderStreamState *)p;
-                p += output->encoders[i].stream_count * sizeof (struct _EncoderStreamState);
+                p += output->encoders[i].stream_count * sizeof (struct _EncoderStreamState); /* encoder state */
                 if (daemon) {
                         /* daemon, use share memory. */
                         name = g_strdup_printf ("%s.%d", livejob->name, i);
@@ -1723,19 +1721,19 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
                 output->encoders[i].cache_size = SHM_SIZE;
                 output->encoders[i].head_addr = (guint64 *)p;
                 *(output->encoders[i].head_addr) = 0;
-                p += sizeof (guint64);
+                p += sizeof (guint64); /* cache head */
                 output->encoders[i].tail_addr = (guint64 *)p;
                 /* timestamp + gop size = 12 */
                 *(output->encoders[i].tail_addr) = 12;
-                p += sizeof (guint64);
+                p += sizeof (guint64); /* cache tail */
                 output->encoders[i].last_rap_addr = (guint64 *)p;
                 *(output->encoders[i].last_rap_addr) = 0;
-                p += sizeof (guint64);
+                p += sizeof (guint64); /* last rap addr */
                 output->encoders[i].total_count = (guint64 *)p;
                 *(output->encoders[i].total_count) = 0;
+                p += sizeof (guint64); /* total count */
                 output->encoders[i].m3u8_playlist = NULL;
                 output->encoders[i].last_timestamp = 0;
-                p += sizeof (guint64);
         }
         livejob->output = output;
         livejob->mqdes = mq_open ("/gstreamill", O_WRONLY);
