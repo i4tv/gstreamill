@@ -178,3 +178,5 @@ test.job is job description in json, can be found in examples directory.
     }
 
 There are more examples in examples directory of source.
+
+Report a bug on [issues](https://github.com/zhangping/gstreamill/issues) page.
