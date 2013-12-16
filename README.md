@@ -95,8 +95,6 @@ job_name is value of the "name" field in job description.
 
 * query gstreamill stat:
 
-    syntax : curl http://localhost:20118/stat/gstreamill[/sub/item]
-
     curl http://localhost:20118/stat/gstreamill
     curl http://localhost:20118/stat/gstreamill/livejob/test
 
