@@ -181,25 +181,26 @@ int main (int argc, char *argv[])
                 gchar *log_path;
                 gint ret;
 
-                /* read job description from share memory */
-                job = NULL;
-                fd = shm_open (job_name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
-                if (ftruncate (fd, job_length) == -1) {
-                        GST_ERROR ("ftruncate error: %s", g_strerror (errno));
-                        return -1;
-                }
-                p = mmap (NULL, job_length, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-                job = g_strdup (p);
-
-                if ((job != NULL) && (!livejobdesc_is_valid (job))) {
-                        exit (1);
-                }
-
                 /* initialize log */
                 log_path = g_build_filename (log_dir, job_name, "gstreamill.log", NULL);
                 ret = init_log (log_path);
                 g_free (log_path);
                 if (ret != 0) {
+                        exit (1);
+                }
+
+                /* read job description from share memory */
+                job = NULL;
+                fd = shm_open (job_name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+                if (ftruncate (fd, job_length) == -1) {
+                        GST_ERROR ("ftruncate error: %s", g_strerror (errno));
+                        exit (1);
+                }
+                p = mmap (NULL, job_length, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+                job = g_strdup (p);
+
+                if ((job != NULL) && (!livejobdesc_is_valid (job))) {
+                        GST_ERROR ("invalide job description");
                         exit (1);
                 }
 
@@ -210,15 +211,17 @@ int main (int argc, char *argv[])
                 signal (SIGUSR2, stop_job);
                 loop = g_main_loop_new (NULL, FALSE);
                 if (livejob_initialize (livejob, TRUE) != 0) {
+                        GST_ERROR ("initialize livejob failure, exit");
                         exit (1);
                 }
                 if (livejob_start (livejob) != 0) {
+                        GST_ERROR ("start livejob failure, exit");
                         exit (1);
                 }
-                GST_WARNING ("gstreamill %s starting ... %s", job_name, job);
-                g_main_loop_run (loop);
+                GST_WARNING ("livejob %s starting ...", job_name);
+                g_free (job);
 
-                return 0;
+                g_main_loop_run (loop);
         }
 
         /* run in background? */
