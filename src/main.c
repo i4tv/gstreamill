@@ -95,17 +95,11 @@ static GOptionEntry options[] = {
 
 static gint create_pid_file ()
 {
-        pid_t pid;
-        FILE *fd;
+        gchar *pid;
 
-        pid = getpid ();
-        fd = fopen (PID_FILE, "w");
-        if (fd == NULL) {
-                perror ("Create pid file error\n");
-                return 1;
-        }
-        fprintf (fd, "%d\n", pid);
-        fclose (fd);
+        pid = g_strdup_printf ("%d", getpid ());
+        g_file_set_contents (PID_FILE, pid, strlen (pid), NULL);
+        g_free (pid);
 
         return 0;
 }
@@ -175,11 +169,6 @@ int main (int argc, char *argv[])
                 foreground = FALSE;
         }
 
-        if (!foreground && g_file_test (PID_FILE, G_FILE_TEST_EXISTS) && (job_name == NULL)) {
-                g_print ("file %s found, gstreamill already running !!!\n", PID_FILE);
-                exit (1);
-        }
-
         if (gst_debug_get_default_threshold () < GST_LEVEL_WARNING) {
                 gst_debug_set_default_threshold (GST_LEVEL_WARNING);
         }
@@ -236,6 +225,12 @@ int main (int argc, char *argv[])
         if (!foreground) {
                 gchar *log_path;
                 gint ret;
+
+                /* pid file exist? */
+                if (g_file_test (PID_FILE, G_FILE_TEST_EXISTS)) {
+                        g_print ("file %s found, gstreamill already running !!!\n", PID_FILE);
+                        exit (1);
+                }
 
 		/* daemonize */
                 if (daemon (0, 0) != 0) {
