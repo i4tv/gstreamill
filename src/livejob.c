@@ -1217,8 +1217,7 @@ static GstFlowReturn encoder_appsink_callback (GstAppSink * sink, gpointer user_
         }
 
         if (!GST_BUFFER_FLAG_IS_SET (buffer, GST_BUFFER_FLAG_DELTA_UNIT)) {
-                if ((GST_BUFFER_PTS (buffer) == encoder->last_running_time) &&
-                    (encoder->next_key_index != encoder->key_index)) {
+                if (GST_BUFFER_PTS (buffer) == encoder->last_running_time) {
                         /* 
                          * random access point found.
                          * write previous gop size to 4 bytes reservation,
@@ -1228,12 +1227,12 @@ static GstFlowReturn encoder_appsink_callback (GstAppSink * sink, gpointer user_
                         gchar *msg;
 
                         move_last_rap (encoder, buffer);
-                        encoder->key_index++;
-                        msg = g_strdup_printf ("/live/%s/encoder/%d", encoder->livejob->name, encoder->id);
+                        msg = g_strdup_printf ("/live/%s/encoder/%d/%lu", encoder->livejob->name, encoder->id, encoder->last_segment_duration);
                         if (mq_send (encoder->livejob->mqdes, msg, strlen (msg), 1) == -1) {
                                 GST_ERROR ("mq_send error: %s", g_strerror (errno));
                         }
                         g_free (msg);
+                        encoder->last_running_time = GST_CLOCK_TIME_NONE;
                 }
         }
 
@@ -1279,7 +1278,8 @@ static void encoder_appsrc_need_data_callback (GstAppSrc *src, guint length, gpo
                         caps = gst_sample_get_caps (stream->source->ring[current_position]);
                         gst_app_src_set_caps (src, caps);
                         if (!g_str_has_prefix (gst_caps_to_string (caps), "video")) {
-                                stream->segment_duration = 0;
+                                /* only for video stream, force key unit */
+                                stream->encoder = NULL;
                         }
                         GST_INFO ("set stream %s caps: %s", stream->name, gst_caps_to_string (caps));
                 }
@@ -1291,23 +1291,24 @@ static void encoder_appsrc_need_data_callback (GstAppSrc *src, guint length, gpo
                         GST_TIME_ARGS (GST_BUFFER_PTS (buffer)),
                         stream->source->current_position);
 
-                /* force key unit */
-                if (stream->segment_duration != 0) {
-                        if (stream->duration_accumulation >= stream->segment_duration) {
+                /* force key unit? */
+                if ((stream->encoder != NULL) && (stream->encoder->segment_duration != 0)) {
+                        if (stream->encoder->duration_accumulation >= stream->encoder->segment_duration) {
                                 GstClockTime running_time;
 
+                                stream->encoder->last_segment_duration = stream->encoder->duration_accumulation;
                                 running_time = GST_BUFFER_PTS (buffer);
                                 pad = gst_element_get_static_pad ((GstElement *)src, "src");
                                 event = gst_video_event_new_downstream_force_key_unit (running_time,
                                                                                        running_time,
                                                                                        running_time,
                                                                                        TRUE,
-                                                                                       stream->force_key_count);
+                                                                                       stream->encoder->force_key_count);
                                 gst_pad_push_event (pad, event);
-                                stream->force_key_count++;
-                                stream->duration_accumulation = 0;
+                                stream->encoder->force_key_count++;
+                                stream->encoder->duration_accumulation = 0;
                         }
-                        stream->duration_accumulation += GST_BUFFER_DURATION (buffer);
+                        stream->encoder->duration_accumulation += GST_BUFFER_DURATION (buffer);
                 }
 
                 /* push buffer */
@@ -1335,18 +1336,9 @@ static GstPadProbeReturn encoder_appsink_event_probe (GstPad *pad, GstPadProbeIn
         }
         /* force key unit event */
         gst_video_event_parse_downstream_force_key_unit (event, &timestamp, &stream_time, &running_time, &all_headers, &count);
-        encoder->last_running_time = timestamp;
-        /* send first IDR timestamp */
-        if (encoder->next_key_index == 0) {
-                gchar *msg;
-
-                msg = g_strdup_printf ("/live/%s/encoder/%d/start/%lu", encoder->livejob->name, encoder->id, timestamp);
-                if (mq_send (encoder->livejob->mqdes, msg, strlen (msg), 1) == -1) {
-                        GST_ERROR ("mq_send error: %s", g_strerror (errno));
-                }
-                g_free (msg);
+        if (encoder->last_segment_duration != 0) {
+                encoder->last_running_time = timestamp;
         }
-        encoder->next_key_index++;
 
         return GST_PAD_PROBE_OK;
 }
@@ -1591,10 +1583,12 @@ static guint encoder_initialize (LiveJob *livejob)
                 encoder = encoder_new ("name", pipeline, NULL);
                 encoder->livejob = livejob;
                 encoder->id = i;
-                encoder->key_index = 1;
-                encoder->next_key_index = 0;
                 encoder->last_running_time = GST_CLOCK_TIME_NONE;
                 encoder->output = &(livejob->output->encoders[i]);
+                encoder->segment_duration = livejobdesc_m3u8streaming_segment_duration (encoder->livejob->job);
+                encoder->duration_accumulation = 0;
+                encoder->last_segment_duration = 0;
+                encoder->force_key_count = 0;
 
                 bins = livejobdesc_bins (livejob->job, pipeline);
                 if (encoder_extract_streams (encoder, bins) != 0) {
@@ -1606,16 +1600,14 @@ static guint encoder_initialize (LiveJob *livejob)
                 for (j = 0; j < encoder->streams->len; j++) {
                         stream = g_array_index (encoder->streams, gpointer, j);
                         stream->state = &(livejob->output->encoders[i].streams[j]);
-                        stream->segment_duration = livejobdesc_m3u8streaming_segment_duration (encoder->livejob->job);
-                        stream->duration_accumulation = stream->segment_duration;
                         g_strlcpy (livejob->output->encoders[i].streams[j].name, stream->name, STREAM_NAME_LEN);
+                        stream->encoder = encoder;
                         stream->source = NULL;
                         for (k = 0; k < livejob->source->streams->len; k++) {
                                 source = g_array_index (livejob->source->streams, gpointer, k);
                                 if (g_strcmp0 (source->name, stream->name) == 0) {
                                         stream->source = source;
                                         stream->current_position = -1;
-                                        stream->force_key_count = 0;
                                         stream->system_clock = encoder->livejob->system_clock;
                                         g_array_append_val (source->encoders, stream);
                                         break;

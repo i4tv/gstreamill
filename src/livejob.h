@@ -130,11 +130,7 @@ typedef struct _EncoderStream {
         GstClock *system_clock;
         gint current_position; /* encoder position */
         EncoderStreamState *state;
-
-        /* gop size */
-        guint force_key_count; /* downstream force key unit count */
-        GstClockTime segment_duration; /* force key interval */
-        GstClockTime duration_accumulation; /* current segment duration accumulation */
+        Encoder *encoder;
 } EncoderStream;
 
 struct _Encoder {
@@ -156,9 +152,13 @@ struct _Encoder {
         GstBuffer *cache_7x188;
         gsize cache_size;
 
+        /* gop size */
+        guint force_key_count; /* downstream force key unit count */
+        GstClockTime segment_duration; /* force key interval */
+        GstClockTime duration_accumulation; /* current segment duration accumulation */
+
         /* idr help */
-        guint key_index;
-        guint next_key_index;
+        GstClockTime last_segment_duration;
         GstClockTime last_running_time;
 };
 

@@ -508,17 +508,15 @@ static void notify_function (union sigval sv)
                 if (encoder != NULL) {
                         gchar *url;
                         GstClockTime last_timestamp;
-                        GstClockTime timestamp;
+                        GstClockTime segment_duration;
 
-                        if ((encoder->m3u8_playlist != NULL) && (sscanf (buf, "/live/%*[^/]/encoder/%*[^/]/start/%lu", &timestamp) != EOF)) {
-                                /* first IDR timestamp */
-                                encoder->last_timestamp = timestamp;
-                        } else if (encoder->m3u8_playlist != NULL) {
+                        if (encoder->m3u8_playlist != NULL) {
                                 /* new segement begain, last segment end. */
+                                sscanf (buf, "/live/%*[^/]/encoder/%*[^/]/%lu", &segment_duration);
                                 last_timestamp = livejob_encoder_output_rap_timestamp (encoder, *(encoder->last_rap_addr));
                                 url = g_strdup_printf ("%lu.ts", encoder->last_timestamp);
                                 g_rw_lock_writer_lock (&(encoder->m3u8_playlist_rwlock));
-                                m3u8playlist_add_entry (encoder->m3u8_playlist, url, last_timestamp - encoder->last_timestamp);
+                                m3u8playlist_add_entry (encoder->m3u8_playlist, url, segment_duration);
                                 g_rw_lock_writer_unlock (&(encoder->m3u8_playlist_rwlock));
                                 encoder->last_timestamp = last_timestamp;
                                 g_free (url);
