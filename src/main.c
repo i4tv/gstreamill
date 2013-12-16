@@ -264,7 +264,11 @@ int main (int argc, char *argv[])
 
         /* gstreamill */
         gstreamill = gstreamill_new ("daemon", !foreground, "log_dir", log_dir, NULL);
-        gstreamill_start (gstreamill);
+        if (gstreamill_start (gstreamill) != 0) {
+                GST_ERROR ("start gstreamill error, exit.");
+                remove_pid_file ();
+                exit (1);
+        }
 
         /* httpstreaming, pull */
         httpstreaming = httpstreaming_new ("gstreamill", gstreamill, "address", http_streaming, NULL);

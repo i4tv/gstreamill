@@ -551,7 +551,7 @@ gint gstreamill_start (Gstreamill *gstreamill)
         gst_clock_id_unref (id);
         if (ret != GST_CLOCK_OK) {
                 GST_WARNING ("Regist gstreamill monitor failure");
-                exit (0);
+                return 1;
         }
 
         /* idr found event message queue init */
@@ -562,6 +562,7 @@ gint gstreamill_start (Gstreamill *gstreamill)
         mq_unlink ("/gstreamill");
         if ((gstreamill->mqdes = mq_open ("/gstreamill", O_RDONLY | O_CREAT | O_NONBLOCK, 0666, &attr)) == -1) {
                 GST_ERROR ("mq_open error : %s", g_strerror (errno));
+                return 1;
         }
         sev.sigev_notify = SIGEV_THREAD;
         sev.sigev_notify_function = notify_function;
@@ -569,6 +570,7 @@ gint gstreamill_start (Gstreamill *gstreamill)
         sev.sigev_value.sival_ptr = gstreamill;
         if (mq_notify (gstreamill->mqdes, &sev) == -1) {
                 GST_ERROR ("mq_notify error : %s", g_strerror (errno));
+                return 1;
         }
 
         return 0;
