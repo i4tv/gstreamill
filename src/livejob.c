@@ -838,6 +838,7 @@ static GSList * bins_parse (LiveJob *livejob, gchar *pipeline)
                         p1 = g_strdup (*pp);
                         p1 = g_strstrip (p1);
                         if (is_pad (p1)) {
+                                /* request pad or sometimes pad */
                                 if (src == NULL) {
                                         /* should be a sometimes pad */
                                         src_name = g_strndup (p1, g_strrstr (p1, ".") - p1);
@@ -856,38 +857,39 @@ static GSList * bins_parse (LiveJob *livejob, gchar *pipeline)
                                         g_free (p);
                                         bin->links = g_slist_append (bin->links, link);
                                 }
-                        } else {
-                                element = element_create (livejob, pipeline, p1);
-                                if (element != NULL) {
-                                        if (src_name != NULL) {
-                                                link = g_slice_new (Link);
-                                                link->src = src;
-                                                link->src_name = src_name;
-                                                link->src_pad_name = src_pad_name;
-                                                link->sink = element;
-                                                link->sink_name = p1;
-                                                link->sink_pad_name = NULL;
-                                                p = g_strdup_printf ("%s.elements.%s.caps", pipeline, src_name);
-                                                link->caps = livejobdesc_element_caps (livejob->job, p);
-                                                g_free (p);
-                                                if (src_pad_name == NULL) {
-                                                        bin->links = g_slist_append (bin->links, link);
-                                                } else {
-                                                        bin->previous = link;
-                                                }
+                                pp++;
+                                continue;
+                        }
+                        element = element_create (livejob, pipeline, p1);
+                        if (element != NULL) {
+                                if (src_name != NULL) {
+                                        link = g_slice_new (Link);
+                                        link->src = src;
+                                        link->src_name = src_name;
+                                        link->src_pad_name = src_pad_name;
+                                        link->sink = element;
+                                        link->sink_name = p1;
+                                        link->sink_pad_name = NULL;
+                                        p = g_strdup_printf ("%s.elements.%s.caps", pipeline, src_name);
+                                        link->caps = livejobdesc_element_caps (livejob->job, p);
+                                        g_free (p);
+                                        if (src_pad_name == NULL) {
+                                                bin->links = g_slist_append (bin->links, link);
                                         } else {
-                                                bin->first = element;
+                                                bin->previous = link;
                                         }
-                                        bin->elements = g_slist_append (bin->elements, element);
-                                        src = element;
-                                        src_name = p1;
-                                        src_pad_name = NULL;
                                 } else {
-                                        /* create element failure */
-                                        g_free (bins);
-                                        g_strfreev (pp1);
-                                        return NULL;
+                                        bin->first = element;
                                 }
+                                bin->elements = g_slist_append (bin->elements, element);
+                                src = element;
+                                src_name = p1;
+                                src_pad_name = NULL;
+                        } else {
+                                /* create element failure */
+                                g_free (bins);
+                                g_strfreev (pp1);
+                                return NULL;
                         }
                         pp++;
                 }
