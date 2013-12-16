@@ -206,7 +206,7 @@ int main (int argc, char *argv[])
                         exit (1);
                 }
 
-                /* launch a livejob. */
+                /* initialize log */
                 log_path = g_build_filename (log_dir, job_name, "gstreamill.log", NULL);
                 ret = init_log (log_path);
                 g_free (log_path);
@@ -214,12 +214,11 @@ int main (int argc, char *argv[])
                         exit (1);
                 }
 
+                /* launch a livejob. */
                 livejob = livejob_new ("name", job_name, "job", job, NULL);
                 signal (SIGPIPE, SIG_IGN);
                 signal (SIGUSR1, sighandler);
                 signal (SIGUSR2, stop_job);
-                GST_WARNING ("gstreamill %s starting ... %s", job_name, job);
-
                 loop = g_main_loop_new (NULL, FALSE);
                 if (livejob_initialize (livejob, TRUE) != 0) {
                         exit (1);
@@ -227,6 +226,7 @@ int main (int argc, char *argv[])
                 if (livejob_start (livejob) != 0) {
                         exit (1);
                 }
+                GST_WARNING ("gstreamill %s starting ... %s", job_name, job);
                 g_main_loop_run (loop);
 
                 return 0;
