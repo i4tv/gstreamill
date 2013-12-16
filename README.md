@@ -91,9 +91,14 @@ test.job is job description in json, can be found in examples directory.
 
     curl http://localhost:20118/stop/job_name
 
+job_name is value of the "name" field in job description.
+
 * query gstreamill stat:
 
-    curl http://localhost:20118/stat/gstreamill[/sub/item]
+    syntax : curl http://localhost:20118/stat/gstreamill[/sub/item]
+
+    curl http://localhost:20118/stat/gstreamill
+    curl http://localhost:20118/stat/gstreamill/livejob/test
 
 * query gstreamer information:
 
