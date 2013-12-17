@@ -115,8 +115,7 @@ gchar * m3u8playlist_render (M3U8Playlist * playlist)
         /* #EXTM3U */
         g_string_append_printf (playlist->playlist_str, M3U8_HEADER_TAG);
         /* #EXT-X-VERSION */
-        //  g_string_append_printf (playlist->playlist_str, M3U8_VERSION_TAG,
-        //      playlist->version);
+        g_string_append_printf (playlist->playlist_str, M3U8_VERSION_TAG, playlist->version);
         /* #EXT-X-ALLOW_CACHE */
         g_string_append_printf (playlist->playlist_str, M3U8_ALLOW_CACHE_TAG, playlist->allow_cache ? "YES" : "NO");
         /* #EXT-X-MEDIA-SEQUENCE */

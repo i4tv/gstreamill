@@ -663,6 +663,9 @@ static gint reset_livejob (LiveJob *livejob)
                 guint version, window_size;
 
                 version = livejobdesc_m3u8streaming_version (livejob->job);
+                if (version == 0) {
+                        version = 3;
+                }
                 window_size = livejobdesc_m3u8streaming_window_size (livejob->job);
                 for (i = 0; i < livejob->output->encoder_count; i++) {
                         encoder = &(livejob->output->encoders[i]);
@@ -787,6 +790,11 @@ static gchar * livejob_master_m3u8_playlist (LiveJob *livejob)
 
         master_m3u8_playlist = g_string_new ("");
         g_string_append_printf (master_m3u8_playlist, M3U8_HEADER_TAG);
+        if (livejobdesc_m3u8streaming_version (livejob->job) == 0) {
+                g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, 3);
+        } else {
+                g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, livejobdesc_m3u8streaming_version (livejob->job));
+        }
         for (i = 0; i < livejob->output->encoder_count; i++) {
                 p = g_strdup_printf ("encoder.%d.elements.x264enc.property.bitrate", i);
                 value = livejobdesc_element_property_value (livejob->job, p);
