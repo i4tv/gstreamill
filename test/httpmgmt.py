@@ -1,29 +1,29 @@
 import time
 import httplib
 
-def request(server, port, channelid, command):
+def stop(server, port, job):
     conn = httplib.HTTPConnection(server, port)
-    channel = "/channel/%d/%s" % (channelid, command)
-    conn.request("GET", channel)
+    stop = "/stop/%s" % job
+    conn.request("GET", stop)
     resp = conn.getresponse()
     if resp.status == 200:
-        data = resp.read (16)
+        data = resp.read ()
+        print data
     conn.close()
 
-def save (server, port):
+def start(server, port, jobfile):
     conn = httplib.HTTPConnection(server, port)
-    headers = {
-        "Content-Type": "application/xml",
-        "Content-Length": 4586
-    }
-    conn.request ("GET", "/configure")
-    response = conn.getresponse()
-    if response.status == 200:
-        params = response.read()
-    conn.request("POST", "/configure", params, headers)
-    response = conn.getresponse()
-    print response.status, response.reason
+    headers = {"Content-Type": "application/json"}
+    job = open(jobfile).read()
+    conn.request("POST", "/start", job, headers)
+    resp = conn.getresponse()
+    if resp.status == 200:
+        data = resp.read ()
+        print "start job response:", data
+    conn.close()
 
 while True:
-    save ("192.168.2.10", 20220)
-    time.sleep(1)
+    start ("localhost", 20118, "examples/test.job")
+    time.sleep(10)
+    stop ("localhost", 20118, "test")
+    time.sleep(10)
