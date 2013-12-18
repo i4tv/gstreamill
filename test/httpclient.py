@@ -33,6 +33,8 @@ def fetch_data(server, port, location, size):
                 if not (len(data) == ReadSize):
                     print time.strftime("%b %d - %H:%M:%S", time.gmtime()), "http://%s%s" % (server, location), resp.status, resp.reason, "size", len(data), "time", t2-t1
                     exit (0)
+                else:
+                    print "Got",len(data)
             break
         except socket.error, msg:
             print "socket error %s" % msg
@@ -49,20 +51,4 @@ def fetch_data(server, port, location, size):
                 continue
 
 while True:
-    """
-    fetch_data("192.168.2.11", 20129, "/channel/0/encoder/0", ReadSize)
-    fetch_data("192.168.2.11", 20129, "/channel/0/encoder/1", ReadSize)
-    fetch_data("192.168.2.11", 20129, "/channel/1/encoder/0", ReadSize)
-    fetch_data("192.168.2.11", 20129, "/channel/1/encoder/1", ReadSize)
-    fetch_data("192.168.2.11", 20129, "/channel/2/encoder/0", ReadSize)
-    fetch_data("192.168.2.11", 20129, "/channel/2/encoder/1", ReadSize)
-    fetch_data("192.168.2.10", 20129, "/channel/0/encoder/0", ReadSize)
-    fetch_data("192.168.2.10", 20129, "/channel/0/encoder/1", ReadSize)
-    fetch_data("192.168.2.10", 20129, "/channel/0/encoder/2", ReadSize)
-    fetch_data("192.168.2.10", 20129, "/channel/0/encoder/3", ReadSize)
-    fetch_data("192.168.2.10", 20129, "/channel/1/encoder/0", ReadSize)
-    fetch_data("192.168.2.10", 20129, "/channel/1/encoder/1", ReadSize)
-    fetch_data("192.168.2.10", 20129, "/channel/1/encoder/2", ReadSize)
-    fetch_data("192.168.2.10", 20129, "/channel/1/encoder/3", ReadSize)
-    """
-    fetch_data("192.168.2.9", 20129, "/channel/0/encoder/0", ReadSize)
+    fetch_data("localhost", 20119, "/live/test/encoder/0", ReadSize)
