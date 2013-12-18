@@ -225,18 +225,14 @@ static gint parse_request (RequestData *request_data)
         gchar *parameters = &(request_data->parameters[0]);
         gint i, content_length;
 
-        if ((strstr (buf, "\n\n") == NULL) && (strstr (buf, "\r\n\r\n") == NULL)) {
+        /* check header */
+        p1 = strstr (buf, "\r\n\r\n");
+        if (p1 == NULL) {
                 /* header not completed, read more data. */
                 return 1;
         }
+        request_data->header_size = p1 - buf + 4;
 
-        p1 = strstr (buf, "\n\n");
-        if (p1 == NULL) {
-                p1 = strstr (buf, "\r\n\r\n");
-                request_data->header_size = p1 - buf + 4;
-        } else {
-                request_data->header_size = p1 - buf + 2;
-        }
         GST_LOG ("head size: %d", request_data->header_size);
         header = g_strndup (buf, p1 - buf);
         p1 = strstr (header, "Content-Length:");
