@@ -1324,25 +1324,27 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
 
 gchar * gstreamill_gstreamer_stat (Gstreamill *gstreamill, gchar *uri)
 {
-        gchar *std_out, *cmd, *plugin;
+        gchar *std_out, *cmd;
         GError *error = NULL;
-        GRegex *regex;
+        gchar buf[128];
 
-        /* strip space at begin */
-        if (g_str_has_prefix (uri, "/stat/gstreamer/")) {
-                regex = g_regex_new ("/stat/gstreamer/", 0, 0, NULL);
-                plugin = g_regex_replace (regex, uri, -1, 0, "", 0, NULL);
-                g_regex_unref (regex);
-                cmd = g_strdup_printf ("gst-inspect-1.0 %s", plugin);
-                g_free (plugin);
-        } else {
-                cmd = g_strdup ("gst-inspect");
+        cmd = NULL;
+        std_out = NULL;
+        if (sscanf (uri, "/stat/gstreamer/%s$", buf) != EOF) {
+                cmd = g_strdup_printf ("gst-inspect-1.0 %s", buf);
+        } else if (g_strcmp0 (uri, "/stat/gstreamer") == 0 || g_strcmp0 (uri, "/stat/gstreamer/") == 0) {
+                cmd = g_strdup ("gst-inspect-1.0");
         }
-        if (!g_spawn_command_line_sync (cmd, &std_out, NULL, NULL, &error)) {
+        if ((cmd != NULL) && !g_spawn_command_line_sync (cmd, &std_out, NULL, NULL, &error)) {
                 GST_ERROR ("gst-inspect error, reason: %s.", error->message);
                 g_error_free (error);
         }
-        g_free (cmd);
+        if (cmd != NULL) {
+                g_free (cmd);
+        }
+        if (std_out == NULL) {
+                std_out = g_strdup ("output is null, maybe gst-inspect-1.0 command not found.");
+        }
 
         return std_out;
 }

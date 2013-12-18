@@ -214,11 +214,10 @@ static void request_gstreamill_stat (HTTPMgmt *httpmgmt, RequestData *request_da
 static void request_gstreamer_stat (HTTPMgmt *httpmgmt, RequestData *request_data)
 {
         gchar *buf, *p;
-        if (g_str_has_prefix (request_data->uri, "/stat/gstreamer")) {
-                p = gstreamill_gstreamer_stat (httpmgmt->gstreamill, request_data->uri);
-                buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (p), p);
-                g_free (p);
-        }
+
+        p = gstreamill_gstreamer_stat (httpmgmt->gstreamill, request_data->uri);
+        buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (p), p);
+        g_free (p);
         httpserver_write (request_data->sock, buf, strlen (buf));
         g_free (buf);
 
