@@ -213,8 +213,8 @@ static gint read_request (RequestData *request_data)
                 }
         }
         request_data->request_length = read_pos;
-
         buf[read_pos] = '\0'; /* string */
+
         return read_pos;
 }
 
@@ -228,7 +228,7 @@ static gint parse_request (RequestData *request_data)
         /* check header */
         p1 = strstr (buf, "\r\n\r\n");
         if (p1 == NULL) {
-                /* header not completed, read more data. */
+                /* header not completed */
                 return 1;
         }
         request_data->header_size = p1 - buf + 4;
