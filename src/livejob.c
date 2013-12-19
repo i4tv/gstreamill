@@ -398,11 +398,6 @@ static void livejob_dispose (GObject *obj)
                 livejob->job = NULL;
         }
 
-        if (livejob->mqdes != -1) {
-                mq_close (livejob->mqdes);
-                livejob->mqdes = -1;
-        }
-
         G_OBJECT_CLASS (parent_class)->dispose (obj);
 }
 
@@ -1762,11 +1757,6 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
                 output->encoders[i].last_timestamp = 0;
         }
         livejob->output = output;
-        livejob->mqdes = mq_open ("/gstreamill", O_WRONLY);
-        if (livejob->mqdes == -1) {
-                GST_ERROR ("mq_open error: %s", g_strerror (errno));
-                return 1;
-        }
 
         return 0;
 }
@@ -1785,6 +1775,12 @@ gint livejob_start (LiveJob *livejob)
         Encoder *encoder;
         GstStateChangeReturn ret;
         gint i;
+
+        livejob->mqdes = mq_open ("/gstreamill", O_WRONLY);
+        if (livejob->mqdes == -1) {
+                GST_ERROR ("mq_open error: %s", g_strerror (errno));
+                return 1;
+        }
 
         if (source_initialize (livejob) != 0) {
                 GST_ERROR ("Initialize livejob source error.");
