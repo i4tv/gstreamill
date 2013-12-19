@@ -383,16 +383,28 @@ static void livejob_dispose (GObject *obj)
                 livejob->job = NULL;
         }
 
+        if (livejob->mqdes != -1) {
+                mq_close (livejob->mqdes);
+                livejob->mqdes = -1;
+        }
+
         G_OBJECT_CLASS (parent_class)->dispose (obj);
 }
 
 static void livejob_finalize (GObject *obj)
 {
         LiveJob *livejob = LIVEJOB (obj);
+        LiveJobOutput *output;
         GObjectClass *parent_class = g_type_class_peek (G_TYPE_OBJECT);
+        gint i;
 
         g_array_free (livejob->encoder_array, TRUE);
-        g_free (livejob->output);
+
+        output = livejob->output;
+        for (i = 0; i < output->encoder_count; i++) {
+                sem_close (output->encoders[i].semaphore);
+        }
+        g_free (output);
 
         G_OBJECT_CLASS (parent_class)->finalize (obj);
 }
@@ -1693,6 +1705,11 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
                 g_free (name);
                 name = g_strdup_printf ("/%s.%d", livejob->name, i);
                 output->encoders[i].semaphore = sem_open (name, O_CREAT, 0600, 1);
+                if (output->encoders[i].semaphore == SEM_FAILED) {
+                        GST_ERROR ("sem_open %s error: %s", name, g_strerror (errno));
+                        g_free (name);
+                        return 1;
+                }
                 g_free (name);
                 output->encoders[i].heartbeat = (GstClockTime *)p;
                 *(output->encoders[i].heartbeat) = gst_clock_get_time (livejob->system_clock);
@@ -1735,6 +1752,10 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
         }
         livejob->output = output;
         livejob->mqdes = mq_open ("/gstreamill", O_WRONLY);
+        if (livejob->mqdes == -1) {
+                GST_ERROR ("mq_open error: %s", g_strerror (errno));
+                return 1;
+        }
 
         return 0;
 }
