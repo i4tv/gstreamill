@@ -109,6 +109,7 @@ typedef struct _EncoderOutput {
         gchar name[STREAM_NAME_LEN];
         sem_t *semaphore; /* access of encoder output should be exclusive */
         GstClockTime *heartbeat;
+        gint cache_fd;
         gchar *cache_addr;
         guint64 cache_size;
         guint64 *total_count; /* total output packet counts */
@@ -192,6 +193,7 @@ struct _LiveJob {
         gint id;
         gchar *log_dir;
         GstClock *system_clock;
+        gint output_fd;
         LiveJobOutput *output; /* Interface for producing */
         gint64 age; /* (re)start times of the livejob */
         gchar *last_start_time; /* last start up time */

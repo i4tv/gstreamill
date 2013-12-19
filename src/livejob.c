@@ -372,6 +372,21 @@ static void livejob_dispose (GObject *obj)
 {
         LiveJob *livejob = LIVEJOB (obj);
         GObjectClass *parent_class = g_type_class_peek (G_TYPE_OBJECT);
+        LiveJobOutput *output;
+        gint i;
+
+        output = livejob->output;
+        for (i = 0; i < output->encoder_count; i++) {
+                if (output->encoders[i].cache_fd != -1) {
+                        g_close (output->encoders[i].cache_fd, NULL);
+                }
+                sem_close (output->encoders[i].semaphore);
+        }
+        g_free (output);
+
+        if (livejob->output_fd != -1) {
+                g_close (livejob->output_fd, NULL);
+        }
 
         if (livejob->name != NULL) {
                 g_free (livejob->name);
@@ -394,17 +409,9 @@ static void livejob_dispose (GObject *obj)
 static void livejob_finalize (GObject *obj)
 {
         LiveJob *livejob = LIVEJOB (obj);
-        LiveJobOutput *output;
         GObjectClass *parent_class = g_type_class_peek (G_TYPE_OBJECT);
-        gint i;
 
         g_array_free (livejob->encoder_array, TRUE);
-
-        output = livejob->output;
-        for (i = 0; i < output->encoder_count; i++) {
-                sem_close (output->encoders[i].semaphore);
-        }
-        g_free (output);
 
         G_OBJECT_CLASS (parent_class)->finalize (obj);
 }
@@ -1683,8 +1690,10 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
                         return 1;
                 }
                 p = mmap (NULL, output_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+                livejob->output_fd = fd;
         } else {
                 p = g_malloc (output_size);
+                livejob->output_fd = -1;
         }
         output = (LiveJobOutput *)g_malloc (sizeof (LiveJobOutput));
         output->job_description = (gchar *)p;
@@ -1725,10 +1734,12 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
                                 return 1;
                         }
                         output->encoders[i].cache_addr = mmap (NULL, SHM_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+                        output->encoders[i].cache_fd = fd;
                         /* initialize gop size = 0. */
                         *(gint32 *)(output->encoders[i].cache_addr + 8) = 0;
                         g_free (name);
                 } else {
+                        output->encoders[i].cache_fd = -1;
                         output->encoders[i].cache_addr = g_malloc (SHM_SIZE);
                 }
                 /* first gop timestamp is 0 */

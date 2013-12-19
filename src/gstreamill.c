@@ -574,25 +574,6 @@ gint gstreamill_start (Gstreamill *gstreamill)
         return 0;
 }
 
-static void clean_dev_shm (LiveJob *livejob)
-{
-        gchar *name;
-        gint i;
-
-        name = g_strdup_printf ("/dev/shm/%s", livejob->name);
-        g_unlink (name);
-        g_free (name);
-
-        for (i = 0; i < livejob->output->encoder_count; i++) {
-                name = g_strdup_printf ("/dev/shm/%s.%d", livejob->name, i);
-                g_unlink (name);
-                g_free (name);
-                name = g_strdup_printf ("/dev/shm/sem.%s.%d", livejob->name, i);
-                g_unlink (name);
-                g_free (name);
-        }
-}
-
 /**
  * gstreamill_stop:
  * @gstreamill: (in): gstreamill to be stop
@@ -609,7 +590,6 @@ void gstreamill_stop (Gstreamill *gstreamill)
         list = gstreamill->live_job_list;
         while (list != NULL) {
                 livejob = list->data;
-                clean_dev_shm (livejob);
                 stop_livejob (livejob, SIGUSR2);
                 list = list->next;
         }
@@ -690,7 +670,6 @@ static void child_watch_cb (GPid pid, gint status, LiveJob *livejob)
 
         if (WIFEXITED (status) && (WEXITSTATUS (status) == 0)) {
                 /* clean /dev/shm/ file relative with livejob */
-                clean_dev_shm (livejob);
                 GST_ERROR ("LiveJob with pid %d normaly exit, status is %d", pid, WEXITSTATUS (status));
                 *(livejob->output->state) = GST_STATE_NULL;
         }
@@ -890,7 +869,6 @@ gchar * gstreamill_job_stop (Gstreamill *gstreamill, gchar *name)
 
         livejob = get_livejob (gstreamill, name);
         if (livejob != NULL) {
-                clean_dev_shm (livejob);
                 stop_livejob (livejob, SIGUSR2);
                 return g_strdup ("ok");
         } else {
