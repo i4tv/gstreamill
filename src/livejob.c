@@ -1036,22 +1036,24 @@ static void complete_request_element (GSList *bins)
                 l2 = bin->links;
                 while (l2 != NULL) {
                         link = l2->data;
-                        if (link->sink == NULL) {
-                                GST_INFO ("Request element link: %s -> %s", link->src_name, link->sink_name);
-                                l3 = bins;
-                                while (l3 != NULL) {
-                                        bin2 = l3->data;
-                                        l4 = bin2->elements;
-                                        while (l4 != NULL) {
-                                                element = l4->data;
-                                                l4 = g_slist_next (l4);
-                                                if (g_strcmp0 (link->sink_name, gst_element_get_name (element)) == 0) {
-                                                        /* request sink element found, e.g mpeg2mux */
-                                                        link->sink = element;
-                                                }
+                        if (link->sink != NULL) {
+                                l2 = g_slist_next (l2);
+                                continue;
+                        }
+                        GST_INFO ("Request element link: %s -> %s", link->src_name, link->sink_name);
+                        l3 = bins;
+                        while (l3 != NULL) {
+                                bin2 = l3->data;
+                                l4 = bin2->elements;
+                                while (l4 != NULL) {
+                                        element = l4->data;
+                                        l4 = g_slist_next (l4);
+                                        if (g_strcmp0 (link->sink_name, gst_element_get_name (element)) == 0) {
+                                                /* request sink element found, e.g mpeg2mux */
+                                                link->sink = element;
                                         }
-                                        l3 = g_slist_next (l3);
                                 }
+                                l3 = g_slist_next (l3);
                         }
                         l2 = g_slist_next (l2);
                 }
