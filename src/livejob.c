@@ -745,19 +745,21 @@ static void delay_sometimes_pad_link (Source *source, gchar *name)
                 elements = bin->elements;
                 while (elements != NULL) {
                         element = elements->data;
-                        if (g_strcmp0 (gst_element_get_name (element), name) == 0) {
-                                if (bin->signal_id != 0) {
-                                        /* have connected pad_added signal */
-                                        break;
-                                }
-                                bin->signal_id = g_signal_connect_data (element,
-                                                                        "pad-added",
-                                                                        G_CALLBACK (pad_added_callback),
-                                                                        source->bins,
-                                                                        (GClosureNotify)free_bin,
-                                                                        (GConnectFlags) 0);
-                                GST_INFO ("delay sometimes pad linkage %s", bin->name);
+                        if (g_strcmp0 (gst_element_get_name (element), name) != 0) {
+                                elements = elements->next;
+                                continue;
                         }
+                        if (bin->signal_id != 0) {
+                                /* have connected pad_added signal */
+                                break;
+                        }
+                        bin->signal_id = g_signal_connect_data (element,
+                                                                "pad-added",
+                                                                G_CALLBACK (pad_added_callback),
+                                                                source->bins,
+                                                                (GClosureNotify)free_bin,
+                                                                (GConnectFlags) 0);
+                        GST_INFO ("delay sometimes pad linkage %s", bin->name);
                         elements = elements->next;
                 }
                 bins = bins->next;
