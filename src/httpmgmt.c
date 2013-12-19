@@ -137,8 +137,9 @@ static void start_job (HTTPMgmt *httpmgmt, RequestData *request_data)
                 p = gstreamill_job_start (httpmgmt->gstreamill, var);
                 buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), p);
                 g_free (p);
-        } else
+        } else {
                 buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+        }
         httpserver_write (request_data->sock, buf, strlen (buf));
         g_free (buf);
 
