@@ -700,6 +700,10 @@ static void child_watch_cb (GPid pid, gint status, LiveJob *livejob)
                 GST_ERROR ("LiveJob with pid %d exit on an unhandled signal, restart.", pid);
                 reset_livejob (livejob);
                 ret = create_livejob_process (livejob);
+                if (g_str_has_suffix (ret, "failure")) {
+                        /* create process failure, clean from job list */
+                        *(livejob->output->state) = GST_STATE_NULL;
+                }
                 GST_ERROR ("create_livejob_process: %s", ret);
                 g_free (ret);
         }
@@ -741,7 +745,7 @@ static gchar * create_livejob_process (LiveJob *livejob)
                         }
                 }
                 g_error_free (error);
-                return g_strdup ("spawn children process failure");
+                return g_strdup ("create live job process failure");
         }
 
         for (j = 0; j < i; j++) {
@@ -845,11 +849,16 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job)
                         break;
                 }
                 livejob->master_m3u8_playlist = livejob_master_m3u8_playlist (livejob);
-                gstreamill->live_job_list = g_slist_append (gstreamill->live_job_list, livejob);
                 reset_livejob (livejob);
-                if (gstreamill->daemon)
+                if (gstreamill->daemon) {
                         p = create_livejob_process (livejob);
-                else {
+                        GST_ERROR ("%s: %s", p, livejob->name);
+                        if (g_str_has_suffix (p, "success")) {
+                                gstreamill->live_job_list = g_slist_append (gstreamill->live_job_list, livejob);
+                        } else {
+                                g_object_unref (livejob);
+                        }
+                } else {
                         if (livejob_start (livejob) == 0) {
                                 p = g_strdup ("success");
                         } else {
