@@ -374,18 +374,34 @@ static void livejob_dispose (GObject *obj)
         GObjectClass *parent_class = g_type_class_peek (G_TYPE_OBJECT);
         LiveJobOutput *output;
         gint i;
+        gchar *name;
 
         output = livejob->output;
         for (i = 0; i < output->encoder_count; i++) {
+                name = g_strdup_printf ("%s.%d", livejob->name, i);
                 if (output->encoders[i].cache_fd != -1) {
                         g_close (output->encoders[i].cache_fd, NULL);
+                        if (shm_unlink (name) == -1) {
+                                GST_ERROR ("shm_unlink %s error: %s", name, g_strerror (errno));
+                        }
                 }
-                sem_close (output->encoders[i].semaphore);
+                g_free (name);
+                name = g_strdup_printf ("/%s.%d", livejob->name, i);
+                if (sem_close (output->encoders[i].semaphore) == -1) {
+                        GST_ERROR ("sem_close %s error: %s", name, g_strerror (errno));
+                }
+                if (sem_unlink (name) == -1) {
+                        GST_ERROR ("sem_unlink %s error: %s", name, g_strerror (errno));
+                }
+                g_free (name);
         }
         g_free (output);
 
         if (livejob->output_fd != -1) {
                 g_close (livejob->output_fd, NULL);
+                if (shm_unlink (livejob->name) == -1) {
+                        GST_ERROR ("shm_unlink %s error: %s", livejob->name, g_strerror (errno));
+                }
         }
 
         if (livejob->name != NULL) {
