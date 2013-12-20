@@ -15,6 +15,8 @@
 #include <glib/gstdio.h>
 #include <gst/gst.h>
 #include <string.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include "gstreamill.h"
 #include "httpstreaming.h"
@@ -128,6 +130,7 @@ int main (int argc, char *argv[])
         GOptionContext *ctx;
         GError *err = NULL;
         gboolean foreground;
+        struct rlimit rlim;
 
         ctx = g_option_context_new (NULL);
         g_option_context_add_main_entries (ctx, options, NULL);
@@ -260,6 +263,11 @@ int main (int argc, char *argv[])
                 }
         }
 
+        rlim.rlim_cur = RLIM_INFINITY;
+        rlim.rlim_max = RLIM_INFINITY;
+        if (setrlimit (RLIMIT_AS, &rlim) == -1) {
+                GST_ERROR ("setrlimit error: %s", g_strerror (errno));
+        }
         signal (SIGPIPE, SIG_IGN);
         GST_WARNING ("gstreamill started ...");
 
