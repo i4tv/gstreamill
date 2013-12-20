@@ -290,7 +290,6 @@ static gint stop_livejob (LiveJob *livejob, gint sig)
         if (livejob->worker_pid != 0) {
                 if (sig == SIGUSR2) {
                         /* normally stop */
-                        *(livejob->output->state) = GST_STATE_NULL;
                         GST_WARNING ("Stop livejob %s, pid %d.", livejob->name, livejob->worker_pid);
                 } else {
                         /* unexpect stop, restart job */
@@ -669,7 +668,6 @@ static void child_watch_cb (GPid pid, gint status, LiveJob *livejob)
         livejob->worker_pid = 0;
 
         if (WIFEXITED (status) && (WEXITSTATUS (status) == 0)) {
-                /* clean /dev/shm/ file relative with livejob */
                 GST_ERROR ("LiveJob with pid %d normaly exit, status is %d", pid, WEXITSTATUS (status));
                 *(livejob->output->state) = GST_STATE_NULL;
         }
