@@ -193,6 +193,7 @@ struct _LiveJob {
         gint id;
         gchar *log_dir;
         GstClock *system_clock;
+        gsize output_size;
         gint output_fd;
         LiveJobOutput *output; /* Interface for producing */
         gint64 age; /* (re)start times of the livejob */

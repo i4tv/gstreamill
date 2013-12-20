@@ -381,6 +381,9 @@ static void livejob_dispose (GObject *obj)
                 name = g_strdup_printf ("%s.%d", livejob->name, i);
                 if (output->encoders[i].cache_fd != -1) {
                         g_close (output->encoders[i].cache_fd, NULL);
+                        if (munmap (output->encoders[i].cache_addr, SHM_SIZE) == -1) {
+                                GST_ERROR ("munmap %s error: %s", name, g_strerror (errno));
+                        }
                         if (shm_unlink (name) == -1) {
                                 GST_ERROR ("shm_unlink %s error: %s", name, g_strerror (errno));
                         }
@@ -395,14 +398,16 @@ static void livejob_dispose (GObject *obj)
                 }
                 g_free (name);
         }
-        g_free (output);
-
         if (livejob->output_fd != -1) {
                 g_close (livejob->output_fd, NULL);
+                if (munmap (output->job_description, livejob->output_size) == -1) {
+                        GST_ERROR ("munmap %s error: %s", livejob->name, g_strerror (errno));
+                }
                 if (shm_unlink (livejob->name) == -1) {
                         GST_ERROR ("shm_unlink %s error: %s", livejob->name, g_strerror (errno));
                 }
         }
+        g_free (output);
 
         if (livejob->name != NULL) {
                 g_free (livejob->name);
@@ -1688,22 +1693,21 @@ static guint encoder_initialize (LiveJob *livejob)
 gint livejob_initialize (LiveJob *livejob, gboolean daemon)
 {
         gint i, fd;
-        gsize output_size;
         LiveJobOutput *output;
         gchar *name, *p;
 
-        output_size = status_output_size (livejob);
+        livejob->output_size = status_output_size (livejob);
         if (daemon) {
                 /* daemon, use share memory */
                 fd = shm_open (livejob->name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
-                if (ftruncate (fd, output_size) == -1) {
+                if (ftruncate (fd, livejob->output_size) == -1) {
                         GST_ERROR ("ftruncate error: %s", g_strerror (errno));
                         return 1;
                 }
-                p = mmap (NULL, output_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+                p = mmap (NULL, livejob->output_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
                 livejob->output_fd = fd;
         } else {
-                p = g_malloc (output_size);
+                p = g_malloc (livejob->output_size);
                 livejob->output_fd = -1;
         }
         output = (LiveJobOutput *)g_malloc (sizeof (LiveJobOutput));
