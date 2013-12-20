@@ -1092,7 +1092,7 @@ static gchar * source_streams_stat (LiveJob *livejob)
         gint i;
         gchar *source_streams, *p1, *p2;
         gchar *template_source_stream = "            {\n"
-                                        "                \"name\": %s,\n"
+                                        "                \"name\": \"%s\",\n"
                                         "                \"timestamp\": %lu,\n"
                                         "                \"heartbeat\": %s\n"
                                         "            }";
