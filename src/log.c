@@ -5,7 +5,6 @@
  *
  */
 
-#include <time.h>
 #include <string.h>
 #include <libgen.h>
 
@@ -134,23 +133,22 @@ static void log_func (GstDebugCategory *category,
                       gpointer user_data)
 {
         FILE *log_hd = *(FILE **)user_data;
-        time_t t;
-        struct tm *tm;
-        gchar date[26];
+        GDateTime *datetime;
+        gchar *date;
 
         if (level > gst_debug_category_get_threshold (category)) {
                 return;
         }
 
-        time (&t);
-        tm = localtime (&t);
-        asctime_r (tm, date);
-        date[strlen (date)-1] = '\0';
-        fprintf (log_hd, "%s: %s" CAT_FMT "%s\n",
+        datetime = g_date_time_new_now_local ();
+        date = g_date_time_format (datetime, "%b %d %H:%M:%S");
+        fprintf (log_hd, "%s %s" CAT_FMT "%s\n",
                  date,
                  gst_debug_level_get_name (level),
                  gst_debug_category_get_name (category), file, line,
                  gst_debug_message_get (message));
+        g_date_time_unref (datetime);
+        g_free (date);
 }
 
 gint log_set_log_handler (Log *log)
