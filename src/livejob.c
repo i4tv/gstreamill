@@ -272,14 +272,9 @@ static void encoder_dispose (GObject *obj)
 {
         Encoder *encoder = ENCODER (obj);
         GObjectClass *parent_class = g_type_class_peek (G_TYPE_OBJECT);
-        gchar *name;
 
         if (encoder->name != NULL) {
-                mq_close (encoder->output->mqdes);
                 mq_close (encoder->mqdes);
-                name = g_strdup_printf ("/%s", encoder->name);
-                mq_unlink (name);
-                g_free (name);
                 g_free (encoder->name);
                 encoder->name = NULL;
         }
@@ -384,6 +379,7 @@ static void livejob_dispose (GObject *obj)
 
         output = livejob->output;
         for (i = 0; i < output->encoder_count; i++) {
+                /* share memory release */
                 name = g_strdup_printf ("%s.%d", livejob->name, i);
                 if (output->encoders[i].cache_fd != -1) {
                         g_close (output->encoders[i].cache_fd, NULL);
@@ -395,6 +391,8 @@ static void livejob_dispose (GObject *obj)
                         }
                 }
                 g_free (name);
+
+                /* semaphore and message queue release */
                 name = g_strdup_printf ("/%s.%d", livejob->name, i);
                 if (sem_close (output->encoders[i].semaphore) == -1) {
                         GST_ERROR ("sem_close %s error: %s", name, g_strerror (errno));
@@ -402,8 +400,15 @@ static void livejob_dispose (GObject *obj)
                 if (sem_unlink (name) == -1) {
                         GST_ERROR ("sem_unlink %s error: %s", name, g_strerror (errno));
                 }
+                if (mq_close (output->encoders[i].mqdes) == -1) {
+                        GST_ERROR ("mq_close %s error: %s", name, g_strerror (errno));
+                }
+                if (mq_unlink (name) == -1) {
+                        GST_ERROR ("mq_unlink %s error: %s", name, g_strerror (errno));
+                }
                 g_free (name);
         }
+
         if (livejob->output_fd != -1) {
                 g_close (livejob->output_fd, NULL);
                 if (munmap (output->job_description, livejob->output_size) == -1) {
