@@ -702,7 +702,7 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job)
                         g_object_unref (livejob);
                         break;
                 }
-                livejob->master_m3u8_playlist = livejob_get_master_m3u8_playlist (livejob);
+                livejob->output->master_m3u8_playlist = livejob_get_master_m3u8_playlist (livejob);
                 livejob_reset (livejob);
                 if (gstreamill->daemon) {
                         p = create_livejob_process (livejob);
@@ -878,7 +878,7 @@ gchar * gstreamill_get_master_m3u8playlist (Gstreamill *gstreamill, gchar *uri)
         }
         p = g_strdup_printf ("/live/%s/playlist.m3u8", livejob->name);
         if (g_strcmp0 (p, uri) == 0) {
-                master_m3u8_playlist = g_strdup (livejob->master_m3u8_playlist);
+                master_m3u8_playlist = g_strdup (livejob->output->master_m3u8_playlist);
         } else {
                 master_m3u8_playlist = NULL;
         }

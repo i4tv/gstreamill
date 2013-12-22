@@ -183,6 +183,8 @@ typedef struct _LiveJobOutput {
         SourceState source;
         gint64 encoder_count;
         EncoderOutput *encoders;
+
+        gchar *master_m3u8_playlist;
 } LiveJobOutput;
 
 struct _LiveJob {
@@ -216,7 +218,6 @@ struct _LiveJob {
 
         /* m3u8 playlist */
         mqd_t mqdes;
-        gchar *master_m3u8_playlist;
 };
 
 struct _LiveJobClass {
