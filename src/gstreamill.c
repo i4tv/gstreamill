@@ -433,57 +433,6 @@ restart:
         return TRUE;
 }
 
-static void notify_function (union sigval sv)
-{
-        Gstreamill *gstreamill;
-        struct sigevent sev;
-
-        gstreamill = (Gstreamill *)sv.sival_ptr;
-
-        /* mq_notify first */
-        sev.sigev_notify = SIGEV_THREAD;
-        sev.sigev_notify_function = notify_function;
-        sev.sigev_notify_attributes = NULL;
-        sev.sigev_value.sival_ptr = sv.sival_ptr;
-        if (mq_notify (gstreamill->mqdes, &sev) == -1) {
-                GST_ERROR ("mq_notify error : %s", g_strerror (errno));
-        }
-
-        for (;;) {
-                gchar buf[128];
-                gsize size;
-                EncoderOutput *encoder;
-
-                size = mq_receive (gstreamill->mqdes, buf, 128, NULL);
-                if (size == -1) {
-                        if (errno != EAGAIN) {
-                                GST_ERROR ("mq_receive error : %s", g_strerror (errno));
-                        }
-                        break;
-                }
-                *(buf + size) = '\0';
-                encoder = gstreamill_get_encoder_output (gstreamill, buf);
-                if (encoder != NULL) {
-                        gchar *url;
-                        GstClockTime last_timestamp;
-                        GstClockTime segment_duration;
-
-                        if (encoder->m3u8_playlist != NULL) {
-                                /* new segement begain, last segment end. */
-                                sscanf (buf, "/live/%*[^/]/encoder/%*[^/]/%lu", &segment_duration);
-                                last_timestamp = livejob_encoder_output_rap_timestamp (encoder, *(encoder->last_rap_addr));
-                                url = g_strdup_printf ("%lu.ts", encoder->last_timestamp);
-                                g_rw_lock_writer_lock (&(encoder->m3u8_playlist_rwlock));
-                                m3u8playlist_add_entry (encoder->m3u8_playlist, url, segment_duration);
-                                g_rw_lock_writer_unlock (&(encoder->m3u8_playlist_rwlock));
-                                encoder->last_timestamp = last_timestamp;
-                                g_free (url);
-                        }
-                        gstreamill_unaccess (gstreamill, buf);
-                }
-        }
-}
-
 /**
  * gstreamill_start:
  * @gstreamill: (in): gstreamill to be starting
@@ -497,8 +446,6 @@ gint gstreamill_start (Gstreamill *gstreamill)
         GstClockID id;
         GstClockTime t;
         GstClockReturn ret;
-        struct sigevent sev;
-        struct mq_attr attr;
 
         /* regist gstreamill monitor */
         t = gst_clock_get_time (gstreamill->system_clock)  + 5000 * GST_MSECOND;
@@ -507,25 +454,6 @@ gint gstreamill_start (Gstreamill *gstreamill)
         gst_clock_id_unref (id);
         if (ret != GST_CLOCK_OK) {
                 GST_WARNING ("Regist gstreamill monitor failure");
-                return 1;
-        }
-
-        /* idr found event message queue init */
-        attr.mq_flags = 0;
-        attr.mq_maxmsg = 32;
-        attr.mq_msgsize = 128;
-        attr.mq_curmsgs = 0;
-        mq_unlink ("/gstreamill");
-        if ((gstreamill->mqdes = mq_open ("/gstreamill", O_RDONLY | O_CREAT | O_NONBLOCK, 0666, &attr)) == -1) {
-                GST_ERROR ("mq_open error : %s", g_strerror (errno));
-                return 1;
-        }
-        sev.sigev_notify = SIGEV_THREAD;
-        sev.sigev_notify_function = notify_function;
-        sev.sigev_notify_attributes = NULL;
-        sev.sigev_value.sival_ptr = gstreamill;
-        if (mq_notify (gstreamill->mqdes, &sev) == -1) {
-                GST_ERROR ("mq_notify error : %s", g_strerror (errno));
                 return 1;
         }
 
@@ -667,11 +595,50 @@ static LiveJob * get_livejob (Gstreamill *gstreamill, gchar *name)
         return livejob;
 }
 
+static void notify_function (union sigval sv)
+{
+        EncoderOutput *encoder;
+        struct sigevent sev;
+        gchar *url;
+        GstClockTime last_timestamp;
+        GstClockTime segment_duration;
+        gsize size;
+        gchar buf[128];
+
+        encoder = (EncoderOutput *)sv.sival_ptr;
+
+        /* mq_notify first */
+        sev.sigev_notify = SIGEV_THREAD;
+        sev.sigev_notify_function = notify_function;
+        sev.sigev_notify_attributes = NULL;
+        sev.sigev_value.sival_ptr = sv.sival_ptr;
+        if (mq_notify (encoder->mqdes, &sev) == -1) {
+                GST_ERROR ("mq_notify error : %s", g_strerror (errno));
+        }
+
+        size = mq_receive (encoder->mqdes, buf, 128, NULL);
+        if (size == -1) {
+                GST_ERROR ("mq_receive error : %s", g_strerror (errno));
+                return;
+        }
+        buf[size] = '\0';
+        sscanf (buf, "%lu", &segment_duration);
+
+        last_timestamp = livejob_encoder_output_rap_timestamp (encoder, *(encoder->last_rap_addr));
+        url = g_strdup_printf ("%lu.ts", encoder->last_timestamp);
+        g_rw_lock_writer_lock (&(encoder->m3u8_playlist_rwlock));
+        m3u8playlist_add_entry (encoder->m3u8_playlist, url, segment_duration);
+        g_rw_lock_writer_unlock (&(encoder->m3u8_playlist_rwlock));
+        encoder->last_timestamp = last_timestamp;
+        g_free (url);
+}
+
 static gchar * gstreamill_livejob_start (Gstreamill *gstreamill, gchar *job)
 {
         gchar *p, *name;
         LiveJob *livejob;
 
+        /* create livejob object */
         name = livejobdesc_get_name (job);
         if (get_livejob (gstreamill, name) != NULL) {
                 GST_ERROR ("start live job failure, duplicated name %s.", name);
@@ -681,6 +648,8 @@ static gchar * gstreamill_livejob_start (Gstreamill *gstreamill, gchar *job)
         }
         livejob = livejob_new ("job", job, "name", name, NULL);
         g_free (name);
+
+        /* livejob initialize */
         livejob->log_dir = gstreamill->log_dir;
         g_mutex_init (&(livejob->current_access_mutex));
         livejob->current_access = 0;
@@ -691,7 +660,46 @@ static gchar * gstreamill_livejob_start (Gstreamill *gstreamill, gchar *job)
                 g_object_unref (livejob);
                 return p;
         }
-        livejob->output->master_m3u8_playlist = livejob_get_master_m3u8_playlist (livejob);
+
+        /* m3u8 playlist initialize */
+        if (livejobdesc_m3u8streaming (livejob->job)) {
+                LiveJobOutput *output;
+                EncoderOutput *encoder;
+                gint i;
+                struct sigevent sev;
+                struct mq_attr attr;
+                gchar *name;
+
+                output = livejob->output;
+                output->master_m3u8_playlist = livejob_get_master_m3u8_playlist (livejob);
+                for (i = 0; i < output->encoder_count; i++) {
+                        encoder = (EncoderOutput *)&(output->encoders[i]);
+                        attr.mq_flags = 0;
+                        attr.mq_maxmsg = 128;
+                        attr.mq_msgsize = 128;
+                        attr.mq_curmsgs = 0;
+                        name = g_strdup_printf ("/%s.%d", livejob->name, i);
+                        if ((encoder->mqdes = mq_open (name, O_RDONLY | O_CREAT | O_NONBLOCK, 0666, &attr)) == -1) {
+                                GST_ERROR ("mq_open error : %s", g_strerror (errno));
+                                g_free (name);
+                                p = g_strdup_printf ("m3u8 playlist initialize failure");
+                                return p;
+                        }
+                        GST_ERROR ("mqdes : %d", encoder->mqdes);
+                        g_free (name);
+                        sev.sigev_notify = SIGEV_THREAD;
+                        sev.sigev_notify_function = notify_function;
+                        sev.sigev_notify_attributes = NULL;
+                        sev.sigev_value.sival_ptr = encoder;
+                        if (mq_notify (encoder->mqdes, &sev) == -1) {
+                                GST_ERROR ("mq_notify error : %s", g_strerror (errno));
+                                p = g_strdup_printf ("m3u8 playlist initialize failure");
+                                return p;
+                        }
+                }
+        }
+
+        /* reset and start livejob */
         livejob_reset (livejob);
         if (gstreamill->daemon) {
                 p = create_livejob_process (livejob);

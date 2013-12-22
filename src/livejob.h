@@ -120,6 +120,7 @@ typedef struct _EncoderOutput {
         EncoderStreamState *streams;
 
         /* m3u8 streaming */
+        mqd_t mqdes;
         GRWLock m3u8_playlist_rwlock;
         M3U8Playlist *m3u8_playlist;
         GstClockTime last_timestamp; /* last segment timestamp */
@@ -158,7 +159,8 @@ struct _Encoder {
         GstClockTime segment_duration; /* force key interval */
         GstClockTime duration_accumulation; /* current segment duration accumulation */
 
-        /* idr help */
+        /* m3u8 playlist */
+        mqd_t mqdes;
         GstClockTime last_segment_duration;
         GstClockTime last_running_time;
 };
@@ -215,9 +217,6 @@ struct _LiveJob {
 
         Source *source; 
         GArray *encoder_array;
-
-        /* m3u8 playlist */
-        mqd_t mqdes;
 };
 
 struct _LiveJobClass {

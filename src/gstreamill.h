@@ -33,7 +33,6 @@ struct _Gstreamill {
         gchar *start_time;
         gchar *log_dir;
 
-        mqd_t mqdes; /* idr found */
         GSList *live_job_list;
 };
 

@@ -272,8 +272,14 @@ static void encoder_dispose (GObject *obj)
 {
         Encoder *encoder = ENCODER (obj);
         GObjectClass *parent_class = g_type_class_peek (G_TYPE_OBJECT);
+        gchar *name;
 
         if (encoder->name != NULL) {
+                mq_close (encoder->output->mqdes);
+                mq_close (encoder->mqdes);
+                name = g_strdup_printf ("/%s", encoder->name);
+                mq_unlink (name);
+                g_free (name);
                 g_free (encoder->name);
                 encoder->name = NULL;
         }
@@ -1243,12 +1249,14 @@ static GstFlowReturn encoder_appsink_callback (GstAppSink * sink, gpointer user_
         GstBuffer *buffer;
         GstSample *sample;
         Encoder *encoder = (Encoder *)user_data;
+        EncoderOutput *output;
 
-        *(encoder->output->heartbeat) = gst_clock_get_time (encoder->livejob->system_clock);
+        output = encoder->output;
+        *(output->heartbeat) = gst_clock_get_time (encoder->livejob->system_clock);
         sample = gst_app_sink_pull_sample (GST_APP_SINK (sink));
         buffer = gst_sample_get_buffer (sample);
         sem_wait (encoder->output->semaphore);
-        (*(encoder->output->total_count)) += gst_buffer_get_size (buffer);
+        (*(output->total_count)) += gst_buffer_get_size (buffer);
 
         /* update head_addr, free enough memory for current buffer. */
         while (cache_free (encoder) < gst_buffer_get_size (buffer) + 12) { /* timestamp + gop size = 12 */
@@ -1266,8 +1274,8 @@ static GstFlowReturn encoder_appsink_callback (GstAppSink * sink, gpointer user_
                         gchar *msg;
 
                         move_last_rap (encoder, buffer);
-                        msg = g_strdup_printf ("/live/%s/encoder/%d/%lu", encoder->livejob->name, encoder->id, encoder->last_segment_duration);
-                        if (mq_send (encoder->livejob->mqdes, msg, strlen (msg), 1) == -1) {
+                        msg = g_strdup_printf ("%lu", encoder->last_segment_duration);
+                        if (mq_send (encoder->mqdes, msg, strlen (msg), 1) == -1) {
                                 GST_ERROR ("mq_send error: %s", g_strerror (errno));
                         }
                         g_free (msg);
@@ -1285,7 +1293,7 @@ static GstFlowReturn encoder_appsink_callback (GstAppSink * sink, gpointer user_
          * update tail_addr and last_rap_addr
          */
         copy_buffer (encoder, buffer);
-        sem_post (encoder->output->semaphore);
+        sem_post (output->semaphore);
 
         gst_sample_unref (sample);
 
@@ -1673,6 +1681,19 @@ static guint encoder_initialize (LiveJob *livejob)
                 /* parse udpstreaming */
                 udpstreaming_parse (livejob, encoder);
 
+                /* m3u8 playlist */
+                if (livejobdesc_m3u8streaming (livejob->job)) {
+                        gchar *name;
+
+                        name = g_strdup_printf ("/%s.%d", livejob->name, i);
+                        encoder->mqdes = mq_open (name, O_WRONLY);
+                        if (encoder->mqdes == -1) {
+                                GST_ERROR ("mq_open %s error: %s", name, g_strerror (errno));
+                                return 1;
+                        }
+                        g_free (name);
+                }
+
                 g_free (pipeline);
                 g_array_append_val (livejob->encoder_array, encoder);
         }
@@ -1896,12 +1917,6 @@ gint livejob_start (LiveJob *livejob)
         Encoder *encoder;
         GstStateChangeReturn ret;
         gint i;
-
-        livejob->mqdes = mq_open ("/gstreamill", O_WRONLY);
-        if (livejob->mqdes == -1) {
-                GST_ERROR ("mq_open error: %s", g_strerror (errno));
-                return 1;
-        }
 
         if (source_initialize (livejob) != 0) {
                 GST_ERROR ("Initialize livejob source error.");
