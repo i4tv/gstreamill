@@ -703,6 +703,7 @@ static gchar * gstreamill_livejob_start (Gstreamill *gstreamill, gchar *job)
                 }
         } else {
                 if (livejob_start (livejob) == 0) {
+                        gstreamill->live_job_list = g_slist_append (gstreamill->live_job_list, livejob);
                         p = g_strdup ("success");
                 } else {
                         p = g_strdup ("failure");
