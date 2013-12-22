@@ -667,6 +667,51 @@ static LiveJob * get_livejob (Gstreamill *gstreamill, gchar *name)
         return livejob;
 }
 
+static gchar * gstreamill_livejob_start (Gstreamill *gstreamill, gchar *job)
+{
+        gchar *p, *name;
+        LiveJob *livejob;
+
+        name = livejobdesc_get_name (job);
+        if (get_livejob (gstreamill, name) != NULL) {
+                GST_ERROR ("start live job failure, duplicated name %s.", name);
+                p = g_strdup_printf ("start live job failure, duplicated name %s.", name);
+                g_free (name);
+                return p;
+        }
+        livejob = livejob_new ("job", job, "name", name, NULL);
+        g_free (name);
+        livejob->log_dir = gstreamill->log_dir;
+        g_mutex_init (&(livejob->current_access_mutex));
+        livejob->current_access = 0;
+        livejob->age = 0;
+        livejob->last_start_time = NULL;
+        if (livejob_initialize (livejob, gstreamill->daemon) != 0) {
+                p = g_strdup ("initialize livejob failure");
+                g_object_unref (livejob);
+                return p;
+        }
+        livejob->output->master_m3u8_playlist = livejob_get_master_m3u8_playlist (livejob);
+        livejob_reset (livejob);
+        if (gstreamill->daemon) {
+                p = create_livejob_process (livejob);
+                GST_ERROR ("%s: %s", p, livejob->name);
+                if (g_str_has_suffix (p, "success")) {
+                        gstreamill->live_job_list = g_slist_append (gstreamill->live_job_list, livejob);
+                } else {
+                        g_object_unref (livejob);
+                }
+        } else {
+                if (livejob_start (livejob) == 0) {
+                        p = g_strdup ("success");
+                } else {
+                        p = g_strdup ("failure");
+                }
+        }
+
+        return p;
+}
+
 /**
  * gstreamill_job_start:
  * @job: (in): json type of job description.
@@ -675,8 +720,7 @@ static LiveJob * get_livejob (Gstreamill *gstreamill, gchar *name)
  */
 gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job)
 {
-        gchar *p, *name;
-        LiveJob *livejob;
+        gchar *p;
 
         if (!livejobdesc_is_valid (job)) {
                 p = g_strdup ("Invalid job");
@@ -686,39 +730,7 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job)
         switch (livejobdesc_get_type (job)) {
         case JT_LIVE:
                 GST_INFO ("live job arrived.");
-                name = livejobdesc_get_name (job);
-                if (get_livejob (gstreamill, name) != NULL) {
-                        GST_ERROR ("start live job failure, duplicated name %s.", name);
-                        return g_strdup_printf ("start live job failure, duplicated name %s.", name);
-                }
-                livejob = livejob_new ("job", job, "name", name, NULL);
-                livejob->log_dir = gstreamill->log_dir;
-                g_mutex_init (&(livejob->current_access_mutex));
-                livejob->current_access = 0;
-                livejob->age = 0;
-                livejob->last_start_time = NULL;
-                if (livejob_initialize (livejob, gstreamill->daemon) != 0) {
-                        p = g_strdup ("initialize livejob failure");
-                        g_object_unref (livejob);
-                        break;
-                }
-                livejob->output->master_m3u8_playlist = livejob_get_master_m3u8_playlist (livejob);
-                livejob_reset (livejob);
-                if (gstreamill->daemon) {
-                        p = create_livejob_process (livejob);
-                        GST_ERROR ("%s: %s", p, livejob->name);
-                        if (g_str_has_suffix (p, "success")) {
-                                gstreamill->live_job_list = g_slist_append (gstreamill->live_job_list, livejob);
-                        } else {
-                                g_object_unref (livejob);
-                        }
-                } else {
-                        if (livejob_start (livejob) == 0) {
-                                p = g_strdup ("success");
-                        } else {
-                                p = g_strdup ("failure");
-                        }
-                }
+                p = gstreamill_livejob_start (gstreamill, job);
                 break;
         case JT_RECORDE:
         case JT_TRANSCODE:
