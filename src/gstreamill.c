@@ -148,16 +148,16 @@ GType gstreamill_get_type (void)
 
         if (type) return type;
         static const GTypeInfo info = {
-                sizeof (GstreamillClass), // class size.
-                NULL, // base initializer
-                NULL, // base finalizer
-                (GClassInitFunc) gstreamill_class_init, // class init.
-                NULL, // class finalize.
-                NULL, // class data.
+                sizeof (GstreamillClass), /* class size */
+                NULL, /* base initializer */
+                NULL, /* base finalizer */
+                (GClassInitFunc) gstreamill_class_init, /* class init */
+                NULL, /* class finalize */
+                NULL, /* class data */
                 sizeof (Gstreamill),
-                0, // instance size.
-                (GInstanceInitFunc) gstreamill_init, // instance init.
-                NULL // value table.
+                0, /* instance size */
+                (GInstanceInitFunc) gstreamill_init, /* instance init */
+                NULL /* value table */
         };
         type = g_type_register_static (G_TYPE_OBJECT, "Gstreamill", &info, 0);
 
@@ -167,8 +167,7 @@ GType gstreamill_get_type (void)
 static void stat_refresh (LiveJob *livejob)
 {
         gchar *stat_file, *stat, **stats, **cpustats;
-        guint64 utime, stime, ctime; // process user time, process system time, total cpu time
-        guint64 rss; // Resident Set Size.
+        guint64 utime, stime, ctime; /* process user time, process system time, total cpu time */
         gint i;
 
         stat_file = g_strdup_printf ("/proc/%d/stat", livejob->worker_pid);
@@ -177,9 +176,10 @@ static void stat_refresh (LiveJob *livejob)
                 return;
         }
         stats = g_strsplit (stat, " ", 44);
-        utime = g_ascii_strtoull (stats[13],  NULL, 10); // seconds
+        utime = g_ascii_strtoull (stats[13],  NULL, 10); /* seconds */
         stime = g_ascii_strtoull (stats[14], NULL, 10);
-        rss = g_ascii_strtoull (stats[23], NULL, 10) * sysconf (_SC_PAGESIZE);
+        /* Resident Set Size */
+        livejob->memory = g_ascii_strtoull (stats[23], NULL, 10) * sysconf (_SC_PAGESIZE);
         g_free (stat_file);
         g_free (stat);
         g_strfreev (stats);
@@ -198,7 +198,6 @@ static void stat_refresh (LiveJob *livejob)
         g_strfreev (cpustats);
         livejob->cpu_average = ((utime + stime) * 100) / (ctime - livejob->start_ctime);
         livejob->cpu_current = ((utime - livejob->last_utime + stime - livejob->last_stime) * 100) / (ctime - livejob->last_ctime);
-        livejob->memory = rss;
         livejob->last_ctime = ctime;
         livejob->last_utime = utime;
         livejob->last_stime = stime;
@@ -206,7 +205,6 @@ static void stat_refresh (LiveJob *livejob)
 
 static void rotate_log (Gstreamill *gstreamill, gchar *log_path, pid_t pid)
 {
-        //struct stat st;
         GStatBuf st;
         gchar *name;
         glob_t pglob;
@@ -444,7 +442,7 @@ static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClock
                 /* stat report. */
                 if (gstreamill->daemon && (livejob->worker_pid != 0)) {
                         stat_refresh (livejob);
-                        GST_INFO ("LiveJob %s's average cpu: %d%%, cpu: %d%%, rss: %dMB",
+                        GST_INFO ("LiveJob %s's average cpu: %d%%, cpu: %d%%, rss: %d",
                                   livejob->name,
                                   livejob->cpu_average,
                                   livejob->cpu_current,
