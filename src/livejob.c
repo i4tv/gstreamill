@@ -1681,7 +1681,7 @@ static guint encoder_initialize (LiveJob *livejob)
 }
 
 /**
- * livejob_initialize
+ * livejob_initialize:
  * @livejob: (in): the livejob to be initialized.
  * @daemon: (in): is gstreamill run in background.
  *
@@ -1780,6 +1780,62 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
 
         return 0;
 }
+
+/*
+ * livejob_reset:
+ * @livejob: livejob object
+ *
+ * reset livejobe stat
+ *
+ */
+void livejob_reset (LiveJob *livejob)
+{
+        gchar *stat, **stats, **cpustats;
+        GstDateTime *start_time;
+        gint i;
+
+        g_file_get_contents ("/proc/stat", &stat, NULL, NULL);
+        stats = g_strsplit (stat, "\n", 10);
+        cpustats = g_strsplit (stats[0], " ", 10);
+        livejob->start_ctime = 0;
+        for (i = 1; i < 8; i++) {
+                livejob->start_ctime += g_ascii_strtoull (cpustats[i], NULL, 10);
+        }
+        livejob->last_ctime = 0;
+        livejob->last_utime = 0;
+        livejob->last_stime = 0;
+        g_free (stat);
+        g_strfreev (stats);
+        g_strfreev (cpustats);
+        start_time = gst_date_time_new_now_local_time ();
+        if (livejob->last_start_time != NULL) {
+                g_free (livejob->last_start_time);
+        }
+        livejob->last_start_time = gst_date_time_to_iso8601_string (start_time);
+        gst_date_time_unref (start_time);
+
+        /* reset m3u8 playlist */
+        if (livejobdesc_m3u8streaming (livejob->job)) {
+                EncoderOutput *encoder;
+                guint version, window_size;
+
+                version = livejobdesc_m3u8streaming_version (livejob->job);
+                if (version == 0) {
+                        version = 3;
+                }
+                window_size = livejobdesc_m3u8streaming_window_size (livejob->job);
+                for (i = 0; i < livejob->output->encoder_count; i++) {
+                        encoder = &(livejob->output->encoders[i]);
+                        if (encoder->m3u8_playlist != NULL) {
+                                g_rw_lock_clear (&(encoder->m3u8_playlist_rwlock));
+                                m3u8playlist_free (encoder->m3u8_playlist);
+                        }
+                        encoder->m3u8_playlist = m3u8playlist_new (version, window_size, FALSE);
+                        g_rw_lock_init (&(encoder->m3u8_playlist_rwlock));
+                }
+        }
+}
+
 
 /*
  * livejob_start:
@@ -1922,5 +1978,46 @@ guint64 livejob_encoder_output_rap_next (EncoderOutput *encoder_output, guint64 
         }
 
         return next_rap_addr;
+}
+
+/*
+ * livejob_master_m3u8_playlist:
+ * @livejob: (in): the livejob object
+ *
+ * get master m3u8 playlist of the livejob
+ *
+ * Returns: master m3u8 playlist
+ *
+ */
+gchar * livejob_get_master_m3u8_playlist (LiveJob *livejob)
+{
+        GString *master_m3u8_playlist;
+        gchar *p, *value;
+        gint i;
+
+        if (!livejobdesc_m3u8streaming (livejob->job)) {
+                /* m3u8streaming no enabled */
+                return "not found";
+        }
+
+        master_m3u8_playlist = g_string_new ("");
+        g_string_append_printf (master_m3u8_playlist, M3U8_HEADER_TAG);
+        if (livejobdesc_m3u8streaming_version (livejob->job) == 0) {
+                g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, 3);
+        } else {
+                g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, livejobdesc_m3u8streaming_version (livejob->job));
+        }
+        for (i = 0; i < livejob->output->encoder_count; i++) {
+                p = g_strdup_printf ("encoder.%d.elements.x264enc.property.bitrate", i);
+                value = livejobdesc_element_property_value (livejob->job, p);
+                g_string_append_printf (master_m3u8_playlist, M3U8_STREAM_INF_TAG, 1, value);
+                g_string_append_printf (master_m3u8_playlist, "encoder/%d/playlist.m3u8\n", i);
+                g_free (p);
+                g_free (value);
+        }
+        p = master_m3u8_playlist->str;
+        g_string_free (master_m3u8_playlist, FALSE);
+
+        return p;
 }
 
