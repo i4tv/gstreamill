@@ -1801,6 +1801,7 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
                 p += sizeof (guint64); /* total count */
                 output->encoders[i].m3u8_playlist = NULL;
                 output->encoders[i].last_timestamp = 0;
+                output->encoders[i].mqdes = -1;
         }
         livejob->output = output;
 
@@ -1900,11 +1901,19 @@ void livejob_reset (LiveJob *livejob)
                         encoder->m3u8_playlist = m3u8playlist_new (version, window_size, FALSE);
                         g_rw_lock_init (&(encoder->m3u8_playlist_rwlock));
 
+                        name = g_strdup_printf ("/%s.%d", livejob->name, i);
+                        if (encoder->mqdes != -1) {
+                                if (mq_close (encoder->mqdes) == -1) {
+                                        GST_ERROR ("mq_close %s error: %s", name, g_strerror (errno));
+                                }
+                                if (mq_unlink (name) == -1) {
+                                        GST_ERROR ("mq_unlink %s error: %s", name, g_strerror (errno));
+                                }
+                        }
                         attr.mq_flags = 0;
-                        attr.mq_maxmsg = 128;
+                        attr.mq_maxmsg = 32;
                         attr.mq_msgsize = 128;
                         attr.mq_curmsgs = 0;
-                        name = g_strdup_printf ("/%s.%d", livejob->name, i);
                         if ((encoder->mqdes = mq_open (name, O_RDONLY | O_CREAT | O_NONBLOCK, 0666, &attr)) == -1) {
                                 GST_ERROR ("mq_open error : %s", g_strerror (errno));
                         }
