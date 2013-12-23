@@ -595,44 +595,6 @@ static LiveJob * get_livejob (Gstreamill *gstreamill, gchar *name)
         return livejob;
 }
 
-static void notify_function (union sigval sv)
-{
-        EncoderOutput *encoder;
-        struct sigevent sev;
-        gchar *url;
-        GstClockTime last_timestamp;
-        GstClockTime segment_duration;
-        gsize size;
-        gchar buf[128];
-
-        encoder = (EncoderOutput *)sv.sival_ptr;
-
-        /* mq_notify first */
-        sev.sigev_notify = SIGEV_THREAD;
-        sev.sigev_notify_function = notify_function;
-        sev.sigev_notify_attributes = NULL;
-        sev.sigev_value.sival_ptr = sv.sival_ptr;
-        if (mq_notify (encoder->mqdes, &sev) == -1) {
-                GST_ERROR ("mq_notify error : %s", g_strerror (errno));
-        }
-
-        size = mq_receive (encoder->mqdes, buf, 128, NULL);
-        if (size == -1) {
-                GST_ERROR ("mq_receive error : %s", g_strerror (errno));
-                return;
-        }
-        buf[size] = '\0';
-        sscanf (buf, "%lu", &segment_duration);
-
-        last_timestamp = livejob_encoder_output_rap_timestamp (encoder, *(encoder->last_rap_addr));
-        url = g_strdup_printf ("%lu.ts", encoder->last_timestamp);
-        g_rw_lock_writer_lock (&(encoder->m3u8_playlist_rwlock));
-        m3u8playlist_add_entry (encoder->m3u8_playlist, url, segment_duration);
-        g_rw_lock_writer_unlock (&(encoder->m3u8_playlist_rwlock));
-        encoder->last_timestamp = last_timestamp;
-        g_free (url);
-}
-
 static gchar * gstreamill_livejob_start (Gstreamill *gstreamill, gchar *job)
 {
         gchar *p, *name;
@@ -661,42 +623,9 @@ static gchar * gstreamill_livejob_start (Gstreamill *gstreamill, gchar *job)
                 return p;
         }
 
-        /* m3u8 playlist initialize */
+        /* m3u8 master playlist */
         if (livejobdesc_m3u8streaming (livejob->job)) {
-                LiveJobOutput *output;
-                EncoderOutput *encoder;
-                gint i;
-                struct sigevent sev;
-                struct mq_attr attr;
-                gchar *name;
-
-                output = livejob->output;
-                output->master_m3u8_playlist = livejob_get_master_m3u8_playlist (livejob);
-                for (i = 0; i < output->encoder_count; i++) {
-                        encoder = (EncoderOutput *)&(output->encoders[i]);
-                        attr.mq_flags = 0;
-                        attr.mq_maxmsg = 128;
-                        attr.mq_msgsize = 128;
-                        attr.mq_curmsgs = 0;
-                        name = g_strdup_printf ("/%s.%d", livejob->name, i);
-                        if ((encoder->mqdes = mq_open (name, O_RDONLY | O_CREAT | O_NONBLOCK, 0666, &attr)) == -1) {
-                                GST_ERROR ("mq_open error : %s", g_strerror (errno));
-                                g_free (name);
-                                p = g_strdup_printf ("m3u8 playlist initialize failure");
-                                return p;
-                        }
-                        GST_ERROR ("mqdes : %d", encoder->mqdes);
-                        g_free (name);
-                        sev.sigev_notify = SIGEV_THREAD;
-                        sev.sigev_notify_function = notify_function;
-                        sev.sigev_notify_attributes = NULL;
-                        sev.sigev_value.sival_ptr = encoder;
-                        if (mq_notify (encoder->mqdes, &sev) == -1) {
-                                GST_ERROR ("mq_notify error : %s", g_strerror (errno));
-                                p = g_strdup_printf ("m3u8 playlist initialize failure");
-                                return p;
-                        }
-                }
+                livejob->output->master_m3u8_playlist = livejob_get_master_m3u8_playlist (livejob);
         }
 
         /* reset and start livejob */
