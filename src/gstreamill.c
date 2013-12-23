@@ -711,7 +711,7 @@ gchar * gstreamill_job_stop (Gstreamill *gstreamill, gchar *name)
  */
 LiveJob *gstreamill_get_livejob (Gstreamill *gstreamill, gchar *uri)
 {
-        LiveJob *livejob;
+        LiveJob *livejob = NULL;
         GRegex *regex;
         GMatchInfo *match_info;
         gchar *name = NULL;
