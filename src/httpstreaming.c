@@ -295,6 +295,8 @@ static void get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *encod
                 }
                 rap_addr = livejob_encoder_output_rap_next (encoder_output, rap_addr);
         }
+
+        /* segment found, send it */
         if (t == timestamp) {
                 gsize gop_size;
 
@@ -323,13 +325,13 @@ static void get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *encod
                 return;
         }
 
+        /* segment not found */
+        sem_post (encoder_output->semaphore);
         buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
         if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
                 GST_ERROR ("Write sock error: %s", g_strerror (errno));
         }
         g_free (buf);
-
-        sem_post (encoder_output->semaphore);
 }
 
 static is_http_progress_play_url (RequestData *request_data)
