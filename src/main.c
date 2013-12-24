@@ -119,7 +119,6 @@ static void stop_gstreamill (gint number)
 {
         gstreamill_stop (gstreamill);
         remove_pid_file ();
-        exit (0);
 }
 
 int main (int argc, char *argv[])

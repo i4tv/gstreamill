@@ -69,6 +69,7 @@ static void gstreamill_init (Gstreamill *gstreamill)
 {
         GstDateTime *start_time;
 
+        gstreamill->stop = FALSE;
         gstreamill->system_clock = gst_system_clock_obtain ();
         g_object_set (gstreamill->system_clock, "clock-type", GST_CLOCK_TYPE_REALTIME, NULL);
         start_time = gst_date_time_new_now_local_time ();
@@ -417,7 +418,13 @@ static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClock
 
         gstreamill = (Gstreamill *)user_data;
 
+        /* remove stoped livejob from job list */
         clean_job_list (gstreamill);
+
+        /* stop? */
+        if (gstreamill->stop && g_slist_length (gstreamill->live_job_list) == 0) {
+                exit (0);
+        }
 
         /* check livejob stat */
         list = gstreamill->live_job_list;
@@ -487,6 +494,7 @@ void gstreamill_stop (Gstreamill *gstreamill)
                 stop_livejob (livejob, SIGUSR2);
                 list = list->next;
         }
+        gstreamill->stop = TRUE;
 
         return;
 }

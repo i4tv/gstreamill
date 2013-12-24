@@ -26,7 +26,8 @@ typedef struct _GstreamillClass GstreamillClass;
 
 struct _Gstreamill {
         GObject parent;
-    
+
+        gboolean stop; /* gstreamill exit if stop == TURE */
         gboolean daemon; /* run as daemon? */
         GstClock *system_clock;
         gchar *start_time;
