@@ -204,7 +204,7 @@ struct _LiveJob {
         gchar *last_start_time; /* last start up time */
         pid_t worker_pid;
 
-        GMutex current_access_mutex; /* current_access access should be mutex */
+        GMutex access_mutex; /* current_access access should be mutex */
         gint current_access; /* number of current access client */
 
         guint64 last_utime; /* last process user time */

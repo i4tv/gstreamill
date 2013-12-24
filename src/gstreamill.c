@@ -613,7 +613,7 @@ static gchar * gstreamill_livejob_start (Gstreamill *gstreamill, gchar *job)
 
         /* livejob initialize */
         livejob->log_dir = gstreamill->log_dir;
-        g_mutex_init (&(livejob->current_access_mutex));
+        g_mutex_init (&(livejob->access_mutex));
         livejob->current_access = 0;
         livejob->age = 0;
         livejob->last_start_time = NULL;
@@ -778,9 +778,9 @@ EncoderOutput * gstreamill_get_encoder_output (Gstreamill *gstreamill, gchar *ur
                 GST_ERROR ("Encoder %s not found.", uri);
                 return NULL;
         }
-        g_mutex_lock (&(livejob->current_access_mutex));
+        g_mutex_lock (&(livejob->access_mutex));
         livejob->current_access += 1;
-        g_mutex_unlock (&(livejob->current_access_mutex));
+        g_mutex_unlock (&(livejob->access_mutex));
 
         return &livejob->output->encoders[index];
 }
@@ -854,9 +854,9 @@ void gstreamill_unaccess (Gstreamill *gstreamill, gchar *uri)
                 GST_ERROR ("LiveJob %s not found.", uri);
                 return;
         }
-        g_mutex_lock (&(livejob->current_access_mutex));
+        g_mutex_lock (&(livejob->access_mutex));
         livejob->current_access -= 1;
-        g_mutex_unlock (&(livejob->current_access_mutex));
+        g_mutex_unlock (&(livejob->access_mutex));
 
         return;
 }
