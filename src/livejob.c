@@ -1855,79 +1855,95 @@ static void notify_function (union sigval sv)
  */
 void livejob_reset (LiveJob *livejob)
 {
-        gchar *stat, **stats, **cpustats;
-        GstDateTime *start_time;
-        gint i;
+	gchar *stat, **stats, **cpustats;
+	GstDateTime *start_time;
+	gint i;
+	EncoderOutput *encoder;
+	guint version, window_size;
+	struct sigevent sev;
+	struct mq_attr attr;
+	gchar *name;
 
-        g_file_get_contents ("/proc/stat", &stat, NULL, NULL);
-        stats = g_strsplit (stat, "\n", 10);
-        cpustats = g_strsplit (stats[0], " ", 10);
-        livejob->start_ctime = 0;
-        for (i = 1; i < 8; i++) {
-                livejob->start_ctime += g_ascii_strtoull (cpustats[i], NULL, 10);
-        }
-        livejob->last_ctime = 0;
-        livejob->last_utime = 0;
-        livejob->last_stime = 0;
-        g_free (stat);
-        g_strfreev (stats);
-        g_strfreev (cpustats);
-        start_time = gst_date_time_new_now_local_time ();
-        if (livejob->last_start_time != NULL) {
-                g_free (livejob->last_start_time);
-        }
-        livejob->last_start_time = gst_date_time_to_iso8601_string (start_time);
-        gst_date_time_unref (start_time);
+	g_file_get_contents ("/proc/stat", &stat, NULL, NULL);
+	stats = g_strsplit (stat, "\n", 10);
+	cpustats = g_strsplit (stats[0], " ", 10);
+	livejob->start_ctime = 0;
+	for (i = 1; i < 8; i++) {
+		livejob->start_ctime += g_ascii_strtoull (cpustats[i], NULL, 10);
+	}
+	livejob->last_ctime = 0;
+	livejob->last_utime = 0;
+	livejob->last_stime = 0;
+	g_free (stat);
+	g_strfreev (stats);
+	g_strfreev (cpustats);
+	start_time = gst_date_time_new_now_local_time ();
+	if (livejob->last_start_time != NULL) {
+		g_free (livejob->last_start_time);
+	}
+	livejob->last_start_time = gst_date_time_to_iso8601_string (start_time);
+	gst_date_time_unref (start_time);
 
-        /* reset m3u8 playlist */
-        if (livejobdesc_m3u8streaming (livejob->job)) {
-                EncoderOutput *encoder;
-                guint version, window_size;
-                struct sigevent sev;
-                struct mq_attr attr;
-                gchar *name;
+	version = livejobdesc_m3u8streaming_version (livejob->job);
+	if (version == 0) {
+		version = 3;
+	}
+	window_size = livejobdesc_m3u8streaming_window_size (livejob->job);
 
-                version = livejobdesc_m3u8streaming_version (livejob->job);
-                if (version == 0) {
-                        version = 3;
-                }
-                window_size = livejobdesc_m3u8streaming_window_size (livejob->job);
-                for (i = 0; i < livejob->output->encoder_count; i++) {
-                        encoder = &(livejob->output->encoders[i]);
-                        if (encoder->m3u8_playlist != NULL) {
-                                g_rw_lock_clear (&(encoder->m3u8_playlist_rwlock));
-                                m3u8playlist_free (encoder->m3u8_playlist);
-                        }
-                        encoder->m3u8_playlist = m3u8playlist_new (version, window_size, FALSE);
-                        g_rw_lock_init (&(encoder->m3u8_playlist_rwlock));
+	for (i = 0; i < livejob->output->encoder_count; i++) {
+		encoder = &(livejob->output->encoders[i]);
+		name = g_strdup_printf ("/%s.%d", livejob->name, i);
 
-                        name = g_strdup_printf ("/%s.%d", livejob->name, i);
-                        if (encoder->mqdes != -1) {
-                                if (mq_close (encoder->mqdes) == -1) {
-                                        GST_ERROR ("mq_close %s error: %s", name, g_strerror (errno));
-                                }
-                                if (mq_unlink (name) == -1) {
-                                        GST_ERROR ("mq_unlink %s error: %s", name, g_strerror (errno));
-                                }
-                        }
-                        attr.mq_flags = 0;
-                        attr.mq_maxmsg = 32;
-                        attr.mq_msgsize = 128;
-                        attr.mq_curmsgs = 0;
-                        if ((encoder->mqdes = mq_open (name, O_RDONLY | O_CREAT | O_NONBLOCK, 0666, &attr)) == -1) {
-                                GST_ERROR ("mq_open error : %s", g_strerror (errno));
-                        }
-                        g_free (name);
-                        sev.sigev_notify = SIGEV_THREAD;
-                        sev.sigev_notify_function = notify_function;
-                        sev.sigev_notify_attributes = NULL;
-                        sev.sigev_value.sival_ptr = encoder;
-                        if (mq_notify (encoder->mqdes, &sev) == -1) {
-                                GST_ERROR ("mq_notify error : %s", g_strerror (errno));
-                        }
+		if (livejobdesc_m3u8streaming (livejob->job)) {
+			/* reset m3u8 playlist */
+			if (encoder->m3u8_playlist != NULL) {
+				g_rw_lock_clear (&(encoder->m3u8_playlist_rwlock));
+				m3u8playlist_free (encoder->m3u8_playlist);
+			}
+			encoder->m3u8_playlist = m3u8playlist_new (version, window_size, FALSE);
+			g_rw_lock_init (&(encoder->m3u8_playlist_rwlock));
 
-                }
-        }
+			/* reset message queue */
+			if (encoder->mqdes != -1) {
+				if (mq_close (encoder->mqdes) == -1) {
+					GST_ERROR ("mq_close %s error: %s", name, g_strerror (errno));
+				}
+				if (mq_unlink (name) == -1) {
+					GST_ERROR ("mq_unlink %s error: %s", name, g_strerror (errno));
+				}
+			}
+			attr.mq_flags = 0;
+			attr.mq_maxmsg = 32;
+			attr.mq_msgsize = 128;
+			attr.mq_curmsgs = 0;
+			if ((encoder->mqdes = mq_open (name, O_RDONLY | O_CREAT | O_NONBLOCK, 0666, &attr)) == -1) {
+				GST_ERROR ("mq_open error : %s", g_strerror (errno));
+			}
+			sev.sigev_notify = SIGEV_THREAD;
+			sev.sigev_notify_function = notify_function;
+			sev.sigev_notify_attributes = NULL;
+			sev.sigev_value.sival_ptr = encoder;
+			if (mq_notify (encoder->mqdes, &sev) == -1) {
+				GST_ERROR ("mq_notify error : %s", g_strerror (errno));
+			}
+		}
+
+		/* reset semaphore */
+		if (livejob->age > 0) {
+			if (sem_close (encoder->semaphore) == -1) {
+				GST_ERROR ("sem_close %s error: %s", name, g_strerror (errno));
+			}
+			if (sem_unlink (name) == -1) {
+				GST_ERROR ("sem_unlink %s error: %s", name, g_strerror (errno));
+			}
+			encoder->semaphore = sem_open (name, O_CREAT, 0600, 1);
+			if (encoder->semaphore == SEM_FAILED) {
+				GST_ERROR ("sem_open %s error: %s", name, g_strerror (errno));
+			}
+		}
+
+		g_free (name);
+	}
 }
 
 /*
