@@ -27,8 +27,7 @@ typedef struct _GstreamillClass GstreamillClass;
 struct _Gstreamill {
         GObject parent;
     
-        /* run as daemon? */
-        gboolean daemon;
+        gboolean daemon; /* run as daemon? */
         GstClock *system_clock;
         gchar *start_time;
         gchar *log_dir;
