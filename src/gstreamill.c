@@ -479,7 +479,6 @@ void gstreamill_stop (Gstreamill *gstreamill)
                 stop_livejob (livejob, SIGUSR2);
                 list = list->next;
         }
-        mq_unlink ("/gstreamill");
 
         return;
 }
