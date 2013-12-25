@@ -1745,6 +1745,9 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
         output->source.sync_error_times = 0;
         output->source.stream_count = livejobdesc_streams_count (livejob->job, "source");
         output->source.streams = (struct _SourceStreamState *)p;
+        for (i = 0; i < output->source.stream_count; i++) {
+                output->source.streams[i].last_heartbeat = gst_clock_get_time (livejob->system_clock);
+        }
         p += output->source.stream_count * sizeof (struct _SourceStreamState);
         output->encoder_count = livejobdesc_encoders_count (livejob->job);
         output->encoders = (struct _EncoderOutput *)g_malloc (output->encoder_count * sizeof (struct _EncoderOutput));
