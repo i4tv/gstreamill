@@ -1,0 +1,50 @@
+{
+    "name" : "v4l2",
+    "debug" : "mpegtsmux:2",
+    "source" : {
+        "elements" : {
+            "alsasrc" : {
+                "property" : {
+                    "blocksize" : 8192
+                },
+                "caps" : "audio/x-raw,width=16,depth=16,rate=48000,channels=2,endianness=1234"
+            }
+        "bins" : [
+            "alsasrc device=hw:2 ! queue ! appsink",
+            "definition = v4l2src device=/dev/video0 ! queue! deinterlace mode=0 method=5 ! queue ! appsink"
+        ]
+    },
+    "encoders" : [
+        {
+            "elements" : {
+                "videoscale" : {
+                    "caps" : "video/x-raw,width=720,height=576"
+                },
+                "x264enc" : {
+                    "property" : {
+                        "bitrate" : 1000,
+                        "byte-stream" : true,
+                        "threads" : 6,
+                        "bframes" :3
+                    }
+                },
+                "faac" : {
+                    "property" : {
+                        "outputformat" : 1
+                    }
+                },
+                "appsink" : {
+                    "property" : {
+                        "sync" : false
+                    }
+                }
+            },
+            "bins" : [
+                "appsrc name=video ! queue ! ffmpegcolorspace ! x264enc ! queue ! muxer.",
+                "appsrc name=audio ! audioresample ! audioconvert ! faac ! muxer.",
+                "mpegtsmux name=muxer ! queue ! appsink"
+            ]
+        }
+    ]
+}
+
