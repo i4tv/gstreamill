@@ -33,7 +33,8 @@ struct _Gstreamill {
         gchar *start_time;
         gchar *log_dir;
 
-        GSList *live_job_list;
+        GMutex livejob_list_mutex;
+        GSList *livejob_list;
 };
 
 struct _GstreamillClass {
@@ -59,6 +60,7 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *name);
 gchar * gstreamill_gstreamer_stat (Gstreamill *gstreamill, gchar *uri);
 void gstreamill_unaccess (Gstreamill *gstreamill, gchar *uri);
 LiveJob * gstreamill_get_livejob (Gstreamill *gstreamill, gchar *uri);
+gint gstreamill_livejob_number (Gstreamill *gstreamill);
 EncoderOutput * gstreamill_get_encoder_output (Gstreamill *gstreamill, gchar *uri);
 gchar * gstreamill_get_m3u8playlist (Gstreamill *gstreamill, EncoderOutput *encoder_output);
 gchar * gstreamill_get_master_m3u8playlist (Gstreamill *gstreamill, gchar *uri);

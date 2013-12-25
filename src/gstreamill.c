@@ -75,7 +75,8 @@ static void gstreamill_init (Gstreamill *gstreamill)
         start_time = gst_date_time_new_now_local_time ();
         gstreamill->start_time = gst_date_time_to_iso8601_string (start_time);
         gst_date_time_unref (start_time);
-        gstreamill->live_job_list = NULL;
+        g_mutex_init (&(gstreamill->livejob_list_mutex));
+        gstreamill->livejob_list = NULL;
 }
 
 static GObject * gstreamill_constructor (GType type, guint n_construct_properties, GObjectConstructParam *construct_properties)
@@ -139,7 +140,7 @@ static void gstreamill_finalize (GObject *obj)
 {
         Gstreamill *gstreamill = GSTREAMILL (obj);
         GObjectClass *parent_class = g_type_class_peek (G_TYPE_OBJECT);
-        g_slist_free (gstreamill->live_job_list);
+        g_slist_free (gstreamill->livejob_list);
         G_OBJECT_CLASS (parent_class)->finalize (obj);
 }
 
@@ -204,7 +205,7 @@ log_rotate (Gstreamill *gstreamill)
         g_free (log_path);
 
         /* livejobs log rotate. */
-        list = gstreamill->live_job_list;
+        list = gstreamill->livejob_list;
         while (list != NULL) {
                 livejob = list->data;
                 if (livejob->worker_pid == 0) {
@@ -227,12 +228,12 @@ static void clean_job_list (Gstreamill *gstreamill)
 
         done = FALSE;
         while (!done) {
-                list = gstreamill->live_job_list;
+                list = gstreamill->livejob_list;
                 while (list != NULL) {
                         livejob = list->data;
                         if (*(livejob->output->state) == GST_STATE_NULL && livejob->current_access == 0) {
                                 GST_WARNING ("Remove live job: %s.", livejob->name);
-                                gstreamill->live_job_list = g_slist_remove (gstreamill->live_job_list, livejob);
+                                gstreamill->livejob_list = g_slist_remove (gstreamill->livejob_list, livejob);
                                 g_object_unref (livejob);
                                 break;
                         }
@@ -418,22 +419,26 @@ static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClock
 
         gstreamill = (Gstreamill *)user_data;
 
+        g_mutex_lock (&(gstreamill->livejob_list_mutex));
+
         /* remove stoped livejob from job list */
         clean_job_list (gstreamill);
 
         /* stop? */
-        if (gstreamill->stop && g_slist_length (gstreamill->live_job_list) == 0) {
+        if (gstreamill->stop && g_slist_length (gstreamill->livejob_list) == 0) {
                 exit (0);
         }
 
         /* check livejob stat */
-        list = gstreamill->live_job_list;
+        list = gstreamill->livejob_list;
         g_slist_foreach (list, livejob_check_func, gstreamill);
 
         /* log rotate. */
         if (gstreamill->daemon) {
                 log_rotate (gstreamill);
         }
+
+        g_mutex_unlock (&(gstreamill->livejob_list_mutex));
 
         /* register streamill monitor */
         now = gst_clock_get_time (gstreamill->system_clock);
@@ -488,12 +493,14 @@ void gstreamill_stop (Gstreamill *gstreamill)
         LiveJob *livejob;
         GSList *list;
 
-        list = gstreamill->live_job_list;
+        g_mutex_lock (&(gstreamill->livejob_list_mutex));
+        list = gstreamill->livejob_list;
         while (list != NULL) {
                 livejob = list->data;
                 stop_livejob (livejob, SIGUSR2);
                 list = list->next;
         }
+        g_mutex_unlock (&(gstreamill->livejob_list_mutex));
         gstreamill->stop = TRUE;
 
         return;
@@ -593,8 +600,10 @@ static LiveJob * get_livejob (Gstreamill *gstreamill, gchar *name)
         LiveJob *livejob;
         GSList *list;
 
-        list = gstreamill->live_job_list;
+        g_mutex_lock (&(gstreamill->livejob_list_mutex));
+        list = gstreamill->livejob_list;
         if (list == NULL) {
+                g_mutex_unlock (&(gstreamill->livejob_list_mutex));
                 return NULL;
         }
         while (list != NULL) {
@@ -606,6 +615,7 @@ static LiveJob * get_livejob (Gstreamill *gstreamill, gchar *name)
                 }
                 list = list->next;
         }
+        g_mutex_unlock (&(gstreamill->livejob_list_mutex));
 
         return livejob;
 }
@@ -649,13 +659,17 @@ static gchar * gstreamill_livejob_start (Gstreamill *gstreamill, gchar *job)
                 p = create_livejob_process (livejob);
                 GST_ERROR ("%s: %s", p, livejob->name);
                 if (g_str_has_suffix (p, "success")) {
-                        gstreamill->live_job_list = g_slist_append (gstreamill->live_job_list, livejob);
+                        g_mutex_lock (&(gstreamill->livejob_list_mutex));
+                        gstreamill->livejob_list = g_slist_append (gstreamill->livejob_list, livejob);
+                        g_mutex_unlock (&(gstreamill->livejob_list_mutex));
                 } else {
                         g_object_unref (livejob);
                 }
         } else {
                 if (livejob_start (livejob) == 0) {
-                        gstreamill->live_job_list = g_slist_append (gstreamill->live_job_list, livejob);
+                        g_mutex_lock (&(gstreamill->livejob_list_mutex));
+                        gstreamill->livejob_list = g_slist_append (gstreamill->livejob_list, livejob);
+                        g_mutex_unlock (&(gstreamill->livejob_list_mutex));
                         p = g_strdup ("success");
                 } else {
                         p = g_strdup ("failure");
@@ -748,6 +762,17 @@ LiveJob *gstreamill_get_livejob (Gstreamill *gstreamill, gchar *uri)
         }
 
         return livejob;
+}
+
+gint gstreamill_livejob_number (Gstreamill *gstreamill)
+{
+        gint number;
+
+        g_mutex_lock (&(gstreamill->livejob_list_mutex));
+        number = g_slist_length (gstreamill->livejob_list);
+        g_mutex_unlock (&(gstreamill->livejob_list_mutex));
+
+        return number;
 }
 
 /**
@@ -903,7 +928,8 @@ gchar * gstreamill_stat (Gstreamill *gstreamill)
         LiveJob *livejob;
 
         jobarray = g_strdup_printf ("[");
-        list = gstreamill->live_job_list;
+        g_mutex_lock (&(gstreamill->livejob_list_mutex));
+        list = gstreamill->livejob_list;
         while (list != NULL) {
                 livejob = list->data;
                 p = jobarray;
@@ -916,6 +942,7 @@ gchar * gstreamill_stat (Gstreamill *gstreamill)
                         g_free (p);
                 }
         }
+        g_mutex_unlock (&(gstreamill->livejob_list_mutex));
         stat = g_strdup_printf (template,
                                 VERSION,
                                 __DATE__,

@@ -184,7 +184,7 @@ static void request_gstreamill_stat (HTTPMgmt *httpmgmt, RequestData *request_da
                 buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), p);
                 g_free (p);
         } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamill/livejob/number")) {
-                p = g_strdup_printf ("%d", g_slist_length (httpmgmt->gstreamill->live_job_list));
+                p = g_strdup_printf ("%d", gstreamill_livejob_number (httpmgmt->gstreamill));
                 buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (p), p);
                 g_free (p);
         } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamill/livejob/")) {
