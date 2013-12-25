@@ -249,12 +249,12 @@ static void clean_job_list (Gstreamill *gstreamill)
 static gint stop_livejob (LiveJob *livejob, gint sig)
 {
         if (livejob->worker_pid != 0) {
+                *(livejob->output->state) = GST_STATE_PAUSED;
                 if (sig == SIGUSR2) {
                         /* normally stop */
                         GST_WARNING ("Stop livejob %s, pid %d.", livejob->name, livejob->worker_pid);
                 } else {
                         /* unexpect stop, restart job */
-                        *(livejob->output->state) = GST_STATE_VOID_PENDING;
                         GST_WARNING ("Restart livejob %s, pid %d.", livejob->name, livejob->worker_pid);
                 }
                 kill (livejob->worker_pid, sig);
@@ -430,8 +430,10 @@ static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClock
         }
 
         /* check livejob stat */
-        list = gstreamill->livejob_list;
-        g_slist_foreach (list, livejob_check_func, gstreamill);
+        if (!gstreamill->stop) {
+                list = gstreamill->livejob_list;
+                g_slist_foreach (list, livejob_check_func, gstreamill);
+        }
 
         /* log rotate. */
         if (gstreamill->daemon) {
@@ -493,6 +495,7 @@ void gstreamill_stop (Gstreamill *gstreamill)
         LiveJob *livejob;
         GSList *list;
 
+        gstreamill->stop = TRUE;
         g_mutex_lock (&(gstreamill->livejob_list_mutex));
         list = gstreamill->livejob_list;
         while (list != NULL) {
@@ -501,7 +504,6 @@ void gstreamill_stop (Gstreamill *gstreamill)
                 list = list->next;
         }
         g_mutex_unlock (&(gstreamill->livejob_list_mutex));
-        gstreamill->stop = TRUE;
 
         return;
 }
