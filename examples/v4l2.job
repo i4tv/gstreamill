@@ -9,9 +9,10 @@
                 },
                 "caps" : "audio/x-raw,width=16,depth=16,rate=48000,channels=2,endianness=1234"
             }
+        },
         "bins" : [
-            "alsasrc device=hw:2 ! queue ! appsink",
-            "definition = v4l2src device=/dev/video0 ! queue! deinterlace mode=0 method=5 ! queue ! appsink"
+            "alsasrc device=hw:2 ! queue ! appsink name=audio",
+            "v4l2src device=/dev/video0 ! queue! deinterlace mode=0 method=5 ! queue ! appsink name=video"
         ]
     },
     "encoders" : [
@@ -28,11 +29,6 @@
                         "bframes" :3
                     }
                 },
-                "faac" : {
-                    "property" : {
-                        "outputformat" : 1
-                    }
-                },
                 "appsink" : {
                     "property" : {
                         "sync" : false
@@ -40,8 +36,8 @@
                 }
             },
             "bins" : [
-                "appsrc name=video ! queue ! ffmpegcolorspace ! x264enc ! queue ! muxer.",
-                "appsrc name=audio ! audioresample ! audioconvert ! faac ! muxer.",
+                "appsrc name=video ! queue ! x264enc ! queue ! muxer.",
+                "appsrc name=audio ! audioresample ! audioconvert ! voaacenc ! muxer.",
                 "mpegtsmux name=muxer ! queue ! appsink"
             ]
         }
