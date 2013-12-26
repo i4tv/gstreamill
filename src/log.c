@@ -89,6 +89,7 @@ static void log_set_property (GObject *obj, guint prop_id, const GValue *value, 
         case LOG_PROP_PATH:
                 LOG (obj)->log_path = (gchar *)g_value_dup_string (value);
                 break;
+
         default:
                 G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
                 break;
@@ -103,6 +104,7 @@ static void log_get_property (GObject *obj, guint prop_id, GValue *value, GParam
         case LOG_PROP_PATH:
                 g_value_set_string (value, log->log_path);
                 break;
+
         default:
                 G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
                 break;
@@ -166,6 +168,7 @@ gint log_set_log_handler (Log *log)
         if (log->log_hd == NULL) {
                 GST_ERROR ("Error open log file %s, %s.", log->log_path, g_strerror (errno));
                 return -1;
+
         } else {
                 gst_debug_add_log_function (log_func, &(log->log_hd), NULL);
                 return 0;

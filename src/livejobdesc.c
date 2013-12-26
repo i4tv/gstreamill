@@ -22,6 +22,7 @@ gboolean livejobdesc_is_valid (gchar *job)
         if (val == NULL) {
                 GST_ERROR ("parse job error.");
                 return FALSE;
+
         } else if (json_value_get_type (val) != JSONObject){
                 GST_ERROR ("job is not a json object.");
                 json_value_free (val);
@@ -70,6 +71,7 @@ gint livejobdesc_streams_count (gchar *job, gchar *pipeline)
                 array = json_object_dotget_array (obj, "encoders");
                 sscanf (pipeline, "encoder.%d", &index);
                 obj = json_array_get_object (array, index);
+
         } else if (g_str_has_prefix (pipeline, "source")) {
                 ptype = "appsink";
                 obj = json_object_get_object (obj, "source");
@@ -132,6 +134,7 @@ gchar * livejobdesc_get_debug (gchar *job)
         p = (gchar *)json_object_get_string (obj, "debug");
         if (p == NULL) {
                 debug = NULL;
+
         } else {
                 debug = g_strdup (p);
         }
@@ -154,6 +157,7 @@ gchar ** livejobdesc_bins (gchar *job, gchar *pipeline)
                 array = json_object_dotget_array (obj, "encoders");
                 sscanf (pipeline, "encoder.%d", &index);
                 obj = json_array_get_object (array, index);
+
         } else if (g_str_has_prefix (pipeline, "source")) {
                 obj = json_object_get_object (obj, "source");
         }
@@ -186,6 +190,7 @@ gchar * livejobdesc_udpstreaming (gchar *job, gchar *pipeline)
         p = (gchar *)json_object_get_string (obj, "udpstreaming");
         if (p == NULL) {
                 udpstreaming = NULL;
+
         } else {
                 udpstreaming = g_strdup (p);
         }
@@ -211,6 +216,7 @@ gchar ** livejobdesc_element_properties (gchar *job, gchar *element)
                 obj = json_array_get_object (array, index);
                 p = g_strrstr (element, "elements");
                 obj = json_object_dotget_object (obj, p);
+
         } else if (g_str_has_prefix (element, "source")) {
                 obj = json_object_dotget_object (obj, element);
         }
@@ -256,6 +262,7 @@ gchar * livejobdesc_element_property_value (gchar *job, gchar *property)
                 obj = json_array_get_object (array, index);
                 p = g_strrstr (property, "elements");
                 value = json_object_dotget_value (obj, p);
+
         } else if (g_str_has_prefix (property, "source")) {
                 value = json_object_dotget_value (obj, property);
         }
@@ -264,22 +271,27 @@ gchar * livejobdesc_element_property_value (gchar *job, gchar *property)
         case JSONString:
                 p = g_strdup (json_value_get_string (value));
                 break;
+
         case JSONNumber:
                 n = json_value_get_number (value);
                 i = n;
                 if (i == n) {
                         p = g_strdup_printf ("%ld", i);
+
                 } else {
                         p = g_strdup_printf ("%f", n);
                 }
                 break;
+
         case JSONBoolean:
                 if (json_value_get_boolean (value)) {
                         p = g_strdup ("TRUE");
+
                 } else {
                         p = g_strdup ("FALSE");
                 }
                 break;
+
         default:
                 GST_ERROR ("property value invalid.");
         }
@@ -302,6 +314,7 @@ gchar * livejobdesc_element_caps (gchar *job, gchar *element)
                 array = json_object_dotget_array (obj, "encoders");
                 sscanf (element, "encoder.%d", &index);
                 obj = json_array_get_object (array, index);
+
         } else {
 		obj = json_object_get_object (obj, "source");
         }
@@ -309,6 +322,7 @@ gchar * livejobdesc_element_caps (gchar *job, gchar *element)
         caps = (gchar *)json_object_dotget_string (obj, p);
         if (caps == NULL) {
                 p = NULL;
+
         } else {
 	        p = g_strdup (caps);
         }
@@ -327,6 +341,7 @@ gboolean livejobdesc_m3u8streaming (gchar *job)
         obj = json_value_get_object (val);
         if (json_object_get_object (obj, "m3u8streaming") != NULL) {
                 m3u8streaming = TRUE;
+
         } else {
                 m3u8streaming = FALSE;
         }
