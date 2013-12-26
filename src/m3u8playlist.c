@@ -106,7 +106,7 @@ static guint m3u8playlist_target_duration (M3U8Playlist * playlist)
 
 gchar * m3u8playlist_render (M3U8Playlist * playlist)
 {
-        gchar *pl;
+        gchar *p;
 
         g_return_val_if_fail (playlist != NULL, NULL);
 
@@ -127,9 +127,9 @@ gchar * m3u8playlist_render (M3U8Playlist * playlist)
         /* Entries */
         g_queue_foreach (playlist->entries, (GFunc) render_entry, playlist);
 
-        pl = playlist->playlist_str->str;
+        p = playlist->playlist_str->str;
         g_string_free (playlist->playlist_str, FALSE);
 
-        return pl;
+        return p;
 }
 
