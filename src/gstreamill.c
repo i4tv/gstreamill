@@ -254,6 +254,7 @@ static gint stop_livejob (LiveJob *livejob, gint sig)
 {
         if (livejob->worker_pid != 0) {
                 *(livejob->output->state) = GST_STATE_PAUSED;
+
                 if (sig == SIGUSR2) {
                         /* normally stop */
                         GST_WARNING ("Stop livejob %s, pid %d.", livejob->name, livejob->worker_pid);
@@ -263,6 +264,7 @@ static gint stop_livejob (LiveJob *livejob, gint sig)
                         GST_WARNING ("Restart livejob %s, pid %d.", livejob->name, livejob->worker_pid);
                 }
                 kill (livejob->worker_pid, sig);
+
                 return 0;
 
         } else {
@@ -286,10 +288,12 @@ static void livejob_check_func (gpointer data, gpointer user_data)
 
         /* source heartbeat check */
         for (j = 0; j < output->source.stream_count; j++) {
+		/* check video and audio */
                 if (!g_str_has_prefix (output->source.streams[j].name, "video") &&
                     !g_str_has_prefix (output->source.streams[j].name, "audio")) {
                         continue;
                 }
+
                 now = gst_clock_get_time (gstreamill->system_clock);
                 time_diff = GST_CLOCK_DIFF (output->source.streams[j].last_heartbeat, now);
                 if ((time_diff > HEARTBEAT_THRESHHOLD) && gstreamill->daemon) {
@@ -324,6 +328,7 @@ static void livejob_check_func (gpointer data, gpointer user_data)
                             !g_str_has_prefix (output->encoders[j].streams[k].name, "audio")) {
                                 continue;
                         }
+
                         now = gst_clock_get_time (gstreamill->system_clock);
                         time_diff = GST_CLOCK_DIFF (output->encoders[j].streams[k].last_heartbeat, now);
                         if ((time_diff > HEARTBEAT_THRESHHOLD) && gstreamill->daemon) {
@@ -386,9 +391,11 @@ static void livejob_check_func (gpointer data, gpointer user_data)
                     !g_str_has_prefix (output->source.streams[j].name, "audio")) {
                         continue;
                 }
+
                 if (min > output->source.streams[j].current_timestamp) {
                         min = output->source.streams[j].current_timestamp;
                 }
+
                 if (max < output->source.streams[j].current_timestamp) {
                         max = output->source.streams[j].current_timestamp;
                 }
@@ -542,6 +549,7 @@ static void child_watch_cb (GPid pid, gint status, LiveJob *livejob)
                 GST_ERROR ("LiveJob with pid %d normaly exit, status is %d", pid, WEXITSTATUS (status));
                 *(livejob->output->state) = GST_STATE_NULL;
         }
+
         if (WIFSIGNALED (status)) {
                 gchar *ret;
 
@@ -618,6 +626,7 @@ static LiveJob * get_livejob (Gstreamill *gstreamill, gchar *name)
                 g_mutex_unlock (&(gstreamill->livejob_list_mutex));
                 return NULL;
         }
+
         while (list != NULL) {
                 livejob = list->data;
                 if (g_strcmp0 (livejob->name, name) == 0) {
@@ -885,6 +894,7 @@ gchar * gstreamill_get_master_m3u8playlist (Gstreamill *gstreamill, gchar *uri)
                 GST_ERROR ("LiveJob %s not found.", uri);
                 return NULL;
         }
+
         p = g_strdup_printf ("/live/%s/playlist.m3u8", livejob->name);
         if (g_strcmp0 (p, uri) == 0) {
                 master_m3u8_playlist = g_strdup (livejob->output->master_m3u8_playlist);
