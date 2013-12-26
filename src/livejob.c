@@ -119,9 +119,11 @@ static void source_set_property (GObject *obj, guint prop_id, const GValue *valu
         case SOURCE_PROP_NAME:
                 SOURCE (obj)->name = (gchar *)g_value_dup_string (value);
                 break;
+
         case SOURCE_PROP_STATE:
                 SOURCE (obj)->state= g_value_get_int (value);
                 break;
+
         default:
                 G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
                 break;
@@ -167,9 +169,11 @@ static void source_get_property (GObject *obj, guint prop_id, GValue *value, GPa
         case SOURCE_PROP_NAME:
                 g_value_set_string (value, source->name);
                 break;
+
         case SOURCE_PROP_STATE:
                 g_value_set_int (value, source->state);
                 break;
+
         default:
                 G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
                 break;
@@ -242,9 +246,11 @@ static void encoder_set_property (GObject *obj, guint prop_id, const GValue *val
         case ENCODER_PROP_NAME:
                 ENCODER (obj)->name = (gchar *)g_value_dup_string (value);
                 break;
+
         case ENCODER_PROP_STATE:
                 ENCODER (obj)->state= g_value_get_int (value);
                 break;
+
         default:
                 G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
                 break;
@@ -259,9 +265,11 @@ static void encoder_get_property (GObject *obj, guint prop_id, GValue *value, GP
         case ENCODER_PROP_NAME:
                 g_value_set_string (value, encoder->name);
                 break;
+
         case ENCODER_PROP_STATE:
                 g_value_set_int (value, encoder->state);
                 break;
+
         default:
                 G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
                 break;
@@ -343,9 +351,11 @@ static void livejob_set_property (GObject *obj, guint prop_id, const GValue *val
         case LIVEJOB_PROP_NAME:
                 LIVEJOB (obj)->name = (gchar *)g_value_dup_string (value);
                 break;
+
         case LIVEJOB_PROP_JOB:
                 LIVEJOB (obj)->job = (gchar *)g_value_dup_string (value);
                 break;
+
         default:
                 G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
                 break;
@@ -360,9 +370,11 @@ static void livejob_get_property (GObject *obj, guint prop_id, GValue *value, GP
         case LIVEJOB_PROP_NAME:
                 g_value_set_string (value, livejob->name);
                 break;
+
         case LIVEJOB_PROP_JOB:
                 g_value_set_string (value, livejob->job);
                 break;
+
         default:
                 G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
                 break;
@@ -477,14 +489,19 @@ static void print_one_tag (const GstTagList * list, const gchar * tag, gpointer 
                 val = gst_tag_list_get_value_index (list, tag, i);
                 if (G_VALUE_HOLDS_STRING (val)) {
                         GST_INFO ("%20s : %s", tag, g_value_get_string (val));
+
                 } else if (G_VALUE_HOLDS_UINT (val)) {
                         GST_INFO ("%20s : %u", tag, g_value_get_uint (val));
+
                 } else if (G_VALUE_HOLDS_DOUBLE (val)) {
                         GST_INFO ("%20s : %g", tag, g_value_get_double (val));
+
                 } else if (G_VALUE_HOLDS_BOOLEAN (val)) {
                         GST_INFO ("%20s : %s", tag, (g_value_get_boolean (val)) ? "true" : "false");
+
                 } else if (GST_VALUE_HOLDS_BUFFER (val)) {
                         GST_INFO ("%20s : buffer of size %lu", tag, gst_buffer_get_size (gst_value_get_buffer (val)));
+
                 } else {
                         GST_INFO ("%20s : tag of type '%s'", tag, G_VALUE_TYPE_NAME (val));
                 }
@@ -509,17 +526,20 @@ static gboolean bus_callback (GstBus *bus, GstMessage *msg, gpointer user_data)
         case GST_MESSAGE_EOS:
                 GST_INFO ("End of stream\n");
                 break;
+
         case GST_MESSAGE_TAG:
                 GST_INFO ("TAG");
                 gst_message_parse_tag (msg, &tags);
                 gst_tag_list_foreach (tags, print_one_tag, NULL);
                 break;
+
         case GST_MESSAGE_ERROR: 
                 gst_message_parse_error (msg, &error, &debug);
                 g_free (debug);
                 GST_WARNING ("%s error: %s", g_value_get_string (&name), error->message);
                 g_error_free (error);
                 break;
+
         case GST_MESSAGE_STATE_CHANGED:
                 g_value_init (&state, G_TYPE_INT);
                 gst_message_parse_state_changed (msg, &old, &new, &pending);
@@ -535,10 +555,12 @@ static gboolean bus_callback (GstBus *bus, GstMessage *msg, gpointer user_data)
                         g_value_unset (&state);
                 }
                 break;
+
         case GST_MESSAGE_STREAM_STATUS:
                 gst_message_parse_stream_status (msg, &type, NULL);
                 GST_INFO ("stream status %d", type);
                 break;
+
         case GST_MESSAGE_NEW_CLOCK:
                 gst_message_parse_new_clock (msg, &clock);
                 GST_INFO ("New source clock %s", GST_OBJECT_NAME (clock));
@@ -546,11 +568,12 @@ static gboolean bus_callback (GstBus *bus, GstMessage *msg, gpointer user_data)
         case GST_MESSAGE_ASYNC_DONE:
                 GST_INFO ("source %s message: %s", g_value_get_string (&name), GST_MESSAGE_TYPE_NAME (msg));
                 break;
+
         default:
                 GST_INFO ("%s message: %s", g_value_get_string (&name), GST_MESSAGE_TYPE_NAME (msg));
         }
-
         g_value_unset (&name);
+
         return TRUE;
 }
 
@@ -716,6 +739,7 @@ static void pad_added_callback (GstElement *src, GstPad *pad, gpointer data)
                 bin = bins->data;
                 if (g_str_has_prefix (src_pad_name, bin->name)) {
                         break;
+
                 } else {
                         bin = NULL;
                 }
@@ -744,6 +768,7 @@ static void pad_added_callback (GstElement *src, GstPad *pad, gpointer data)
                         caps = gst_caps_from_string (link->caps);
                         gst_element_link_filtered (link->src, link->sink, caps);
                         gst_caps_unref (caps);
+
                 } else {
                         gst_element_link (link->src, link->sink);
                 }
@@ -892,6 +917,7 @@ static GSList * bins_parse (LiveJob *livejob, gchar *pipeline)
                                         /* should be a sometimes pad */
                                         src_name = g_strndup (p1, g_strrstr (p1, ".") - p1);
                                         src_pad_name = g_strndup (g_strrstr (p1, ".") + 1, strlen (p1) - strlen (src_name) -1);
+
                                 } else {
                                         /* should be a request pad */
                                         link = g_slice_new (Link);
@@ -924,9 +950,11 @@ static GSList * bins_parse (LiveJob *livejob, gchar *pipeline)
                                         g_free (p);
                                         if (src_pad_name == NULL) {
                                                 bin->links = g_slist_append (bin->links, link);
+
                                         } else {
                                                 bin->previous = link;
                                         }
+
                                 } else {
                                         bin->first = element;
                                 }
@@ -934,6 +962,7 @@ static GSList * bins_parse (LiveJob *livejob, gchar *pipeline)
                                 src = element;
                                 src_name = p1;
                                 src_pad_name = NULL;
+
                         } else {
                                 /* create element failure */
                                 g_free (bins);
@@ -1040,11 +1069,13 @@ static GstElement * create_source_pipeline (Source *source)
                                         caps = gst_caps_from_string (link->caps);
                                         gst_element_link_filtered (link->src, link->sink, caps);
                                         gst_caps_unref (caps);
+
                                 } else {
                                         gst_element_link (link->src, link->sink);
                                 }
                                 links = g_slist_next (links);
                         }
+
                 } else {
                         /* delay sometimes pad link */
                         delay_sometimes_pad_link (source, bin->previous->src_name);
@@ -1131,6 +1162,7 @@ static gint cache_free (Encoder *encoder)
 {
         if (*(encoder->output->head_addr) > *(encoder->output->tail_addr)) {
                 return *(encoder->output->head_addr) - *(encoder->output->tail_addr);
+
         } else {
                 return *(encoder->output->head_addr) + encoder->output->cache_size - *(encoder->output->tail_addr);
         }
@@ -1147,6 +1179,7 @@ static void move_head (Encoder *encoder)
         /* move head. */
         if (*(encoder->output->head_addr) + gop_size < encoder->output->cache_size) {
                 *(encoder->output->head_addr) += gop_size;
+
         } else {
                 *(encoder->output->head_addr) = *(encoder->output->head_addr) + gop_size - encoder->output->cache_size;
         }
@@ -1163,11 +1196,14 @@ static void move_last_rap (Encoder *encoder, GstBuffer *buffer)
         /* calculate and write gop size. */
         if (*(encoder->output->tail_addr) >= *(encoder->output->last_rap_addr)) {
                 size = *(encoder->output->tail_addr) - *(encoder->output->last_rap_addr);
+
         } else {
                 size = encoder->output->cache_size - *(encoder->output->last_rap_addr) + *(encoder->output->tail_addr);
         }
+
         if (*(encoder->output->last_rap_addr) + 12 <= encoder->output->cache_size) {
                 memcpy (encoder->output->cache_addr + *(encoder->output->last_rap_addr) + 8, &size, 4);
+
         } else {
                 n = encoder->output->cache_size - *(encoder->output->last_rap_addr) - 8;
                 memcpy (encoder->output->cache_addr + *(encoder->output->last_rap_addr), &size, n);
@@ -1182,6 +1218,7 @@ static void move_last_rap (Encoder *encoder, GstBuffer *buffer)
         if (*(encoder->output->tail_addr) + 12 < encoder->output->cache_size) {
                 memcpy (encoder->output->cache_addr + *(encoder->output->tail_addr), buf, 12);
                 *(encoder->output->tail_addr) += 12;
+
         } else {
                 n = encoder->output->cache_size - *(encoder->output->tail_addr);
                 memcpy (encoder->output->cache_addr + *(encoder->output->tail_addr), buf, n);
@@ -1199,6 +1236,7 @@ static void copy_buffer (Encoder *encoder, GstBuffer *buffer)
         if (*(encoder->output->tail_addr) + gst_buffer_get_size (buffer) < encoder->output->cache_size) {
                 memcpy (encoder->output->cache_addr + *(encoder->output->tail_addr), info.data, gst_buffer_get_size (buffer));
                 *(encoder->output->tail_addr) = *(encoder->output->tail_addr) + gst_buffer_get_size (buffer);
+
         } else {
                 size = encoder->output->cache_size - *(encoder->output->tail_addr);
                 memcpy (encoder->output->cache_addr + *(encoder->output->tail_addr), info.data, size);
@@ -1221,11 +1259,13 @@ static void udp_streaming (Encoder *encoder, GstBuffer *buffer)
                         encoder->cache_7x188 = gst_buffer_copy_region (buffer, GST_BUFFER_COPY_MEMORY, offset, buffer_size);
                         encoder->cache_size = buffer_size;
                         break;
+
                 } else if (encoder->cache_size == 0) {
                         /* buffer_size >= 1316 */
                         encoder->cache_7x188 = gst_buffer_copy_region (buffer, GST_BUFFER_COPY_MEMORY, offset, 1316);
                         offset += 1316;
                         buffer_size -= 1316;
+
                 } else if (encoder->cache_size + buffer_size >= 1316) {
                         gsize size;
                         gst_buffer_ref (buffer);
@@ -1234,6 +1274,7 @@ static void udp_streaming (Encoder *encoder, GstBuffer *buffer)
                         offset += 1316 - encoder->cache_size;
                         buffer_size -= 1316 - encoder->cache_size;
                         encoder->cache_size = 0;
+
                 } else {
                         /* encoder->cache_size + buffer_size < 1316 */
                         gst_buffer_ref (buffer);
@@ -1468,6 +1509,7 @@ static gint create_encoder_pipeline (Encoder *encoder)
                                 caps = gst_caps_from_string (link->caps);
                                 gst_element_link_filtered (link->src, link->sink, caps);
                                 gst_caps_unref (caps);
+
                         } else {
                                 gst_element_link (link->src, link->sink);
                         }
@@ -1525,6 +1567,7 @@ static gint source_extract_streams (LiveJob *livejob)
                         GST_INFO ("source stream %s found %s", stream->name, bin);
                         g_match_info_free (match_info);
                         g_array_append_val (livejob->source->streams, stream);
+
                 } else if (g_strrstr (bin, "appsink") != NULL) {
                         GST_ERROR ("appsink name property must be set");
                         return 1;
@@ -1588,6 +1631,7 @@ static gint encoder_extract_streams (Encoder *encoder, gchar **bins)
                         g_match_info_free (match_info);
                         g_array_append_val (encoder->streams, stream);
                         GST_INFO ("encoder stream %s found %s", stream->name, bin);
+
                 } else if (g_str_has_prefix (bin, "appsrc")) {
                         GST_ERROR ("appsrc name property must be set");
                         return 1;
@@ -1733,6 +1777,7 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
                 }
                 p = mmap (NULL, livejob->output_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
                 livejob->output_fd = fd;
+
         } else {
                 p = g_malloc (livejob->output_size);
                 livejob->output_fd = -1;
@@ -1783,6 +1828,7 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
                         /* initialize gop size = 0. */
                         *(gint32 *)(output->encoders[i].cache_addr + 8) = 0;
                         g_free (name);
+
                 } else {
                         output->encoders[i].cache_fd = -1;
                         output->encoders[i].cache_addr = g_malloc (SHM_SIZE);
@@ -2059,6 +2105,7 @@ GstClockTime livejob_encoder_output_rap_timestamp (EncoderOutput *encoder_output
 
         if (rap_addr + 8 <= encoder_output->cache_size) {
                 memcpy (&timestamp, encoder_output->cache_addr + rap_addr, 8);
+
         } else {
                 gint n;
 
@@ -2088,6 +2135,7 @@ guint64 livejob_encoder_output_gop_size (EncoderOutput *encoder_output, guint64 
         /* gop size address */
         if (rap_addr + 8 < encoder_output->cache_size) {
         	gop_size_addr = rap_addr + 8;
+
         } else {
                 gop_size_addr = rap_addr + 8 - encoder_output->cache_size;
         }
@@ -2095,6 +2143,7 @@ guint64 livejob_encoder_output_gop_size (EncoderOutput *encoder_output, guint64 
         /* gop size */
         if (gop_size_addr + 4 < encoder_output->cache_size) {
                 memcpy (&gop_size, encoder_output->cache_addr + gop_size_addr, 4);
+
         } else {
                 gint n;
 
@@ -2157,6 +2206,7 @@ gchar * livejob_get_master_m3u8_playlist (LiveJob *livejob)
         g_string_append_printf (master_m3u8_playlist, M3U8_HEADER_TAG);
         if (livejobdesc_m3u8streaming_version (livejob->job) == 0) {
                 g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, 3);
+
         } else {
                 g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, livejobdesc_m3u8streaming_version (livejob->job));
         }
