@@ -828,6 +828,7 @@ static gchar * get_bin_name (gchar *bin)
                 return name;
         }
 
+        /* demuxer.video ! queue ! mpeg2dec ! queue ! appsink name = video */
         regex = g_regex_new ("! *appsink *name *= *(?<name>[^ ]*)[^!]*$", G_REGEX_OPTIMIZE, 0, NULL);
         g_regex_match (regex, bin, 0, &match_info);
         g_regex_unref (regex);
