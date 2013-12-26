@@ -131,6 +131,11 @@ int main (int argc, char *argv[])
         gboolean foreground;
         struct rlimit rlim;
 
+        if (getuid () != 0) {
+                g_print ("must be root user to run gstreamill\n");
+                exit (1);
+        }
+
         ctx = g_option_context_new (NULL);
         g_option_context_add_main_entries (ctx, options, NULL);
         g_option_context_add_group (ctx, gst_init_get_option_group ());
