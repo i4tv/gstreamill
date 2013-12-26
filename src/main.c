@@ -48,12 +48,15 @@ static void print_version_info ()
         const gchar *nano_str;
 
         gst_version (&major, &minor, &micro, &nano);
-        if (nano == 1)
+        if (nano == 1) {
                 nano_str = "(git)";
-        else if (nano == 2)
+
+        } else if (nano == 2) {
                 nano_str = "(Prerelease)";
-        else
+
+        } else {
                 nano_str = "";
+        }
         g_print ("gstreamill version: %s\n", VERSION);
         g_print ("gstreamill build: %s %s\n", __DATE__, __TIME__);
         g_print ("gstreamer version : %d.%d.%d %s\n", major, minor, micro, nano_str);
@@ -131,11 +134,6 @@ int main (int argc, char *argv[])
         gboolean foreground;
         struct rlimit rlim;
 
-        if (getuid () != 0) {
-                g_print ("must be root user to run gstreamill\n");
-                exit (1);
-        }
-
         ctx = g_option_context_new (NULL);
         g_option_context_add_main_entries (ctx, options, NULL);
         g_option_context_add_group (ctx, gst_init_get_option_group ());
@@ -145,6 +143,16 @@ int main (int argc, char *argv[])
         }
         g_option_context_free (ctx);
         GST_DEBUG_CATEGORY_INIT (GSTREAMILL, "gstreamill", 0, "gstreamill log");
+
+        if (version) {
+                print_version_info ();
+                exit (0);
+        }
+
+        if (getuid () != 0) {
+                g_print ("must be root user to run gstreamill\n");
+                exit (1);
+        }
 
         /* stop gstreamill. */
         if (stop) {
@@ -163,14 +171,10 @@ int main (int argc, char *argv[])
                 exit (0);
         }
 
-        if (version) {
-                print_version_info ();
-                exit (0);
-        }
-
         if (job_file != NULL) {
                 /* gstreamill command with job, run in foreground */
                 foreground = TRUE;
+
         } else {
                 /* gstreamill command without job, run in background */
                 foreground = FALSE;
@@ -301,6 +305,7 @@ int main (int argc, char *argv[])
                         remove_pid_file ();
                         exit (1);
                 }
+
         } else {
 		/* run in foreground, start job */
                 gchar *job, *p;
