@@ -97,9 +97,11 @@ static void gstreamill_set_property (GObject *obj, guint prop_id, const GValue *
         case GSTREAMILL_PROP_DAEMON:
                 GSTREAMILL (obj)->daemon = g_value_get_boolean (value);
                 break;
+
         case GSTREAMILL_PROP_LOGDIR:
                 GSTREAMILL (obj)->log_dir = (gchar *)g_value_dup_string (value);
                 break;
+
         default:
                 G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
                 break;
@@ -114,9 +116,11 @@ static void gstreamill_get_property (GObject *obj, guint prop_id, GValue *value,
         case GSTREAMILL_PROP_DAEMON:
                 g_value_set_boolean (value, gstreamill->daemon);
                 break;
+
         case GSTREAMILL_PROP_LOGDIR:
                 g_value_set_string (value, gstreamill->log_dir);
                 break;
+
         default:
                 G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
                 break;
@@ -253,12 +257,14 @@ static gint stop_livejob (LiveJob *livejob, gint sig)
                 if (sig == SIGUSR2) {
                         /* normally stop */
                         GST_WARNING ("Stop livejob %s, pid %d.", livejob->name, livejob->worker_pid);
+
                 } else {
                         /* unexpect stop, restart job */
                         GST_WARNING ("Restart livejob %s, pid %d.", livejob->name, livejob->worker_pid);
                 }
                 kill (livejob->worker_pid, sig);
                 return 0;
+
         } else {
                 return 1; /* stop a stoped livejob */
         }
@@ -294,6 +300,7 @@ static void livejob_check_func (gpointer data, gpointer user_data)
                         /* restart livejob. */
                         stop_livejob (livejob, SIGKILL);
                         return;
+
                 } else {
                         GST_INFO ("%s.source.%s heartbeat %" GST_TIME_FORMAT,
                                         livejob->name,
@@ -328,6 +335,7 @@ static void livejob_check_func (gpointer data, gpointer user_data)
                                 /* restart livejob. */
                                 stop_livejob (livejob, SIGKILL);
                                 return;
+
                         } else {
                                 GST_INFO ("%s.encoders.%s.%s heartbeat %" GST_TIME_FORMAT,
                                                 livejob->name,
@@ -361,6 +369,7 @@ static void livejob_check_func (gpointer data, gpointer user_data)
                         /* restart livejob. */
                         stop_livejob (livejob, SIGKILL);
                         return;
+
                 } else {
                         GST_INFO ("%s.encoders.%s output heartbeat %" GST_TIME_FORMAT,
                                         livejob->name,
@@ -394,6 +403,7 @@ static void livejob_check_func (gpointer data, gpointer user_data)
                         stop_livejob (livejob, SIGKILL);
                         return;
                 }
+
         } else {
                 output->source.sync_error_times = 0;
         }
@@ -612,6 +622,7 @@ static LiveJob * get_livejob (Gstreamill *gstreamill, gchar *name)
                 livejob = list->data;
                 if (g_strcmp0 (livejob->name, name) == 0) {
                         break;
+
                 } else {
                         livejob = NULL;
                 }
@@ -664,15 +675,18 @@ static gchar * gstreamill_livejob_start (Gstreamill *gstreamill, gchar *job)
                         g_mutex_lock (&(gstreamill->livejob_list_mutex));
                         gstreamill->livejob_list = g_slist_append (gstreamill->livejob_list, livejob);
                         g_mutex_unlock (&(gstreamill->livejob_list_mutex));
+
                 } else {
                         g_object_unref (livejob);
                 }
+
         } else {
                 if (livejob_start (livejob) == 0) {
                         g_mutex_lock (&(gstreamill->livejob_list_mutex));
                         gstreamill->livejob_list = g_slist_append (gstreamill->livejob_list, livejob);
                         g_mutex_unlock (&(gstreamill->livejob_list_mutex));
                         p = g_strdup ("success");
+
                 } else {
                         p = g_strdup ("failure");
                 }
@@ -701,11 +715,13 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job)
                 GST_INFO ("live job arrived.");
                 p = gstreamill_livejob_start (gstreamill, job);
                 break;
+
         case JT_RECORDE:
         case JT_TRANSCODE:
         case JT_UNKNOWN:
                 p = g_strdup ("Unknown type");
                 break;
+
         case JT_ERROR:
                 p = g_strdup ("Error job");
         }
@@ -727,6 +743,7 @@ gchar * gstreamill_job_stop (Gstreamill *gstreamill, gchar *name)
         if (livejob != NULL) {
                 stop_livejob (livejob, SIGUSR2);
                 return g_strdup ("ok");
+
         } else {
                 return g_strdup ("livejob not found");
         }
@@ -871,6 +888,7 @@ gchar * gstreamill_get_master_m3u8playlist (Gstreamill *gstreamill, gchar *uri)
         p = g_strdup_printf ("/live/%s/playlist.m3u8", livejob->name);
         if (g_strcmp0 (p, uri) == 0) {
                 master_m3u8_playlist = g_strdup (livejob->output->master_m3u8_playlist);
+
         } else {
                 master_m3u8_playlist = NULL;
         }
@@ -1188,16 +1206,20 @@ gchar * gstreamill_gstreamer_stat (Gstreamill *gstreamill, gchar *uri)
         std_out = NULL;
         if (sscanf (uri, "/stat/gstreamer/%s$", buf) != EOF) {
                 cmd = g_strdup_printf ("gst-inspect-1.0 %s", buf);
+
         } else if (g_strcmp0 (uri, "/stat/gstreamer") == 0 || g_strcmp0 (uri, "/stat/gstreamer/") == 0) {
                 cmd = g_strdup ("gst-inspect-1.0");
         }
+
         if ((cmd != NULL) && !g_spawn_command_line_sync (cmd, &std_out, NULL, NULL, &error)) {
                 GST_ERROR ("gst-inspect error, reason: %s.", error->message);
                 g_error_free (error);
         }
+
         if (cmd != NULL) {
                 g_free (cmd);
         }
+
         if (std_out == NULL) {
                 std_out = g_strdup ("output is null, maybe gst-inspect-1.0 command not found.");
         }
