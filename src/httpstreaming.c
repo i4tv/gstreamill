@@ -78,9 +78,11 @@ static void httpstreaming_set_property (GObject *obj, guint prop_id, const GValu
         case HTTPSTREAMING_PROP_ADDRESS:
                 HTTPSTREAMING (obj)->address = (gchar *)g_value_dup_string (value);
                 break;
+
         case HTTPSTREAMING_PROP_GSTREAMILL:
                 HTTPSTREAMING (obj)->gstreamill = (Gstreamill *)g_value_get_pointer (value);
                 break;
+
         default:
                 G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
                 break;
@@ -95,9 +97,11 @@ static void httpstreaming_get_property (GObject *obj, guint prop_id, GValue *val
         case HTTPSTREAMING_PROP_ADDRESS:
                 g_value_set_string (value, httpstreaming->address);
                 break;
+
         case HTTPSTREAMING_PROP_GSTREAMILL:
                 g_value_set_pointer (value, httpstreaming->gstreamill);
                 break;
+
         default:
                 G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
                 break;
@@ -144,9 +148,11 @@ static gint send_data (EncoderOutput *encoder_output, RequestData *request_data)
                 iov[0].iov_len = priv_data->chunk_size_str_len - priv_data->send_count;
                 iov[1].iov_base = encoder_output->cache_addr + priv_data->send_position;
                 iov[1].iov_len = priv_data->chunk_size;
+
         } else if (priv_data->send_count < (priv_data->chunk_size_str_len + priv_data->chunk_size)) {
                 iov[1].iov_base = encoder_output->cache_addr + priv_data->send_position + (priv_data->send_count - priv_data->chunk_size_str_len);
                 iov[1].iov_len = priv_data->chunk_size - (priv_data->send_count - priv_data->chunk_size_str_len);
+
         } else if (priv_data->send_count > (priv_data->chunk_size_str_len + priv_data->chunk_size)) {
                 iov[2].iov_base = "\n";
                 iov[2].iov_len = 1;
@@ -171,12 +177,15 @@ static gint64 get_current_gop_end (EncoderOutput *encoder_output, PrivateData *p
         n = encoder_output->cache_size - priv_data->rap_addr;
         if (n >= 12) {
                 memcpy (&current_gop_size, encoder_output->cache_addr + priv_data->rap_addr + 8, 4);
+
         } else if (n > 8) {
                 memcpy (&current_gop_size, encoder_output->cache_addr + priv_data->rap_addr + 8, n - 8);
                 memcpy (&current_gop_size + n - 8, encoder_output->cache_addr, 12 - n);
+
         } else {
                 memcpy (&current_gop_size, encoder_output->cache_addr + 8 - n, 4);
         }
+
         if (current_gop_size == 0) {
                 /* current output gop. */
                 return -1;
@@ -217,6 +226,7 @@ static GstClockTime send_chunk (EncoderOutput *encoder_output, RequestData *requ
                 priv_data->rap_addr = current_gop_end_addr;
                 if (priv_data->send_position + 12 < encoder_output->cache_size) {
                         priv_data->send_position += 12;
+
                 } else {
                         priv_data->send_position = priv_data->send_position + 12 - encoder_output->cache_size;
                 }
@@ -229,27 +239,35 @@ static GstClockTime send_chunk (EncoderOutput *encoder_output, RequestData *requ
                         /* current output gop. */
                         if ((tail_addr - priv_data->send_position) > 16384) {
                                 priv_data->chunk_size = 16384;
+
                         } else if (tail_addr > priv_data->send_position) {
                                 /* send to tail. */
                                 priv_data->chunk_size = tail_addr - priv_data->send_position;
+
                         } else if (tail_addr == priv_data->send_position) {
                                 /* no data available, wait a while. */
                                 return 100 * GST_MSECOND + g_random_int_range (1, 1000000);
+
                         } else if ((encoder_output->cache_size - priv_data->send_position) > 16384) {
                                 priv_data->chunk_size = 16384;
+
                         } else {
                                 priv_data->chunk_size = encoder_output->cache_size - priv_data->send_position;
                         }
+
                 } else {
                         /* completely output gop. */
                         if ((current_gop_end_addr - priv_data->send_position) > 16384) {
                                 priv_data->chunk_size = 16384;
+
                         } else if (current_gop_end_addr > priv_data->send_position) {
                                 /* send to gop end. */
                                 priv_data->chunk_size = current_gop_end_addr - priv_data->send_position;
+
                         } else if (current_gop_end_addr == priv_data->send_position) {
                                 /* no data available, wait a while. */
                                 return 100 * GST_MSECOND + g_random_int_range (1, 1000000); //FIXME FIXME
+
                         } else {
                                 /* send to cache end. */
                                 priv_data->chunk_size = encoder_output->cache_size - priv_data->send_position;
@@ -264,6 +282,7 @@ static GstClockTime send_chunk (EncoderOutput *encoder_output, RequestData *requ
         ret = send_data (encoder_output, request_data);
         if (ret == -1) {
                 return GST_CLOCK_TIME_NONE;
+
         } else {
                 priv_data->send_count += ret;
                 request_data->bytes_send += ret;
@@ -271,6 +290,7 @@ static GstClockTime send_chunk (EncoderOutput *encoder_output, RequestData *requ
         if (priv_data->send_count == priv_data->chunk_size + priv_data->chunk_size_str_len + 2) {
                 /* send complete, wait 10 ms. */
                 return 10 * GST_MSECOND + g_random_int_range (1, 1000000);
+
         } else {
                 /* not send complete, blocking, wait 200 ms. */
                 return 200 * GST_MSECOND + g_random_int_range (1, 1000000);
@@ -311,6 +331,7 @@ static void get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *encod
                         if (httpserver_write (request_data->sock, encoder_output->cache_addr + rap_addr + 12, gop_size) != gop_size) {
                                 GST_ERROR ("Write segment error: %s", g_strerror (errno));
                         }
+
                 } else {
                         gint n;
 
@@ -394,6 +415,7 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
                                                        strlen (master_m3u8_playlist),
                                                        master_m3u8_playlist);
                                 g_free (master_m3u8_playlist);
+
                         } else {
                                 buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
                         }
@@ -402,6 +424,7 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
                         }
                         g_free (buf);
                         return 0;
+
                 } else if (*(encoder_output->head_addr) == *(encoder_output->tail_addr)) {
                         /* not ready */
                         GST_DEBUG ("%s not ready.", request_data->uri);
@@ -412,11 +435,13 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
                         g_free (buf);
                         gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
                         return 0;
+
                 } else if (g_str_has_suffix (request_data->uri, ".ts")) {
                         /* get mpeg2 transport stream segment */
                         get_mpeg2ts_segment (request_data, encoder_output);
                         gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
                         return 0;
+
                 } else if (g_str_has_suffix (request_data->uri, "playlist.m3u8")) {
                         /* get m3u8 playlist */
                         gchar *m3u8playlist;
@@ -435,6 +460,7 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
                         g_free (buf);
                         gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
                         return 0;
+
                 } else if (is_http_progress_play_url (request_data)) {
                         /* http progressive streaming request */
                         GST_INFO ("Play %s.", request_data->uri);
@@ -456,6 +482,7 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
                         }
                         g_free (buf);
                         return gst_clock_get_time (system_clock);
+
                 } else {
                         buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
                         if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
@@ -466,6 +493,7 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
                         return 0;
                 }
                 break;
+
         case HTTP_CONTINUE:
                 priv_data = request_data->priv_data;
                 if ((priv_data->livejob_age != priv_data->livejob->age) ||
@@ -482,11 +510,13 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
                         return gst_clock_get_time (system_clock) + 500 * GST_MSECOND + g_random_int_range (1, 1000000);
                 }
                 return send_chunk (encoder_output, request_data) + gst_clock_get_time (system_clock);
+
         case HTTP_FINISH:
                 g_free (request_data->priv_data);
                 request_data->priv_data = NULL;
                 gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
                 return 0;
+
         default:
                 GST_ERROR ("Unknown status %d", request_data->status);
                 buf = g_strdup_printf (http_400, PACKAGE_NAME, PACKAGE_VERSION);
