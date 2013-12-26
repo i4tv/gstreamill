@@ -57,6 +57,7 @@ static void print_version_info ()
         } else {
                 nano_str = "";
         }
+
         g_print ("gstreamill version: %s\n", VERSION);
         g_print ("gstreamill build: %s %s\n", __DATE__, __TIME__);
         g_print ("gstreamer version : %d.%d.%d %s\n", major, minor, micro, nano_str);
@@ -67,6 +68,7 @@ static gint init_log (gchar *log_path)
         gint ret;
 
         _log = log_new ("log_path", log_path, NULL);
+
         ret = log_set_log_handler (_log);
         if (ret != 0) {
                 return ret;
@@ -271,12 +273,16 @@ int main (int argc, char *argv[])
                 }
         }
 
+        /* set maximum of core file */
         rlim.rlim_cur = RLIM_INFINITY;
         rlim.rlim_max = RLIM_INFINITY;
-        if (setrlimit (RLIMIT_AS, &rlim) == -1) {
+        if (setrlimit (RLIMIT_CORE, &rlim) == -1) {
                 GST_ERROR ("setrlimit error: %s", g_strerror (errno));
         }
+
+        /* ignore SIGPIPE */
         signal (SIGPIPE, SIG_IGN);
+
         GST_WARNING ("gstreamill started ...");
 
         loop = g_main_loop_new (NULL, FALSE);
