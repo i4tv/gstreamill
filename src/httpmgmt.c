@@ -79,9 +79,11 @@ static void httpmgmt_set_property (GObject *obj, guint prop_id, const GValue *va
         case HTTPMGMT_PROP_ADDRESS:
                 HTTPMGMT (obj)->address = (gchar *)g_value_dup_string (value);
                 break;
+
         case HTTPMGMT_PROP_GSTREAMILL:
                 HTTPMGMT (obj)->gstreamill = (Gstreamill *)g_value_get_pointer (value);
                 break;
+
         default:
                 G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
                 break;
@@ -96,9 +98,11 @@ static void httpmgmt_get_property (GObject *obj, guint prop_id, GValue *value, G
         case HTTPMGMT_PROP_ADDRESS:
                 g_value_set_string (value, httpmgmt->address);
                 break;
+
         case HTTPMGMT_PROP_GSTREAMILL:
                 g_value_set_pointer (value, httpmgmt->gstreamill);
                 break;
+
         default:
                 G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
                 break;
@@ -137,6 +141,7 @@ static void start_job (HTTPMgmt *httpmgmt, RequestData *request_data)
                 p = gstreamill_job_start (httpmgmt->gstreamill, var);
                 buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), p);
                 g_free (p);
+
         } else {
                 buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
         }
@@ -183,27 +188,35 @@ static void request_gstreamill_stat (HTTPMgmt *httpmgmt, RequestData *request_da
                 p = gstreamill_stat (httpmgmt->gstreamill);
                 buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), p);
                 g_free (p);
+
         } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamill/livejob/number")) {
                 p = g_strdup_printf ("%d", gstreamill_livejob_number (httpmgmt->gstreamill));
                 buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (p), p);
                 g_free (p);
+
         } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamill/livejob/")) {
                 p = gstreamill_job_stat (httpmgmt->gstreamill, request_data->uri);
                 buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (p), p);
                 g_free (p);
+
         } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamill/starttime")) {
                 p = g_strdup_printf ("%s", gstreamill_get_start_time (httpmgmt->gstreamill));
                 buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (p), p);
                 g_free (p);
+
         } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamill/version")) {
                 buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (VERSION), VERSION);
+
         } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamill/builddate")) {
                 buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (__DATE__), __DATE__);
+
         } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamill/buildtime")) {
                 buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (__TIME__), __TIME__);
+
         } else {
                 buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
         }
+
         if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
                 GST_ERROR ("Write sock error: %s", g_strerror (errno));
         }
@@ -236,12 +249,16 @@ static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
                 GST_INFO ("new request arrived, socket is %d, uri is %s", request_data->sock, request_data->uri);
                 if (g_str_has_prefix (request_data->uri, "/start")) {
                         start_job (httpmgmt, request_data);
+
                 } else if (g_str_has_prefix (request_data->uri, "/stop")) {
                         stop_job (httpmgmt, request_data);
+
                 } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamill")) {
                         request_gstreamill_stat (httpmgmt, request_data);
+
                 } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamer")) {
                         request_gstreamer_stat (httpmgmt, request_data);
+
                 } else {
                         buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
                         if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
@@ -250,8 +267,10 @@ static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
                         g_free (buf);
                 }
                 break;
+
         case HTTP_FINISH:
                 break;
+
         default:
                 GST_ERROR ("Unknown status %d", request_data->status);
                 buf = g_strdup_printf (http_400, PACKAGE_NAME, PACKAGE_VERSION);
