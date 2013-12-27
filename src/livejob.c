@@ -2210,6 +2210,7 @@ gchar * livejob_get_master_m3u8_playlist (LiveJob *livejob)
         } else {
                 g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, livejobdesc_m3u8streaming_version (livejob->job));
         }
+
         for (i = 0; i < livejob->output->encoder_count; i++) {
                 p = g_strdup_printf ("encoder.%d.elements.x264enc.property.bitrate", i);
                 value = livejobdesc_element_property_value (livejob->job, p);
@@ -2218,6 +2219,7 @@ gchar * livejob_get_master_m3u8_playlist (LiveJob *livejob)
                 g_free (p);
                 g_free (value);
         }
+
         p = master_m3u8_playlist->str;
         g_string_free (master_m3u8_playlist, FALSE);
 
