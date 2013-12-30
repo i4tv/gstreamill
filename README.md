@@ -77,9 +77,23 @@ gstreamill have been tested in ubuntu 13.10.
 
     gstreamill -s
 
-* debug job descript
+* invoke a job
+
+default management port is 20118, invoke test job as flowing:
+
+    curl -H "Content-Type: application/json" --data @examples/test.job http://localhost:20118/start
+
+* invode a job in foreground:
 
     gstreamill -j job_descript_file
+
+* access output use vlc
+
+    http://localhost:20119/live/test/encoder/0
+
+or
+
+    http://localhost:20119/live/test/playlist.m3u8
 
 ## management interface
 
