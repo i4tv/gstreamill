@@ -46,9 +46,9 @@
                 }
             },
             "bins" : [
-                    "appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc name=voaacenc0! queue ! muxer.",
-                    "appsrc name=video ! queue ! x264enc ! queue ! muxer.",
-                    "mpegtsmux name=muxer ! queue ! appsink sync=FALSE"
+                "appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc name=voaacenc0! queue ! muxer.",
+                "appsrc name=video ! queue ! x264enc ! queue ! muxer.",
+                "mpegtsmux name=muxer ! queue ! appsink sync=FALSE"
             ],
             "udpstreaming" : "127.0.0.1:12345"
         },
@@ -76,9 +76,9 @@
                 }
             },
             "bins" : [
-                    "appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc name=voaacenc1 ! queue ! muxer.",
-                    "appsrc name=video ! queue ! x264enc ! queue ! muxer.",
-                    "mpegtsmux name=muxer ! queue ! appsink sync=FALSE"
+                "appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc name=voaacenc1 ! queue ! muxer.",
+                "appsrc name=video ! queue ! x264enc ! queue ! muxer.",
+                "mpegtsmux name=muxer ! queue ! appsink sync=FALSE"
             ],
             "udpstreaming" : "127.0.0.1:22345"
         }
