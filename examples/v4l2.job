@@ -8,24 +8,34 @@
                     "blocksize" : 8192
                 },
                 "caps" : "audio/x-raw,width=16,depth=16,rate=48000,channels=2,endianness=1234"
+            },
+            "v4l2src" : {
+                "property" : {
+                    "device" : "/dev/video0",
+                    "io-mode" : 1,
+                    "do-timestamp" : true
+                }
             }
         },
         "bins" : [
-            "alsasrc device=hw:2 ! queue ! appsink name=audio",
-            "v4l2src device=/dev/video0 ! queue! deinterlace mode=0 method=5 ! queue ! appsink name=video"
+            "alsasrc device=hw:0 ! queue ! appsink name=audio",
+            "v4l2src ! queue ! appsink name=video"
         ]
     },
     "encoders" : [
         {
             "elements" : {
-                "videoscale" : {
-                    "caps" : "video/x-raw,width=720,height=576"
+                "appsrc" : {
+                    "property" : {
+                        "format" : 3,
+                        "is-live" : true
+                    }
                 },
                 "x264enc" : {
                     "property" : {
                         "bitrate" : 1000,
                         "byte-stream" : true,
-                        "threads" : 6,
+                        "threads" : 4,
                         "bframes" :3
                     }
                 },
@@ -36,8 +46,8 @@
                 }
             },
             "bins" : [
-                "appsrc name=video ! queue ! x264enc ! queue ! muxer.",
                 "appsrc name=audio ! audioresample ! audioconvert ! voaacenc ! muxer.",
+                "appsrc name=video ! videoconvert ! queue ! x264enc ! queue ! muxer.",
                 "mpegtsmux name=muxer ! queue ! appsink"
             ]
         }
