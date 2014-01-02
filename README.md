@@ -198,4 +198,4 @@ job_name is value of the "name" field in job description.
 
 There are more examples in examples directory of source.
 
-Talk about gstreamill on [i4tv](http://www.i4tv.org:10080/osqa/) or report a bug on [issues](https://github.com/zhangping/gstreamill/issues) page.
+Talk about gstreamill on [gstreamill](https://groups.google.com/forum/#!forum/gstreamill) or report a bug on [issues](https://github.com/zhangping/gstreamill/issues) page.
