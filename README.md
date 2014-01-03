@@ -134,6 +134,29 @@ job_name is value of the "name" field in job description.
 
 ## JOB DESCRIPTION
 
+JOB file structure:
+
+    {
+        'name' : 'cctv2',
+        'debug' : '3',
+        'source' : {
+            ...
+        },
+        'encoders' : [
+            ...
+        ],
+        'm3u8streaming' : {
+            ...
+        }
+    }
+
+name : job name
+debug : debug option, reference gst-launch gst-debug, optional.
+source : source of encoders.
+encoders : encoders.
+m3u8streaming : m3u8 streaming
+
+
     {
         "name" : "test",
         "debug" : "gstreamill:3",
