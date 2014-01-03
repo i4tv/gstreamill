@@ -150,11 +150,11 @@ JOB file structure:
         }
     }
 
-* name : job name
-* debug : debug option, reference gst-launch gst-debug, optional.
-* source : source of encoders.
-* encoders : encoders.
-* m3u8streaming : m3u8 streaming
+    * name : job name
+    * debug : debug option, reference gst-launch gst-debug, optional.
+    * source : source of encoders.
+    * encoders : encoders.
+    * m3u8streaming : m3u8 streaming
 
 
     {
