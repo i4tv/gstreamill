@@ -162,6 +162,39 @@ encoders : encoders.
 
 m3u8streaming : m3u8 streaming
 
+structure of source:
+
+   "source" : {
+        "elements" : {
+            ...
+        },
+        "bins" : [
+            ...
+        ]
+    }
+
+structure of elements:
+
+    "elements" : {
+        "element" : {
+            "property" : {
+                ...
+            },
+            "caps" : "..."
+        },
+        ...
+    }
+
+structure of bins:
+
+    "bins" : [
+        bin
+        bin
+        ...
+    ]
+
+
+example:
 
     {
         "name" : "test",
