@@ -25,7 +25,7 @@ gstreamill is under active development and isn't production ready.
                   |           |          +------ HTTP
        LIVE ------+           |
                               |
-                       REST interface
+                REST interface (json over http post)
 
 # INSTALL
 
