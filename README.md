@@ -21,9 +21,11 @@ gstreamill is under active development and isn't production ready.
                   |                      +------- UDP
        CVBS ------+    +------------+    |
                   +----+ gstreamill +----+------ M3U8
-       SDI -------+    +------------+    |
-                  |                      +------ HTTP
-       LIVE ------+
+       SDI -------+    +------+-----+    |
+                  |           |          +------ HTTP
+       LIVE ------+           |
+                              |
+                       REST interface
 
 # INSTALL
 
