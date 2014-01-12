@@ -188,11 +188,18 @@ structure of elements:
 structure of bins:
 
     "bins" : [
-        bin
-        bin
+        bin,
+        bin,
         ...
     ]
 
+syntax of bin is like gst-launch, for example:
+
+    "udpsrc ! queue ! tsdemux name=demuxer",
+    "demuxer.video ! queue ! mpeg2dec ! queue ! appsink name = video",
+    "demuxer.audio ! mpegaudioparse ! queue ! mad ! queue ! appsink name = audio" 
+
+first bin with tsdemux has sometimes pads, second and third bin link with first bin: demuxer.video and demuxer.audio. second bin with appsink named video and third bin with appsink named audio. source bins must have bin with appsink that is corespond endoders' source.
 
 example:
 
