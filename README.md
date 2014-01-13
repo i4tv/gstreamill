@@ -4,8 +4,6 @@
 
 gstreamill is an open source, GPL licensed "stream mill" based on gstreamer-1.0. To send query to a gstreamill server to provoke a live encode, transcode or recoder job. query is carried in http post, post body is the job to be provoke, job is descripted in json.
 
-gstreamill is under active development and isn't production ready.
-
 ## Highlight
 
    * hls, http progressive streaminig, udp output.
