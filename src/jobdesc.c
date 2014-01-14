@@ -13,7 +13,7 @@
 GST_DEBUG_CATEGORY_EXTERN (GSTREAMILL);
 #define GST_CAT_DEFAULT GSTREAMILL
 
-gboolean livejobdesc_is_valid (gchar *job)
+gboolean jobdesc_is_valid (gchar *job)
 {
         JSON_Value *val;
         JSON_Object *obj;
@@ -40,7 +40,7 @@ gboolean livejobdesc_is_valid (gchar *job)
         return TRUE;
 }
 
-gchar * livejobdesc_get_name (gchar *job)
+gchar * jobdesc_get_name (gchar *job)
 {
         JSON_Value *val;
         JSON_Object *obj;
@@ -55,7 +55,7 @@ gchar * livejobdesc_get_name (gchar *job)
         return ret;
 }
 
-gint livejobdesc_streams_count (gchar *job, gchar *pipeline)
+gint jobdesc_streams_count (gchar *job, gchar *pipeline)
 {
         JSON_Value *val;
         JSON_Object *obj;
@@ -89,7 +89,7 @@ gint livejobdesc_streams_count (gchar *job, gchar *pipeline)
         return count;
 }
 
-gint livejobdesc_encoders_count (gchar *job)
+gint jobdesc_encoders_count (gchar *job)
 {
         JSON_Value *val;
         JSON_Object *obj;
@@ -105,7 +105,7 @@ gint livejobdesc_encoders_count (gchar *job)
         return count;
 }
 
-JobType livejobdesc_get_type (gchar *job)
+JobType jobdesc_get_type (gchar *job)
 {
         JSON_Value *val;
         JSON_Object *obj;
@@ -123,7 +123,7 @@ JobType livejobdesc_get_type (gchar *job)
         return JT_UNKNOWN;
 }
 
-gchar * livejobdesc_get_debug (gchar *job)
+gchar * jobdesc_get_debug (gchar *job)
 {
         JSON_Value *val;
         JSON_Object *obj;
@@ -143,7 +143,7 @@ gchar * livejobdesc_get_debug (gchar *job)
         return debug;
 }
 
-gchar ** livejobdesc_bins (gchar *job, gchar *pipeline)
+gchar ** jobdesc_bins (gchar *job, gchar *pipeline)
 {
         JSON_Value *val;
         JSON_Object *obj;
@@ -174,7 +174,7 @@ gchar ** livejobdesc_bins (gchar *job, gchar *pipeline)
         return p;
 }
 
-gchar * livejobdesc_udpstreaming (gchar *job, gchar *pipeline)
+gchar * jobdesc_udpstreaming (gchar *job, gchar *pipeline)
 {
         JSON_Value *val;
         JSON_Object *obj;
@@ -199,7 +199,7 @@ gchar * livejobdesc_udpstreaming (gchar *job, gchar *pipeline)
         return udpstreaming;
 }
 
-gchar ** livejobdesc_element_properties (gchar *job, gchar *element)
+gchar ** jobdesc_element_properties (gchar *job, gchar *element)
 {
         JSON_Value *val;
         JSON_Object *obj;
@@ -242,7 +242,7 @@ gchar ** livejobdesc_element_properties (gchar *job, gchar *element)
  *
  * @property: (in): encoders.x.elements.element.property.name or source.elements.element.property.name
  */
-gchar * livejobdesc_element_property_value (gchar *job, gchar *property)
+gchar * jobdesc_element_property_value (gchar *job, gchar *property)
 {
         JSON_Value *val;
         JSON_Object *obj;
@@ -300,7 +300,7 @@ gchar * livejobdesc_element_property_value (gchar *job, gchar *property)
         return p;
 }
 
-gchar * livejobdesc_element_caps (gchar *job, gchar *element)
+gchar * jobdesc_element_caps (gchar *job, gchar *element)
 {
         JSON_Value *val;
         JSON_Object *obj;
@@ -331,7 +331,7 @@ gchar * livejobdesc_element_caps (gchar *job, gchar *element)
         return p;
 }
 
-gboolean livejobdesc_m3u8streaming (gchar *job)
+gboolean jobdesc_m3u8streaming (gchar *job)
 {
         JSON_Value *val;
         JSON_Object *obj;
@@ -350,7 +350,7 @@ gboolean livejobdesc_m3u8streaming (gchar *job)
         return m3u8streaming;
 }
 
-guint livejobdesc_m3u8streaming_version (gchar *job)
+guint jobdesc_m3u8streaming_version (gchar *job)
 {
         JSON_Value *val;
         JSON_Object *obj;
@@ -364,7 +364,7 @@ guint livejobdesc_m3u8streaming_version (gchar *job)
         return version;
 }
 
-guint livejobdesc_m3u8streaming_window_size (gchar *job)
+guint jobdesc_m3u8streaming_window_size (gchar *job)
 {
         JSON_Value *val;
         JSON_Object *obj;
@@ -378,7 +378,7 @@ guint livejobdesc_m3u8streaming_window_size (gchar *job)
         return window_size;
 }
 
-GstClockTime livejobdesc_m3u8streaming_segment_duration (gchar *job)
+GstClockTime jobdesc_m3u8streaming_segment_duration (gchar *job)
 {
         JSON_Value *val;
         JSON_Object *obj;

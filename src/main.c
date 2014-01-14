@@ -212,7 +212,7 @@ int main (int argc, char *argv[])
                 p = mmap (NULL, job_length, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
                 job = g_strdup (p);
 
-                if ((job != NULL) && (!livejobdesc_is_valid (job))) {
+                if ((job != NULL) && (!jobdesc_is_valid (job))) {
                         GST_ERROR ("invalide job description");
                         exit (1);
                 }

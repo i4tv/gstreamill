@@ -671,14 +671,14 @@ static GstElement * element_create (LiveJob *livejob, gchar *pipeline, gchar *pa
         }
 
         p = g_strdup_printf ("%s.elements.%s.property", pipeline, name);
-        properties = livejobdesc_element_properties (livejob->job, p);
+        properties = jobdesc_element_properties (livejob->job, p);
         g_free (p);
         if (properties != NULL) {
                 /* set propertys in element property. */
                 pp = properties;
                 while (*pp != NULL) {
                         p = g_strdup_printf ("%s.elements.%s.property.%s", pipeline, name, *pp);
-                        value = livejobdesc_element_property_value (livejob->job, p);
+                        value = jobdesc_element_property_value (livejob->job, p);
                         g_free (p);
                         if (!set_element_property (element, *pp, value)) {
                                 GST_ERROR ("Set property error %s=%s", *pp, value);
@@ -895,7 +895,7 @@ static GSList * bins_parse (LiveJob *livejob, gchar *pipeline)
         GSList *list;
 
         list = NULL;
-        binsp = bins = livejobdesc_bins (livejob->job, pipeline);
+        binsp = bins = jobdesc_bins (livejob->job, pipeline);
         while (*binsp != NULL) {
                 bin = g_slice_new (Bin);
                 bin->links = NULL;
@@ -928,7 +928,7 @@ static GSList * bins_parse (LiveJob *livejob, gchar *pipeline)
                                         link->sink_name = g_strndup (p1, g_strrstr (p1, ".") - p1);
                                         link->sink_pad_name = g_strdup (link->sink_name);
                                         p = g_strdup_printf ("%s.elements.%s.caps", pipeline, src_name);
-                                        link->caps = livejobdesc_element_caps (livejob->job, p);
+                                        link->caps = jobdesc_element_caps (livejob->job, p);
                                         g_free (p);
                                         bin->links = g_slist_append (bin->links, link);
                                 }
@@ -946,7 +946,7 @@ static GSList * bins_parse (LiveJob *livejob, gchar *pipeline)
                                         link->sink_name = p1;
                                         link->sink_pad_name = NULL;
                                         p = g_strdup_printf ("%s.elements.%s.caps", pipeline, src_name);
-                                        link->caps = livejobdesc_element_caps (livejob->job, p);
+                                        link->caps = jobdesc_element_caps (livejob->job, p);
                                         g_free (p);
                                         if (src_pad_name == NULL) {
                                                 bin->links = g_slist_append (bin->links, link);
@@ -1533,11 +1533,11 @@ static gsize status_output_size (LiveJob *livejob)
 
         size = (strlen (livejob->job) / 8 + 1) * 8; /* job description, 64 bit alignment */
         size += sizeof (guint64); /* state */
-        size += livejobdesc_streams_count (livejob->job, "source") * sizeof (struct _SourceStreamState);
-        for (i = 0; i < livejobdesc_encoders_count (livejob->job); i++) {
+        size += jobdesc_streams_count (livejob->job, "source") * sizeof (struct _SourceStreamState);
+        for (i = 0; i < jobdesc_encoders_count (livejob->job); i++) {
                 size += sizeof (GstClockTime); /* encoder heartbeat */
                 pipeline = g_strdup_printf ("encoder.%d", i);
-                size += livejobdesc_streams_count (livejob->job, pipeline) * sizeof (struct _EncoderStreamState); /* encoder state */
+                size += jobdesc_streams_count (livejob->job, pipeline) * sizeof (struct _EncoderStreamState); /* encoder state */
                 g_free (pipeline);
                 size += sizeof (guint64); /* cache head */
                 size += sizeof (guint64); /* cache tail */
@@ -1555,7 +1555,7 @@ static gint source_extract_streams (LiveJob *livejob)
         SourceStream *stream;
         gchar **bins, **p, *bin;
 
-        p = bins = livejobdesc_bins (livejob->job, "source");
+        p = bins = jobdesc_bins (livejob->job, "source");
         while (*p != NULL) {
                 bin = *p;
                 regex = g_regex_new ("! *appsink *name *= *(?<name>[^ ]*)[^!]*$", G_REGEX_OPTIMIZE, 0, NULL);
@@ -1647,7 +1647,7 @@ static void udpstreaming_parse (LiveJob *livejob, Encoder *encoder)
         gchar *udpstreaming, **pp;
         GstElement *udpsink;
 
-        udpstreaming = livejobdesc_udpstreaming (livejob->job, encoder->name);
+        udpstreaming = jobdesc_udpstreaming (livejob->job, encoder->name);
         if (udpstreaming == NULL) {
                 encoder->udpstreaming = NULL;
                 encoder->appsrc = NULL;
@@ -1674,7 +1674,7 @@ static guint encoder_initialize (LiveJob *livejob)
         gchar **bins;
         gsize count;
 
-        count = livejobdesc_encoders_count (livejob->job);
+        count = jobdesc_encoders_count (livejob->job);
         for (i = 0; i < count; i++) {
                 pipeline = g_strdup_printf ("encoder.%d", i);
                 encoder = encoder_new ("name", pipeline, NULL);
@@ -1682,12 +1682,12 @@ static guint encoder_initialize (LiveJob *livejob)
                 encoder->id = i;
                 encoder->last_running_time = GST_CLOCK_TIME_NONE;
                 encoder->output = &(livejob->output->encoders[i]);
-                encoder->segment_duration = livejobdesc_m3u8streaming_segment_duration (encoder->livejob->job);
+                encoder->segment_duration = jobdesc_m3u8streaming_segment_duration (encoder->livejob->job);
                 encoder->duration_accumulation = 0;
                 encoder->last_segment_duration = 0;
                 encoder->force_key_count = 0;
 
-                bins = livejobdesc_bins (livejob->job, pipeline);
+                bins = jobdesc_bins (livejob->job, pipeline);
                 if (encoder_extract_streams (encoder, bins) != 0) {
                         g_strfreev (bins);
                         return 1;
@@ -1732,7 +1732,7 @@ static guint encoder_initialize (LiveJob *livejob)
                 udpstreaming_parse (livejob, encoder);
 
                 /* m3u8 playlist */
-                if (livejobdesc_m3u8streaming (livejob->job)) {
+                if (jobdesc_m3u8streaming (livejob->job)) {
                         gchar *name;
 
                         name = g_strdup_printf ("/%s.%d", livejob->name, i);
@@ -1789,18 +1789,18 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
         output->state = (guint64 *)p;
         p += sizeof (guint64); /* state */
         output->source.sync_error_times = 0;
-        output->source.stream_count = livejobdesc_streams_count (livejob->job, "source");
+        output->source.stream_count = jobdesc_streams_count (livejob->job, "source");
         output->source.streams = (struct _SourceStreamState *)p;
         for (i = 0; i < output->source.stream_count; i++) {
                 output->source.streams[i].last_heartbeat = gst_clock_get_time (livejob->system_clock);
         }
         p += output->source.stream_count * sizeof (struct _SourceStreamState);
-        output->encoder_count = livejobdesc_encoders_count (livejob->job);
+        output->encoder_count = jobdesc_encoders_count (livejob->job);
         output->encoders = (struct _EncoderOutput *)g_malloc (output->encoder_count * sizeof (struct _EncoderOutput));
         for (i = 0; i < output->encoder_count; i++) {
                 name = g_strdup_printf ("encoder.%d", i);
                 g_strlcpy (output->encoders[i].name, name, STREAM_NAME_LEN);
-                output->encoders[i].stream_count = livejobdesc_streams_count (livejob->job, name);
+                output->encoders[i].stream_count = jobdesc_streams_count (livejob->job, name);
                 g_free (name);
                 name = g_strdup_printf ("/%s.%d", livejob->name, i);
                 output->encoders[i].semaphore = sem_open (name, O_CREAT, 0600, 1);
@@ -1934,17 +1934,17 @@ void livejob_reset (LiveJob *livejob)
 	livejob->last_start_time = gst_date_time_to_iso8601_string (start_time);
 	gst_date_time_unref (start_time);
 
-	version = livejobdesc_m3u8streaming_version (livejob->job);
+	version = jobdesc_m3u8streaming_version (livejob->job);
 	if (version == 0) {
 		version = 3;
 	}
-	window_size = livejobdesc_m3u8streaming_window_size (livejob->job);
+	window_size = jobdesc_m3u8streaming_window_size (livejob->job);
 
 	for (i = 0; i < livejob->output->encoder_count; i++) {
 		encoder = &(livejob->output->encoders[i]);
 		name = g_strdup_printf ("/%s.%d", livejob->name, i);
 
-		if (livejobdesc_m3u8streaming (livejob->job)) {
+		if (jobdesc_m3u8streaming (livejob->job)) {
 			/* reset m3u8 playlist */
 			if (encoder->m3u8_playlist != NULL) {
 				g_rw_lock_clear (&(encoder->m3u8_playlist_rwlock));
@@ -2197,23 +2197,23 @@ gchar * livejob_get_master_m3u8_playlist (LiveJob *livejob)
         gchar *p, *value;
         gint i;
 
-        if (!livejobdesc_m3u8streaming (livejob->job)) {
+        if (!jobdesc_m3u8streaming (livejob->job)) {
                 /* m3u8streaming no enabled */
                 return "not found";
         }
 
         master_m3u8_playlist = g_string_new ("");
         g_string_append_printf (master_m3u8_playlist, M3U8_HEADER_TAG);
-        if (livejobdesc_m3u8streaming_version (livejob->job) == 0) {
+        if (jobdesc_m3u8streaming_version (livejob->job) == 0) {
                 g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, 3);
 
         } else {
-                g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, livejobdesc_m3u8streaming_version (livejob->job));
+                g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, jobdesc_m3u8streaming_version (livejob->job));
         }
 
         for (i = 0; i < livejob->output->encoder_count; i++) {
                 p = g_strdup_printf ("encoder.%d.elements.x264enc.property.bitrate", i);
-                value = livejobdesc_element_property_value (livejob->job, p);
+                value = jobdesc_element_property_value (livejob->job, p);
                 g_string_append_printf (master_m3u8_playlist, M3U8_STREAM_INF_TAG, 1, value);
                 g_string_append_printf (master_m3u8_playlist, "encoder/%d/playlist.m3u8\n", i);
                 g_free (p);
