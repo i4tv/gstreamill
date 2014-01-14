@@ -17,7 +17,7 @@
 #include <gst/video/video.h>
 
 #include "livejob.h"
-#include "livejobdesc.h"
+#include "jobdesc.h"
 
 GST_DEBUG_CATEGORY_EXTERN (GSTREAMILL);
 #define GST_CAT_DEFAULT GSTREAMILL

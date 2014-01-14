@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 #include "parson.h"
-#include "livejobdesc.h"
+#include "jobdesc.h"
 
 GST_DEBUG_CATEGORY_EXTERN (GSTREAMILL);
 #define GST_CAT_DEFAULT GSTREAMILL

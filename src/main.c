@@ -22,7 +22,7 @@
 #include "httpstreaming.h"
 #include "httpmgmt.h"
 #include "parson.h"
-#include "livejobdesc.h"
+#include "jobdesc.h"
 #include "log.h"
 
 #define PID_FILE "/var/run/gstreamill.pid"
