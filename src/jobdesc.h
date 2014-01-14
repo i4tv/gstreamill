@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef __LIVEJOBDESC_H__
-#define __LIVEJOBDESC_H__
+#ifndef __JOBDESC_H__
+#define __JOBDESC_H__
 
 #include <gst/gst.h>
 
@@ -34,4 +34,4 @@ guint livejobdesc_m3u8streaming_version (gchar *job);
 guint livejobdesc_m3u8streaming_window_size (gchar *job);
 GstClockTime livejobdesc_m3u8streaming_segment_duration (gchar *job);
 
-#endif /* __LIVEJOBDESC_H__ */
+#endif /* __JOBDESC_H__ */
