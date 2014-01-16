@@ -8,6 +8,11 @@
                     "uri" : "udp://127.0.0.1:6003"
                 }
             },
+            "tsdemux" : {
+                "property" : {
+                    "program-number" : 12
+                }
+            },
             "appsink" : {
                 "property" : {
                    "sync" : false,
