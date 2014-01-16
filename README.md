@@ -47,6 +47,13 @@ gstreamill have been tested in ubuntu 13.10.
 
 # USING GSTREAMILL
 
+## Prerequisites
+
+   * gstreamer1.0-plugins-ugly
+   * gstreamer1.0-plugins-bad
+   * gstreamer1.0-plugins-good
+   * gstreamer1.0-plugins-base
+
 ## command line
 
 * help
