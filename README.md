@@ -35,8 +35,8 @@ gstreamill have been tested in ubuntu 13.10.
    * autoconf
    * automake
    * libtool
-   * gstreamer-devel
-   * gstreamer-plugins-base-devel
+   * libgstreamer1.0-dev
+   * libgstreamer-plugins-base1.0-dev
 
 ## Compile and install
 
