@@ -198,78 +198,45 @@ structure of bins:
         ...
     ]
 
-syntax of bin is like gst-launch, for example:
+bins is an array of bin, syntax of bin is like gst-launch, for example:
 
     "udpsrc ! queue ! tsdemux name=demuxer",
     "demuxer.video ! queue ! mpeg2dec ! queue ! appsink name = video",
     "demuxer.audio ! mpegaudioparse ! queue ! mad ! queue ! appsink name = audio" 
 
-first bin with tsdemux has sometimes pads, second and third bin link with first bin: demuxer.video and demuxer.audio. second bin with appsink named video and third bin with appsink named audio. source bins must have bin with appsink that is corespond endoders' source.
+in this example, first bin with tsdemux has sometimes pads, second and third bin link with first bin: demuxer.video and demuxer.audio. second bin with appsink named video and third bin with appsink named audio. source bins must have bin with appsink that is corespond endoders' source.
 
-example:
+structure of encoders:
+
+    "encoders" : [
+        encoder,
+        ...
+    ]
+
+encoders is an array of encoder, encoder is an object, every encoder correspneds an encode output, that means gstreamill support mutilty bitrate output.
+
+structure of encoder:
 
     {
-        "name" : "test",
-        "debug" : "gstreamill:3",
-        "source" : {
-            "elements" : {
-                "videotestsrc" : {
-                    "caps" : "video/x-raw,width=720,height=576,framerate=25/1"
-                },
-                "audiotestsrc" : {
-                    "property" : {
-                        "wave" : 8
-                    }
-                }
-            },
-            "bins" : [
-                "videotestsrc ! appsink name=video",
-                "audiotestsrc ! appsink name=audio"
-            ]
+        "elements" : {
+            ...
         },
-        "encoders" : [
-            {
-                "elements": {
-                    "appsrc" : {
-                        "property" : {
-                            "format" : 3,
-                            "is-live" : true
-                        }
-                    },
-                    "x264enc" : {
-                        "property" : {
-                            "bitrate" : 1000,
-                            "byte-stream" : true,
-                            "threads" : 4,
-                            "bframes" : 3
-                        }
-                    },
-                    "faac" : {
-                        "property" : {
-                            "name" : "faac",
-                            "outputformat" : 1
-                        }
-                    },
-                    "appsink" : {
-                        "property" : {
-                            "sync" : false
-                        }
-                    }
-                },
-                "bins" : [
-                    "appsrc name=video ! queue ! x264enc ! queue ! muxer.",
-                    "appsrc name=audio ! audioconvert ! audioresample ! voaacenc ! muxer.",
-                    "mpegtsmux name=muxer ! queue ! appsink"
-                ]
-            }
+        "bins" : [
+            ...
         ],
+        "udpstreaming" : "uri"
+    }
+
+elements and bins is just the same as source structure in syntax, the differnce is encoder bins must have bins with appsrc element, appsrc must have name property, the value of name is the same as appsink name value in source bins. udpstreaming uri is udp streaming output uri, it's optional.
+
+m3u8streaming is hls output, it's optional:
+
         "m3u8streaming" : {
             "version" : 3,
             "window-size" : 10,
             "segment-duration" : 3.00
         }
-    }
 
-There are more examples in examples directory of source.
+There are examples in examples directory of source.
 
 Talk about gstreamill on [gstreamill](https://groups.google.com/forum/#!forum/gstreamill) or report a bug on [issues](https://github.com/zhangping/gstreamill/issues) page.
