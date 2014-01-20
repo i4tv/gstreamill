@@ -10,6 +10,34 @@
 #include "livejob.h"
 
 /*
+ * livejob_encoder_output_rap_timestamp:
+ * @encoder_output: (in): the encoder output.
+ * @rap_addr: (in): the rap addr to get its timestamp
+ *
+ * get the timestamp of random access point of encoder_output.
+ *
+ * Returns: GstClockTime type timestamp.
+ *
+ */
+GstClockTime livejob_encoder_output_rap_timestamp (EncoderOutput *encoder_output, guint64 rap_addr)
+{
+        GstClockTime timestamp;
+
+        if (rap_addr + 8 <= encoder_output->cache_size) {
+                memcpy (&timestamp, encoder_output->cache_addr + rap_addr, 8);
+
+        } else {
+                gint n;
+
+                n = encoder_output->cache_size - rap_addr;
+                memcpy (&timestamp, encoder_output->cache_addr + rap_addr, n);
+                memcpy (&timestamp + n, encoder_output->cache_addr, 8 - n);
+        }
+
+        return timestamp;
+}
+
+/*
  * livejob_encoder_output_gop_size:
  * @encoder_output: (in): the encoder output.
  * @rap_addr: (in): the rap addr

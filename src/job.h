@@ -236,6 +236,5 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon);
 void livejob_reset (LiveJob *livejob);
 gint livejob_start (LiveJob *livejob);
 void livejob_stat_update (LiveJob *livejob);
-GstClockTime livejob_encoder_output_rap_timestamp (EncoderOutput *encoder_output, guint64 rap_addr);
 
 #endif /* __JOB_H__ */
