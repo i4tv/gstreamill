@@ -1,5 +1,5 @@
 /*
- *  livejob
+ *  job
  *
  *  Copyright (C) Zhang Ping <zhangping@163.com>
  */
@@ -653,7 +653,7 @@ static gboolean set_element_property (GstElement *element, gchar* name, gchar* v
         return TRUE;
 }
 
-static GstElement * element_create (LiveJob *livejob, gchar *pipeline, gchar *param)
+static GstElement * element_create (gchar *job, gchar *pipeline, gchar *param)
 {
         GstElement *element;
         gchar *name, *p, **pp, **pp1, **properties, *value;
@@ -671,14 +671,14 @@ static GstElement * element_create (LiveJob *livejob, gchar *pipeline, gchar *pa
         }
 
         p = g_strdup_printf ("%s.elements.%s.property", pipeline, name);
-        properties = jobdesc_element_properties (livejob->job, p);
+        properties = jobdesc_element_properties (job, p);
         g_free (p);
         if (properties != NULL) {
                 /* set propertys in element property. */
                 pp = properties;
                 while (*pp != NULL) {
                         p = g_strdup_printf ("%s.elements.%s.property.%s", pipeline, name, *pp);
-                        value = jobdesc_element_property_value (livejob->job, p);
+                        value = jobdesc_element_property_value (job, p);
                         g_free (p);
                         if (!set_element_property (element, *pp, value)) {
                                 GST_ERROR ("Set property error %s=%s", *pp, value);
@@ -886,7 +886,7 @@ static gchar * get_bin_name (gchar *bin)
         return NULL;
 }
 
-static GSList * bins_parse (LiveJob *livejob, gchar *pipeline)
+static GSList * bins_parse (gchar *job, gchar *pipeline)
 {
         GstElement *element, *src;
         gchar *p, *p1, *src_name, *src_pad_name, **pp, **pp1, **bins, **binsp;
@@ -895,7 +895,7 @@ static GSList * bins_parse (LiveJob *livejob, gchar *pipeline)
         GSList *list;
 
         list = NULL;
-        binsp = bins = jobdesc_bins (livejob->job, pipeline);
+        binsp = bins = jobdesc_bins (job, pipeline);
         while (*binsp != NULL) {
                 bin = g_slice_new (Bin);
                 bin->links = NULL;
@@ -928,14 +928,14 @@ static GSList * bins_parse (LiveJob *livejob, gchar *pipeline)
                                         link->sink_name = g_strndup (p1, g_strrstr (p1, ".") - p1);
                                         link->sink_pad_name = g_strdup (link->sink_name);
                                         p = g_strdup_printf ("%s.elements.%s.caps", pipeline, src_name);
-                                        link->caps = jobdesc_element_caps (livejob->job, p);
+                                        link->caps = jobdesc_element_caps (job, p);
                                         g_free (p);
                                         bin->links = g_slist_append (bin->links, link);
                                 }
                                 pp++;
                                 continue;
                         }
-                        element = element_create (livejob, pipeline, p1);
+                        element = element_create (job, pipeline, p1);
                         if (element != NULL) {
                                 if (src_name != NULL) {
                                         link = g_slice_new (Link);
@@ -946,7 +946,7 @@ static GSList * bins_parse (LiveJob *livejob, gchar *pipeline)
                                         link->sink_name = p1;
                                         link->sink_pad_name = NULL;
                                         p = g_strdup_printf ("%s.elements.%s.caps", pipeline, src_name);
-                                        link->caps = jobdesc_element_caps (livejob->job, p);
+                                        link->caps = jobdesc_element_caps (job, p);
                                         g_free (p);
                                         if (src_pad_name == NULL) {
                                                 bin->links = g_slist_append (bin->links, link);
@@ -1603,7 +1603,7 @@ static guint source_initialize (LiveJob *livejob)
         }
 
         /* parse bins and create pipeline. */
-        livejob->source->bins = bins_parse (livejob, "source");
+        livejob->source->bins = bins_parse (livejob->job, "source");
         if (livejob->source->bins == NULL) {
                 return 1;
         }
@@ -1717,7 +1717,7 @@ static guint encoder_initialize (LiveJob *livejob)
                 }
 
                 /* parse bins and create pipeline. */
-                encoder->bins = bins_parse (livejob, pipeline);
+                encoder->bins = bins_parse (livejob->job, pipeline);
                 if (encoder->bins == NULL) {
                 	g_free (pipeline);
                         return 1;
