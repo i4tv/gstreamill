@@ -1585,7 +1585,6 @@ static guint source_initialize (LiveJob *livejob)
         SourceStream *stream;
 
         livejob->source = source_new ("name", "source", NULL);
-        livejob->source->livejob = livejob;
         if (source_extract_streams (livejob) != 0) {
                 return 1;
         }

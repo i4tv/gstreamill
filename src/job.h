@@ -78,7 +78,6 @@ struct _Source {
 
         gchar *name;
         GstState state; /* state of the pipeline */
-        LiveJob *livejob;
         GSList *bins;
         GstElement *pipeline;
 
