@@ -10,7 +10,7 @@
 
 #include <gst/gst.h>
 #include "config.h"
-#include "livejob.h"
+#include "job.h"
 #include "httpserver.h"
 #include "gstreamill.h"
 

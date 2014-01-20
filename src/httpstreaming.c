@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "livejob.h"
 #include "httpstreaming.h"
 
 GST_DEBUG_CATEGORY_EXTERN (GSTREAMILL);

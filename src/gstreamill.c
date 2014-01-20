@@ -16,7 +16,6 @@
 #include "gstreamill.h"
 #include "parson.h"
 #include "jobdesc.h"
-#include "livejob.h"
 #include "m3u8playlist.h"
 
 GST_DEBUG_CATEGORY_EXTERN (GSTREAMILL);
