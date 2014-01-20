@@ -1548,14 +1548,14 @@ static gsize status_output_size (LiveJob *livejob)
         return size;
 }
 
-static gint source_extract_streams (LiveJob *livejob)
+static gint source_extract_streams (Source *source, gchar *job)
 {
         GRegex *regex;
         GMatchInfo *match_info;
         SourceStream *stream;
         gchar **bins, **p, *bin;
 
-        p = bins = jobdesc_bins (livejob->job, "source");
+        p = bins = jobdesc_bins (job, "source");
         while (*p != NULL) {
                 bin = *p;
                 regex = g_regex_new ("! *appsink *name *= *(?<name>[^ ]*)[^!]*$", G_REGEX_OPTIMIZE, 0, NULL);
@@ -1566,7 +1566,7 @@ static gint source_extract_streams (LiveJob *livejob)
                         stream->name = g_match_info_fetch_named (match_info, "name");
                         GST_INFO ("source stream %s found %s", stream->name, bin);
                         g_match_info_free (match_info);
-                        g_array_append_val (livejob->source->streams, stream);
+                        g_array_append_val (source->streams, stream);
 
                 } else if (g_strrstr (bin, "appsink") != NULL) {
                         GST_ERROR ("appsink name property must be set");
@@ -1585,7 +1585,7 @@ static guint source_initialize (LiveJob *livejob)
         SourceStream *stream;
 
         livejob->source = source_new ("name", "source", NULL);
-        if (source_extract_streams (livejob) != 0) {
+        if (source_extract_streams (livejob->source, livejob->job) != 0) {
                 return 1;
         }
 
