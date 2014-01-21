@@ -189,5 +189,8 @@ typedef struct _LiveJobOutput {
 
 Source * source_initialize (gchar *job, SourceState source_stat);
 guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, Source *source);
+GstClockTime encoder_output_rap_timestamp (EncoderOutput *encoder_output, guint64 rap_addr);
+guint64 encoder_output_rap_next (EncoderOutput *encoder_output, guint64 rap_addr);
+guint64 encoder_output_gop_size (EncoderOutput *encoder_output, guint64 rap_addr);
 
 #endif /* __JOB_H__ */

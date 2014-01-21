@@ -309,18 +309,18 @@ static void get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *encod
         /* seek gop */
         rap_addr = *(encoder_output->head_addr);
         while (rap_addr != *(encoder_output->last_rap_addr)) {
-                t = livejob_encoder_output_rap_timestamp (encoder_output, rap_addr);
+                t = encoder_output_rap_timestamp (encoder_output, rap_addr);
                 if (timestamp == t) {
                         break;
                 }
-                rap_addr = livejob_encoder_output_rap_next (encoder_output, rap_addr);
+                rap_addr = encoder_output_rap_next (encoder_output, rap_addr);
         }
 
         /* segment found, send it */
         if (t == timestamp) {
                 gsize gop_size;
 
-                gop_size = livejob_encoder_output_gop_size (encoder_output, rap_addr);
+                gop_size = encoder_output_gop_size (encoder_output, rap_addr);
 		sem_post (encoder_output->semaphore);
                 buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "video/mpeg", gop_size, ""); 
                 if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
