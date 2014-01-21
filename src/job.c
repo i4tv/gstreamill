@@ -1525,19 +1525,19 @@ static gint create_encoder_pipeline (Encoder *encoder)
         return 0;
 }
 
-static gsize status_output_size (LiveJob *livejob)
+static gsize status_output_size (gchar *job)
 {
         gsize size;
         gint i;
         gchar *pipeline;
 
-        size = (strlen (livejob->job) / 8 + 1) * 8; /* job description, 64 bit alignment */
+        size = (strlen (job) / 8 + 1) * 8; /* job description, 64 bit alignment */
         size += sizeof (guint64); /* state */
-        size += jobdesc_streams_count (livejob->job, "source") * sizeof (struct _SourceStreamState);
-        for (i = 0; i < jobdesc_encoders_count (livejob->job); i++) {
+        size += jobdesc_streams_count (job, "source") * sizeof (struct _SourceStreamState);
+        for (i = 0; i < jobdesc_encoders_count (job); i++) {
                 size += sizeof (GstClockTime); /* encoder heartbeat */
                 pipeline = g_strdup_printf ("encoder.%d", i);
-                size += jobdesc_streams_count (livejob->job, pipeline) * sizeof (struct _EncoderStreamState); /* encoder state */
+                size += jobdesc_streams_count (job, pipeline) * sizeof (struct _EncoderStreamState); /* encoder state */
                 g_free (pipeline);
                 size += sizeof (guint64); /* cache head */
                 size += sizeof (guint64); /* cache tail */
@@ -1766,7 +1766,7 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
         LiveJobOutput *output;
         gchar *name, *p;
 
-        livejob->output_size = status_output_size (livejob);
+        livejob->output_size = status_output_size (livejob->job);
         if (daemon) {
                 /* daemon, use share memory */
                 fd = shm_open (livejob->name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
