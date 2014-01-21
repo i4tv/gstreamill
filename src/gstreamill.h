@@ -12,7 +12,7 @@
 #include <mqueue.h>
 
 #include "config.h"
-#include "job.h"
+#include "livejob.h"
 
 #define SYNC_THRESHHOLD 3000000000 /* 1000ms */
 #define HEARTBEAT_THRESHHOLD 7000000000 /* 2000ms */

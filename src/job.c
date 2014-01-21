@@ -21,12 +21,6 @@ GST_DEBUG_CATEGORY_EXTERN (GSTREAMILL);
 #define GST_CAT_DEFAULT GSTREAMILL
 
 enum {
-        LIVEJOB_PROP_0,
-        LIVEJOB_PROP_NAME,
-        LIVEJOB_PROP_JOB,
-};
-
-enum {
         SOURCE_PROP_0,
         SOURCE_PROP_NAME,
         SOURCE_PROP_STATE
@@ -46,10 +40,6 @@ static void encoder_set_property (GObject *obj, guint prop_id, const GValue *val
 static void encoder_get_property (GObject *obj, guint prop_id, GValue *value, GParamSpec *pspec);
 static void encoder_dispose (GObject *obj);
 static void encoder_finalize (GObject *obj);
-static void livejob_set_property (GObject *obj, guint prop_id, const GValue *value, GParamSpec *pspec);
-static void livejob_get_property (GObject *obj, guint prop_id, GValue *value, GParamSpec *pspec);
-static void livejob_dispose (GObject *obj);
-static void livejob_finalize (GObject *obj);
 
 static void source_class_init (SourceClass *sourceclass)
 {
@@ -307,176 +297,6 @@ static void encoder_finalize (GObject *obj)
         g_array_free (encoder->streams, FALSE);
 
         G_OBJECT_CLASS (parent_class)->finalize (obj);
-}
-
-static void livejob_class_init (LiveJobClass *livejobclass)
-{
-        GObjectClass *g_object_class = G_OBJECT_CLASS (livejobclass);
-        GParamSpec *param;
-
-        g_object_class->set_property = livejob_set_property;
-        g_object_class->get_property = livejob_get_property;
-        g_object_class->dispose = livejob_dispose;
-        g_object_class->finalize = livejob_finalize;
-
-        param = g_param_spec_string (
-                "name",
-                "name",
-                "name of livejob",
-                NULL,
-                G_PARAM_WRITABLE | G_PARAM_READABLE
-        );
-        g_object_class_install_property (g_object_class, LIVEJOB_PROP_NAME, param);
-
-        param = g_param_spec_string (
-                "job",
-                "job",
-                "job description of json type",
-                NULL,
-                G_PARAM_WRITABLE | G_PARAM_READABLE
-        );
-        g_object_class_install_property (g_object_class, LIVEJOB_PROP_JOB, param);
-}
-
-static void livejob_init (LiveJob *livejob)
-{
-        livejob->system_clock = gst_system_clock_obtain ();
-        g_object_set (livejob->system_clock, "clock-type", GST_CLOCK_TYPE_REALTIME, NULL);
-        livejob->encoder_array = g_array_new (FALSE, FALSE, sizeof (gpointer));
-}
-
-static void livejob_set_property (GObject *obj, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-        g_return_if_fail (IS_LIVEJOB (obj));
-
-        switch (prop_id) {
-        case LIVEJOB_PROP_NAME:
-                LIVEJOB (obj)->name = (gchar *)g_value_dup_string (value);
-                break;
-
-        case LIVEJOB_PROP_JOB:
-                LIVEJOB (obj)->job = (gchar *)g_value_dup_string (value);
-                break;
-
-        default:
-                G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
-                break;
-        }
-}
-
-static void livejob_get_property (GObject *obj, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-        LiveJob *livejob = LIVEJOB (obj);
-
-        switch (prop_id) {
-        case LIVEJOB_PROP_NAME:
-                g_value_set_string (value, livejob->name);
-                break;
-
-        case LIVEJOB_PROP_JOB:
-                g_value_set_string (value, livejob->job);
-                break;
-
-        default:
-                G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
-                break;
-        }
-}
-
-static void livejob_dispose (GObject *obj)
-{
-        LiveJob *livejob = LIVEJOB (obj);
-        GObjectClass *parent_class = g_type_class_peek (G_TYPE_OBJECT);
-        LiveJobOutput *output;
-        gint i;
-        gchar *name;
-
-        output = livejob->output;
-        for (i = 0; i < output->encoder_count; i++) {
-                /* share memory release */
-                name = g_strdup_printf ("%s.%d", livejob->name, i);
-                if (output->encoders[i].cache_fd != -1) {
-                        g_close (output->encoders[i].cache_fd, NULL);
-                        if (munmap (output->encoders[i].cache_addr, SHM_SIZE) == -1) {
-                                GST_ERROR ("munmap %s error: %s", name, g_strerror (errno));
-                        }
-                        if (shm_unlink (name) == -1) {
-                                GST_ERROR ("shm_unlink %s error: %s", name, g_strerror (errno));
-                        }
-                }
-                g_free (name);
-
-                /* semaphore and message queue release */
-                name = g_strdup_printf ("/%s.%d", livejob->name, i);
-                if (sem_close (output->encoders[i].semaphore) == -1) {
-                        GST_ERROR ("sem_close %s error: %s", name, g_strerror (errno));
-                }
-                if (sem_unlink (name) == -1) {
-                        GST_ERROR ("sem_unlink %s error: %s", name, g_strerror (errno));
-                }
-                if (mq_close (output->encoders[i].mqdes) == -1) {
-                        GST_ERROR ("mq_close %s error: %s", name, g_strerror (errno));
-                }
-                if (mq_unlink (name) == -1) {
-                        GST_ERROR ("mq_unlink %s error: %s", name, g_strerror (errno));
-                }
-                g_free (name);
-        }
-
-        if (livejob->output_fd != -1) {
-                g_close (livejob->output_fd, NULL);
-                if (munmap (output->job_description, livejob->output_size) == -1) {
-                        GST_ERROR ("munmap %s error: %s", livejob->name, g_strerror (errno));
-                }
-                if (shm_unlink (livejob->name) == -1) {
-                        GST_ERROR ("shm_unlink %s error: %s", livejob->name, g_strerror (errno));
-                }
-        }
-        g_free (output);
-
-        if (livejob->name != NULL) {
-                g_free (livejob->name);
-                livejob->name = NULL;
-        }
-
-        if (livejob->job != NULL) {
-                g_free (livejob->job);
-                livejob->job = NULL;
-        }
-
-        G_OBJECT_CLASS (parent_class)->dispose (obj);
-}
-
-static void livejob_finalize (GObject *obj)
-{
-        LiveJob *livejob = LIVEJOB (obj);
-        GObjectClass *parent_class = g_type_class_peek (G_TYPE_OBJECT);
-
-        g_array_free (livejob->encoder_array, TRUE);
-
-        G_OBJECT_CLASS (parent_class)->finalize (obj);
-}
-
-GType livejob_get_type (void)
-{
-        static GType type = 0;
-
-        if (type) return type;
-        static const GTypeInfo info = {
-                sizeof (LiveJobClass),
-                NULL, /* base class initializer */
-                NULL, /* base class finalizer */
-                (GClassInitFunc)livejob_class_init,
-                NULL,
-                NULL,
-                sizeof (LiveJob),
-                0,
-                (GInstanceInitFunc)livejob_init,
-                NULL
-        };
-        type = g_type_register_static (G_TYPE_OBJECT, "LiveJob", &info, 0);
-
-        return type;
 }
 
 static void print_one_tag (const GstTagList * list, const gchar * tag, gpointer user_data)
