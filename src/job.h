@@ -232,7 +232,6 @@ struct _LiveJobClass {
 #define livejob_new(...)       (g_object_new(TYPE_LIVEJOB, ## __VA_ARGS__, NULL))
 
 GType livejob_get_type (void);
-gint livejob_initialize (LiveJob *livejob, gboolean daemon);
 void livejob_reset (LiveJob *livejob);
 gint livejob_start (LiveJob *livejob);
 void livejob_stat_update (LiveJob *livejob);
