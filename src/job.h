@@ -139,9 +139,9 @@ struct _Encoder {
 
         gchar *name;
         gint id;
+        GstClock *system_clock;
         GstState state; /* state of the pipeline */
         GstClockTime *output_heartbeat;
-        LiveJob *livejob;
         GSList *bins;
         GstElement *pipeline;
         GArray *streams;

@@ -1679,11 +1679,10 @@ static guint encoder_initialize (LiveJob *livejob)
         for (i = 0; i < count; i++) {
                 pipeline = g_strdup_printf ("encoder.%d", i);
                 encoder = encoder_new ("name", pipeline, NULL);
-                encoder->livejob = livejob;
                 encoder->id = i;
                 encoder->last_running_time = GST_CLOCK_TIME_NONE;
                 encoder->output = &(livejob->output->encoders[i]);
-                encoder->segment_duration = jobdesc_m3u8streaming_segment_duration (encoder->livejob->job);
+                encoder->segment_duration = jobdesc_m3u8streaming_segment_duration (livejob->job);
                 encoder->duration_accumulation = 0;
                 encoder->last_segment_duration = 0;
                 encoder->force_key_count = 0;
