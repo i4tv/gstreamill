@@ -1583,15 +1583,15 @@ static gint source_extract_streams (Source *source, gchar *job)
         return 0;
 }
 
-static guint source_initialize (LiveJob *livejob, SourceState source_stat)
+static Source * source_initialize (gchar *job, SourceState source_stat)
 {
         gint i, j;
         Source *source;
         SourceStream *stream;
 
         source = source_new ("name", "source", NULL);
-        if (source_extract_streams (source, livejob->job) != 0) {
-                return 1;
+        if (source_extract_streams (source, job) != 0) {
+                return NULL;
         }
 
         for (i = 0; i < source->streams->len; i++) {
@@ -1607,14 +1607,13 @@ static guint source_initialize (LiveJob *livejob, SourceState source_stat)
         }
 
         /* parse bins and create pipeline. */
-        source->bins = bins_parse (livejob->job, "source");
+        source->bins = bins_parse (job, "source");
         if (source->bins == NULL) {
-                return 1;
+                return NULL;
         }
         source->pipeline = create_source_pipeline (source);
-        livejob->source = source;
 
-        return 0;
+        return source;
 }
 
 static gint encoder_extract_streams (Encoder *encoder, gchar **bins)
@@ -2061,7 +2060,8 @@ gint livejob_start (LiveJob *livejob)
         GstStateChangeReturn ret;
         gint i;
 
-        if (source_initialize (livejob, livejob->output->source) != 0) {
+        livejob->source = source_initialize (livejob->job, livejob->output->source);
+        if (livejob->source == NULL) {
                 GST_ERROR ("Initialize livejob source error.");
                 return 1;
         }
