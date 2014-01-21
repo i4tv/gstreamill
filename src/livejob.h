@@ -7,7 +7,9 @@
 #ifndef __LIVEJOB_H__
 #define __LIVEJOB_H__
 
-#include "job.h"
+#include "encoders.h"
+
+#define SHM_SIZE 64*1024*1024
 
 typedef struct _LiveJob LiveJob;
 typedef struct _LiveJobClass LiveJobClass;
