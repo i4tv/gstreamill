@@ -4,8 +4,8 @@
  *  Copyright (C) Zhang Ping <zhangping@163.com>
  */
 
-#ifndef __JOB_H__
-#define __JOB_H__
+#ifndef __ENCODERS_H__
+#define __ENCODERS_H__
 
 #include <gst/gst.h>
 #include <semaphore.h>
@@ -182,4 +182,4 @@ GstClockTime encoder_output_rap_timestamp (EncoderOutput *encoder_output, guint6
 guint64 encoder_output_rap_next (EncoderOutput *encoder_output, guint64 rap_addr);
 guint64 encoder_output_gop_size (EncoderOutput *encoder_output, guint64 rap_addr);
 
-#endif /* __JOB_H__ */
+#endif /* __ENCODERS_H__ */
