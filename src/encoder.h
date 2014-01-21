@@ -1,5 +1,5 @@
 /*
- *  job
+ *  encoder
  *
  *  Copyright (C) Zhang Ping <zhangping@163.com>
  */
