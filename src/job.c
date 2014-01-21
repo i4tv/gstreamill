@@ -213,6 +213,8 @@ static void encoder_class_init (EncoderClass *encoderclass)
 
 static void encoder_init (Encoder *encoder)
 {
+        encoder->system_clock = gst_system_clock_obtain ();
+        g_object_set (encoder->system_clock, "clock-type", GST_CLOCK_TYPE_REALTIME, NULL);
         encoder->streams = g_array_new (FALSE, FALSE, sizeof (gpointer));
 }
 
@@ -1299,7 +1301,7 @@ static GstFlowReturn encoder_appsink_callback (GstAppSink * sink, gpointer user_
         EncoderOutput *output;
 
         output = encoder->output;
-        *(output->heartbeat) = gst_clock_get_time (encoder->livejob->system_clock);
+        *(output->heartbeat) = gst_clock_get_time (encoder->system_clock);
         sample = gst_app_sink_pull_sample (GST_APP_SINK (sink));
         buffer = gst_sample_get_buffer (sample);
         sem_wait (encoder->output->semaphore);
@@ -1704,7 +1706,7 @@ static guint encoder_initialize (LiveJob *livejob)
                                 if (g_strcmp0 (source->name, stream->name) == 0) {
                                         stream->source = source;
                                         stream->current_position = -1;
-                                        stream->system_clock = encoder->livejob->system_clock;
+                                        stream->system_clock = encoder->system_clock;
                                         g_array_append_val (source->encoders, stream);
                                         break;
                                 }
