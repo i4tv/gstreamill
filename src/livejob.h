@@ -7,7 +7,8 @@
 #ifndef __LIVEJOB_H__
 #define __LIVEJOB_H__
 
-#include "job.h"
+#include "source.h"
+#include "encoder.h"
 
 #define SHM_SIZE 64*1024*1024
 
