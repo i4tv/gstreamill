@@ -1558,7 +1558,7 @@ static gint source_extract_streams (Source *source, gchar *job)
         return 0;
 }
 
-static Source * source_initialize (gchar *job, SourceState source_stat)
+Source * source_initialize (gchar *job, SourceState source_stat)
 {
         gint i, j;
         Source *source;
@@ -1643,7 +1643,7 @@ static void udpstreaming_parse (LiveJob *livejob, Encoder *encoder)
         encoder->cache_size = 0;
 }
 
-static guint encoder_initialize (LiveJob *livejob)
+guint encoder_initialize (LiveJob *livejob)
 {
         gint i, j, k;
         gchar *pipeline;
@@ -1865,53 +1865,5 @@ void livejob_reset (LiveJob *livejob)
 
 		g_free (name);
 	}
-}
-
-/*
- * livejob_start:
- * @livejob: (in): livejob to be start.
- *
- * initialize source, encoders and start livejob.
- *
- * Returns: 0 on success, otherwise return 1.
- *
- */
-gint livejob_start (LiveJob *livejob)
-{
-        Encoder *encoder;
-        GstStateChangeReturn ret;
-        gint i;
-
-        livejob->source = source_initialize (livejob->job, livejob->output->source);
-        if (livejob->source == NULL) {
-                GST_ERROR ("Initialize livejob source error.");
-                return 1;
-        }
-
-        if (encoder_initialize (livejob) != 0) {
-                GST_ERROR ("Initialize livejob encoder error.");
-                return 1;
-        }
-
-        /* set pipelines as PLAYING state */
-        gst_element_set_state (livejob->source->pipeline, GST_STATE_PLAYING);
-        livejob->source->state = GST_STATE_PLAYING;
-        for (i = 0; i < livejob->encoder_array->len; i++) {
-                encoder = g_array_index (livejob->encoder_array, gpointer, i);
-                ret = gst_element_set_state (encoder->pipeline, GST_STATE_PLAYING);
-                if (ret == GST_STATE_CHANGE_FAILURE) {
-                        GST_ERROR ("Set %s to play error.", encoder->name);
-                }
-                if (encoder->udpstreaming != NULL) {
-                        ret = gst_element_set_state (encoder->udpstreaming, GST_STATE_PLAYING);
-                        if (ret == GST_STATE_CHANGE_FAILURE) {
-                                GST_ERROR ("Set %s udpstreaming to play error.", encoder->name);
-                        }
-                }
-                encoder->state = GST_STATE_PLAYING;
-        }
-        *(livejob->output->state) = GST_STATE_PLAYING;
- 
-        return 0;
 }
 
