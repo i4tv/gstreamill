@@ -1584,15 +1584,16 @@ static gint source_extract_streams (Source *source, gchar *job)
 static guint source_initialize (LiveJob *livejob)
 {
         gint i, j;
+        Source *source;
         SourceStream *stream;
 
-        livejob->source = source_new ("name", "source", NULL);
-        if (source_extract_streams (livejob->source, livejob->job) != 0) {
+        source = source_new ("name", "source", NULL);
+        if (source_extract_streams (source, livejob->job) != 0) {
                 return 1;
         }
 
-        for (i = 0; i < livejob->source->streams->len; i++) {
-                stream = g_array_index (livejob->source->streams, gpointer, i);
+        for (i = 0; i < source->streams->len; i++) {
+                stream = g_array_index (source->streams, gpointer, i);
                 stream->current_position = -1;
                 stream->system_clock = livejob->system_clock;
                 stream->encoders = g_array_new (FALSE, FALSE, sizeof (gpointer));
@@ -1604,11 +1605,12 @@ static guint source_initialize (LiveJob *livejob)
         }
 
         /* parse bins and create pipeline. */
-        livejob->source->bins = bins_parse (livejob->job, "source");
-        if (livejob->source->bins == NULL) {
+        source->bins = bins_parse (livejob->job, "source");
+        if (source->bins == NULL) {
                 return 1;
         }
-        livejob->source->pipeline = create_source_pipeline (livejob->source);
+        source->pipeline = create_source_pipeline (source);
+        livejob->source = source;
 
         return 0;
 }
