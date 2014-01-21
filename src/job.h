@@ -177,16 +177,6 @@ struct _EncoderClass {
 
 GType encoder_get_type (void);
 
-typedef struct _LiveJobOutput {
-        gchar *job_description;
-        guint64 *state;
-        SourceState source;
-        gint64 encoder_count;
-        EncoderOutput *encoders;
-
-        gchar *master_m3u8_playlist;
-} LiveJobOutput;
-
 Source * source_initialize (gchar *job, SourceState source_stat);
 guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, Source *source);
 GstClockTime encoder_output_rap_timestamp (EncoderOutput *encoder_output, guint64 rap_addr);

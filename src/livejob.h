@@ -12,6 +12,16 @@
 typedef struct _LiveJob LiveJob;
 typedef struct _LiveJobClass LiveJobClass;
 
+typedef struct _LiveJobOutput {
+        gchar *job_description;
+        guint64 *state;
+        SourceState source;
+        gint64 encoder_count;
+        EncoderOutput *encoders;
+
+        gchar *master_m3u8_playlist;
+} LiveJobOutput;
+
 struct _LiveJob {
         GObject parent;
 
