@@ -86,6 +86,8 @@ static void source_class_init (SourceClass *sourceclass)
 
 static void source_init (Source *source)
 {
+        source->system_clock = gst_system_clock_obtain ();
+        g_object_set (source->system_clock, "clock-type", GST_CLOCK_TYPE_REALTIME, NULL);
         source->streams = g_array_new (FALSE, FALSE, sizeof (gpointer));
 }
 
@@ -1581,7 +1583,7 @@ static gint source_extract_streams (Source *source, gchar *job)
         return 0;
 }
 
-static guint source_initialize (LiveJob *job, SourceState source_stat)
+static guint source_initialize (LiveJob *livejob, SourceState source_stat)
 {
         gint i, j;
         Source *source;
@@ -1595,7 +1597,7 @@ static guint source_initialize (LiveJob *job, SourceState source_stat)
         for (i = 0; i < source->streams->len; i++) {
                 stream = g_array_index (source->streams, gpointer, i);
                 stream->current_position = -1;
-                stream->system_clock = livejob->system_clock;
+                stream->system_clock = source->system_clock;
                 stream->encoders = g_array_new (FALSE, FALSE, sizeof (gpointer));
                 for (j = 0; j < SOURCE_RING_SIZE; j++) {
                         stream->ring[j] = NULL;

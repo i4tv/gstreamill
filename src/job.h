@@ -77,6 +77,7 @@ struct _Source {
         GObject parent;
 
         gchar *name;
+        GstClock *system_clock;
         GstState state; /* state of the pipeline */
         GSList *bins;
         GstElement *pipeline;
