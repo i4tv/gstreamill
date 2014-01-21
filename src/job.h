@@ -233,6 +233,6 @@ struct _LiveJobClass {
 
 GType livejob_get_type (void);
 Source * source_initialize (gchar *job, SourceState source_stat);
-guint encoder_initialize (LiveJob *livejob);
+guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, Source *source);
 
 #endif /* __JOB_H__ */

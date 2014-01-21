@@ -1621,12 +1621,12 @@ static gint encoder_extract_streams (Encoder *encoder, gchar **bins)
         return 0;
 }
 
-static void udpstreaming_parse (LiveJob *livejob, Encoder *encoder)
+static void udpstreaming_parse (gchar *job, Encoder *encoder)
 {
         gchar *udpstreaming, **pp;
         GstElement *udpsink;
 
-        udpstreaming = jobdesc_udpstreaming (livejob->job, encoder->name);
+        udpstreaming = jobdesc_udpstreaming (job, encoder->name);
         if (udpstreaming == NULL) {
                 encoder->udpstreaming = NULL;
                 encoder->appsrc = NULL;
@@ -1643,88 +1643,98 @@ static void udpstreaming_parse (LiveJob *livejob, Encoder *encoder)
         encoder->cache_size = 0;
 }
 
-guint encoder_initialize (LiveJob *livejob)
+guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, Source *source)
 {
         gint i, j, k;
-        gchar *pipeline;
+        gchar *job_name, *pipeline;
         Encoder *encoder;
-        EncoderStream *stream;
-        SourceStream *source;
+        EncoderStream *estream;
+        SourceStream *sstream;
         gchar **bins;
         gsize count;
 
-        count = jobdesc_encoders_count (livejob->job);
+        job_name = jobdesc_get_name (job);
+        count = jobdesc_encoders_count (job);
         for (i = 0; i < count; i++) {
                 pipeline = g_strdup_printf ("encoder.%d", i);
                 encoder = encoder_new ("name", pipeline, NULL);
                 encoder->id = i;
                 encoder->last_running_time = GST_CLOCK_TIME_NONE;
-                encoder->output = &(livejob->output->encoders[i]);
-                encoder->segment_duration = jobdesc_m3u8streaming_segment_duration (livejob->job);
+                encoder->output = &(encoders[i]);
+                encoder->segment_duration = jobdesc_m3u8streaming_segment_duration (job);
                 encoder->duration_accumulation = 0;
                 encoder->last_segment_duration = 0;
                 encoder->force_key_count = 0;
 
-                bins = jobdesc_bins (livejob->job, pipeline);
+                bins = jobdesc_bins (job, pipeline);
                 if (encoder_extract_streams (encoder, bins) != 0) {
+                        g_free (job_name);
+                        g_free (pipeline);
                         g_strfreev (bins);
                         return 1;
                 }
                 g_strfreev (bins);
 
                 for (j = 0; j < encoder->streams->len; j++) {
-                        stream = g_array_index (encoder->streams, gpointer, j);
-                        stream->state = &(livejob->output->encoders[i].streams[j]);
-                        g_strlcpy (livejob->output->encoders[i].streams[j].name, stream->name, STREAM_NAME_LEN);
-                        stream->encoder = encoder;
-                        stream->source = NULL;
-                        for (k = 0; k < livejob->source->streams->len; k++) {
-                                source = g_array_index (livejob->source->streams, gpointer, k);
-                                if (g_strcmp0 (source->name, stream->name) == 0) {
-                                        stream->source = source;
-                                        stream->current_position = -1;
-                                        stream->system_clock = encoder->system_clock;
-                                        g_array_append_val (source->encoders, stream);
+                        estream = g_array_index (encoder->streams, gpointer, j);
+                        estream->state = &(encoders[i].streams[j]);
+                        g_strlcpy (encoders[i].streams[j].name, estream->name, STREAM_NAME_LEN);
+                        estream->encoder = encoder;
+                        estream->source = NULL;
+                        for (k = 0; k < source->streams->len; k++) {
+                                sstream = g_array_index (source->streams, gpointer, k);
+                                if (g_strcmp0 (sstream->name, estream->name) == 0) {
+                                        estream->source = sstream;
+                                        estream->current_position = -1;
+                                        estream->system_clock = encoder->system_clock;
+                                        g_array_append_val (sstream->encoders, estream);
                                         break;
                                 }
                         }
-                        if (stream->source == NULL) {
-                                GST_ERROR ("cant find livejob %s source %s.", livejob->name, stream->name);
+                        if (estream->source == NULL) {
+                                g_free (job_name);
+                                g_free (pipeline);
+                                GST_ERROR ("cant find job %s source %s.", job_name, estream->name);
                                 return 1;
                         }
                 }
 
                 /* parse bins and create pipeline. */
-                encoder->bins = bins_parse (livejob->job, pipeline);
+                encoder->bins = bins_parse (job, pipeline);
                 if (encoder->bins == NULL) {
+                        g_free (job_name);
                 	g_free (pipeline);
                         return 1;
                 }
                 complete_request_element (encoder->bins);
                 if (create_encoder_pipeline (encoder) != 0) {
+                        g_free (job_name);
                 	g_free (pipeline);
                         return 1;
                 }
 
                 /* parse udpstreaming */
-                udpstreaming_parse (livejob, encoder);
+                udpstreaming_parse (job, encoder);
 
                 /* m3u8 playlist */
-                if (jobdesc_m3u8streaming (livejob->job)) {
-                        gchar *name;
+                if (jobdesc_m3u8streaming (job)) {
+                        gchar *mq_name;
 
-                        name = g_strdup_printf ("/%s.%d", livejob->name, i);
-                        encoder->mqdes = mq_open (name, O_WRONLY);
+                        mq_name = g_strdup_printf ("/%s.%d", job_name, i);
+                        encoder->mqdes = mq_open (mq_name, O_WRONLY);
                         if (encoder->mqdes == -1) {
-                                GST_ERROR ("mq_open %s error: %s", name, g_strerror (errno));
+                                g_free (job_name);
+                                g_free (pipeline);
+                                GST_ERROR ("mq_open %s error: %s", mq_name, g_strerror (errno));
                                 return 1;
                         }
-                        g_free (name);
+                        g_free (mq_name);
                 }
 
                 g_free (pipeline);
-                g_array_append_val (livejob->encoder_array, encoder);
+                g_array_append_val (earray, encoder);
         }
+        g_free (job_name);
 
         return 0;
 }

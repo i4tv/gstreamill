@@ -439,7 +439,7 @@ gint livejob_start (LiveJob *livejob)
                 return 1;
         }
 
-        if (encoder_initialize (livejob) != 0) {
+        if (encoder_initialize (livejob->encoder_array, livejob->job, livejob->output->encoders, livejob->source) != 0) {
                 GST_ERROR ("Initialize livejob encoder error.");
                 return 1;
         }
