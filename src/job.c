@@ -14,7 +14,7 @@
 #include <gst/app/gstappsrc.h>
 #include <gst/video/video.h>
 
-#include "encoders.h"
+#include "job.h"
 #include "jobdesc.h"
 
 GST_DEBUG_CATEGORY_EXTERN (GSTREAMILL);
