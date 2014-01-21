@@ -234,6 +234,5 @@ struct _LiveJobClass {
 GType livejob_get_type (void);
 void livejob_reset (LiveJob *livejob);
 gint livejob_start (LiveJob *livejob);
-void livejob_stat_update (LiveJob *livejob);
 
 #endif /* __JOB_H__ */

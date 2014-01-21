@@ -4,6 +4,7 @@
  *  Copyright (C) Zhang Ping <zhangping@163.com>
  */
 
+#include <unistd.h>
 #include <sys/mman.h>
 #include <string.h>
 
@@ -231,6 +232,52 @@ guint64 livejob_encoder_output_rap_next (EncoderOutput *encoder_output, guint64 
         }
 
         return next_rap_addr;
+}
+
+/*
+ * livejob_stat_update:
+ * @livejob: (in): livejob object
+ *
+ * update livejob's stat
+ *
+ */
+void livejob_stat_update (LiveJob *livejob)
+{
+        gchar *stat_file, *stat, **stats, **cpustats;
+        guint64 utime, stime, ctime; /* process user time, process system time, total cpu time */
+        gint i;
+
+        stat_file = g_strdup_printf ("/proc/%d/stat", livejob->worker_pid);
+        if (!g_file_get_contents (stat_file, &stat, NULL, NULL)) {
+                GST_ERROR ("Read process %d's stat failure.", livejob->worker_pid);
+                return;
+        }
+        stats = g_strsplit (stat, " ", 44);
+        utime = g_ascii_strtoull (stats[13],  NULL, 10); /* seconds */
+        stime = g_ascii_strtoull (stats[14], NULL, 10);
+        /* Resident Set Size */
+        livejob->memory = g_ascii_strtoull (stats[23], NULL, 10) * sysconf (_SC_PAGESIZE);
+        g_free (stat_file);
+        g_free (stat);
+        g_strfreev (stats);
+        if (!g_file_get_contents ("/proc/stat", &stat, NULL, NULL)) {
+                GST_ERROR ("Read /proc/stat failure.");
+                return;
+        }
+        stats = g_strsplit (stat, "\n", 10);
+        cpustats = g_strsplit (stats[0], " ", 10);
+        ctime = 0;
+        for (i = 1; i < 8; i++) {
+                ctime += g_ascii_strtoull (cpustats[i], NULL, 10);
+        }
+        g_free (stat);
+        g_strfreev (stats);
+        g_strfreev (cpustats);
+        livejob->cpu_average = ((utime + stime) * 100) / (ctime - livejob->start_ctime);
+        livejob->cpu_current = ((utime - livejob->last_utime + stime - livejob->last_stime) * 100) / (ctime - livejob->last_ctime);
+        livejob->last_ctime = ctime;
+        livejob->last_utime = utime;
+        livejob->last_stime = stime;
 }
 
 /*
