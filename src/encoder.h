@@ -7,6 +7,9 @@
 #ifndef __ENCODER_H__
 #define __ENCODER_H__
 
+#include <semaphore.h>
+#include <mqueue.h>
+
 typedef struct _Encoder Encoder;
 typedef struct _EncoderClass EncoderClass;
 

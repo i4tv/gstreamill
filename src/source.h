@@ -8,8 +8,6 @@
 #define __SOURCE_H__
 
 #include <gst/gst.h>
-#include <semaphore.h>
-#include <mqueue.h>
 
 #include "log.h"
 #include "m3u8playlist.h"
