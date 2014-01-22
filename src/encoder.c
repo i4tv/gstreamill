@@ -329,13 +329,16 @@ static GstFlowReturn encoder_appsink_callback (GstAppSink * sink, gpointer user_
         }
 
         if (!GST_BUFFER_FLAG_IS_SET (buffer, GST_BUFFER_FLAG_DELTA_UNIT)) {
-                if (GST_BUFFER_PTS (buffer) == encoder->last_running_time) {
-                        /* 
-                         * random access point found.
-                         * write previous gop size to 4 bytes reservation,
-                         * write current gop timestamp,
-                         * reserve 4 bytes for size of current gop,
-                         */
+                /* 
+                 * random access point found.
+                 * write previous gop size to 4 bytes reservation,
+                 * write current gop timestamp,
+                 * reserve 4 bytes for size of current gop,
+                 */
+                if (encoder->mqdes == -1) {
+                        move_last_rap (encoder, buffer);
+
+                } else if (GST_BUFFER_PTS (buffer) == encoder->last_running_time) {
                         gchar *msg;
 
                         move_last_rap (encoder, buffer);
@@ -719,6 +722,9 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
                                 return 1;
                         }
                         g_free (mq_name);
+
+                } else {
+                        encoder->mqdes = -1;
                 }
 
                 g_free (pipeline);
