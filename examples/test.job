@@ -47,7 +47,7 @@
                 }
             },
             "bins" : [
-                "appsrc name=video ! queue ! x264enc ! queue ! muxer.",
+                "appsrc name=video ! queue ! timeoverlay ! queue ! x264enc ! queue ! muxer.",
                 "appsrc name=audio ! audioconvert ! audioresample ! voaacenc ! muxer.",
                 "mpegtsmux name=muxer ! queue ! appsink"
             ]
