@@ -336,6 +336,7 @@ static GstFlowReturn encoder_appsink_callback (GstAppSink * sink, gpointer user_
                  * reserve 4 bytes for size of current gop,
                  */
                 if (encoder->mqdes == -1) {
+                        /* no m3u8 output */
                         move_last_rap (encoder, buffer);
 
                 } else if (GST_BUFFER_PTS (buffer) == encoder->last_running_time) {
