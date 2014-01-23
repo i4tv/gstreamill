@@ -1,5 +1,5 @@
 /*
- * live job streaming over http.
+ * streaming over http.
  *
  * Copyright (C) Zhang Ping <dqzhangp@163.com>
  *
@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "livejob.h"
 #include "httpstreaming.h"
 
 GST_DEBUG_CATEGORY_EXTERN (GSTREAMILL);
