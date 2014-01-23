@@ -316,7 +316,7 @@ gchar * jobdesc_element_caps (gchar *job, gchar *element)
                 obj = json_array_get_object (array, index);
 
         } else {
-		obj = json_object_get_object (obj, "source");
+                obj = json_object_get_object (obj, "source");
         }
         p = g_strrstr (element, "elements");
         caps = (gchar *)json_object_dotget_string (obj, p);
