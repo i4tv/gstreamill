@@ -203,13 +203,13 @@ static gint read_request (RequestData *request_data)
                                 return -1;
 
                         } else {
- 				/* errno == EAGAIN means read complete */
+                                 /* errno == EAGAIN means read complete */
                                 GST_DEBUG ("read complete");
                                 break;
                         }
 
                 } else if (count == 0) {
- 			/* closed by client */
+                         /* closed by client */
                         GST_WARNING ("client closed");
                         return -2;
 
@@ -279,7 +279,7 @@ static gint parse_request (RequestData *request_data)
         }
 
         while (*buf == ' ') {
-	 	/* skip space */
+                 /* skip space */
                 buf++;
         }
 
@@ -293,13 +293,13 @@ static gint parse_request (RequestData *request_data)
                 *uri = '\0';
 
         } else {
-	 	/* Bad request, uri too long */
+                 /* Bad request, uri too long */
                 return 3;
         }
 
         i = 0;
         if (*buf == '?') {
- 		/* have parameters */
+                 /* have parameters */
                 buf++;
                 while (*buf != ' ' && i++ < 1024) {
                         *parameters = *buf;
@@ -311,17 +311,17 @@ static gint parse_request (RequestData *request_data)
                 *parameters = '\0';
 
         } else {
- 		/* Bad request, parameters too long */
+                 /* Bad request, parameters too long */
                 return 3;
         }
 
         while (*buf == ' ') {
- 		/* skip space */
+                 /* skip space */
                 buf++;
         }
 
         if (strncmp (buf, "HTTP/1.1", 8) == 0) {
- 		/* http version must be 1.1 */
+                 /* http version must be 1.1 */
                 request_data->version = HTTP_1_1; 
 
         } else if (strncmp (buf, "HTTP/1.0", 8) == 0) {
@@ -413,11 +413,11 @@ static gint accept_socket (HTTPServer *http_server)
         gint request_data_queue_len;
 
         for (;;) {
- 		/* repeat accept until -1 returned */
+                 /* repeat accept until -1 returned */
                 accepted_sock = accept (http_server->listen_sock, &in_addr, &in_len);
                 if (accepted_sock == -1) {
                         if (( errno == EAGAIN) || (errno == EWOULDBLOCK)) {
-				/* We have processed all incoming connections. */
+                                /* We have processed all incoming connections. */
                                 break;
 
                         } else {
@@ -612,7 +612,7 @@ static gpointer listen_thread (gpointer data)
                         request_data->events |= event_list[i].events;
                         g_mutex_unlock (&(request_data->events_mutex));
 
-			/* push to thread pool queue */
+                        /* push to thread pool queue */
                         if ((event_list[i].events & EPOLLIN) && (request_data->status == HTTP_CONNECTED)) {
                                 GError *err = NULL;
 

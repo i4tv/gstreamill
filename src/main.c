@@ -248,13 +248,13 @@ int main (int argc, char *argv[])
                         exit (1);
                 }
 
-		/* daemonize */
+                /* daemonize */
                 if (daemon (0, 0) != 0) {
                         g_print ("Failed to daemonize");
                         exit (1);
                 }
 
-		/* log to file */
+                /* log to file */
                 log_path = g_build_filename (log_dir, "gstreamill.log", NULL);
                 ret = init_log (log_path);
                 g_free (log_path);
@@ -263,11 +263,11 @@ int main (int argc, char *argv[])
                         exit (1);
                 }
 
-		/* customize signal */
+                /* customize signal */
                 signal (SIGUSR1, sighandler);
                 signal (SIGUSR2, stop_gstreamill);
 
-		/* create pid file */
+                /* create pid file */
                 if (create_pid_file () != 0) {
                         exit (1);
                 }
@@ -313,7 +313,7 @@ int main (int argc, char *argv[])
                 }
 
         } else {
-		/* run in foreground, start job */
+                /* run in foreground, start job */
                 gchar *job, *p;
 
                 if (!g_file_get_contents (job_file, &job, NULL, NULL)) {

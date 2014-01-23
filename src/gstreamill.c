@@ -288,7 +288,7 @@ static void livejob_check_func (gpointer data, gpointer user_data)
 
         /* source heartbeat check */
         for (j = 0; j < output->source.stream_count; j++) {
-		/* check video and audio */
+                /* check video and audio */
                 if (!g_str_has_prefix (output->source.streams[j].name, "video") &&
                     !g_str_has_prefix (output->source.streams[j].name, "audio")) {
                         continue;

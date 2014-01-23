@@ -697,13 +697,13 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
                 encoder->bins = bins_parse (job, pipeline);
                 if (encoder->bins == NULL) {
                         g_free (job_name);
-                	g_free (pipeline);
+                        g_free (pipeline);
                         return 1;
                 }
                 complete_request_element (encoder->bins);
                 if (create_encoder_pipeline (encoder) != 0) {
                         g_free (job_name);
-                	g_free (pipeline);
+                        g_free (pipeline);
                         return 1;
                 }
 
@@ -808,7 +808,7 @@ guint64 encoder_output_gop_size (EncoderOutput *encoder_output, guint64 rap_addr
 
         /* gop size address */
         if (rap_addr + 8 < encoder_output->cache_size) {
-        	gop_size_addr = rap_addr + 8;
+                gop_size_addr = rap_addr + 8;
 
         } else {
                 gop_size_addr = rap_addr + 8 - encoder_output->cache_size;

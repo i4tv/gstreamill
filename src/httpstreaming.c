@@ -320,7 +320,7 @@ static void get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *encod
                 gsize gop_size;
 
                 gop_size = encoder_output_gop_size (encoder_output, rap_addr);
-		sem_post (encoder_output->semaphore);
+                sem_post (encoder_output->semaphore);
                 buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "video/mpeg", gop_size, ""); 
                 if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
                         GST_ERROR ("Write segment http head error: %s", g_strerror (errno));
