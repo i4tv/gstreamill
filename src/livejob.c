@@ -59,6 +59,7 @@ static void livejob_init (LiveJob *livejob)
         livejob->system_clock = gst_system_clock_obtain ();
         g_object_set (livejob->system_clock, "clock-type", GST_CLOCK_TYPE_REALTIME, NULL);
         livejob->encoder_array = g_array_new (FALSE, FALSE, sizeof (gpointer));
+        livejob->m3u8push_thread_pool = NULL;
 }
 
 static void livejob_set_property (GObject *obj, guint prop_id, const GValue *value, GParamSpec *pspec)
@@ -223,7 +224,7 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
         LiveJob *livejob = (LiveJob *)user_data;
         m3u8Segment *m3u8_segment = (m3u8Segment *)data;
 
-        GST_ERROR ("thread pool, %s, m3u8push: %lu", livejob->name, m3u8_segment->timestamp);
+        GST_ERROR ("thread pool, url: %s, m3u8push: %lu", livejob->m3u8push_url, m3u8_segment->timestamp);
         g_free (m3u8_segment);
 }
 
@@ -331,7 +332,8 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
         }
         livejob->output = output;
 
-        if (jobdesc_m3u8streaming (livejob->job)) {
+        livejob->m3u8push_url = jobdesc_m3u8streaming_push_url (livejob->job);
+        if (livejob->m3u8push_url != NULL) {
                 GError *err = NULL;
 
                 livejob->m3u8push_thread_pool = g_thread_pool_new (m3u8push_thread_func, livejob, 10, TRUE, &err);
@@ -429,13 +431,15 @@ static void notify_function (union sigval sv)
         /* add new m3u8 playlist entry */
         m3u8playlist_add_entry (encoder->m3u8_playlist, url, segment_duration);
         /* push task to push segment to thread pool */
-        m3u8_segment = g_malloc (sizeof (m3u8Segment));
-        m3u8_segment->encoder = encoder;
-        m3u8_segment->timestamp = encoder->last_timestamp;
-        g_thread_pool_push (encoder->m3u8push_thread_pool, m3u8_segment, &err);
-        if (err != NULL) {
-                GST_FIXME ("m3u8push thread pool push error %s", err->message);
-                g_error_free (err);
+        if (encoder->m3u8push_thread_pool != NULL) {
+                m3u8_segment = g_malloc (sizeof (m3u8Segment));
+                m3u8_segment->encoder = encoder;
+                m3u8_segment->timestamp = encoder->last_timestamp;
+                g_thread_pool_push (encoder->m3u8push_thread_pool, m3u8_segment, &err);
+                if (err != NULL) {
+                        GST_FIXME ("m3u8push thread pool push error %s", err->message);
+                        g_error_free (err);
+                }
         }
         g_rw_lock_writer_unlock (&(encoder->m3u8_playlist_rwlock));
 

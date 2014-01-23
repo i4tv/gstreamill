@@ -56,7 +56,8 @@
     "m3u8streaming" : {
         "version" : 3,
         "window-size" : 10,
-        "segment-duration" : 3.00
+        "segment-duration" : 3.00,
+        "push_url" : "http://www.i4tv.org/test"
     }
 }
 

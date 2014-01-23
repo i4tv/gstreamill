@@ -33,5 +33,6 @@ gboolean jobdesc_m3u8streaming (gchar *job);
 guint jobdesc_m3u8streaming_version (gchar *job);
 guint jobdesc_m3u8streaming_window_size (gchar *job);
 GstClockTime jobdesc_m3u8streaming_segment_duration (gchar *job);
+gchar * jobdesc_m3u8streaming_push_url (gchar *job);
 
 #endif /* __JOBDESC_H__ */
