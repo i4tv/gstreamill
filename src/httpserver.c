@@ -130,12 +130,15 @@ static void httpserver_set_property (GObject *obj, guint prop_id, const GValue *
         case HTTPSERVER_PROP_NODE:
                 HTTPSERVER (obj)->node = (gchar *)g_value_dup_string (value);
                 break;
+
         case HTTPSERVER_PROP_SERVICE:
                 HTTPSERVER (obj)->service = (gchar *)g_value_dup_string (value);
                 break;
+
         case HTTPSERVER_PROP_MAXTHREADS:
                 HTTPSERVER (obj)->max_threads = g_value_get_int (value);
                 break;
+
         default:
                 G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
                 break;
@@ -150,12 +153,15 @@ static void httpserver_get_property (GObject *obj, guint prop_id, GValue *value,
         case HTTPSERVER_PROP_NODE:
                 g_value_set_string (value, httpserver->node);
                 break;
+
         case HTTPSERVER_PROP_SERVICE:
                 g_value_set_string (value, httpserver->service);
                 break;
+
         case HTTPSERVER_PROP_MAXTHREADS:
                 g_value_set_int (value, httpserver->max_threads);
                 break;
+
         default:
                 G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
                 break;
@@ -195,15 +201,18 @@ static gint read_request (RequestData *request_data)
                         if (errno != EAGAIN) {
                                 GST_ERROR ("read error %s", g_strerror (errno));
                                 return -1;
+
                         } else {
  				/* errno == EAGAIN means read complete */
                                 GST_DEBUG ("read complete");
                                 break;
                         }
+
                 } else if (count == 0) {
  			/* closed by client */
                         GST_WARNING ("client closed");
                         return -2;
+
                 } else if (count > 0) {
                         read_pos += count;
                         if (read_pos == kRequestBufferSize) {
@@ -260,9 +269,11 @@ static gint parse_request (RequestData *request_data)
         if (strncmp (buf, "GET", 3) == 0) {
                 request_data->method = HTTP_GET;
                 buf += 3;
+
         } else if (strncmp (buf, "POST", 4) == 0) {
                 request_data->method = HTTP_POST;
                 buf += 4;
+
         } else {
                 return 2; /* Bad request */
         }
@@ -280,6 +291,7 @@ static gint parse_request (RequestData *request_data)
         }
         if (i <= 255) {
                 *uri = '\0';
+
         } else {
 	 	/* Bad request, uri too long */
                 return 3;
@@ -297,6 +309,7 @@ static gint parse_request (RequestData *request_data)
         }
         if (i <= 1024) {
                 *parameters = '\0';
+
         } else {
  		/* Bad request, parameters too long */
                 return 3;
@@ -310,8 +323,10 @@ static gint parse_request (RequestData *request_data)
         if (strncmp (buf, "HTTP/1.1", 8) == 0) {
  		/* http version must be 1.1 */
                 request_data->version = HTTP_1_1; 
+
         } else if (strncmp (buf, "HTTP/1.0", 8) == 0) {
                 request_data->version = HTTP_1_0;
+
         }else { /* Bad request, must be http 1.1 */
                 return 4;
         }
@@ -404,6 +419,7 @@ static gint accept_socket (HTTPServer *http_server)
                         if (( errno == EAGAIN) || (errno == EWOULDBLOCK)) {
 				/* We have processed all incoming connections. */
                                 break;
+
                         } else {
                                 GST_ERROR ("accept error  %s", g_strerror (errno));
                                 break;
@@ -452,6 +468,7 @@ static gint accept_socket (HTTPServer *http_server)
                         g_queue_push_head (http_server->request_data_queue, request_data_pointer);
                         g_mutex_unlock (&(http_server->request_data_queue_mutex));
                         return -1;
+
                 } else {
                         GST_DEBUG ("pop request data, sock %d", request_data->sock);
                 }
@@ -465,27 +482,35 @@ static gchar * epoll_event_string (struct epoll_event event)
         if (event.events & EPOLLIN) {
                 return "EPOLLIN";
         }
+
         if (event.events & EPOLLOUT) {
                 return "EPOLLOUT";
         }
+
         if (event.events & EPOLLERR) {
                 return "EPOLLERR";
         } 
+
         if (event.events & EPOLLHUP) {
                 return "EPOLLHUP";
         }
+
         if (event.events & EPOLLRDBAND) {
                 return "EPOLLRDBAND";
         }
+
         if (event.events & EPOLLRDNORM) { 
                 return "EPOLLRDNORM";
         }
+
         if (event.events & EPOLLWRNORM) {
                 return "EPOLLWRNORM";
         }
+
         if (event.events & EPOLLWRBAND) {
                 return "EPOLLWRBAND";
         }
+
         if (event.events & EPOLLRDHUP) {
                 return "EPOLLRDHUP";
         }
@@ -521,6 +546,7 @@ static gint socket_prepare (HTTPServer *http_server)
                         /* bind successfully! */
                         GST_INFO ("listen socket %d", listen_sock);
                         break;
+
                 } else if (ret == -1) {
                         GST_ERROR ("Bind socket %d error: %s", listen_sock, g_strerror (errno));
                         return 1;
@@ -629,6 +655,7 @@ static gboolean gtree_foreach_func (gpointer key, gpointer value, gpointer data)
         if (current_time > *(GstClockTime *)key) {
                 *wakeup_list = g_slist_append (*wakeup_list, value);
                 return FALSE;
+
         } else {
                 func_data->wakeup_time = g_get_monotonic_time () + ((*(GstClockTime *)key) - current_time)/ 1000;
                 return TRUE;
@@ -724,11 +751,13 @@ static void thread_pool_func (gpointer data, gpointer user_data)
         if (request_data->events & (EPOLLHUP | EPOLLERR)) {
                 request_data->status = HTTP_FINISH;
                 request_data->events = 0;
+
         } else if (request_data->events & EPOLLOUT) {
                 if ((request_data->status == HTTP_IDLE) || (request_data->status == HTTP_BLOCK)) {
                         request_data->status = HTTP_CONTINUE;
                 }
                 request_data->events ^= EPOLLOUT;
+
         } else if (request_data->events & EPOLLIN) {
                 if ((request_data->status == HTTP_IDLE) || (request_data->status == HTTP_BLOCK)) {
                         /* in normal play status */
@@ -736,6 +765,7 @@ static void thread_pool_func (gpointer data, gpointer user_data)
                         if (ret == -2) {
                                 GST_DEBUG ("Clinet close, FIN received.");
                                 request_data->status = HTTP_FINISH;
+
                         } else {
                                 GST_DEBUG ("Unexpected request arrived, ignore.");
                                 request_data->status = HTTP_CONTINUE;
@@ -743,9 +773,11 @@ static void thread_pool_func (gpointer data, gpointer user_data)
                 } 
                 /* HTTP_REQUEST status */
                 request_data->events ^= EPOLLIN;
+
         } else if ((request_data->status == HTTP_IDLE) || (request_data->status == HTTP_BLOCK)) {
                 /* no event, popup from idle queue or block queue */
                 request_data->status = HTTP_CONTINUE;
+
         } else {
                 GST_ERROR ("warning!!! unprocessed event, sock %d status %d events %d", request_data->sock, request_data->status, request_data->events);
         }
@@ -783,6 +815,7 @@ static void thread_pool_func (gpointer data, gpointer user_data)
                                 g_tree_insert (http_server->idle_queue, &(request_data->wakeup_time), request_data_pointer);
                                 g_cond_signal (&(http_server->idle_queue_cond));
                                 g_mutex_unlock (&(http_server->idle_queue_mutex));
+
                         } else {
                                 /* finish */
                                 GST_DEBUG ("callback return 0, request finish, sock %d", request_data->sock);
@@ -793,12 +826,14 @@ static void thread_pool_func (gpointer data, gpointer user_data)
                                 g_queue_push_head (http_server->request_data_queue, request_data_pointer);
                                 g_mutex_unlock (&(http_server->request_data_queue_mutex));
                         }
+
                 } else if (ret == 1) {
                         /* need read more data */
                         g_mutex_lock (&(http_server->block_queue_mutex));
                         g_queue_push_head (http_server->block_queue, request_data_pointer);
                         g_mutex_unlock (&(http_server->block_queue_mutex));
                         return;
+
                 } else {
                         /* Bad Request */
                         GST_ERROR ("Bad request, return is %d, sock is %d", ret, request_data->sock);
@@ -814,6 +849,7 @@ static void thread_pool_func (gpointer data, gpointer user_data)
                         g_queue_push_head (http_server->request_data_queue, request_data_pointer);
                         g_mutex_unlock (&(http_server->request_data_queue_mutex));
                 }
+
         } else if (request_data->status == HTTP_CONTINUE) {
                 cb_ret = http_server->user_callback (request_data, http_server->user_data);
                 if (cb_ret == GST_CLOCK_TIME_NONE) {
@@ -824,6 +860,7 @@ static void thread_pool_func (gpointer data, gpointer user_data)
                         request_data->wakeup_time = gst_clock_get_time (http_server->system_clock) + 300 * GST_MSECOND;
                         g_queue_push_head (http_server->block_queue, request_data_pointer);
                         g_mutex_unlock (&(http_server->block_queue_mutex));
+
                 } else if (cb_ret > 0) {
                         /* idle */
                         int iiii=0;
@@ -849,6 +886,7 @@ static void thread_pool_func (gpointer data, gpointer user_data)
                         g_tree_insert (http_server->idle_queue, &(request_data->wakeup_time), request_data_pointer);
                         g_cond_signal (&(http_server->idle_queue_cond));
                         g_mutex_unlock (&(http_server->idle_queue_mutex));
+
                 } else {
                         /* finish */
                         g_mutex_lock (&(http_server->idle_queue_mutex));
@@ -861,6 +899,7 @@ static void thread_pool_func (gpointer data, gpointer user_data)
                         g_queue_push_head (http_server->request_data_queue, request_data_pointer);
                         g_mutex_unlock (&(http_server->request_data_queue_mutex));
                 }
+
         } else if (request_data->status == HTTP_FINISH) { // FIXME: how about if have continue request in idle queue??
                 cb_ret = http_server->user_callback (request_data, http_server->user_data);
                 GST_DEBUG ("request finish %d callback return %lu, send %lu", request_data->sock, cb_ret, request_data->bytes_send);
@@ -946,6 +985,7 @@ gint httpserver_report_request_data (HTTPServer *http_server)
                 request_data = http_server->request_data_pointers[i];
                 if (request_data->status != HTTP_NONE) {
                         GST_INFO ("%d : status %d sock %d uri %s wakeuptime %lu", i, request_data->status, request_data->sock, request_data->uri, request_data->wakeup_time);
+
                 } else {
                         count += 1;
                 }
