@@ -218,6 +218,15 @@ static gsize status_output_size (gchar *job)
         return size;
 }
 
+static void m3u8push_thread_func (gpointer data, gpointer user_data)
+{
+        LiveJob *livejob = (LiveJob *)user_data;
+        m3u8Segment *m3u8_segment = (m3u8Segment *)data;
+
+        GST_ERROR ("thread pool, %s, m3u8push: %lu", livejob->name, m3u8_segment->timestamp);
+        g_free (m3u8_segment);
+}
+
 /**
  * livejob_initialize:
  * @livejob: (in): the livejob to be initialized.
@@ -322,6 +331,17 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
         }
         livejob->output = output;
 
+        if (jobdesc_m3u8streaming (livejob->job)) {
+                GError *err = NULL;
+
+                livejob->m3u8push_thread_pool = g_thread_pool_new (m3u8push_thread_func, livejob, 10, TRUE, &err);
+                if (err != NULL) {
+                        GST_ERROR ("Create m3u8push thread pool error %s", err->message);
+                        g_error_free (err);
+                        return 1;
+                }
+        }
+ 
         return 0;
 }
 
@@ -380,6 +400,8 @@ static void notify_function (union sigval sv)
         GstClockTime segment_duration;
         gsize size;
         gchar buf[128];
+        m3u8Segment *m3u8_segment;
+        GError *err = NULL;
 
         encoder = (EncoderOutput *)sv.sival_ptr;
 
@@ -402,9 +424,21 @@ static void notify_function (union sigval sv)
 
         last_timestamp = encoder_output_rap_timestamp (encoder, *(encoder->last_rap_addr));
         url = g_strdup_printf ("%lu.ts", encoder->last_timestamp);
+
         g_rw_lock_writer_lock (&(encoder->m3u8_playlist_rwlock));
+        /* add new m3u8 playlist entry */
         m3u8playlist_add_entry (encoder->m3u8_playlist, url, segment_duration);
+        /* push task to push segment to thread pool */
+        m3u8_segment = g_malloc (sizeof (m3u8Segment));
+        m3u8_segment->encoder = encoder;
+        m3u8_segment->timestamp = encoder->last_timestamp;
+        g_thread_pool_push (encoder->m3u8push_thread_pool, m3u8_segment, &err);
+        if (err != NULL) {
+                GST_FIXME ("m3u8push thread pool push error %s", err->message);
+                g_error_free (err);
+        }
         g_rw_lock_writer_unlock (&(encoder->m3u8_playlist_rwlock));
+
         encoder->last_timestamp = last_timestamp;
         g_free (url);
 }
@@ -463,6 +497,7 @@ void livejob_reset (LiveJob *livejob)
 				g_rw_lock_clear (&(encoder->m3u8_playlist_rwlock));
 				m3u8playlist_free (encoder->m3u8_playlist);
 			}
+                        encoder->m3u8push_thread_pool = livejob->m3u8push_thread_pool;
 			encoder->m3u8_playlist = m3u8playlist_new (version, window_size, FALSE);
 			g_rw_lock_init (&(encoder->m3u8_playlist_rwlock));
 
@@ -553,7 +588,7 @@ gint livejob_start (LiveJob *livejob)
                 encoder->state = GST_STATE_PLAYING;
         }
         *(livejob->output->state) = GST_STATE_PLAYING;
- 
+
         return 0;
 }
 

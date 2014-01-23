@@ -34,6 +34,7 @@ typedef struct _EncoderOutput {
         EncoderStreamState *streams;
 
         /* m3u8 streaming */
+        GThreadPool *m3u8push_thread_pool;
         mqd_t mqdes;
         GRWLock m3u8_playlist_rwlock;
         M3U8Playlist *m3u8_playlist;

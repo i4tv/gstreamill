@@ -15,6 +15,11 @@
 typedef struct _LiveJob LiveJob;
 typedef struct _LiveJobClass LiveJobClass;
 
+typedef struct _m3u8Segment {
+        EncoderOutput *encoder;
+        GstClockTime timestamp;
+} m3u8Segment;
+
 typedef struct _LiveJobOutput {
         gchar *job_description;
         guint64 *state;
@@ -53,6 +58,8 @@ struct _LiveJob {
 
         Source *source; 
         GArray *encoder_array;
+
+        GThreadPool *m3u8push_thread_pool;
 };
 
 struct _LiveJobClass {
