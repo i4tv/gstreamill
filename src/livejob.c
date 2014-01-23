@@ -4,6 +4,8 @@
  *  Copyright (C) Zhang Ping <zhangping@163.com>
  */
 
+#include <sys/socket.h>
+#include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/mman.h>
 #include <string.h>
@@ -219,12 +221,46 @@ static gsize status_output_size (gchar *job)
         return size;
 }
 
+static gint http_put (LiveJob *livejob, gint8 *data, gsize count)
+{
+	gint socketfd;
+        struct sockaddr_in serveraddr;
+        gint ret, len;
+        gsize sent;
+        guint16 port = 80;
+
+        socketfd = socket (AF_INET, SOCK_STREAM, 0);
+        memset (&serveraddr, 0x00, sizeof (struct sockaddr_in));
+        serveraddr.sin_family = AF_INET;
+        serveraddr.sin_port = htons (port);
+        serveraddr.sin_addr.s_addr = inet_addr (livejob->m3u8push_server_uri);
+
+        sent = 0;
+        while (sent < count) {
+                len = INT_MAX < count - sent ? INT_MAX : count - sent;
+                ret = write (socketfd, data + sent, len);
+                if (ret == -1) {
+                        if (errno == EAGAIN) {
+                                /* block, wait 50ms */
+                                g_usleep (50000);
+                                continue;
+                        }
+                        GST_INFO ("Write error: %s", g_strerror (errno));
+                        break;
+                }
+                sent += ret;
+        }
+        close (socketfd);
+
+        return sent;
+}
+
 static void m3u8push_thread_func (gpointer data, gpointer user_data)
 {
         LiveJob *livejob = (LiveJob *)user_data;
         m3u8Segment *m3u8_segment = (m3u8Segment *)data;
 
-        GST_ERROR ("thread pool, url: %s, m3u8push: %lu", livejob->m3u8push_url, m3u8_segment->timestamp);
+        GST_ERROR ("thread pool, url: %s, m3u8push: %lu", livejob->m3u8push_server_uri, m3u8_segment->timestamp);
         g_free (m3u8_segment);
 }
 
@@ -332,8 +368,8 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
         }
         livejob->output = output;
 
-        livejob->m3u8push_url = jobdesc_m3u8streaming_push_url (livejob->job);
-        if (livejob->m3u8push_url != NULL) {
+        livejob->m3u8push_server_uri = jobdesc_m3u8streaming_push_server_uri (livejob->job);
+        if (livejob->m3u8push_server_uri != NULL) {
                 GError *err = NULL;
 
                 livejob->m3u8push_thread_pool = g_thread_pool_new (m3u8push_thread_func, livejob, 10, TRUE, &err);

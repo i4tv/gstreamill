@@ -59,7 +59,7 @@ struct _LiveJob {
         Source *source; 
         GArray *encoder_array;
 
-        gchar *m3u8push_url;
+        gchar *m3u8push_server_uri;
         GThreadPool *m3u8push_thread_pool;
 };
 

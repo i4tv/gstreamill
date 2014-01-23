@@ -57,7 +57,7 @@
         "version" : 3,
         "window-size" : 10,
         "segment-duration" : 3.00,
-        "push_url" : "http://www.i4tv.org/test"
+        "push-server-uri" : "http://www.i4tv.org:80/test"
     }
 }
 

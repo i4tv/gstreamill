@@ -392,7 +392,7 @@ GstClockTime jobdesc_m3u8streaming_segment_duration (gchar *job)
         return segment_duration;
 }
 
-gchar * jobdesc_m3u8streaming_push_url (gchar *job)
+gchar * jobdesc_m3u8streaming_push_server_uri (gchar *job)
 {
         JSON_Value *val;
         JSON_Object *obj;
@@ -400,7 +400,7 @@ gchar * jobdesc_m3u8streaming_push_url (gchar *job)
 
         val = json_parse_string (job);
         obj = json_value_get_object (val);
-        push_url = (gchar *)json_object_dotget_string (obj, "m3u8streaming.push_url");
+        push_url = (gchar *)json_object_dotget_string (obj, "m3u8streaming.push-server-uri");
         ret = g_strdup (push_url);
         json_value_free (val);
 
