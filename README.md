@@ -169,7 +169,7 @@ m3u8streaming : m3u8 streaming
 
 structure of source:
 
-   "source" : {
+    "source" : {
         "elements" : {
             ...
         },
