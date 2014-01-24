@@ -281,7 +281,7 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
         guint64 rap_addr;
         GstClockTime t;
         gsize segment_size, count;
-        guint8 *buf;
+        guint8 *buf, *playlist;
 
         /* seek gop */
         sem_wait (m3u8_segment->encoder->semaphore);
@@ -299,7 +299,6 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
         segment_size = encoder_output_gop_size (m3u8_segment->encoder, rap_addr);
         request_uri = g_strdup_printf ("%s/%s/%lu.ts", livejob->m3u8push_server_uri, m3u8_segment->encoder->name, m3u8_segment->timestamp);
         header = g_strdup_printf (HTTP_PUT, request_uri, PACKAGE_NAME, PACKAGE_VERSION, livejob->m3u8push_server_host, segment_size);
-        GST_ERROR ("header: %s", header);
 
         /* copy header to buffer */
         count = segment_size + strlen (header);
@@ -309,9 +308,6 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
         /* copy body(segment) to buffer */
         if (rap_addr + segment_size + 12 < m3u8_segment->encoder->cache_size) {
                 memcpy (buf + strlen (header), m3u8_segment->encoder->cache_addr + rap_addr + 12, segment_size);
-                //if (httpserver_write (request_data->sock, encoder_output->cache_addr + rap_addr + 12, gop_size) != gop_size) {
-                  //      GST_ERROR ("Write segment error: %s", g_strerror (errno));
-                //}
 
         } else {
                 gint n;
@@ -322,17 +318,21 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
                 memcpy (p, m3u8_segment->encoder->cache_addr + rap_addr + 12, n);
                 p += n;
                 memcpy (p, m3u8_segment->encoder->cache_addr, segment_size - n);
-               // if (httpserver_write (request_data->sock, encoder_output->cache_addr + rap_addr + 12, n) != n) {
-                 //       GST_ERROR ("Write segment error: %s", g_strerror (errno));
-                //}
-               // if (httpserver_write (request_data->sock, encoder_output->cache_addr, gop_size - n) != gop_size - n) {
-                 //       GST_ERROR ("Write segment error: %s", g_strerror (errno));
-               // }
         }
 
         /* put segment */
         http_put (livejob, buf, count);
 
+        /* put playlist */
+        g_free (request_uri);
+        request_uri = g_strdup_printf ("%s/%s/playlist.m3u8", livejob->m3u8push_server_uri, m3u8_segment->encoder->name);
+        g_free (header);
+        playlist = m3u8playlist_render (m3u8_segment->encoder->m3u8_playlist);
+        header = g_strdup_printf (HTTP_PUT, request_uri, PACKAGE_NAME, PACKAGE_VERSION, livejob->m3u8push_server_host, strlen (playlist));
+        buf = g_strdup_printf ("%s%s", header, playlist);
+        http_put (livejob, buf, strlen (buf));
+
+        g_free (playlist);
         g_free (header);
         g_free (request_uri);
         g_free (m3u8_segment);
