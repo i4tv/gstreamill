@@ -29,11 +29,11 @@
 typedef struct _LiveJob LiveJob;
 typedef struct _LiveJobClass LiveJobClass;
 
-typedef struct _m3u8Segment {
+typedef struct _m3u8PushRequest {
         gchar *tail_url;
         EncoderOutput *encoder;
         GstClockTime timestamp;
-} m3u8Segment;
+} m3u8PushRequest;
 
 typedef struct _LiveJobOutput {
         gchar *job_description;
@@ -74,10 +74,10 @@ struct _LiveJob {
         Source *source; 
         GArray *encoder_array;
 
-        gchar *m3u8push_server_uri;
-        gchar m3u8push_server_host[256];
-        gchar m3u8push_server_path[128];
-        guint16 m3u8push_server_port;
+        gchar *m3u8push_uri;
+        gchar m3u8push_host[256];
+        gchar m3u8push_path[128];
+        guint16 m3u8push_port;
         GThreadPool *m3u8push_thread_pool;
 };
 

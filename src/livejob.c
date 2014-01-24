@@ -234,12 +234,12 @@ static gint http_request (LiveJob *livejob, guint8 *data, gsize count)
         socketfd = socket (AF_INET, SOCK_STREAM, 0);
         memset (&serveraddr, 0x00, sizeof (struct sockaddr_in));
         serveraddr.sin_family = AF_INET;
-        serveraddr.sin_port = htons (livejob->m3u8push_server_port);
-        serveraddr.sin_addr.s_addr = inet_addr (livejob->m3u8push_server_host);
-        if ((serveraddr.sin_addr.s_addr = inet_addr (livejob->m3u8push_server_host)) == (unsigned long)INADDR_NONE) {
-                hostp = gethostbyname (livejob->m3u8push_server_host);
+        serveraddr.sin_port = htons (livejob->m3u8push_port);
+        serveraddr.sin_addr.s_addr = inet_addr (livejob->m3u8push_host);
+        if ((serveraddr.sin_addr.s_addr = inet_addr (livejob->m3u8push_host)) == (unsigned long)INADDR_NONE) {
+                hostp = gethostbyname (livejob->m3u8push_host);
                 if (hostp == (struct hostent *)NULL) {
-                        GST_ERROR ("put segment, host %s not found", livejob->m3u8push_server_host);
+                        GST_ERROR ("put segment, host %s not found", livejob->m3u8push_host);
                         g_free (data);
                         return -1;
                 }
@@ -276,39 +276,39 @@ static gint http_request (LiveJob *livejob, guint8 *data, gsize count)
 static void m3u8push_thread_func (gpointer data, gpointer user_data)
 {
         LiveJob *livejob = (LiveJob *)user_data;
-        m3u8Segment *m3u8_segment = (m3u8Segment *)data;
+        m3u8PushRequest *m3u8_push_request = (m3u8PushRequest *)data;
         gchar *header, *request_uri;
         guint64 rap_addr;
         GstClockTime t;
         gsize segment_size, count;
         guint8 *buf, *playlist;
 
-        if (m3u8_segment->tail_url != NULL) {
-                request_uri = g_strdup_printf ("%s/%s/%s", livejob->m3u8push_server_path, m3u8_segment->encoder->name, m3u8_segment->tail_url);
-                header = g_strdup_printf (HTTP_DELETE, request_uri,  PACKAGE_NAME, PACKAGE_VERSION, livejob->m3u8push_server_host);
+        if (m3u8_push_request->tail_url != NULL) {
+                request_uri = g_strdup_printf ("%s/%s/%s", livejob->m3u8push_path, m3u8_push_request->encoder->name, m3u8_push_request->tail_url);
+                header = g_strdup_printf (HTTP_DELETE, request_uri,  PACKAGE_NAME, PACKAGE_VERSION, livejob->m3u8push_host);
                 http_request (livejob, header, strlen (header));
                 g_free (request_uri);
-                g_free (m3u8_segment->tail_url);
-                g_free (m3u8_segment);
+                g_free (m3u8_push_request->tail_url);
+                g_free (m3u8_push_request);
                 return;
         }
 
         /* seek gop */
-        sem_wait (m3u8_segment->encoder->semaphore);
-        rap_addr = *(m3u8_segment->encoder->head_addr);
-        while (rap_addr != *(m3u8_segment->encoder->last_rap_addr)) {
-                t = encoder_output_rap_timestamp (m3u8_segment->encoder, rap_addr);
-                if (m3u8_segment->timestamp == t) {
+        sem_wait (m3u8_push_request->encoder->semaphore);
+        rap_addr = *(m3u8_push_request->encoder->head_addr);
+        while (rap_addr != *(m3u8_push_request->encoder->last_rap_addr)) {
+                t = encoder_output_rap_timestamp (m3u8_push_request->encoder, rap_addr);
+                if (m3u8_push_request->timestamp == t) {
                         break;
                 }
-                rap_addr = encoder_output_rap_next (m3u8_segment->encoder, rap_addr);
+                rap_addr = encoder_output_rap_next (m3u8_push_request->encoder, rap_addr);
         }
-        sem_post (m3u8_segment->encoder->semaphore);
+        sem_post (m3u8_push_request->encoder->semaphore);
 
         /* header */
-        segment_size = encoder_output_gop_size (m3u8_segment->encoder, rap_addr);
-        request_uri = g_strdup_printf ("%s/%s/%lu.ts", livejob->m3u8push_server_path, m3u8_segment->encoder->name, m3u8_segment->timestamp);
-        header = g_strdup_printf (HTTP_PUT, request_uri, PACKAGE_NAME, PACKAGE_VERSION, livejob->m3u8push_server_host, segment_size);
+        segment_size = encoder_output_gop_size (m3u8_push_request->encoder, rap_addr);
+        request_uri = g_strdup_printf ("%s/%s/%lu.ts", livejob->m3u8push_path, m3u8_push_request->encoder->name, m3u8_push_request->timestamp);
+        header = g_strdup_printf (HTTP_PUT, request_uri, PACKAGE_NAME, PACKAGE_VERSION, livejob->m3u8push_host, segment_size);
 
         /* copy header to buffer */
         count = segment_size + strlen (header);
@@ -316,18 +316,18 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
         memcpy (buf, header, strlen (header));
 
         /* copy body(segment) to buffer */
-        if (rap_addr + segment_size + 12 < m3u8_segment->encoder->cache_size) {
-                memcpy (buf + strlen (header), m3u8_segment->encoder->cache_addr + rap_addr + 12, segment_size);
+        if (rap_addr + segment_size + 12 < m3u8_push_request->encoder->cache_size) {
+                memcpy (buf + strlen (header), m3u8_push_request->encoder->cache_addr + rap_addr + 12, segment_size);
 
         } else {
                 gint n;
                 guint8 *p;
 
-                n = m3u8_segment->encoder->cache_size - rap_addr - 12;
+                n = m3u8_push_request->encoder->cache_size - rap_addr - 12;
                 p = buf + strlen (header);
-                memcpy (p, m3u8_segment->encoder->cache_addr + rap_addr + 12, n);
+                memcpy (p, m3u8_push_request->encoder->cache_addr + rap_addr + 12, n);
                 p += n;
-                memcpy (p, m3u8_segment->encoder->cache_addr, segment_size - n);
+                memcpy (p, m3u8_push_request->encoder->cache_addr, segment_size - n);
         }
 
         /* put segment */
@@ -335,17 +335,17 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
 
         /* put playlist */
         g_free (request_uri);
-        request_uri = g_strdup_printf ("%s/%s/playlist.m3u8", livejob->m3u8push_server_uri, m3u8_segment->encoder->name);
+        request_uri = g_strdup_printf ("%s/%s/playlist.m3u8", livejob->m3u8push_uri, m3u8_push_request->encoder->name);
         g_free (header);
-        playlist = m3u8playlist_render (m3u8_segment->encoder->m3u8_playlist);
-        header = g_strdup_printf (HTTP_PUT, request_uri, PACKAGE_NAME, PACKAGE_VERSION, livejob->m3u8push_server_host, strlen (playlist));
+        playlist = m3u8playlist_render (m3u8_push_request->encoder->m3u8_playlist);
+        header = g_strdup_printf (HTTP_PUT, request_uri, PACKAGE_NAME, PACKAGE_VERSION, livejob->m3u8push_host, strlen (playlist));
         buf = g_strdup_printf ("%s%s", header, playlist);
         http_request (livejob, buf, strlen (buf));
 
         g_free (playlist);
         g_free (header);
         g_free (request_uri);
-        g_free (m3u8_segment);
+        g_free (m3u8_push_request);
 }
 
 /**
@@ -452,14 +452,14 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
         }
         livejob->output = output;
 
-        livejob->m3u8push_server_uri = jobdesc_m3u8streaming_push_server_uri (livejob->job);
-        if (livejob->m3u8push_server_uri != NULL) {
+        livejob->m3u8push_uri = jobdesc_m3u8streaming_push_server_uri (livejob->job);
+        if (livejob->m3u8push_uri != NULL) {
                 GError *err = NULL;
 
-                sscanf (livejob->m3u8push_server_uri, "http://%[^:/]", livejob->m3u8push_server_host);
-                livejob->m3u8push_server_port = 80;
-                sscanf (livejob->m3u8push_server_uri, "http://%*[^:]:%hu", &(livejob->m3u8push_server_port));
-                sscanf (livejob->m3u8push_server_uri, "http://%*[^/]%s", livejob->m3u8push_server_path);
+                sscanf (livejob->m3u8push_uri, "http://%[^:/]", livejob->m3u8push_host);
+                livejob->m3u8push_port = 80;
+                sscanf (livejob->m3u8push_uri, "http://%*[^:]:%hu", &(livejob->m3u8push_port));
+                sscanf (livejob->m3u8push_uri, "http://%*[^/]%s", livejob->m3u8push_path);
                 livejob->m3u8push_thread_pool = g_thread_pool_new (m3u8push_thread_func, livejob, 10, TRUE, &err);
                 if (err != NULL) {
                         GST_ERROR ("Create m3u8push thread pool error %s", err->message);
@@ -525,7 +525,7 @@ static void notify_function (union sigval sv)
         GstClockTime segment_duration;
         gsize size;
         gchar *url, *tail_url, buf[128];
-        m3u8Segment *m3u8_segment;
+        m3u8PushRequest *m3u8_push_request;
         GError *err = NULL;
 
         encoder = (EncoderOutput *)sv.sival_ptr;
@@ -556,11 +556,11 @@ static void notify_function (union sigval sv)
         if (encoder->m3u8push_thread_pool != NULL) {
                 M3U8Entry *entry;
 
-                m3u8_segment = g_malloc (sizeof (m3u8Segment));
-                m3u8_segment->tail_url = NULL;
-                m3u8_segment->encoder = encoder;
-                m3u8_segment->timestamp = encoder->last_timestamp;
-                g_thread_pool_push (encoder->m3u8push_thread_pool, m3u8_segment, &err);
+                m3u8_push_request = g_malloc (sizeof (m3u8PushRequest));
+                m3u8_push_request->tail_url = NULL;
+                m3u8_push_request->encoder = encoder;
+                m3u8_push_request->timestamp = encoder->last_timestamp;
+                g_thread_pool_push (encoder->m3u8push_thread_pool, m3u8_push_request, &err);
                 if (err != NULL) {
                         GST_FIXME ("m3u8push thread pool push error %s", err->message);
                         g_error_free (err);
@@ -576,10 +576,10 @@ static void notify_function (union sigval sv)
 
         /* remove old segment */
         if (tail_url != NULL) {
-                m3u8_segment = g_malloc (sizeof (m3u8Segment));
-                m3u8_segment->tail_url = tail_url;
-                m3u8_segment->encoder = encoder;
-                g_thread_pool_push (encoder->m3u8push_thread_pool, m3u8_segment, &err);
+                m3u8_push_request = g_malloc (sizeof (m3u8PushRequest));
+                m3u8_push_request->tail_url = tail_url;
+                m3u8_push_request->encoder = encoder;
+                g_thread_pool_push (encoder->m3u8push_thread_pool, m3u8_push_request, &err);
                 if (err != NULL) {
                         GST_FIXME ("m3u8push thread pool push error %s", err->message);
                         g_error_free (err);
