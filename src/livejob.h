@@ -7,10 +7,19 @@
 #ifndef __LIVEJOB_H__
 #define __LIVEJOB_H__
 
+#include "config.h"
 #include "source.h"
 #include "encoder.h"
 
 #define SHM_SIZE 64*1024*1024
+
+#define HTTP_PUT "PUT %s HTTP/1.1\r\n" \
+                 "User-Agent: %s-%s\r\n" \
+                 "Host: %s\r\n" \
+                 "Accept: */*\r\n" \
+                 "Content-Type:application/octet-stream\r\n" \
+                 "Content-Length: %lu\r\n" \
+                 "Expect: 100-continue\r\n\r\n"
 
 typedef struct _LiveJob LiveJob;
 typedef struct _LiveJobClass LiveJobClass;

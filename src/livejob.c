@@ -4,6 +4,7 @@
  *  Copyright (C) Zhang Ping <zhangping@163.com>
  */
 
+#include <stdio.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -259,8 +260,31 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
 {
         LiveJob *livejob = (LiveJob *)user_data;
         m3u8Segment *m3u8_segment = (m3u8Segment *)data;
+        gchar *header, *request_uri, host[128];
+        guint64 rap_addr;
+        GstClockTime t;
+        gsize segment_size;
 
-        GST_ERROR ("thread pool, url: %s, m3u8push: %lu", livejob->m3u8push_server_uri, m3u8_segment->timestamp);
+        /* seek gop */
+        sem_wait (m3u8_segment->encoder->semaphore);
+        rap_addr = *(m3u8_segment->encoder->head_addr);
+        while (rap_addr != *(m3u8_segment->encoder->last_rap_addr)) {
+                t = encoder_output_rap_timestamp (m3u8_segment->encoder, rap_addr);
+                if (m3u8_segment->timestamp == t) {
+                        break;
+                }
+                rap_addr = encoder_output_rap_next (m3u8_segment->encoder, rap_addr);
+        }
+        sem_post (m3u8_segment->encoder->semaphore);
+
+        segment_size = encoder_output_gop_size (m3u8_segment->encoder, rap_addr);
+        sscanf (livejob->m3u8push_server_uri, "http://%[^:/]", host);
+        request_uri = g_strdup_printf ("%s/%s/%lu.ts", livejob->m3u8push_server_uri, m3u8_segment->encoder->name, m3u8_segment->timestamp);
+        header = g_strdup_printf (HTTP_PUT, request_uri, PACKAGE_NAME, PACKAGE_VERSION, host, segment_size);
+        GST_ERROR ("header: %s", header);
+
+        g_free (header);
+        g_free (request_uri);
         g_free (m3u8_segment);
 }
 
