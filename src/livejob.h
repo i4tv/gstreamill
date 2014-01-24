@@ -21,10 +21,16 @@
                  "Content-Length: %lu\r\n" \
                  "Expect: 100-continue\r\n\r\n"
 
+#define HTTP_DELETE "DELETE %s HTTP/1.1\r\n" \
+                    "User-Agent: %s-%s\r\n" \
+                    "Host: %s\r\n" \
+                    "Accept: */*\r\n\r\n"
+
 typedef struct _LiveJob LiveJob;
 typedef struct _LiveJobClass LiveJobClass;
 
 typedef struct _m3u8Segment {
+        gchar *tail_url;
         EncoderOutput *encoder;
         GstClockTime timestamp;
 } m3u8Segment;
@@ -70,6 +76,7 @@ struct _LiveJob {
 
         gchar *m3u8push_server_uri;
         gchar m3u8push_server_host[256];
+        gchar m3u8push_server_path[128];
         guint16 m3u8push_server_port;
         GThreadPool *m3u8push_thread_pool;
 };

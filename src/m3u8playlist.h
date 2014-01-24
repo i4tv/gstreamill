@@ -38,5 +38,6 @@ M3U8Playlist * m3u8playlist_new (guint version, guint window_size, gboolean allo
 void m3u8playlist_free (M3U8Playlist *playlist);
 gboolean m3u8playlist_add_entry (M3U8Playlist *playlist, const gchar *url, gfloat duration);
 gchar * m3u8playlist_render (M3U8Playlist *playlist); 
+M3U8Entry * m3u8playlist_tail_entry (M3U8Playlist *playlist);
 
 #endif /* __M3U8PLAYLIST_H__ */

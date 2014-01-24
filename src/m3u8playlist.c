@@ -133,3 +133,16 @@ gchar * m3u8playlist_render (M3U8Playlist * playlist)
         return p;
 }
 
+M3U8Entry * m3u8playlist_tail_entry (M3U8Playlist *playlist)
+{
+        M3U8Entry *entry;
+
+        g_return_val_if_fail (playlist != NULL, NULL);
+
+        entry = NULL;
+        if (playlist->entries->length >= playlist->window_size) {
+                entry = g_queue_peek_head (playlist->entries);
+        }
+
+        return entry;
+}
