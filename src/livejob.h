@@ -17,9 +17,8 @@
                  "User-Agent: %s-%s\r\n" \
                  "Host: %s\r\n" \
                  "Accept: */*\r\n" \
-                 "Content-Type:application/octet-stream\r\n" \
-                 "Content-Length: %lu\r\n" \
-                 "Expect: 100-continue\r\n\r\n"
+                 "Content-Type: application/octet-stream\r\n" \
+                 "Content-Length: %lu\r\n\r\n" 
 
 #define HTTP_DELETE "DELETE %s HTTP/1.1\r\n" \
                     "User-Agent: %s-%s\r\n" \

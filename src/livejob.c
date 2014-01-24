@@ -335,7 +335,7 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
 
         /* put playlist */
         g_free (request_uri);
-        request_uri = g_strdup_printf ("%s/%s/playlist.m3u8", livejob->m3u8push_uri, m3u8_push_request->encoder->name);
+        request_uri = g_strdup_printf ("%s/%s/playlist.m3u8", livejob->m3u8push_path, m3u8_push_request->encoder->name);
         g_free (header);
         playlist = m3u8playlist_render (m3u8_push_request->encoder->m3u8_playlist);
         header = g_strdup_printf (HTTP_PUT, request_uri, PACKAGE_NAME, PACKAGE_VERSION, livejob->m3u8push_host, strlen (playlist));
