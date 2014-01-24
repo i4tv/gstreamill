@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 #include <unistd.h>
 #include <sys/mman.h>
 #include <string.h>
@@ -222,19 +223,34 @@ static gsize status_output_size (gchar *job)
         return size;
 }
 
-static gint http_put (LiveJob *livejob, gint8 *data, gsize count)
+static gint http_put (LiveJob *livejob, guint8 *data, gsize count)
 {
 	gint socketfd;
+        struct hostent *hostp;
         struct sockaddr_in serveraddr;
         gint ret, len;
         gsize sent;
-        guint16 port = 80;
 
         socketfd = socket (AF_INET, SOCK_STREAM, 0);
         memset (&serveraddr, 0x00, sizeof (struct sockaddr_in));
         serveraddr.sin_family = AF_INET;
-        serveraddr.sin_port = htons (port);
-        serveraddr.sin_addr.s_addr = inet_addr (livejob->m3u8push_server_uri);
+        serveraddr.sin_port = htons (livejob->m3u8push_server_port);
+        serveraddr.sin_addr.s_addr = inet_addr (livejob->m3u8push_server_host);
+        if ((serveraddr.sin_addr.s_addr = inet_addr (livejob->m3u8push_server_host)) == (unsigned long)INADDR_NONE) {
+                hostp = gethostbyname (livejob->m3u8push_server_host);
+                if (hostp == (struct hostent *)NULL) {
+                        GST_ERROR ("put segment, host %s not found", livejob->m3u8push_server_host);
+                        g_free (data);
+                        return -1;
+                }
+                memcpy (&serveraddr.sin_addr, hostp->h_addr, sizeof (serveraddr.sin_addr));
+        }
+        ret = connect (socketfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr));
+        if (ret < 0) {
+                GST_ERROR ("put segment, connect error: %s", g_strerror (errno));
+                g_free (data);
+                return  -1;
+        }
 
         sent = 0;
         while (sent < count) {
@@ -252,6 +268,7 @@ static gint http_put (LiveJob *livejob, gint8 *data, gsize count)
                 sent += ret;
         }
         close (socketfd);
+        g_free (data);
 
         return sent;
 }
@@ -260,10 +277,11 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
 {
         LiveJob *livejob = (LiveJob *)user_data;
         m3u8Segment *m3u8_segment = (m3u8Segment *)data;
-        gchar *header, *request_uri, host[128];
+        gchar *header, *request_uri;
         guint64 rap_addr;
         GstClockTime t;
-        gsize segment_size;
+        gsize segment_size, count;
+        guint8 *buf;
 
         /* seek gop */
         sem_wait (m3u8_segment->encoder->semaphore);
@@ -277,11 +295,43 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
         }
         sem_post (m3u8_segment->encoder->semaphore);
 
+        /* header */
         segment_size = encoder_output_gop_size (m3u8_segment->encoder, rap_addr);
-        sscanf (livejob->m3u8push_server_uri, "http://%[^:/]", host);
         request_uri = g_strdup_printf ("%s/%s/%lu.ts", livejob->m3u8push_server_uri, m3u8_segment->encoder->name, m3u8_segment->timestamp);
-        header = g_strdup_printf (HTTP_PUT, request_uri, PACKAGE_NAME, PACKAGE_VERSION, host, segment_size);
+        header = g_strdup_printf (HTTP_PUT, request_uri, PACKAGE_NAME, PACKAGE_VERSION, livejob->m3u8push_server_host, segment_size);
         GST_ERROR ("header: %s", header);
+
+        /* copy header to buffer */
+        count = segment_size + strlen (header);
+        buf = g_malloc (count);
+        memcpy (buf, header, strlen (header));
+
+        /* copy body(segment) to buffer */
+        if (rap_addr + segment_size + 12 < m3u8_segment->encoder->cache_size) {
+                memcpy (buf + strlen (header), m3u8_segment->encoder->cache_addr + rap_addr + 12, segment_size);
+                //if (httpserver_write (request_data->sock, encoder_output->cache_addr + rap_addr + 12, gop_size) != gop_size) {
+                  //      GST_ERROR ("Write segment error: %s", g_strerror (errno));
+                //}
+
+        } else {
+                gint n;
+                guint8 *p;
+
+                n = m3u8_segment->encoder->cache_size - rap_addr - 12;
+                p = buf + strlen (header);
+                memcpy (p, m3u8_segment->encoder->cache_addr + rap_addr + 12, n);
+                p += n;
+                memcpy (p, m3u8_segment->encoder->cache_addr, segment_size - n);
+               // if (httpserver_write (request_data->sock, encoder_output->cache_addr + rap_addr + 12, n) != n) {
+                 //       GST_ERROR ("Write segment error: %s", g_strerror (errno));
+                //}
+               // if (httpserver_write (request_data->sock, encoder_output->cache_addr, gop_size - n) != gop_size - n) {
+                 //       GST_ERROR ("Write segment error: %s", g_strerror (errno));
+               // }
+        }
+
+        /* put segment */
+        http_put (livejob, buf, count);
 
         g_free (header);
         g_free (request_uri);
@@ -396,6 +446,9 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
         if (livejob->m3u8push_server_uri != NULL) {
                 GError *err = NULL;
 
+                sscanf (livejob->m3u8push_server_uri, "http://%[^:/]", livejob->m3u8push_server_host);
+                livejob->m3u8push_server_port = 80;
+                sscanf (livejob->m3u8push_server_uri, "http://%*[^:]:%hu", &(livejob->m3u8push_server_port));
                 livejob->m3u8push_thread_pool = g_thread_pool_new (m3u8push_thread_func, livejob, 10, TRUE, &err);
                 if (err != NULL) {
                         GST_ERROR ("Create m3u8push thread pool error %s", err->message);

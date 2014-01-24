@@ -69,6 +69,8 @@ struct _LiveJob {
         GArray *encoder_array;
 
         gchar *m3u8push_server_uri;
+        gchar m3u8push_server_host[256];
+        guint16 m3u8push_server_port;
         GThreadPool *m3u8push_thread_pool;
 };
 
