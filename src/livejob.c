@@ -283,16 +283,6 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
         gsize segment_size, count;
         guint8 *buf, *playlist;
 
-        if (m3u8_push_request->tail_url != NULL) {
-                request_uri = g_strdup_printf ("%s/%s/%s", livejob->m3u8push_path, m3u8_push_request->encoder->name, m3u8_push_request->tail_url);
-                header = g_strdup_printf (HTTP_DELETE, request_uri,  PACKAGE_NAME, PACKAGE_VERSION, livejob->m3u8push_host);
-                http_request (livejob, header, strlen (header));
-                g_free (request_uri);
-                g_free (m3u8_push_request->tail_url);
-                g_free (m3u8_push_request);
-                return;
-        }
-
         /* seek gop */
         sem_wait (m3u8_push_request->encoder->semaphore);
         rap_addr = *(m3u8_push_request->encoder->head_addr);
@@ -347,8 +337,17 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
         http_request (livejob, buf, strlen (buf));
         livejob->sequence_number++;
 
-        g_free (playlist);
+        /* remove segment */
         g_free (header);
+        if (m3u8_push_request->tail_url != NULL) {
+                g_free (request_uri);
+                request_uri = g_strdup_printf ("%s/%s/%s", livejob->m3u8push_path, m3u8_push_request->encoder->name, m3u8_push_request->tail_url);
+                header = g_strdup_printf (HTTP_DELETE, request_uri,  PACKAGE_NAME, PACKAGE_VERSION, livejob->m3u8push_host);
+                http_request (livejob, header, strlen (header));
+                g_free (m3u8_push_request->tail_url);
+        }
+
+        g_free (playlist);
         g_free (request_uri);
         g_free (m3u8_push_request);
 }
@@ -529,7 +528,7 @@ static void notify_function (union sigval sv)
         GstClockTime last_timestamp;
         GstClockTime segment_duration;
         gsize size;
-        gchar *url, *tail_url, buf[128];
+        gchar *url, buf[128];
         m3u8PushRequest *m3u8_push_request;
         GError *err = NULL;
 
@@ -557,7 +556,6 @@ static void notify_function (union sigval sv)
 
         g_rw_lock_writer_lock (&(encoder->m3u8_playlist_rwlock));
         /* put segment */
-        tail_url = NULL;
         if (encoder->m3u8push_thread_pool != NULL) {
                 M3U8Entry *entry;
 
@@ -567,31 +565,20 @@ static void notify_function (union sigval sv)
                 m3u8_push_request->sequence_number = encoder->sequence_number;
                 m3u8_push_request->encoder = encoder;
                 m3u8_push_request->timestamp = encoder->last_timestamp;
+                entry = m3u8playlist_tail_entry (encoder->m3u8_playlist);
+                m3u8_push_request->tail_url = NULL;
+                if (entry != NULL) {
+                        m3u8_push_request->tail_url = g_strdup (entry->url);
+                }
                 g_thread_pool_push (encoder->m3u8push_thread_pool, m3u8_push_request, &err);
                 if (err != NULL) {
                         GST_FIXME ("m3u8push thread pool push error %s", err->message);
                         g_error_free (err);
-                }
-        	entry = m3u8playlist_tail_entry (encoder->m3u8_playlist);
-                if (entry != NULL) {
-                        tail_url = g_strdup (entry->url);
                 }
         }
         /* add new m3u8 playlist entry */
         m3u8playlist_add_entry (encoder->m3u8_playlist, url, segment_duration);
         g_rw_lock_writer_unlock (&(encoder->m3u8_playlist_rwlock));
-
-        /* remove old segment */
-        if (tail_url != NULL) {
-                m3u8_push_request = g_malloc (sizeof (m3u8PushRequest));
-                m3u8_push_request->tail_url = tail_url;
-                m3u8_push_request->encoder = encoder;
-                g_thread_pool_push (encoder->m3u8push_thread_pool, m3u8_push_request, &err);
-                if (err != NULL) {
-                        GST_FIXME ("m3u8push thread pool push error %s", err->message);
-                        g_error_free (err);
-                }
-        }
 
         encoder->last_timestamp = last_timestamp;
         g_free (url);
