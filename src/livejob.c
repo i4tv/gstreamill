@@ -334,13 +334,18 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
         http_request (livejob, buf, count);
 
         /* put playlist */
+        while ((livejob->sequence_number + 1) != m3u8_push_request->sequence_number) {
+                /* waiting previous segment pushed */
+                g_usleep (50000);
+        }
         g_free (request_uri);
         request_uri = g_strdup_printf ("%s/%s/playlist.m3u8", livejob->m3u8push_path, m3u8_push_request->encoder->name);
-        g_free (header);
         playlist = m3u8playlist_render (m3u8_push_request->encoder->m3u8_playlist);
+        g_free (header);
         header = g_strdup_printf (HTTP_PUT, request_uri, PACKAGE_NAME, PACKAGE_VERSION, livejob->m3u8push_host, strlen (playlist));
         buf = g_strdup_printf ("%s%s", header, playlist);
         http_request (livejob, buf, strlen (buf));
+        livejob->sequence_number++;
 
         g_free (playlist);
         g_free (header);
@@ -558,6 +563,8 @@ static void notify_function (union sigval sv)
 
                 m3u8_push_request = g_malloc (sizeof (m3u8PushRequest));
                 m3u8_push_request->tail_url = NULL;
+                encoder->sequence_number++;
+                m3u8_push_request->sequence_number = encoder->sequence_number;
                 m3u8_push_request->encoder = encoder;
                 m3u8_push_request->timestamp = encoder->last_timestamp;
                 g_thread_pool_push (encoder->m3u8push_thread_pool, m3u8_push_request, &err);
