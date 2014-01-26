@@ -29,7 +29,7 @@ typedef struct _LiveJob LiveJob;
 typedef struct _LiveJobClass LiveJobClass;
 
 typedef struct _m3u8PushRequest {
-        gchar *tail_url;
+        gchar *rm_segment;
         EncoderOutput *encoder;
         GstClockTime timestamp;
         guint sequence_number;
