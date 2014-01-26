@@ -17,6 +17,7 @@ M3U8Playlist * m3u8playlist_new (guint version, guint window_size, gboolean allo
         playlist->version = version;
         playlist->window_size = window_size;
         playlist->allow_cache = allow_cache;
+        playlist->adding_entries = g_queue_new ();
         playlist->entries = g_queue_new ();
         playlist->removing_entries = g_queue_new ();
 
@@ -36,6 +37,7 @@ void m3u8playlist_free (M3U8Playlist * playlist)
         g_return_if_fail (playlist != NULL);
 
         g_queue_foreach (playlist->entries, (GFunc) m3u8entry_free, NULL);
+        g_queue_free (playlist->adding_entries);
         g_queue_free (playlist->entries);
         g_queue_free (playlist->removing_entries);
         g_free (playlist);
@@ -62,6 +64,12 @@ gboolean m3u8playlist_add_entry (M3U8Playlist *playlist, const gchar *url, gfloa
         g_return_val_if_fail (url != NULL, FALSE);
 
         entry = m3u8entry_new (url, duration);
+
+        g_queue_push_tail (playlist->adding_entries, entry);
+        if (playlist->adding_entries->length < 5) {
+                return TRUE;
+        }
+        entry = g_queue_pop_head (playlist->adding_entries);
 
         if (playlist->window_size != -1) {
                 /* Delete old entries from the playlist */
