@@ -563,7 +563,7 @@ static void notify_function (union sigval sv)
                 m3u8_push_request->sequence_number = encoder->sequence_number;
                 m3u8_push_request->encoder = encoder;
                 m3u8_push_request->timestamp = encoder->last_timestamp;
-                m3u8_push_request->rm_segment = m3u8playlist_tail_entry (encoder->m3u8_playlist);
+                m3u8_push_request->rm_segment = m3u8playlist_remove_entry (encoder->m3u8_playlist);
                 g_thread_pool_push (encoder->m3u8push_thread_pool, m3u8_push_request, &err);
                 if (err != NULL) {
                         GST_FIXME ("m3u8push thread pool push error %s", err->message);

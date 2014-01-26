@@ -135,7 +135,7 @@ gchar * m3u8playlist_render (M3U8Playlist * playlist)
         return p;
 }
 
-gchar * m3u8playlist_tail_entry (M3U8Playlist *playlist)
+gchar * m3u8playlist_remove_entry (M3U8Playlist *playlist)
 {
         M3U8Entry *entry;
         gchar *rm_segment;
