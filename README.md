@@ -16,15 +16,15 @@ gstreamill is an open source, GPL licensed "stream mill" based on gstreamer-1.0.
 
 ## Application
 
-       IP --------+ 
-                  |                      +------- UDP
-       CVBS ------+    +------------+    |               +---- http put
-                  +----+ gstreamill +----+------ M3U8----+
-       SDI -------+    +------+-----+    |               +---- http get
-                  |           |          +------ HTTP
-       LIVE ------+           |
-                              |
-                REST interface (json over http post)
+    IP --------+ 
+               |                      +------- UDP
+    CVBS ------+    +------------+    |               +---- http put
+               +----+ gstreamill +----+------ M3U8----+
+    SDI -------+    +------+-----+    |               +---- http get
+               |           |          +------ HTTP
+    LIVE ------+           |
+                           |
+             REST interface (json over http post)
 
 # INSTALL
 
@@ -232,12 +232,12 @@ elements and bins is just the same as source structure in syntax, the differnce 
 
 m3u8streaming is hls output, it's optional:
 
-        "m3u8streaming" : {
-            "version" : 3,
-            "window-size" : 10,
-            "segment-duration" : 3.00,
-            "push-server-uri" : "http://192.168.56.3/test"
-        }
+    "m3u8streaming" : {
+        "version" : 3,
+        "window-size" : 10,
+        "segment-duration" : 3.00,
+        "push-server-uri" : "http://192.168.56.3/test"
+    }
 
 There are examples in examples directory of source.
 
