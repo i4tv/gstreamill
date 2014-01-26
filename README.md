@@ -235,7 +235,8 @@ m3u8streaming is hls output, it's optional:
         "m3u8streaming" : {
             "version" : 3,
             "window-size" : 10,
-            "segment-duration" : 3.00
+            "segment-duration" : 3.00,
+            "push-server-uri" : "http://192.168.56.3/test"
         }
 
 There are examples in examples directory of source.
