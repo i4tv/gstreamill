@@ -18,6 +18,7 @@ M3U8Playlist * m3u8playlist_new (guint version, guint window_size, gboolean allo
         playlist->window_size = window_size;
         playlist->allow_cache = allow_cache;
         playlist->entries = g_queue_new ();
+        playlist->removing_entries = g_queue_new ();
 
         return playlist;
 }
@@ -36,6 +37,7 @@ void m3u8playlist_free (M3U8Playlist * playlist)
 
         g_queue_foreach (playlist->entries, (GFunc) m3u8entry_free, NULL);
         g_queue_free (playlist->entries);
+        g_queue_free (playlist->removing_entries);
         g_free (playlist);
 }
 
@@ -67,7 +69,7 @@ gboolean m3u8playlist_add_entry (M3U8Playlist *playlist, const gchar *url, gfloa
                         M3U8Entry *old_entry;
 
                         old_entry = g_queue_pop_head (playlist->entries);
-                        m3u8entry_free (old_entry);
+                        g_queue_push_tail (playlist->removing_entries, old_entry);
                 }
         }
 
@@ -133,16 +135,19 @@ gchar * m3u8playlist_render (M3U8Playlist * playlist)
         return p;
 }
 
-M3U8Entry * m3u8playlist_tail_entry (M3U8Playlist *playlist)
+gchar * m3u8playlist_tail_entry (M3U8Playlist *playlist)
 {
         M3U8Entry *entry;
+        gchar *rm_segment;
 
         g_return_val_if_fail (playlist != NULL, NULL);
 
-        entry = NULL;
-        if (playlist->entries->length >= playlist->window_size) {
-                entry = g_queue_peek_head (playlist->entries);
+        rm_segment = NULL;
+        if (playlist->removing_entries->length >= 3) {
+                entry = g_queue_pop_head (playlist->removing_entries);
+                rm_segment = g_strdup (entry->url);
+                m3u8entry_free (entry);
         }
 
-        return entry;
+        return rm_segment;
 }

@@ -555,28 +555,25 @@ static void notify_function (union sigval sv)
         url = g_strdup_printf ("%lu.ts", encoder->last_timestamp);
 
         g_rw_lock_writer_lock (&(encoder->m3u8_playlist_rwlock));
+
         /* put segment */
         if (encoder->m3u8push_thread_pool != NULL) {
-                M3U8Entry *entry;
-
                 m3u8_push_request = g_malloc (sizeof (m3u8PushRequest));
                 encoder->sequence_number++;
                 m3u8_push_request->sequence_number = encoder->sequence_number;
                 m3u8_push_request->encoder = encoder;
                 m3u8_push_request->timestamp = encoder->last_timestamp;
-                m3u8_push_request->rm_segment = NULL;
-                entry = m3u8playlist_tail_entry (encoder->m3u8_playlist);
-                if (entry != NULL) {
-                        m3u8_push_request->rm_segment = g_strdup (entry->url);
-                }
+                m3u8_push_request->rm_segment = m3u8playlist_tail_entry (encoder->m3u8_playlist);
                 g_thread_pool_push (encoder->m3u8push_thread_pool, m3u8_push_request, &err);
                 if (err != NULL) {
                         GST_FIXME ("m3u8push thread pool push error %s", err->message);
                         g_error_free (err);
                 }
         }
+
         /* add new m3u8 playlist entry */
         m3u8playlist_add_entry (encoder->m3u8_playlist, url, segment_duration);
+
         g_rw_lock_writer_unlock (&(encoder->m3u8_playlist_rwlock));
 
         encoder->last_timestamp = last_timestamp;
