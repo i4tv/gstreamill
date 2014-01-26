@@ -560,13 +560,12 @@ static void notify_function (union sigval sv)
                 M3U8Entry *entry;
 
                 m3u8_push_request = g_malloc (sizeof (m3u8PushRequest));
-                m3u8_push_request->rm_segment = NULL;
                 encoder->sequence_number++;
                 m3u8_push_request->sequence_number = encoder->sequence_number;
                 m3u8_push_request->encoder = encoder;
                 m3u8_push_request->timestamp = encoder->last_timestamp;
-                entry = m3u8playlist_tail_entry (encoder->m3u8_playlist);
                 m3u8_push_request->rm_segment = NULL;
+                entry = m3u8playlist_tail_entry (encoder->m3u8_playlist);
                 if (entry != NULL) {
                         m3u8_push_request->rm_segment = g_strdup (entry->url);
                 }
