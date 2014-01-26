@@ -7,6 +7,7 @@ gstreamill is an open source, GPL licensed "stream mill" based on gstreamer-1.0.
 ## Highlight
 
    * hls, http progressive streaminig, udp output.
+   * hls push mode output via webdav.
    * Multi-Rate with GOP Alignment.
    * RESTful management interface, allowing easy integration into operator environment.
    * Job is descript in json.
@@ -17,9 +18,9 @@ gstreamill is an open source, GPL licensed "stream mill" based on gstreamer-1.0.
 
        IP --------+ 
                   |                      +------- UDP
-       CVBS ------+    +------------+    |
-                  +----+ gstreamill +----+------ M3U8
-       SDI -------+    +------+-----+    |
+       CVBS ------+    +------------+    |               +---- http put
+                  +----+ gstreamill +----+------ M3U8----+
+       SDI -------+    +------+-----+    |               +---- http get
                   |           |          +------ HTTP
        LIVE ------+           |
                               |
