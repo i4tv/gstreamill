@@ -554,7 +554,7 @@ static void notify_function (union sigval sv)
         last_timestamp = encoder_output_rap_timestamp (encoder, *(encoder->last_rap_addr));
         url = g_strdup_printf ("%lu.ts", encoder->last_timestamp);
 
-        g_rw_lock_writer_lock (&(encoder->m3u8_playlist_rwlock));
+        g_mutex_lock (&(encoder->m3u8_playlist_mutex));
 
         /* put segment */
         if (encoder->m3u8push_thread_pool != NULL) {
@@ -574,7 +574,7 @@ static void notify_function (union sigval sv)
         /* add new m3u8 playlist entry */
         m3u8playlist_add_entry (encoder->m3u8_playlist, url, segment_duration);
 
-        g_rw_lock_writer_unlock (&(encoder->m3u8_playlist_rwlock));
+        g_mutex_unlock (&(encoder->m3u8_playlist_mutex));
 
         encoder->last_timestamp = last_timestamp;
         g_free (url);
@@ -631,12 +631,12 @@ void livejob_reset (LiveJob *livejob)
                 if (jobdesc_m3u8streaming (livejob->job)) {
                         /* reset m3u8 playlist */
                         if (encoder->m3u8_playlist != NULL) {
-                                g_rw_lock_clear (&(encoder->m3u8_playlist_rwlock));
+                                g_mutex_clear (&(encoder->m3u8_playlist_mutex));
                                 m3u8playlist_free (encoder->m3u8_playlist);
                         }
                         encoder->m3u8push_thread_pool = livejob->m3u8push_thread_pool;
                         encoder->m3u8_playlist = m3u8playlist_new (version, window_size, FALSE);
-                        g_rw_lock_init (&(encoder->m3u8_playlist_rwlock));
+                        g_mutex_init (&(encoder->m3u8_playlist_mutex));
 
                         /* reset message queue */
                         if (encoder->mqdes != -1) {

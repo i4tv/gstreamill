@@ -869,9 +869,9 @@ gchar * gstreamill_get_m3u8playlist (Gstreamill *gstreamill, EncoderOutput *enco
                 return g_strdup ("not fount");
         }
 
-        g_rw_lock_reader_lock (&(encoder_output->m3u8_playlist_rwlock));
+        g_mutex_lock (&(encoder_output->m3u8_playlist_mutex));
         m3u8playlist = m3u8playlist_render (encoder_output->m3u8_playlist);
-        g_rw_lock_reader_unlock (&(encoder_output->m3u8_playlist_rwlock));
+        g_mutex_unlock (&(encoder_output->m3u8_playlist_mutex));
 
         return m3u8playlist;
 }
