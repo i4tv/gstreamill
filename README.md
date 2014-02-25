@@ -128,11 +128,15 @@ job_name is value of the "name" field in job description.
 
 ## output
 
+job name is the value of name of job description.
+
 * http progressive streaming
 
     http://localhost:20119/live/job name/encoder/encoder_index
 
 * hls
+
+    http://localhost:20119/live/job name/playlist.m3u8
 
     http://localhost:20119/live/job name/encoder/encoder_index/playlist.m3u8
 
