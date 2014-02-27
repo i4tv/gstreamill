@@ -245,6 +245,43 @@ m3u8streaming is hls output, it's optional:
         "push-server-uri" : "http://192.168.56.3/test"
     }
 
+push-server-uri, push m3u8 to web server use http webdav, nginx conf examples:
+
+    #user  nobody;
+    worker_processes  1;
+    
+    #error_log  logs/error.log;
+    #error_log  logs/error.log  notice;
+    #error_log  logs/error.log  info;
+    
+    #pid        logs/nginx.pid;
+    
+    
+    events {
+        worker_connections  1024;
+    }
+    
+    
+    http {
+    
+        server {
+            location / {
+                root /home/zhangping/publish;
+                client_body_temp_path /home/zhangping/tmp;
+    
+                dav_methods  PUT DELETE MKCOL COPY MOVE;
+    
+                create_full_put_path   on;
+                dav_access             group:rw  all:r;
+    
+                limit_except  GET {
+                    allow  192.168.0.0/16;
+                    deny   all;
+                }
+            }
+        }
+    }
+
 There are examples in examples directory of source.
 
 Talk about gstreamill on [gstreamill](https://groups.google.com/forum/#!forum/gstreamill) or report a bug on [issues](https://github.com/zhangping/gstreamill/issues) page.
