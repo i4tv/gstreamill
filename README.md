@@ -245,7 +245,7 @@ m3u8streaming is hls output, it's optional:
         "push-server-uri" : "http://192.168.56.3/test"
     }
 
-push-server-uri, push m3u8 to web server use http webdav, nginx conf examples:
+push-server-uri, push m3u8 to web server use http webdav. If you use nginx, note that the webdav module of nginx is not built by default, it should be enabled with the --with-http_dav_module configuration parameter. nginx conf examples:
 
     #user  nobody;
     worker_processes  1;
@@ -264,6 +264,8 @@ push-server-uri, push m3u8 to web server use http webdav, nginx conf examples:
     
     http {
     
+        client_max_body_size 20M;
+
         server {
             location / {
                 root /home/zhangping/publish;
