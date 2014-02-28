@@ -37,7 +37,8 @@ typedef struct _EncoderOutput {
         GMutex m3u8_playlist_mutex;
         GThreadPool *m3u8push_thread_pool;
         mqd_t mqdes;
-        guint sequence_number;
+        guint64 sequence_number;
+        guint64 pushed_sequence_number;
         M3U8Playlist *m3u8_playlist;
         GstClockTime last_timestamp; /* last segment timestamp */
 } EncoderOutput;

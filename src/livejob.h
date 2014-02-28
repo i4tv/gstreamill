@@ -78,7 +78,6 @@ struct _LiveJob {
         gchar m3u8push_host[256];
         gchar m3u8push_path[128];
         guint16 m3u8push_port;
-        guint64 sequence_number;
         GThreadPool *m3u8push_thread_pool;
 };
 

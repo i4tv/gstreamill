@@ -324,7 +324,7 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
         http_client_request (livejob, buf, count);
 
         /* put playlist */
-        while ((livejob->sequence_number + 1) != m3u8_push_request->sequence_number) {
+        while ((m3u8_push_request->encoder->pushed_sequence_number + 1) != m3u8_push_request->sequence_number) {
                 /* waiting previous segment pushed */
                 g_usleep (50000);
         }
@@ -335,7 +335,7 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
         header = g_strdup_printf (HTTP_PUT, request_uri, PACKAGE_NAME, PACKAGE_VERSION, livejob->m3u8push_host, strlen (playlist));
         buf = g_strdup_printf ("%s%s", header, playlist);
         http_client_request (livejob, buf, strlen (buf));
-        livejob->sequence_number++;
+        m3u8_push_request->encoder->pushed_sequence_number++;
 
         /* remove segment */
         g_free (header);
@@ -453,6 +453,8 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
                 output->encoders[i].m3u8_playlist = NULL;
                 output->encoders[i].last_timestamp = 0;
                 output->encoders[i].mqdes = -1;
+                output->encoders[i].sequence_number = 0;
+                output->encoders[i].pushed_sequence_number = 0;
         }
         livejob->output = output;
 
