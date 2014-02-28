@@ -32,7 +32,7 @@ typedef struct _m3u8PushRequest {
         gchar *rm_segment;
         EncoderOutput *encoder;
         GstClockTime timestamp;
-        guint sequence_number;
+        guint64 sequence_number;
 } m3u8PushRequest;
 
 typedef struct _LiveJobOutput {
@@ -78,7 +78,7 @@ struct _LiveJob {
         gchar m3u8push_host[256];
         gchar m3u8push_path[128];
         guint16 m3u8push_port;
-        guint sequence_number;
+        guint64 sequence_number;
         GThreadPool *m3u8push_thread_pool;
 };
 
