@@ -223,7 +223,7 @@ static gsize status_output_size (gchar *job)
         return size;
 }
 
-static gint http_request (LiveJob *livejob, guint8 *data, gsize count)
+static gint http_client_request (LiveJob *livejob, guint8 *data, gsize count)
 {
 	gint socketfd;
         struct hostent *hostp;
@@ -321,7 +321,7 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
         }
 
         /* put segment */
-        http_request (livejob, buf, count);
+        http_client_request (livejob, buf, count);
 
         /* put playlist */
         while ((livejob->sequence_number + 1) != m3u8_push_request->sequence_number) {
@@ -334,7 +334,7 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
         g_free (header);
         header = g_strdup_printf (HTTP_PUT, request_uri, PACKAGE_NAME, PACKAGE_VERSION, livejob->m3u8push_host, strlen (playlist));
         buf = g_strdup_printf ("%s%s", header, playlist);
-        http_request (livejob, buf, strlen (buf));
+        http_client_request (livejob, buf, strlen (buf));
         livejob->sequence_number++;
 
         /* remove segment */
@@ -343,7 +343,7 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
                 g_free (request_uri);
                 request_uri = g_strdup_printf ("%s/%s/%s", livejob->m3u8push_path, m3u8_push_request->encoder->name, m3u8_push_request->rm_segment);
                 header = g_strdup_printf (HTTP_DELETE, request_uri,  PACKAGE_NAME, PACKAGE_VERSION, livejob->m3u8push_host);
-                http_request (livejob, header, strlen (header));
+                http_client_request (livejob, header, strlen (header));
                 g_free (m3u8_push_request->rm_segment);
         }
 
@@ -584,7 +584,7 @@ static void notify_function (union sigval sv)
  * livejob_reset:
  * @livejob: livejob object
  *
- * reset livejobe stat
+ * reset livejob stat
  *
  */
 void livejob_reset (LiveJob *livejob)
