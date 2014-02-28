@@ -12,7 +12,7 @@
 #define M3U8_VERSION_TAG "#EXT-X-VERSION:%d\n"
 #define M3U8_ALLOW_CACHE_TAG "#EXT-X-ALLOW-CACHE:%s\n"
 #define M3U8_TARGETDURATION_TAG "#EXT-X-TARGETDURATION:%d\n"
-#define M3U8_MEDIA_SEQUENCE_TAG "#EXT-X-MEDIA-SEQUENCE:%d\n"
+#define M3U8_MEDIA_SEQUENCE_TAG "#EXT-X-MEDIA-SEQUENCE:%lu\n"
 #define M3U8_INF_TAG "#EXTINF:%.2f,\n%s\n"
 #define M3U8_STREAM_INF_TAG "#EXT-X-STREAM-INF:PROGRAM-ID=%d,BANDWIDTH=%s000\n"
 
@@ -27,7 +27,7 @@ typedef struct _M3U8Playlist
         guint version;
         gboolean allow_cache;
         gint window_size;
-        guint sequence_number;
+        guint64 sequence_number;
 
         /*< Private >*/
         GQueue *adding_entries;
