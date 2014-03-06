@@ -314,14 +314,12 @@ static GstFlowReturn encoder_appsink_callback (GstAppSink * sink, gpointer user_
         GstBuffer *buffer;
         GstSample *sample;
         Encoder *encoder = (Encoder *)user_data;
-        EncoderOutput *output;
 
-        output = encoder->output;
-        *(output->heartbeat) = gst_clock_get_time (encoder->system_clock);
+        *(encoder->output->heartbeat) = gst_clock_get_time (encoder->system_clock);
         sample = gst_app_sink_pull_sample (GST_APP_SINK (sink));
         buffer = gst_sample_get_buffer (sample);
         sem_wait (encoder->output->semaphore);
-        (*(output->total_count)) += gst_buffer_get_size (buffer);
+        (*(encoder->output->total_count)) += gst_buffer_get_size (buffer);
 
         /* update head_addr, free enough memory for current buffer. */
         while (cache_free (encoder) < gst_buffer_get_size (buffer) + 12) { /* timestamp + gop size = 12 */
@@ -362,7 +360,7 @@ static GstFlowReturn encoder_appsink_callback (GstAppSink * sink, gpointer user_
          * update tail_addr and last_rap_addr
          */
         copy_buffer (encoder, buffer);
-        sem_post (output->semaphore);
+        sem_post (encoder->output->semaphore);
 
         gst_sample_unref (sample);
 
