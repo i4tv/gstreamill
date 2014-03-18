@@ -101,11 +101,11 @@ default management port is 20118, invoke test job as flowing:
 
     http progressive download:
     
-        http://host.name:20119/live/test/encoder/0
+        http://host.name.or.ip:20119/live/test/encoder/0
 
     m3u8:
     
-        http://localhost:20119/live/test/playlist.m3u8
+        http://host.name.or.ip:20119/live/test/playlist.m3u8
 
 ## management interface
 
@@ -117,18 +117,18 @@ test.job is job description in json, can be found in examples directory.
 
 * stop a job
 
-    curl http://localhost:20118/stop/job_name
+    curl http://host.name.or.ip:20118/stop/job_name
 
 job_name is value of the "name" field in job description.
 
 * query gstreamill stat:
 
-    curl http://localhost:20118/stat/gstreamill
-    curl http://localhost:20118/stat/gstreamill/livejob/test
+    curl http://host.name.or.ip:20118/stat/gstreamill
+    curl http://host.name.or.ip:20118/stat/gstreamill/livejob/test
 
 * query gstreamer information:
 
-    curl http://localhost:20118/stat/gstreamer[/plugin]
+    curl http://host.name.or.ip:20118/stat/gstreamer[/plugin]
 
 ## output
 
@@ -136,13 +136,13 @@ job name is the value of name of job description.
 
 * http progressive streaming
 
-    http://localhost:20119/live/job name/encoder/encoder_index
+    http://host.name.or.ip:20119/live/job name/encoder/encoder_index
 
 * hls
 
-    http://localhost:20119/live/job name/playlist.m3u8
+    http://host.name.or.ip:20119/live/job name/playlist.m3u8
 
-    http://localhost:20119/live/job name/encoder/encoder_index/playlist.m3u8
+    http://host.name.or.ip:20119/live/job name/encoder/encoder_index/playlist.m3u8
 
 * udp
 
