@@ -99,10 +99,12 @@ default management port is 20118, invoke test job as flowing:
 
 * access output use vlc
 
-    http progressive download：
+    http progressive download:
+    
         http://host.name:20119/live/test/encoder/0
 
     m3u8:
+    
         http://localhost:20119/live/test/playlist.m3u8
 
 ## management interface
