@@ -114,7 +114,7 @@ gboolean jobdesc_is_live (gchar *job)
         obj = json_value_get_object (val);
 
         /* without is-live configure item, default is live */
-        if (json_object_dotget_boolean (obj, "is-live")) {
+        if (json_object_dotget_boolean (obj, "source.is-live")) {
                 json_value_free (val);
                 return TRUE;
         }

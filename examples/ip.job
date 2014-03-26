@@ -2,6 +2,7 @@
     "name" : "cctv2",
     "debug" : "3",
     "source" : {
+        "is-live" : true,
         "elements" : {
             "udpsrc" : {
                 "property" : {

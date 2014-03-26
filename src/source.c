@@ -696,8 +696,14 @@ static GstFlowReturn source_appsink_callback (GstAppSink *elt, gpointer user_dat
         GST_DEBUG ("%s current position %d, buffer duration: %ld", stream->name, stream->current_position, GST_BUFFER_DURATION (buffer));
         for (i = 0; i < stream->encoders->len; i++) {
                 encoder = g_array_index (stream->encoders, gpointer, i);
-                if (stream->current_position == encoder->current_position) {
-                        GST_WARNING ("encoder stream %s can not catch up source output.", encoder->name);
+                if (stream->is_live) {
+                        /* live job, warning encoder too slow */
+                        if (stream->current_position == encoder->current_position) {
+                                GST_WARNING ("encoder stream %s can not catch up source output.", encoder->name);
+                        }
+                } else {
+
+                        /* trancode job, avoid decoder too fast */
                 }
         }
 
@@ -828,6 +834,12 @@ Source * source_initialize (gchar *job, SourceState source_stat)
         for (i = 0; i < source->streams->len; i++) {
                 stream = g_array_index (source->streams, gpointer, i);
                 stream->current_position = -1;
+                if (jobdesc_is_live (job)) {
+                        stream->is_live = TRUE;
+                } else {
+
+                        stream->is_live = FALSE;
+                }
                 stream->system_clock = source->system_clock;
                 stream->encoders = g_array_new (FALSE, FALSE, sizeof (gpointer));
                 for (j = 0; j < SOURCE_RING_SIZE; j++) {

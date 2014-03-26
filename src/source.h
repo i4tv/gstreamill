@@ -58,6 +58,7 @@ typedef struct _SourceState {
 
 typedef struct _SourceStream {
         gchar *name;
+        gboolean is_live;
         GstSample *ring[SOURCE_RING_SIZE];
         gint current_position; /* current source output position */
         GstClock *system_clock;
@@ -70,7 +71,6 @@ struct _Source {
         GObject parent;
 
         gchar *name;
-        gboolean is_live;
         GstClock *system_clock;
         GstState state; /* state of the pipeline */
         GSList *bins;
