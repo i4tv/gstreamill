@@ -105,7 +105,7 @@ gint jobdesc_encoders_count (gchar *job)
         return count;
 }
 
-JobType jobdesc_get_type (gchar *job)
+gboolean jobdesc_is_live (gchar *job)
 {
         JSON_Value *val;
         JSON_Object *obj;
@@ -113,14 +113,14 @@ JobType jobdesc_get_type (gchar *job)
         val = json_parse_string (job);
         obj = json_value_get_object (val);
 
-        if ((json_object_get_object (obj, "source") != NULL) &&
-            (json_object_get_array (obj, "encoders") != NULL)) {
+        /* without is-live configure item, default is live */
+        if (json_object_dotget_boolean (obj, "is-live")) {
                 json_value_free (val);
-                return JT_LIVE;
+                return TRUE;
         }
         json_value_free (val);
 
-        return JT_UNKNOWN;
+        return FALSE;
 }
 
 gchar * jobdesc_get_debug (gchar *job)

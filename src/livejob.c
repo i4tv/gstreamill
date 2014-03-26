@@ -703,6 +703,7 @@ gint livejob_start (LiveJob *livejob)
                 GST_ERROR ("Initialize livejob source error.");
                 return 1;
         }
+        livejob->source->is_live = TRUE;
 
         if (encoder_initialize (livejob->encoder_array, livejob->job, livejob->output->encoders, livejob->source) != 0) {
                 GST_ERROR ("Initialize livejob encoder error.");

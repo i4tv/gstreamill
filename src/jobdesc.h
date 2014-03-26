@@ -10,19 +10,11 @@
 
 #include <gst/gst.h>
 
-typedef enum {
-        JT_ERROR = 0,
-        JT_LIVE,
-        JT_TRANSCODE,
-        JT_RECORDE,
-        JT_UNKNOWN
-} JobType;
-
 gboolean jobdesc_is_valid (gchar *job);
 gchar * jobdesc_get_name (gchar *job);
 gint jobdesc_encoders_count (gchar *job);
 gint jobdesc_streams_count (gchar *job, gchar *pipeline);
-JobType jobdesc_get_type (gchar *job);
+gboolean jobdesc_is_live (gchar *job);
 gchar * jobdesc_get_debug (gchar *job);
 gchar ** jobdesc_bins (gchar *job, gchar *pipeline);
 gchar * jobdesc_udpstreaming (gchar *job, gchar *pipeline);

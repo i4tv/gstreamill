@@ -70,6 +70,7 @@ struct _Source {
         GObject parent;
 
         gchar *name;
+        gboolean is_live;
         GstClock *system_clock;
         GstState state; /* state of the pipeline */
         GSList *bins;

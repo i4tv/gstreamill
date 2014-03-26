@@ -719,20 +719,11 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job)
                 return p;
         }
 
-        switch (jobdesc_get_type (job)) {
-        case JT_LIVE:
-                GST_INFO ("live job arrived.");
+        if (jobdesc_is_live (job)) {
+                GST_ERROR ("live job arrived");
                 p = gstreamill_livejob_start (gstreamill, job);
-                break;
-
-        case JT_RECORDE:
-        case JT_TRANSCODE:
-        case JT_UNKNOWN:
-                p = g_strdup ("Unknown type");
-                break;
-
-        case JT_ERROR:
-                p = g_strdup ("Error job");
+        } else {
+                p = g_strdup ("unknown job type");
         }
 
         return p;
