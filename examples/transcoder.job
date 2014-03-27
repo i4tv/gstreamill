@@ -1,0 +1,109 @@
+{
+    "name" : "cctv2",
+    "debug" : "3",
+    "source" : {
+        "is-live" : false,
+        "elements" : {
+            "filesrc" : {
+                "property" : {
+                    "location" : "/home/zhangping/cctv2.ts"
+                }
+            },
+            "tsdemux" : {
+                "property" : {
+                    "program-number" : 302
+                }
+            },
+            "appsink" : {
+                "property" : {
+                   "sync" : false,
+                   "drop" : true
+                }
+            }
+        },
+        "bins" : [
+            "filesrc ! queue ! tsdemux name=demuxer",
+            "demuxer.video ! queue ! mpeg2dec ! queue ! appsink name = video",
+            "demuxer.audio ! mpegaudioparse ! queue ! mad ! queue ! appsink name = audio"
+        ]
+    },
+    "encoders" : [
+        {
+            "elements" : {
+                "appsrc" : {
+                    "property" : {
+                        "is-live" : true,
+                        "format" : 3
+                    }
+                },
+                "x264enc" : {
+                    "property" : {
+                        "name" : "x264enc",
+                        "bitrate" : 1500,
+                        "bframes" : 3,
+                        "threads" : 4,
+                        "byte-stream" : "TRUE",
+                        "rc-lookahead" : 25,
+                        "key-int-max" : 100,
+                        "pass" : 17,
+                        "mb-tree" : true,
+                        "option-string" : ":ref=3:me=hex:subme=8:merange=16:nf=1:deblock=1,-2:weightp=1:scenecut=0:b-pyramid=2:direct=spatial"
+                    }
+                },
+                "hlssink" : {
+                    "property" : {
+                        "playlist-location" : "/home/zhangping/tmp/cctv2/800/playlist.m3u8",
+                        "location" : "/home/zhangping/tmp/cctv2/800/segment%05d.ts",
+                        "max-files" : 1000,
+                        "playlist-length" : 1000,
+                        "target-duration" : 10
+                    }
+                }
+            },
+            "bins" : [
+                "appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc name=voaacenc0! queue ! muxer.",
+                "appsrc name=video ! queue ! x264enc ! queue ! muxer.",
+                "mpegtsmux name=muxer ! queue ! hlssink"
+            ]
+        },
+        {
+            "elements" : {
+                "appsrc" : {
+                    "property" : {
+                        "is-live" : true,
+                        "format" : 3
+                    }
+                },
+                "x264enc" : {
+                    "property" : {
+                        "name" : "x264enc",
+                        "bitrate" : 1000,
+                        "bframes" : 3,
+                        "threads" : 4,
+                        "byte-stream" : "TRUE",
+                        "rc-lookahead" : 25,
+                        "key-int-max" : 100,
+                        "pass" : 17,
+                        "mb-tree" : true,
+                        "option-string" : ":ref=3:me=hex:subme=8:merange=16:nf=1:deblock=1,-2:weightp=1:scenecut=0:b-pyramid=2:direct=spatial"
+                    }
+                },
+                "hlssink" : {
+                    "property" : {
+                        "playlist-location" : "/home/zhangping/tmp/cctv2/1000/playlist.m3u8",
+                        "location" : "/home/zhangping/tmp/cctv2/1000/segment%05d.ts",
+                        "max-files" : 1000,
+                        "playlist-length" : 1000,
+                        "target-duration" : 10
+                    }
+                }
+            },
+            "bins" : [
+                "appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc name=voaacenc1 ! queue ! muxer.",
+                "appsrc name=video ! queue ! x264enc ! queue ! muxer.",
+                "mpegtsmux name=muxer ! queue ! hlssink"
+            ]
+        }
+    ]
+}
+

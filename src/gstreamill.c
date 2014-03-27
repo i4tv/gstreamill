@@ -723,7 +723,9 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job)
                 GST_ERROR ("live job arrived");
                 p = gstreamill_livejob_start (gstreamill, job);
         } else {
-                p = g_strdup ("unknown job type");
+
+                GST_ERROR ("transcode job arrived");
+                p = gstreamill_livejob_start (gstreamill, job);
         }
 
         return p;

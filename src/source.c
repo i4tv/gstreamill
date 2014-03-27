@@ -703,6 +703,11 @@ static GstFlowReturn source_appsink_callback (GstAppSink *elt, gpointer user_dat
                         }
                 } else {
 
+                        while (stream->current_position == encoder->current_position) {
+                                GST_DEBUG ("waiting %s encoder", stream->name);
+                                g_usleep (50000); /* wiating 50ms */
+                                continue;
+                        }
                         /* trancode job, avoid decoder too fast */
                 }
         }
