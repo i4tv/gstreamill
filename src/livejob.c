@@ -700,16 +700,27 @@ void livejob_reset (LiveJob *livejob)
 gint livejob_start (LiveJob *livejob)
 {
         Encoder *encoder;
+        EncoderOutput *encoders;
+        SourceState *source_stat;
         GstStateChangeReturn ret;
         gint i;
 
-        livejob->source = source_initialize (livejob->job, &(livejob->output->source));
+        if (livejob->is_live) {
+                source_stat = &(livejob->output->source);
+                encoders = livejob->output->encoders;
+
+        } else {
+                source_stat = NULL;
+                encoders = NULL;
+        }
+
+        livejob->source = source_initialize (livejob->job, source_stat);
         if (livejob->source == NULL) {
                 GST_ERROR ("Initialize livejob source error.");
                 return 1;
         }
 
-        if (encoder_initialize (livejob->encoder_array, livejob->job, livejob->output->encoders, livejob->source) != 0) {
+        if (encoder_initialize (livejob->encoder_array, livejob->job, encoders, livejob->source) != 0) {
                 GST_ERROR ("Initialize livejob encoder error.");
                 return 1;
         }

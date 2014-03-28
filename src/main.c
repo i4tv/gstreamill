@@ -219,6 +219,7 @@ int main (int argc, char *argv[])
 
                 /* launch a livejob. */
                 livejob = livejob_new ("name", job_name, "job", job, NULL);
+                livejob->is_live = jobdesc_is_live (job);
                 signal (SIGPIPE, SIG_IGN);
                 signal (SIGUSR1, sighandler);
                 signal (SIGUSR2, stop_job);
