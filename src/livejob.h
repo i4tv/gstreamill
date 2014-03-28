@@ -50,6 +50,7 @@ struct _LiveJob {
 
         gchar *job;
         gchar *name; /* same as the name in livejob config file */
+        gboolean is_live;
         gint id;
         gchar *log_dir;
         GstClock *system_clock;

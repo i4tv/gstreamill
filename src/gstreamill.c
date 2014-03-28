@@ -281,6 +281,10 @@ static void livejob_check_func (gpointer data, gpointer user_data)
         GstClockTimeDiff time_diff;
         GstClockTime now, min, max;
 
+        if (!(livejob->is_live)) {
+                return;
+        }
+
         output = livejob->output;
         if (*(output->state) != GST_STATE_PLAYING) {
                 return;
@@ -661,6 +665,7 @@ static gchar * gstreamill_livejob_start (Gstreamill *gstreamill, gchar *job)
         /* livejob initialize */
         livejob->log_dir = gstreamill->log_dir;
         g_mutex_init (&(livejob->access_mutex));
+        livejob->is_live = jobdesc_is_live (job);
         livejob->current_access = 0;
         livejob->age = 0;
         livejob->last_start_time = NULL;

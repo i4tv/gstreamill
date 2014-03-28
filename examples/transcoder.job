@@ -1,8 +1,8 @@
 {
-    "name" : "cctv2",
+    "name" : "transcode",
     "debug" : "3",
+    "is-live" : false,
     "source" : {
-        "is-live" : false,
         "elements" : {
             "filesrc" : {
                 "property" : {

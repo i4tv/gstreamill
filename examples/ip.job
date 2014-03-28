@@ -1,8 +1,8 @@
 {
     "name" : "cctv2",
     "debug" : "3",
+    "is-live" : true,
     "source" : {
-        "is-live" : true,
         "elements" : {
             "udpsrc" : {
                 "property" : {

@@ -620,6 +620,11 @@ void livejob_reset (LiveJob *livejob)
         livejob->last_start_time = gst_date_time_to_iso8601_string (start_time);
         gst_date_time_unref (start_time);
 
+        /* is live job? */
+        if (!(livejob->is_live)) {
+                return;
+        }
+
         version = jobdesc_m3u8streaming_version (livejob->job);
         if (version == 0) {
                 version = 3;
