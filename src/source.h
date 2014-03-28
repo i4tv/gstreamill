@@ -95,6 +95,6 @@ GType source_get_type (void);
 
 gboolean bus_callback (GstBus *bus, GstMessage *msg, gpointer user_data);
 GSList * bins_parse (gchar *job, gchar *pipeline);
-Source * source_initialize (gchar *job, SourceState source_stat);
+Source * source_initialize (gchar *job, SourceState *source_stat);
 
 #endif /* __SOURCE_H__ */

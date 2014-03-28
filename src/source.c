@@ -825,7 +825,7 @@ static gint source_extract_streams (Source *source, gchar *job)
         return 0;
 }
 
-Source * source_initialize (gchar *job, SourceState source_stat)
+Source * source_initialize (gchar *job, SourceState *source_stat)
 {
         gint i, j;
         Source *source;
@@ -850,8 +850,10 @@ Source * source_initialize (gchar *job, SourceState source_stat)
                 for (j = 0; j < SOURCE_RING_SIZE; j++) {
                         stream->ring[j] = NULL;
                 }
-                stream->state = &(source_stat.streams[i]);
-                g_strlcpy (source_stat.streams[i].name, stream->name, STREAM_NAME_LEN);
+                if (source_stat != NULL) {
+                        stream->state = &(source_stat->streams[i]);
+                        g_strlcpy (source_stat->streams[i].name, stream->name, STREAM_NAME_LEN);
+                }
         }
 
         /* parse bins and create pipeline. */

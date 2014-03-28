@@ -703,7 +703,7 @@ gint livejob_start (LiveJob *livejob)
         GstStateChangeReturn ret;
         gint i;
 
-        livejob->source = source_initialize (livejob->job, livejob->output->source);
+        livejob->source = source_initialize (livejob->job, &(livejob->output->source));
         if (livejob->source == NULL) {
                 GST_ERROR ("Initialize livejob source error.");
                 return 1;
