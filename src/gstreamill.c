@@ -235,12 +235,14 @@ static void clean_job_list (Gstreamill *gstreamill)
                 list = gstreamill->livejob_list;
                 while (list != NULL) {
                         livejob = list->data;
-                        if (*(livejob->output->state) == GST_STATE_NULL && livejob->current_access == 0) {
+
+                        if (!livejob->is_live || (*(livejob->output->state) == GST_STATE_NULL && livejob->current_access == 0)) {
                                 GST_WARNING ("Remove live job: %s.", livejob->name);
                                 gstreamill->livejob_list = g_slist_remove (gstreamill->livejob_list, livejob);
                                 g_object_unref (livejob);
                                 break;
                         }
+
                         list = list->next;
                 }
                 if (list == NULL) {
@@ -280,6 +282,11 @@ static void livejob_check_func (gpointer data, gpointer user_data)
         gint j, k;
         GstClockTimeDiff time_diff;
         GstClockTime now, min, max;
+
+        if (gstreamill->stop) {
+                GST_ERROR ("waitting %s stopped", livejob->name);
+                return;
+        }
 
         if (!(livejob->is_live)) {
                 return;
@@ -447,6 +454,7 @@ static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClock
 
         /* stop? */
         if (gstreamill->stop && g_slist_length (gstreamill->livejob_list) == 0) {
+                GST_ERROR ("streamill stopped");
                 exit (0);
         }
 
@@ -556,6 +564,12 @@ static void child_watch_cb (GPid pid, gint status, LiveJob *livejob)
 
         if (WIFSIGNALED (status)) {
                 gchar *ret;
+
+                if (*(livejob->output->state) == GST_STATE_PAUSED) {
+                        GST_ERROR ("LiveJob with pid %d exit on an unhandled signal and paused, stopping gstreamill...", pid);
+                        *(livejob->output->state) = GST_STATE_NULL;
+                        return;
+                }
 
                 GST_ERROR ("LiveJob with pid %d exit on an unhandled signal, restart.", pid);
                 livejob_reset (livejob);
@@ -669,14 +683,14 @@ static gchar * gstreamill_livejob_start (Gstreamill *gstreamill, gchar *job)
         livejob->current_access = 0;
         livejob->age = 0;
         livejob->last_start_time = NULL;
-        if (livejob_initialize (livejob, gstreamill->daemon) != 0) {
+        if (livejob->is_live && (livejob_initialize (livejob, gstreamill->daemon) != 0)) {
                 p = g_strdup ("initialize livejob failure");
                 g_object_unref (livejob);
                 return p;
         }
 
         /* m3u8 master playlist */
-        if (jobdesc_m3u8streaming (livejob->job)) {
+        if (livejob->is_live && jobdesc_m3u8streaming (livejob->job)) {
                 livejob->output->master_m3u8_playlist = livejob_get_master_m3u8_playlist (livejob);
         }
 

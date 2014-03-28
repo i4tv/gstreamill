@@ -1,6 +1,6 @@
 {
     "name" : "transcode",
-    "debug" : "3",
+    "debug" : "4",
     "is-live" : false,
     "source" : {
         "elements" : {
