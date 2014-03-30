@@ -380,7 +380,9 @@ static void encoder_appsrc_need_data_callback (GstAppSrc *src, guint length, gpo
 
         current_position = (stream->current_position + 1) % SOURCE_RING_SIZE;
         for (;;) {
-                stream->state->last_heartbeat = gst_clock_get_time (stream->system_clock);
+                if (stream->state != NULL) {
+                        stream->state->last_heartbeat = gst_clock_get_time (stream->system_clock);
+                }
                 /* insure next buffer isn't current buffer */
                 if (current_position == stream->source->current_position ||
                         stream->source->current_position == -1) {
@@ -433,7 +435,9 @@ static void encoder_appsrc_need_data_callback (GstAppSrc *src, guint length, gpo
                         GST_ERROR ("%s, gst_app_src_push_buffer failure.", stream->name);
                 }
 
-                stream->state->current_timestamp = GST_BUFFER_PTS (buffer);
+                if (stream->state != NULL) {
+                        stream->state->current_timestamp = GST_BUFFER_PTS (buffer);
+                }
 
                 break;
         }
@@ -677,6 +681,9 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
                         if (encoders != NULL) {
                                 estream->state = &(encoders[i].streams[j]);
                                 g_strlcpy (encoders[i].streams[j].name, estream->name, STREAM_NAME_LEN);
+
+                        } else {
+                                estream->state = NULL;
                         }
                         estream->encoder = encoder;
                         estream->source = NULL;
