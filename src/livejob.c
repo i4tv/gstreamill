@@ -731,10 +731,10 @@ gint livejob_start (LiveJob *livejob)
         for (i = 0; i < livejob->encoder_array->len; i++) {
                 encoder = g_array_index (livejob->encoder_array, gpointer, i);
                 ret = gst_element_set_state (encoder->pipeline, GST_STATE_PLAYING);
-                if (ret == GST_STATE_CHANGE_FAILURE) {
+                if (ret == GST_STATE_CHANGE_FAILURE) { //FIXME
                         GST_ERROR ("Set %s to play error.", encoder->name);
                 }
-                if (encoder->udpstreaming != NULL) {
+                if (encoder->udpstreaming != NULL) { //FIXME
                         ret = gst_element_set_state (encoder->udpstreaming, GST_STATE_PLAYING);
                         if (ret == GST_STATE_CHANGE_FAILURE) {
                                 GST_ERROR ("Set %s udpstreaming to play error.", encoder->name);
