@@ -683,14 +683,14 @@ static gchar * gstreamill_livejob_start (Gstreamill *gstreamill, gchar *job)
         livejob->current_access = 0;
         livejob->age = 0;
         livejob->last_start_time = NULL;
-        if (livejob->is_live && (livejob_initialize (livejob, gstreamill->daemon) != 0)) {
+        if (livejob_initialize (livejob, gstreamill->daemon) != 0) {
                 p = g_strdup ("initialize livejob failure");
                 g_object_unref (livejob);
                 return p;
         }
 
         /* m3u8 master playlist */
-        if (livejob->is_live && jobdesc_m3u8streaming (livejob->job)) {
+        if (jobdesc_m3u8streaming (livejob->job)) {
                 livejob->output->master_m3u8_playlist = livejob_get_master_m3u8_playlist (livejob);
         }
 
