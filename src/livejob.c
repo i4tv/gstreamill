@@ -742,7 +742,9 @@ gint livejob_start (LiveJob *livejob)
                 }
                 encoder->state = GST_STATE_PLAYING;
         }
-        *(livejob->output->state) = GST_STATE_PLAYING;
+        if (livejob->is_live) {
+                *(livejob->output->state) = GST_STATE_PLAYING;
+        }
 
         return 0;
 }

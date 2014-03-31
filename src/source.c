@@ -689,7 +689,9 @@ static GstFlowReturn source_appsink_callback (GstAppSink *elt, gpointer user_dat
 
         sample = gst_app_sink_pull_sample (GST_APP_SINK (elt));
         buffer = gst_sample_get_buffer (sample);
-        stream->state->last_heartbeat = gst_clock_get_time (stream->system_clock);
+        if (stream->is_live) {
+                stream->state->last_heartbeat = gst_clock_get_time (stream->system_clock);
+        }
         stream->current_position = (stream->current_position + 1) % SOURCE_RING_SIZE;
 
         /* output running status */
@@ -717,7 +719,9 @@ static GstFlowReturn source_appsink_callback (GstAppSink *elt, gpointer user_dat
                 gst_sample_unref (stream->ring[stream->current_position]);
         }
         stream->ring[stream->current_position] = sample;
-        stream->state->current_timestamp = GST_BUFFER_PTS (buffer);
+        if (stream->is_live) {
+                stream->state->current_timestamp = GST_BUFFER_PTS (buffer);
+        }
 
         return GST_FLOW_OK;
 }

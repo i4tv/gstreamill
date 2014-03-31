@@ -236,7 +236,7 @@ static void clean_job_list (Gstreamill *gstreamill)
                 while (list != NULL) {
                         livejob = list->data;
 
-                        if (!livejob->is_live || (*(livejob->output->state) == GST_STATE_NULL && livejob->current_access == 0)) {
+                        if (livejob->is_live && (*(livejob->output->state) == GST_STATE_NULL && livejob->current_access == 0)) {
                                 GST_WARNING ("Remove live job: %s.", livejob->name);
                                 gstreamill->livejob_list = g_slist_remove (gstreamill->livejob_list, livejob);
                                 g_object_unref (livejob);
