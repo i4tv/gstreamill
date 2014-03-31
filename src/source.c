@@ -681,7 +681,9 @@ static SourceStream * source_get_stream (Source *source, gchar *name)
 
 static void eos_callback (GstAppSink *appsink, gpointer user_data)
 {
-        GST_ERROR ("EOS");
+        SourceStream *stream = (SourceStream *)user_data;
+
+        stream->eos = TRUE;
 }
 
 static GstFlowReturn new_sample_callback (GstAppSink *elt, gpointer user_data)
@@ -708,8 +710,8 @@ static GstFlowReturn new_sample_callback (GstAppSink *elt, gpointer user_data)
                         if (stream->current_position == encoder->current_position) {
                                 GST_WARNING ("encoder stream %s can not catch up source output.", encoder->name);
                         }
-                } else {
 
+                } else {
                         /* not a live job, avoid decoder too fast */
                         while (stream->current_position == encoder->current_position) {
                                 GST_DEBUG ("waiting %s encoder", stream->name);
@@ -847,6 +849,7 @@ Source * source_initialize (gchar *job, SourceState *source_stat)
 
         for (i = 0; i < source->streams->len; i++) {
                 stream = g_array_index (source->streams, gpointer, i);
+                stream->eos = FALSE;
                 stream->current_position = -1;
                 if (jobdesc_is_live (job)) {
                         stream->is_live = TRUE;

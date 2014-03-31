@@ -59,6 +59,7 @@ typedef struct _SourceState {
 typedef struct _SourceStream {
         gchar *name;
         gboolean is_live;
+        gboolean eos;
         GstSample *ring[SOURCE_RING_SIZE];
         gint current_position; /* current source output position */
         GstClock *system_clock;

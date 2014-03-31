@@ -370,7 +370,7 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
         return GST_FLOW_OK;
 }
 
-static void encoder_appsrc_need_data_callback (GstAppSrc *src, guint length, gpointer user_data)
+static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data)
 {
         EncoderStream *stream = (EncoderStream *)user_data;
         gint current_position;
@@ -384,8 +384,11 @@ static void encoder_appsrc_need_data_callback (GstAppSrc *src, guint length, gpo
                         stream->state->last_heartbeat = gst_clock_get_time (stream->system_clock);
                 }
                 /* insure next buffer isn't current buffer */
-                if (current_position == stream->source->current_position ||
-                        stream->source->current_position == -1) {
+                if ((current_position == stream->source->current_position) || stream->source->current_position == -1) {
+                        if ((current_position == stream->source->current_position) && stream->source->eos) {
+                                gst_app_src_end_of_stream (src);
+                                break;
+                        }
                         GST_DEBUG ("waiting %s source ready", stream->name);
                         g_usleep (50000); /* wiating 50ms */
                         continue;
@@ -474,7 +477,7 @@ static gint create_encoder_pipeline (Encoder *encoder)
         GType type;
         EncoderStream *stream;
         GstAppSrcCallbacks callbacks = {
-                encoder_appsrc_need_data_callback,
+                need_data_callback,
                 NULL,
                 NULL
         };
