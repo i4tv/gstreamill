@@ -679,6 +679,11 @@ static SourceStream * source_get_stream (Source *source, gchar *name)
         return stream;
 }
 
+static void eos_callback (GstAppSink *appsink, gpointer user_data)
+{
+        GST_ERROR ("EOS");
+}
+
 static GstFlowReturn new_sample_callback (GstAppSink *elt, gpointer user_data)
 {
         GstSample *sample;
@@ -733,7 +738,7 @@ static GstElement * create_source_pipeline (Source *source)
         Link *link;
         GSList *bins, *links, *elements;
         GstAppSinkCallbacks appsink_callbacks = {
-                NULL,
+                eos_callback,
                 NULL,
                 new_sample_callback
         };
