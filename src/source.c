@@ -679,7 +679,7 @@ static SourceStream * source_get_stream (Source *source, gchar *name)
         return stream;
 }
 
-static GstFlowReturn source_appsink_callback (GstAppSink *elt, gpointer user_data)
+static GstFlowReturn new_sample_callback (GstAppSink *elt, gpointer user_data)
 {
         GstSample *sample;
         GstBuffer *buffer;
@@ -735,7 +735,7 @@ static GstElement * create_source_pipeline (Source *source)
         GstAppSinkCallbacks appsink_callbacks = {
                 NULL,
                 NULL,
-                source_appsink_callback
+                new_sample_callback
         };
         GstElementFactory *element_factory;
         GType type;
