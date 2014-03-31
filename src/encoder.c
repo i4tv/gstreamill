@@ -309,7 +309,7 @@ static void udp_streaming (Encoder *encoder, GstBuffer *buffer)
         }
 }
 
-static GstFlowReturn encoder_appsink_callback (GstAppSink * sink, gpointer user_data)
+static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
 {
         GstBuffer *buffer;
         GstSample *sample;
@@ -481,7 +481,7 @@ static gint create_encoder_pipeline (Encoder *encoder)
         GstAppSinkCallbacks encoder_appsink_callbacks = {
                 NULL,
                 NULL,
-                encoder_appsink_callback
+                new_sample_callback
         };
         GstCaps *caps;
         GstBus *bus;
