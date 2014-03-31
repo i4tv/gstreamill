@@ -236,10 +236,16 @@ static void clean_job_list (Gstreamill *gstreamill)
                 while (list != NULL) {
                         livejob = list->data;
 
+                        /* clean live job */
                         if (livejob->is_live && (*(livejob->output->state) == GST_STATE_NULL && livejob->current_access == 0)) {
                                 GST_WARNING ("Remove live job: %s.", livejob->name);
                                 gstreamill->livejob_list = g_slist_remove (gstreamill->livejob_list, livejob);
                                 g_object_unref (livejob);
+                                break;
+                        }
+
+                        /* clean non live job */
+                        if (!livejob->is_live && FALSE) {
                                 break;
                         }
 
@@ -288,6 +294,7 @@ static void livejob_check_func (gpointer data, gpointer user_data)
                 return;
         }
 
+        /* not live job */
         if (!(livejob->is_live)) {
                 return;
         }

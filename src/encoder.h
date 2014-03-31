@@ -59,6 +59,7 @@ struct _Encoder {
         gint id;
         GstClock *system_clock;
         GstState state; /* state of the pipeline */
+        gboolean eos;
         GstClockTime *output_heartbeat;
         GSList *bins;
         GstElement *pipeline;

@@ -455,9 +455,16 @@ static GstPadProbeReturn encoder_appsink_event_probe (GstPad *pad, GstPadProbeIn
         gboolean all_headers;
         guint count;
 
+        if (GST_EVENT_TYPE (event) == GST_EVENT_EOS) {
+                GST_ERROR ("End of Stream of encoder %s", encoder->name);
+                encoder->eos = TRUE;
+                return GST_PAD_PROBE_OK;
+        }
+
         if (!gst_video_event_is_force_key_unit (event)) {
                 return GST_PAD_PROBE_OK;
         }
+
         /* force key unit event */
         gst_video_event_parse_downstream_force_key_unit (event, &timestamp, &stream_time, &running_time, &all_headers, &count);
         if (encoder->last_segment_duration != 0) {
@@ -523,11 +530,13 @@ static gint create_encoder_pipeline (Encoder *encoder)
                 element = bin->last;
                 element_factory = gst_element_get_factory (element);
                 type = gst_element_factory_get_element_type (element_factory);
-                if (g_strcmp0 ("GstAppSink", g_type_name (type)) == 0) {
+                if ((g_strcmp0 ("GstAppSink", g_type_name (type)) == 0) || (g_strcmp0 ("GstHlsSink", g_type_name (type)) == 0)) {
                         GstPad *pad;
 
-                        GST_INFO ("Encoder appsink found.");
-                        gst_app_sink_set_callbacks (GST_APP_SINK (element), &encoder_appsink_callbacks, encoder, NULL);
+                        if (g_strcmp0 ("GstAppSink", g_type_name (type)) == 0) {
+                                GST_INFO ("Encoder appsink found.");
+                                gst_app_sink_set_callbacks (GST_APP_SINK (element), &encoder_appsink_callbacks, encoder, NULL);
+                        }
                         pad = gst_element_get_static_pad (element, "sink");
                         gst_pad_add_probe (pad, GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM, encoder_appsink_event_probe, encoder, NULL);
                 }
@@ -660,6 +669,7 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
         for (i = 0; i < count; i++) {
                 pipeline = g_strdup_printf ("encoder.%d", i);
                 encoder = encoder_new ("name", pipeline, NULL);
+                encoder->eos = FALSE;
                 encoder->id = i;
                 encoder->last_running_time = GST_CLOCK_TIME_NONE;
                 if (encoders != NULL) {
