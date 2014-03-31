@@ -206,7 +206,7 @@ gboolean bus_callback (GstBus *bus, GstMessage *msg, gpointer user_data)
 
         switch (GST_MESSAGE_TYPE (msg)) {
         case GST_MESSAGE_EOS:
-                GST_INFO ("End of stream\n");
+                GST_INFO ("%s end of stream\n", g_value_get_string (&name));
                 break;
 
         case GST_MESSAGE_TAG:
