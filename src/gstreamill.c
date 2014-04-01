@@ -280,24 +280,16 @@ static gint stop_livejob (LiveJob *livejob, gint sig)
         }
 }
 
-static void livejob_check_func (gpointer data, gpointer user_data)
+static void nonlivejob_check_func (Gstreamill *gstreamill, LiveJob *livejob)
 {
-        LiveJob *livejob = (LiveJob *)data;
-        Gstreamill *gstreamill = (Gstreamill *)user_data;
+}
+
+static void livejob_check_func (Gstreamill *gstreamill, LiveJob *livejob)
+{
         LiveJobOutput *output;
         gint j, k;
         GstClockTimeDiff time_diff;
         GstClockTime now, min, max;
-
-        if (gstreamill->stop) {
-                GST_ERROR ("waitting %s stopped", livejob->name);
-                return;
-        }
-
-        /* not live job */
-        if (!(livejob->is_live)) {
-                return;
-        }
 
         output = livejob->output;
         if (*(output->state) != GST_STATE_PLAYING) {
@@ -432,6 +424,29 @@ static void livejob_check_func (gpointer data, gpointer user_data)
         } else {
                 output->source.sync_error_times = 0;
         }
+}
+
+static void job_check_func (gpointer data, gpointer user_data)
+{
+        LiveJob *livejob = (LiveJob *)data;
+        Gstreamill *gstreamill = (Gstreamill *)user_data;
+        LiveJobOutput *output;
+        gint j, k;
+        GstClockTimeDiff time_diff;
+        GstClockTime now, min, max;
+
+        if (gstreamill->stop) {
+                GST_ERROR ("waitting %s stopped", livejob->name);
+                return;
+        }
+
+        /* job check */
+        if (livejob->is_live) {
+                livejob_check_func (gstreamill, livejob);
+
+        } else {
+                nonlivejob_check_func (gstreamill, livejob);
+        }
 
         /* stat report. */
         if (gstreamill->daemon && (livejob->worker_pid != 0)) {
@@ -468,7 +483,7 @@ static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClock
         /* check livejob stat */
         if (!gstreamill->stop) {
                 list = gstreamill->livejob_list;
-                g_slist_foreach (list, livejob_check_func, gstreamill);
+                g_slist_foreach (list, job_check_func, gstreamill);
         }
 
         /* log rotate. */
