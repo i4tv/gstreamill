@@ -124,7 +124,7 @@ job_name is value of the "name" field in job description.
 * query gstreamill stat:
 
     curl http://host.name.or.ip:20118/stat/gstreamill
-    curl http://host.name.or.ip:20118/stat/gstreamill/livejob/test
+    curl http://host.name.or.ip:20118/stat/gstreamill/job/test
 
 * query gstreamer information:
 

@@ -15,7 +15,7 @@
 #include "gstreamill.h"
 
 typedef struct _PrivateData {
-        LiveJob *livejob;
+        Job *job;
         gint64 livejob_age;
         gint64 rap_addr;
         gint64 send_position;

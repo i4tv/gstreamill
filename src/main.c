@@ -186,11 +186,11 @@ int main (int argc, char *argv[])
                 gst_debug_set_default_threshold (GST_LEVEL_WARNING);
         }
 
-        /* subprocess, create_livejob_process */
+        /* subprocess, create_job_process */
         if (job_name != NULL) {
                 gint fd;
-                gchar *job, *p;
-                LiveJob *livejob;
+                gchar *job_desc, *p;
+                Job *job;
                 gchar *log_path;
                 gint ret;
 
@@ -203,37 +203,37 @@ int main (int argc, char *argv[])
                 }
 
                 /* read job description from share memory */
-                job = NULL;
+                job_desc = NULL;
                 fd = shm_open (job_name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
                 if (ftruncate (fd, job_length) == -1) {
                         GST_ERROR ("ftruncate error: %s", g_strerror (errno));
                         exit (1);
                 }
                 p = mmap (NULL, job_length, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-                job = g_strdup (p);
+                job_desc = g_strdup (p);
 
-                if ((job != NULL) && (!jobdesc_is_valid (job))) {
+                if ((job_desc != NULL) && (!jobdesc_is_valid (job_desc))) {
                         GST_ERROR ("invalide job description");
                         exit (1);
                 }
 
-                /* launch a livejob. */
-                livejob = livejob_new ("name", job_name, "job", job, NULL);
-                livejob->is_live = jobdesc_is_live (job);
+                /* launch a job. */
+                job = job_new ("name", job_name, "job", job_desc, NULL);
+                job->is_live = jobdesc_is_live (job_desc);
                 signal (SIGPIPE, SIG_IGN);
                 signal (SIGUSR1, sighandler);
                 signal (SIGUSR2, stop_job);
                 loop = g_main_loop_new (NULL, FALSE);
-                if (livejob_initialize (livejob, TRUE) != 0) {
+                if (job_initialize (job, TRUE) != 0) {
                         GST_ERROR ("initialize livejob failure, exit");
                         exit (1);
                 }
-                if (livejob_start (livejob) != 0) {
+                if (job_start (job) != 0) {
                         GST_ERROR ("start livejob failure, exit");
                         exit (1);
                 }
                 GST_WARNING ("livejob %s starting ...", job_name);
-                g_free (job);
+                g_free (job_desc);
 
                 g_main_loop_run (loop);
         }

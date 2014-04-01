@@ -1,5 +1,5 @@
 /*
- *  livejob
+ *  job
  *
  *  Copyright (C) Zhang Ping <zhangping@163.com>
  */
@@ -13,40 +13,40 @@
 #include <string.h>
 
 #include "jobdesc.h"
-#include "livejob.h"
+#include "job.h"
 
 GST_DEBUG_CATEGORY_EXTERN (GSTREAMILL);
 #define GST_CAT_DEFAULT GSTREAMILL
 
 enum {
-        LIVEJOB_PROP_0,
-        LIVEJOB_PROP_NAME,
-        LIVEJOB_PROP_JOB,
+        JOB_PROP_0,
+        JOB_PROP_NAME,
+        JOB_PROP_JOB,
 };
 
-static void livejob_set_property (GObject *obj, guint prop_id, const GValue *value, GParamSpec *pspec);
-static void livejob_get_property (GObject *obj, guint prop_id, GValue *value, GParamSpec *pspec);
-static void livejob_dispose (GObject *obj);
-static void livejob_finalize (GObject *obj);
+static void job_set_property (GObject *obj, guint prop_id, const GValue *value, GParamSpec *pspec);
+static void job_get_property (GObject *obj, guint prop_id, GValue *value, GParamSpec *pspec);
+static void job_dispose (GObject *obj);
+static void job_finalize (GObject *obj);
 
-static void livejob_class_init (LiveJobClass *livejobclass)
+static void job_class_init (JobClass *jobclass)
 {
-        GObjectClass *g_object_class = G_OBJECT_CLASS (livejobclass);
+        GObjectClass *g_object_class = G_OBJECT_CLASS (jobclass);
         GParamSpec *param;
 
-        g_object_class->set_property = livejob_set_property;
-        g_object_class->get_property = livejob_get_property;
-        g_object_class->dispose = livejob_dispose;
-        g_object_class->finalize = livejob_finalize;
+        g_object_class->set_property = job_set_property;
+        g_object_class->get_property = job_get_property;
+        g_object_class->dispose = job_dispose;
+        g_object_class->finalize = job_finalize;
 
         param = g_param_spec_string (
                 "name",
                 "name",
-                "name of livejob",
+                "name of job",
                 NULL,
                 G_PARAM_WRITABLE | G_PARAM_READABLE
         );
-        g_object_class_install_property (g_object_class, LIVEJOB_PROP_NAME, param);
+        g_object_class_install_property (g_object_class, JOB_PROP_NAME, param);
 
         param = g_param_spec_string (
                 "job",
@@ -55,28 +55,28 @@ static void livejob_class_init (LiveJobClass *livejobclass)
                 NULL,
                 G_PARAM_WRITABLE | G_PARAM_READABLE
         );
-        g_object_class_install_property (g_object_class, LIVEJOB_PROP_JOB, param);
+        g_object_class_install_property (g_object_class, JOB_PROP_JOB, param);
 }
 
-static void livejob_init (LiveJob *livejob)
+static void job_init (Job *job)
 {
-        livejob->system_clock = gst_system_clock_obtain ();
-        g_object_set (livejob->system_clock, "clock-type", GST_CLOCK_TYPE_REALTIME, NULL);
-        livejob->encoder_array = g_array_new (FALSE, FALSE, sizeof (gpointer));
-        livejob->m3u8push_thread_pool = NULL;
+        job->system_clock = gst_system_clock_obtain ();
+        g_object_set (job->system_clock, "clock-type", GST_CLOCK_TYPE_REALTIME, NULL);
+        job->encoder_array = g_array_new (FALSE, FALSE, sizeof (gpointer));
+        job->m3u8push_thread_pool = NULL;
 }
 
-static void livejob_set_property (GObject *obj, guint prop_id, const GValue *value, GParamSpec *pspec)
+static void job_set_property (GObject *obj, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-        g_return_if_fail (IS_LIVEJOB (obj));
+        g_return_if_fail (IS_JOB (obj));
 
         switch (prop_id) {
-        case LIVEJOB_PROP_NAME:
-                LIVEJOB (obj)->name = (gchar *)g_value_dup_string (value);
+        case JOB_PROP_NAME:
+                JOB (obj)->name = (gchar *)g_value_dup_string (value);
                 break;
 
-        case LIVEJOB_PROP_JOB:
-                LIVEJOB (obj)->job = (gchar *)g_value_dup_string (value);
+        case JOB_PROP_JOB:
+                JOB (obj)->job = (gchar *)g_value_dup_string (value);
                 break;
 
         default:
@@ -85,17 +85,17 @@ static void livejob_set_property (GObject *obj, guint prop_id, const GValue *val
         }
 }
 
-static void livejob_get_property (GObject *obj, guint prop_id, GValue *value, GParamSpec *pspec)
+static void job_get_property (GObject *obj, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-        LiveJob *livejob = LIVEJOB (obj);
+        Job *job = JOB (obj);
 
         switch (prop_id) {
-        case LIVEJOB_PROP_NAME:
-                g_value_set_string (value, livejob->name);
+        case JOB_PROP_NAME:
+                g_value_set_string (value, job->name);
                 break;
 
-        case LIVEJOB_PROP_JOB:
-                g_value_set_string (value, livejob->job);
+        case JOB_PROP_JOB:
+                g_value_set_string (value, job->job);
                 break;
 
         default:
@@ -104,18 +104,18 @@ static void livejob_get_property (GObject *obj, guint prop_id, GValue *value, GP
         }
 }
 
-static void livejob_dispose (GObject *obj)
+static void job_dispose (GObject *obj)
 {
-        LiveJob *livejob = LIVEJOB (obj);
+        Job *job = JOB (obj);
         GObjectClass *parent_class = g_type_class_peek (G_TYPE_OBJECT);
-        LiveJobOutput *output;
+        JobOutput *output;
         gint i;
         gchar *name;
 
-        output = livejob->output;
+        output = job->output;
         for (i = 0; i < output->encoder_count; i++) {
                 /* share memory release */
-                name = g_strdup_printf ("%s.%d", livejob->name, i);
+                name = g_strdup_printf ("%s.%d", job->name, i);
                 if (output->encoders[i].cache_fd != -1) {
                         g_close (output->encoders[i].cache_fd, NULL);
                         if (munmap (output->encoders[i].cache_addr, SHM_SIZE) == -1) {
@@ -128,7 +128,7 @@ static void livejob_dispose (GObject *obj)
                 g_free (name);
 
                 /* semaphore and message queue release */
-                name = g_strdup_printf ("/%s.%d", livejob->name, i);
+                name = g_strdup_printf ("/%s.%d", job->name, i);
                 if (sem_close (output->encoders[i].semaphore) == -1) {
                         GST_ERROR ("sem_close %s error: %s", name, g_strerror (errno));
                 }
@@ -144,58 +144,58 @@ static void livejob_dispose (GObject *obj)
                 g_free (name);
         }
 
-        if (livejob->output_fd != -1) {
-                g_close (livejob->output_fd, NULL);
-                if (munmap (output->job_description, livejob->output_size) == -1) {
-                        GST_ERROR ("munmap %s error: %s", livejob->name, g_strerror (errno));
+        if (job->output_fd != -1) {
+                g_close (job->output_fd, NULL);
+                if (munmap (output->job_description, job->output_size) == -1) {
+                        GST_ERROR ("munmap %s error: %s", job->name, g_strerror (errno));
                 }
-                if (shm_unlink (livejob->name) == -1) {
-                        GST_ERROR ("shm_unlink %s error: %s", livejob->name, g_strerror (errno));
+                if (shm_unlink (job->name) == -1) {
+                        GST_ERROR ("shm_unlink %s error: %s", job->name, g_strerror (errno));
                 }
         }
         g_free (output);
 
-        if (livejob->name != NULL) {
-                g_free (livejob->name);
-                livejob->name = NULL;
+        if (job->name != NULL) {
+                g_free (job->name);
+                job->name = NULL;
         }
 
-        if (livejob->job != NULL) {
-                g_free (livejob->job);
-                livejob->job = NULL;
+        if (job->job != NULL) {
+                g_free (job->job);
+                job->job = NULL;
         }
 
         G_OBJECT_CLASS (parent_class)->dispose (obj);
 }
 
-static void livejob_finalize (GObject *obj)
+static void job_finalize (GObject *obj)
 {
-        LiveJob *livejob = LIVEJOB (obj);
+        Job *job = JOB (obj);
         GObjectClass *parent_class = g_type_class_peek (G_TYPE_OBJECT);
 
-        g_array_free (livejob->encoder_array, TRUE);
+        g_array_free (job->encoder_array, TRUE);
 
         G_OBJECT_CLASS (parent_class)->finalize (obj);
 }
 
-GType livejob_get_type (void)
+GType job_get_type (void)
 {
         static GType type = 0;
 
         if (type) return type;
         static const GTypeInfo info = {
-                sizeof (LiveJobClass),
+                sizeof (JobClass),
                 NULL, /* base class initializer */
                 NULL, /* base class finalizer */
-                (GClassInitFunc)livejob_class_init,
+                (GClassInitFunc)job_class_init,
                 NULL,
                 NULL,
-                sizeof (LiveJob),
+                sizeof (Job),
                 0,
-                (GInstanceInitFunc)livejob_init,
+                (GInstanceInitFunc)job_init,
                 NULL
         };
-        type = g_type_register_static (G_TYPE_OBJECT, "LiveJob", &info, 0);
+        type = g_type_register_static (G_TYPE_OBJECT, "Job", &info, 0);
 
         return type;
 }
@@ -223,7 +223,7 @@ static gsize status_output_size (gchar *job)
         return size;
 }
 
-static gint http_client_request (LiveJob *livejob, guint8 *data, gsize count)
+static gint http_client_request (Job *job, guint8 *data, gsize count)
 {
 	gint socketfd;
         struct hostent *hostp;
@@ -234,12 +234,12 @@ static gint http_client_request (LiveJob *livejob, guint8 *data, gsize count)
         socketfd = socket (AF_INET, SOCK_STREAM, 0);
         memset (&serveraddr, 0x00, sizeof (struct sockaddr_in));
         serveraddr.sin_family = AF_INET;
-        serveraddr.sin_port = htons (livejob->m3u8push_port);
-        serveraddr.sin_addr.s_addr = inet_addr (livejob->m3u8push_host);
-        if ((serveraddr.sin_addr.s_addr = inet_addr (livejob->m3u8push_host)) == (unsigned long)INADDR_NONE) {
-                hostp = gethostbyname (livejob->m3u8push_host);
+        serveraddr.sin_port = htons (job->m3u8push_port);
+        serveraddr.sin_addr.s_addr = inet_addr (job->m3u8push_host);
+        if ((serveraddr.sin_addr.s_addr = inet_addr (job->m3u8push_host)) == (unsigned long)INADDR_NONE) {
+                hostp = gethostbyname (job->m3u8push_host);
                 if (hostp == (struct hostent *)NULL) {
-                        GST_ERROR ("put segment, host %s not found", livejob->m3u8push_host);
+                        GST_ERROR ("put segment, host %s not found", job->m3u8push_host);
                         g_free (data);
                         return -1;
                 }
@@ -275,7 +275,7 @@ static gint http_client_request (LiveJob *livejob, guint8 *data, gsize count)
 
 static void m3u8push_thread_func (gpointer data, gpointer user_data)
 {
-        LiveJob *livejob = (LiveJob *)user_data;
+        Job *job = (Job *)user_data;
         m3u8PushRequest *m3u8_push_request = (m3u8PushRequest *)data;
         gchar *header, *request_uri;
         guint64 rap_addr;
@@ -297,8 +297,8 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
 
         /* header */
         segment_size = encoder_output_gop_size (m3u8_push_request->encoder, rap_addr);
-        request_uri = g_strdup_printf ("%s/%s/%lu.ts", livejob->m3u8push_path, m3u8_push_request->encoder->name, m3u8_push_request->timestamp);
-        header = g_strdup_printf (HTTP_PUT, request_uri, PACKAGE_NAME, PACKAGE_VERSION, livejob->m3u8push_host, segment_size);
+        request_uri = g_strdup_printf ("%s/%s/%lu.ts", job->m3u8push_path, m3u8_push_request->encoder->name, m3u8_push_request->timestamp);
+        header = g_strdup_printf (HTTP_PUT, request_uri, PACKAGE_NAME, PACKAGE_VERSION, job->m3u8push_host, segment_size);
 
         /* copy header to buffer */
         count = segment_size + strlen (header);
@@ -321,7 +321,7 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
         }
 
         /* put segment */
-        http_client_request (livejob, buf, count);
+        http_client_request (job, buf, count);
 
         /* put playlist */
         while ((m3u8_push_request->encoder->pushed_sequence_number + 1) != m3u8_push_request->sequence_number) {
@@ -329,21 +329,21 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
                 g_usleep (50000);
         }
         g_free (request_uri);
-        request_uri = g_strdup_printf ("%s/%s/playlist.m3u8", livejob->m3u8push_path, m3u8_push_request->encoder->name);
+        request_uri = g_strdup_printf ("%s/%s/playlist.m3u8", job->m3u8push_path, m3u8_push_request->encoder->name);
         playlist = m3u8playlist_render (m3u8_push_request->encoder->m3u8_playlist);
         g_free (header);
-        header = g_strdup_printf (HTTP_PUT, request_uri, PACKAGE_NAME, PACKAGE_VERSION, livejob->m3u8push_host, strlen (playlist));
+        header = g_strdup_printf (HTTP_PUT, request_uri, PACKAGE_NAME, PACKAGE_VERSION, job->m3u8push_host, strlen (playlist));
         buf = g_strdup_printf ("%s%s", header, playlist);
-        http_client_request (livejob, buf, strlen (buf));
+        http_client_request (job, buf, strlen (buf));
         m3u8_push_request->encoder->pushed_sequence_number++;
 
         /* remove segment */
         g_free (header);
         if (m3u8_push_request->rm_segment != NULL) {
                 g_free (request_uri);
-                request_uri = g_strdup_printf ("%s/%s/%s", livejob->m3u8push_path, m3u8_push_request->encoder->name, m3u8_push_request->rm_segment);
-                header = g_strdup_printf (HTTP_DELETE, request_uri,  PACKAGE_NAME, PACKAGE_VERSION, livejob->m3u8push_host);
-                http_client_request (livejob, header, strlen (header));
+                request_uri = g_strdup_printf ("%s/%s/%s", job->m3u8push_path, m3u8_push_request->encoder->name, m3u8_push_request->rm_segment);
+                header = g_strdup_printf (HTTP_DELETE, request_uri,  PACKAGE_NAME, PACKAGE_VERSION, job->m3u8push_host);
+                http_client_request (job, header, strlen (header));
                 g_free (m3u8_push_request->rm_segment);
         }
 
@@ -353,57 +353,57 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
 }
 
 /**
- * livejob_initialize:
- * @livejob: (in): the livejob to be initialized.
+ * job_initialize:
+ * @job: (in): the job to be initialized.
  * @daemon: (in): is gstreamill run in background.
  *
- * Initialize the output of the livejob, the output of the livejob include the status of source and encoders and
+ * Initialize the output of the job, the output of the job include the status of source and encoders and
  * the output stream.
  *
  * Returns: 0 on success.
  */
-gint livejob_initialize (LiveJob *livejob, gboolean daemon)
+gint job_initialize (Job *job, gboolean daemon)
 {
         gint i, fd;
-        LiveJobOutput *output;
+        JobOutput *output;
         gchar *name, *p;
 
-        livejob->output_size = status_output_size (livejob->job);
+        job->output_size = status_output_size (job->job);
         if (daemon) {
                 /* daemon, use share memory */
-                fd = shm_open (livejob->name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
-                if (ftruncate (fd, livejob->output_size) == -1) {
+                fd = shm_open (job->name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+                if (ftruncate (fd, job->output_size) == -1) {
                         GST_ERROR ("ftruncate error: %s", g_strerror (errno));
                         return 1;
                 }
-                p = mmap (NULL, livejob->output_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-                livejob->output_fd = fd;
+                p = mmap (NULL, job->output_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+                job->output_fd = fd;
 
         } else {
-                p = g_malloc (livejob->output_size);
-                livejob->output_fd = -1;
+                p = g_malloc (job->output_size);
+                job->output_fd = -1;
         }
-        output = (LiveJobOutput *)g_malloc (sizeof (LiveJobOutput));
+        output = (JobOutput *)g_malloc (sizeof (JobOutput));
         output->job_description = (gchar *)p;
-        g_stpcpy (output->job_description, livejob->job);
-        p += (strlen (livejob->job) / 8 + 1) * 8;
+        g_stpcpy (output->job_description, job->job);
+        p += (strlen (job->job) / 8 + 1) * 8;
         output->state = (guint64 *)p;
         p += sizeof (guint64); /* state */
         output->source.sync_error_times = 0;
-        output->source.stream_count = jobdesc_streams_count (livejob->job, "source");
+        output->source.stream_count = jobdesc_streams_count (job->job, "source");
         output->source.streams = (struct _SourceStreamState *)p;
         for (i = 0; i < output->source.stream_count; i++) {
-                output->source.streams[i].last_heartbeat = gst_clock_get_time (livejob->system_clock);
+                output->source.streams[i].last_heartbeat = gst_clock_get_time (job->system_clock);
         }
         p += output->source.stream_count * sizeof (struct _SourceStreamState);
-        output->encoder_count = jobdesc_encoders_count (livejob->job);
+        output->encoder_count = jobdesc_encoders_count (job->job);
         output->encoders = (struct _EncoderOutput *)g_malloc (output->encoder_count * sizeof (struct _EncoderOutput));
         for (i = 0; i < output->encoder_count; i++) {
                 name = g_strdup_printf ("encoder.%d", i);
                 g_strlcpy (output->encoders[i].name, name, STREAM_NAME_LEN);
-                output->encoders[i].stream_count = jobdesc_streams_count (livejob->job, name);
+                output->encoders[i].stream_count = jobdesc_streams_count (job->job, name);
                 g_free (name);
-                name = g_strdup_printf ("/%s.%d", livejob->name, i);
+                name = g_strdup_printf ("/%s.%d", job->name, i);
                 output->encoders[i].semaphore = sem_open (name, O_CREAT, 0600, 1);
                 if (output->encoders[i].semaphore == SEM_FAILED) {
                         GST_ERROR ("sem_open %s error: %s", name, g_strerror (errno));
@@ -412,13 +412,13 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
                 }
                 g_free (name);
                 output->encoders[i].heartbeat = (GstClockTime *)p;
-                *(output->encoders[i].heartbeat) = gst_clock_get_time (livejob->system_clock);
+                *(output->encoders[i].heartbeat) = gst_clock_get_time (job->system_clock);
                 p += sizeof (GstClockTime); /* encoder heartbeat */
                 output->encoders[i].streams = (struct _EncoderStreamState *)p;
                 p += output->encoders[i].stream_count * sizeof (struct _EncoderStreamState); /* encoder state */
                 if (daemon) {
                         /* daemon, use share memory. */
-                        name = g_strdup_printf ("%s.%d", livejob->name, i);
+                        name = g_strdup_printf ("%s.%d", job->name, i);
                         fd = shm_open (name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
                         if (ftruncate (fd, SHM_SIZE) == -1) {
                                 GST_ERROR ("ftruncate error: %s", g_strerror (errno));
@@ -456,17 +456,17 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
                 output->encoders[i].sequence_number = 0;
                 output->encoders[i].pushed_sequence_number = 0;
         }
-        livejob->output = output;
+        job->output = output;
 
-        livejob->m3u8push_uri = jobdesc_m3u8streaming_push_server_uri (livejob->job);
-        if (livejob->m3u8push_uri != NULL) {
+        job->m3u8push_uri = jobdesc_m3u8streaming_push_server_uri (job->job);
+        if (job->m3u8push_uri != NULL) {
                 GError *err = NULL;
 
-                sscanf (livejob->m3u8push_uri, "http://%[^:/]", livejob->m3u8push_host);
-                livejob->m3u8push_port = 80;
-                sscanf (livejob->m3u8push_uri, "http://%*[^:]:%hu", &(livejob->m3u8push_port));
-                sscanf (livejob->m3u8push_uri, "http://%*[^/]%s", livejob->m3u8push_path);
-                livejob->m3u8push_thread_pool = g_thread_pool_new (m3u8push_thread_func, livejob, 10, TRUE, &err);
+                sscanf (job->m3u8push_uri, "http://%[^:/]", job->m3u8push_host);
+                job->m3u8push_port = 80;
+                sscanf (job->m3u8push_uri, "http://%*[^:]:%hu", &(job->m3u8push_port));
+                sscanf (job->m3u8push_uri, "http://%*[^/]%s", job->m3u8push_path);
+                job->m3u8push_thread_pool = g_thread_pool_new (m3u8push_thread_func, job, 10, TRUE, &err);
                 if (err != NULL) {
                         GST_ERROR ("Create m3u8push thread pool error %s", err->message);
                         g_error_free (err);
@@ -478,28 +478,28 @@ gint livejob_initialize (LiveJob *livejob, gboolean daemon)
 }
 
 /*
- * livejob_stat_update:
- * @livejob: (in): livejob object
+ * job_stat_update:
+ * @job: (in): job object
  *
- * update livejob's stat
+ * update job's stat
  *
  */
-void livejob_stat_update (LiveJob *livejob)
+void job_stat_update (Job *job)
 {
         gchar *stat_file, *stat, **stats, **cpustats;
         guint64 utime, stime, ctime; /* process user time, process system time, total cpu time */
         gint i;
 
-        stat_file = g_strdup_printf ("/proc/%d/stat", livejob->worker_pid);
+        stat_file = g_strdup_printf ("/proc/%d/stat", job->worker_pid);
         if (!g_file_get_contents (stat_file, &stat, NULL, NULL)) {
-                GST_ERROR ("Read process %d's stat failure.", livejob->worker_pid);
+                GST_ERROR ("Read process %d's stat failure.", job->worker_pid);
                 return;
         }
         stats = g_strsplit (stat, " ", 44);
         utime = g_ascii_strtoull (stats[13],  NULL, 10); /* seconds */
         stime = g_ascii_strtoull (stats[14], NULL, 10);
         /* Resident Set Size */
-        livejob->memory = g_ascii_strtoull (stats[23], NULL, 10) * sysconf (_SC_PAGESIZE);
+        job->memory = g_ascii_strtoull (stats[23], NULL, 10) * sysconf (_SC_PAGESIZE);
         g_free (stat_file);
         g_free (stat);
         g_strfreev (stats);
@@ -516,11 +516,11 @@ void livejob_stat_update (LiveJob *livejob)
         g_free (stat);
         g_strfreev (stats);
         g_strfreev (cpustats);
-        livejob->cpu_average = ((utime + stime) * 100) / (ctime - livejob->start_ctime);
-        livejob->cpu_current = ((utime - livejob->last_utime + stime - livejob->last_stime) * 100) / (ctime - livejob->last_ctime);
-        livejob->last_ctime = ctime;
-        livejob->last_utime = utime;
-        livejob->last_stime = stime;
+        job->cpu_average = ((utime + stime) * 100) / (ctime - job->start_ctime);
+        job->cpu_current = ((utime - job->last_utime + stime - job->last_stime) * 100) / (ctime - job->last_ctime);
+        job->last_ctime = ctime;
+        job->last_utime = utime;
+        job->last_stime = stime;
 }
 
 static void notify_function (union sigval sv)
@@ -583,13 +583,13 @@ static void notify_function (union sigval sv)
 }
 
 /*
- * livejob_reset:
- * @livejob: livejob object
+ * job_reset:
+ * @job: job object
  *
- * reset livejob stat
+ * reset job stat
  *
  */
-void livejob_reset (LiveJob *livejob)
+void job_reset (Job *job)
 {
         gchar *stat, **stats, **cpustats;
         GstDateTime *start_time;
@@ -603,45 +603,45 @@ void livejob_reset (LiveJob *livejob)
         g_file_get_contents ("/proc/stat", &stat, NULL, NULL);
         stats = g_strsplit (stat, "\n", 10);
         cpustats = g_strsplit (stats[0], " ", 10);
-        livejob->start_ctime = 0;
+        job->start_ctime = 0;
         for (i = 1; i < 8; i++) {
-                livejob->start_ctime += g_ascii_strtoull (cpustats[i], NULL, 10);
+                job->start_ctime += g_ascii_strtoull (cpustats[i], NULL, 10);
         }
-        livejob->last_ctime = 0;
-        livejob->last_utime = 0;
-        livejob->last_stime = 0;
+        job->last_ctime = 0;
+        job->last_utime = 0;
+        job->last_stime = 0;
         g_free (stat);
         g_strfreev (stats);
         g_strfreev (cpustats);
         start_time = gst_date_time_new_now_local_time ();
-        if (livejob->last_start_time != NULL) {
-                g_free (livejob->last_start_time);
+        if (job->last_start_time != NULL) {
+                g_free (job->last_start_time);
         }
-        livejob->last_start_time = gst_date_time_to_iso8601_string (start_time);
+        job->last_start_time = gst_date_time_to_iso8601_string (start_time);
         gst_date_time_unref (start_time);
 
         /* is live job? */
-        if (!(livejob->is_live)) {
+        if (!(job->is_live)) {
                 return;
         }
 
-        version = jobdesc_m3u8streaming_version (livejob->job);
+        version = jobdesc_m3u8streaming_version (job->job);
         if (version == 0) {
                 version = 3;
         }
-        window_size = jobdesc_m3u8streaming_window_size (livejob->job);
+        window_size = jobdesc_m3u8streaming_window_size (job->job);
 
-        for (i = 0; i < livejob->output->encoder_count; i++) {
-                encoder = &(livejob->output->encoders[i]);
-                name = g_strdup_printf ("/%s.%d", livejob->name, i);
+        for (i = 0; i < job->output->encoder_count; i++) {
+                encoder = &(job->output->encoders[i]);
+                name = g_strdup_printf ("/%s.%d", job->name, i);
 
-                if (jobdesc_m3u8streaming (livejob->job)) {
+                if (jobdesc_m3u8streaming (job->job)) {
                         /* reset m3u8 playlist */
                         if (encoder->m3u8_playlist != NULL) {
                                 g_mutex_clear (&(encoder->m3u8_playlist_mutex));
                                 m3u8playlist_free (encoder->m3u8_playlist);
                         }
-                        encoder->m3u8push_thread_pool = livejob->m3u8push_thread_pool;
+                        encoder->m3u8push_thread_pool = job->m3u8push_thread_pool;
                         encoder->m3u8_playlist = m3u8playlist_new (version, window_size, FALSE);
                         g_mutex_init (&(encoder->m3u8_playlist_mutex));
 
@@ -671,7 +671,7 @@ void livejob_reset (LiveJob *livejob)
                 }
 
                 /* reset semaphore */
-                if (livejob->age > 0) {
+                if (job->age > 0) {
                         if (sem_close (encoder->semaphore) == -1) {
                                 GST_ERROR ("sem_close %s error: %s", name, g_strerror (errno));
                         }
@@ -689,15 +689,15 @@ void livejob_reset (LiveJob *livejob)
 }
 
 /*
- * livejob_start:
- * @livejob: (in): livejob to be start.
+ * job_start:
+ * @job: (in): job to be start.
  *
- * initialize source, encoders and start livejob.
+ * initialize source, encoders and start job.
  *
  * Returns: 0 on success, otherwise return 1.
  *
  */
-gint livejob_start (LiveJob *livejob)
+gint job_start (Job *job)
 {
         Encoder *encoder;
         EncoderOutput *encoders;
@@ -705,31 +705,31 @@ gint livejob_start (LiveJob *livejob)
         GstStateChangeReturn ret;
         gint i;
 
-        if (livejob->is_live) {
-                source_stat = &(livejob->output->source);
-                encoders = livejob->output->encoders;
+        if (job->is_live) {
+                source_stat = &(job->output->source);
+                encoders = job->output->encoders;
 
         } else {
                 source_stat = NULL;
                 encoders = NULL;
         }
 
-        livejob->source = source_initialize (livejob->job, source_stat);
-        if (livejob->source == NULL) {
-                GST_ERROR ("Initialize livejob source error.");
+        job->source = source_initialize (job->job, source_stat);
+        if (job->source == NULL) {
+                GST_ERROR ("Initialize job source error.");
                 return 1;
         }
 
-        if (encoder_initialize (livejob->encoder_array, livejob->job, encoders, livejob->source) != 0) {
-                GST_ERROR ("Initialize livejob encoder error.");
+        if (encoder_initialize (job->encoder_array, job->job, encoders, job->source) != 0) {
+                GST_ERROR ("Initialize job encoder error.");
                 return 1;
         }
 
         /* set pipelines as PLAYING state */
-        gst_element_set_state (livejob->source->pipeline, GST_STATE_PLAYING);
-        livejob->source->state = GST_STATE_PLAYING;
-        for (i = 0; i < livejob->encoder_array->len; i++) {
-                encoder = g_array_index (livejob->encoder_array, gpointer, i);
+        gst_element_set_state (job->source->pipeline, GST_STATE_PLAYING);
+        job->source->state = GST_STATE_PLAYING;
+        for (i = 0; i < job->encoder_array->len; i++) {
+                encoder = g_array_index (job->encoder_array, gpointer, i);
                 ret = gst_element_set_state (encoder->pipeline, GST_STATE_PLAYING);
                 if (ret == GST_STATE_CHANGE_FAILURE) { //FIXME
                         GST_ERROR ("Set %s to play error.", encoder->name);
@@ -742,45 +742,45 @@ gint livejob_start (LiveJob *livejob)
                 }
                 encoder->state = GST_STATE_PLAYING;
         }
-        if (livejob->is_live) {
-                *(livejob->output->state) = GST_STATE_PLAYING;
+        if (job->is_live) {
+                *(job->output->state) = GST_STATE_PLAYING;
         }
 
         return 0;
 }
 
 /*
- * livejob_master_m3u8_playlist:
- * @livejob: (in): the livejob object
+ * job_master_m3u8_playlist:
+ * @job: (in): the job object
  *
- * get master m3u8 playlist of the livejob
+ * get master m3u8 playlist of the job
  *
  * Returns: master m3u8 playlist
  *
  */
-gchar * livejob_get_master_m3u8_playlist (LiveJob *livejob)
+gchar * job_get_master_m3u8_playlist (Job *job)
 {
         GString *master_m3u8_playlist;
         gchar *p, *value;
         gint i;
 
-        if (!jobdesc_m3u8streaming (livejob->job)) {
+        if (!jobdesc_m3u8streaming (job->job)) {
                 /* m3u8streaming no enabled */
                 return "not found";
         }
 
         master_m3u8_playlist = g_string_new ("");
         g_string_append_printf (master_m3u8_playlist, M3U8_HEADER_TAG);
-        if (jobdesc_m3u8streaming_version (livejob->job) == 0) {
+        if (jobdesc_m3u8streaming_version (job->job) == 0) {
                 g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, 3);
 
         } else {
-                g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, jobdesc_m3u8streaming_version (livejob->job));
+                g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, jobdesc_m3u8streaming_version (job->job));
         }
 
-        for (i = 0; i < livejob->output->encoder_count; i++) {
+        for (i = 0; i < job->output->encoder_count; i++) {
                 p = g_strdup_printf ("encoder.%d.elements.x264enc.property.bitrate", i);
-                value = jobdesc_element_property_value (livejob->job, p);
+                value = jobdesc_element_property_value (job->job, p);
                 g_string_append_printf (master_m3u8_playlist, M3U8_STREAM_INF_TAG, 1, value);
                 g_string_append_printf (master_m3u8_playlist, "encoder/%d/playlist.m3u8\n", i);
                 g_free (p);

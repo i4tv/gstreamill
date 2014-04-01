@@ -16,7 +16,6 @@
 #include "gstreamill.h"
 #include "parson.h"
 #include "jobdesc.h"
-#include "livejob.h"
 #include "m3u8playlist.h"
 
 GST_DEBUG_CATEGORY_EXTERN (GSTREAMILL);
@@ -33,7 +32,7 @@ static void gstreamill_set_property (GObject *obj, guint prop_id, const GValue *
 static void gstreamill_get_property (GObject *obj, guint prop_id, GValue *value, GParamSpec *pspec);
 static void gstreamill_dispose (GObject *obj);
 static void gstreamill_finalize (GObject *obj);
-static gchar *create_livejob_process (LiveJob *livejob);
+static gchar *create_job_process (Job *job);
 
 static void gstreamill_class_init (GstreamillClass *gstreamillclass)
 {
@@ -75,8 +74,8 @@ static void gstreamill_init (Gstreamill *gstreamill)
         start_time = gst_date_time_new_now_local_time ();
         gstreamill->start_time = gst_date_time_to_iso8601_string (start_time);
         gst_date_time_unref (start_time);
-        g_mutex_init (&(gstreamill->livejob_list_mutex));
-        gstreamill->livejob_list = NULL;
+        g_mutex_init (&(gstreamill->job_list_mutex));
+        gstreamill->job_list = NULL;
 }
 
 static GObject * gstreamill_constructor (GType type, guint n_construct_properties, GObjectConstructParam *construct_properties)
@@ -144,7 +143,7 @@ static void gstreamill_finalize (GObject *obj)
 {
         Gstreamill *gstreamill = GSTREAMILL (obj);
         GObjectClass *parent_class = g_type_class_peek (G_TYPE_OBJECT);
-        g_slist_free (gstreamill->livejob_list);
+        g_slist_free (gstreamill->job_list);
         G_OBJECT_CLASS (parent_class)->finalize (obj);
 }
 
@@ -200,7 +199,7 @@ static void
 log_rotate (Gstreamill *gstreamill)
 {
         gchar *log_path;
-        LiveJob *livejob;
+        Job *job;
         GSList *list;
 
         /* gstreamill log rotate. */
@@ -208,17 +207,17 @@ log_rotate (Gstreamill *gstreamill)
         rotate_log (gstreamill, log_path, getpid ());
         g_free (log_path);
 
-        /* livejobs log rotate. */
-        list = gstreamill->livejob_list;
+        /* jobs log rotate. */
+        list = gstreamill->job_list;
         while (list != NULL) {
-                livejob = list->data;
-                if (livejob->worker_pid == 0) {
-                        /* pid == 0, do not care about livejob which is stoped */
+                job = list->data;
+                if (job->worker_pid == 0) {
+                        /* pid == 0, do not care about job which is stoped */
                         list = list->next;
                         continue;
                 }
-                log_path = g_build_filename (gstreamill->log_dir, livejob->name, "gstreamill.log", NULL);
-                rotate_log (gstreamill, log_path, livejob->worker_pid);
+                log_path = g_build_filename (gstreamill->log_dir, job->name, "gstreamill.log", NULL);
+                rotate_log (gstreamill, log_path, job->worker_pid);
                 g_free (log_path);
                 list = list->next;
         }
@@ -228,24 +227,24 @@ static void clean_job_list (Gstreamill *gstreamill)
 {
         gboolean done;
         GSList *list;
-        LiveJob *livejob;
+        Job *job;
 
         done = FALSE;
         while (!done) {
-                list = gstreamill->livejob_list;
+                list = gstreamill->job_list;
                 while (list != NULL) {
-                        livejob = list->data;
+                        job = list->data;
 
                         /* clean live job */
-                        if (livejob->is_live && (*(livejob->output->state) == GST_STATE_NULL && livejob->current_access == 0)) {
-                                GST_WARNING ("Remove live job: %s.", livejob->name);
-                                gstreamill->livejob_list = g_slist_remove (gstreamill->livejob_list, livejob);
-                                g_object_unref (livejob);
+                        if (job->is_live && (*(job->output->state) == GST_STATE_NULL && job->current_access == 0)) {
+                                GST_WARNING ("Remove live job: %s.", job->name);
+                                gstreamill->job_list = g_slist_remove (gstreamill->job_list, job);
+                                g_object_unref (job);
                                 break;
                         }
 
                         /* clean non live job */
-                        if (!livejob->is_live && FALSE) {
+                        if (!job->is_live && FALSE) {
                                 break;
                         }
 
@@ -258,40 +257,39 @@ static void clean_job_list (Gstreamill *gstreamill)
         }
 }
 
-static gint stop_livejob (LiveJob *livejob, gint sig)
+static gint stop_job (Job *job, gint sig)
 {
-        if (livejob->worker_pid != 0) {
-                *(livejob->output->state) = GST_STATE_PAUSED;
-
+        if (job->worker_pid != 0) {
                 if (sig == SIGUSR2) {
                         /* normally stop */
-                        GST_WARNING ("Stop livejob %s, pid %d.", livejob->name, livejob->worker_pid);
+                        *(job->output->state) = GST_STATE_PAUSED;
+                        GST_WARNING ("Stop job %s, pid %d.", job->name, job->worker_pid);
 
                 } else {
                         /* unexpect stop, restart job */
-                        GST_WARNING ("Restart livejob %s, pid %d.", livejob->name, livejob->worker_pid);
+                        GST_WARNING ("Restart job %s, pid %d.", job->name, job->worker_pid);
                 }
-                kill (livejob->worker_pid, sig);
+                kill (job->worker_pid, sig);
 
                 return 0;
 
         } else {
-                return 1; /* stop a stoped livejob */
+                return 1; /* stop a stoped job */
         }
 }
 
-static void nonlivejob_check_func (Gstreamill *gstreamill, LiveJob *livejob)
+static void nonlivejob_check_func (Gstreamill *gstreamill, Job *job)
 {
 }
 
-static void livejob_check_func (Gstreamill *gstreamill, LiveJob *livejob)
+static void livejob_check_func (Gstreamill *gstreamill, Job *job)
 {
-        LiveJobOutput *output;
+        JobOutput *output;
         gint j, k;
         GstClockTimeDiff time_diff;
         GstClockTime now, min, max;
 
-        output = livejob->output;
+        output = job->output;
         if (*(output->state) != GST_STATE_PLAYING) {
                 return;
         }
@@ -307,17 +305,17 @@ static void livejob_check_func (Gstreamill *gstreamill, LiveJob *livejob)
                 now = gst_clock_get_time (gstreamill->system_clock);
                 time_diff = GST_CLOCK_DIFF (output->source.streams[j].last_heartbeat, now);
                 if ((time_diff > HEARTBEAT_THRESHHOLD) && gstreamill->daemon) {
-                        GST_ERROR ("%s.source.%s heart beat error %lu, restart livejob.",
-                                        livejob->name,
+                        GST_ERROR ("%s.source.%s heart beat error %lu, restart job.",
+                                        job->name,
                                         output->source.streams[j].name,
                                         time_diff);
-                        /* restart livejob. */
-                        stop_livejob (livejob, SIGKILL);
+                        /* restart job. */
+                        stop_job (job, SIGKILL);
                         return;
 
                 } else {
                         GST_INFO ("%s.source.%s heartbeat %" GST_TIME_FORMAT,
-                                        livejob->name,
+                                        job->name,
                                         output->source.streams[j].name,
                                         GST_TIME_ARGS (output->source.streams[j].last_heartbeat));
                 }
@@ -326,7 +324,7 @@ static void livejob_check_func (Gstreamill *gstreamill, LiveJob *livejob)
         /* log source timestamp. */
         for (j = 0; j < output->source.stream_count; j++) {
                 GST_INFO ("%s.source.%s timestamp %" GST_TIME_FORMAT,
-                                livejob->name,
+                                job->name,
                                 output->source.streams[j].name,
                                 GST_TIME_ARGS (output->source.streams[j].current_timestamp));
         }
@@ -343,17 +341,17 @@ static void livejob_check_func (Gstreamill *gstreamill, LiveJob *livejob)
                         time_diff = GST_CLOCK_DIFF (output->encoders[j].streams[k].last_heartbeat, now);
                         if ((time_diff > HEARTBEAT_THRESHHOLD) && gstreamill->daemon) {
                                 GST_ERROR ("%s.encoders.%s.%s heartbeat error %lu, restart",
-                                                livejob->name,
+                                                job->name,
                                                 output->encoders[j].name,
                                                 output->encoders[j].streams[k].name,
                                                 time_diff);
-                                /* restart livejob. */
-                                stop_livejob (livejob, SIGKILL);
+                                /* restart job. */
+                                stop_job (job, SIGKILL);
                                 return;
 
                         } else {
                                 GST_INFO ("%s.encoders.%s.%s heartbeat %" GST_TIME_FORMAT,
-                                                livejob->name,
+                                                job->name,
                                                 output->encoders[j].name,
                                                 output->encoders[j].streams[k].name,
                                                 GST_TIME_ARGS (output->encoders[j].streams[k].last_heartbeat));
@@ -365,7 +363,7 @@ static void livejob_check_func (Gstreamill *gstreamill, LiveJob *livejob)
         for (j = 0; j < output->encoder_count; j++) {
                 for (k = 0; k < output->encoders[j].stream_count; k++) {
                         GST_INFO ("%s.encoders.%s.%s timestamp %" GST_TIME_FORMAT,
-                                        livejob->name,
+                                        job->name,
                                         output->encoders[j].name,
                                         output->encoders[j].streams[k].name,
                                         GST_TIME_ARGS (output->encoders[j].streams[k].current_timestamp));
@@ -378,16 +376,16 @@ static void livejob_check_func (Gstreamill *gstreamill, LiveJob *livejob)
                 time_diff = GST_CLOCK_DIFF (*(output->encoders[j].heartbeat), now);
                 if ((time_diff > ENCODER_OUTPUT_HEARTBEAT_THRESHHOLD) && gstreamill->daemon) {
                         GST_ERROR ("%s.encoders.%s output heart beat error %lu, restart",
-                                        livejob->name,
+                                        job->name,
                                         output->encoders[j].name,
                                         time_diff);
-                        /* restart livejob. */
-                        stop_livejob (livejob, SIGKILL);
+                        /* restart job. */
+                        stop_job (job, SIGKILL);
                         return;
 
                 } else {
                         GST_INFO ("%s.encoders.%s output heartbeat %" GST_TIME_FORMAT,
-                                        livejob->name,
+                                        job->name,
                                         output->encoders[j].name,
                                         GST_TIME_ARGS (*(output->encoders[j].heartbeat)));
                 }
@@ -412,12 +410,12 @@ static void livejob_check_func (Gstreamill *gstreamill, LiveJob *livejob)
         }
         time_diff = GST_CLOCK_DIFF (min, max);
         if ((time_diff > SYNC_THRESHHOLD) && gstreamill->daemon){
-                GST_ERROR ("%s sync error %lu", livejob->name, time_diff);
+                GST_ERROR ("%s sync error %lu", job->name, time_diff);
                 output->source.sync_error_times += 1;
                 if (output->source.sync_error_times == 3) {
-                        GST_ERROR ("sync error times %ld, restart %s", output->source.sync_error_times, livejob->name);
-                        /* restart livejob. */
-                        stop_livejob (livejob, SIGKILL);
+                        GST_ERROR ("sync error times %ld, restart %s", output->source.sync_error_times, job->name);
+                        /* restart job. */
+                        stop_job (job, SIGKILL);
                         return;
                 }
 
@@ -428,34 +426,34 @@ static void livejob_check_func (Gstreamill *gstreamill, LiveJob *livejob)
 
 static void job_check_func (gpointer data, gpointer user_data)
 {
-        LiveJob *livejob = (LiveJob *)data;
+        Job *job = (Job *)data;
         Gstreamill *gstreamill = (Gstreamill *)user_data;
-        LiveJobOutput *output;
+        JobOutput *output;
         gint j, k;
         GstClockTimeDiff time_diff;
         GstClockTime now, min, max;
 
         if (gstreamill->stop) {
-                GST_ERROR ("waitting %s stopped", livejob->name);
+                GST_ERROR ("waitting %s stopped", job->name);
                 return;
         }
 
         /* job check */
-        if (livejob->is_live) {
-                livejob_check_func (gstreamill, livejob);
+        if (job->is_live) {
+                livejob_check_func (gstreamill, job);
 
         } else {
-                nonlivejob_check_func (gstreamill, livejob);
+                nonlivejob_check_func (gstreamill, job);
         }
 
         /* stat report. */
-        if (gstreamill->daemon && (livejob->worker_pid != 0)) {
-                livejob_stat_update (livejob);
-                GST_INFO ("LiveJob %s's average cpu: %d%%, cpu: %d%%, rss: %d",
-                                livejob->name,
-                                livejob->cpu_average,
-                                livejob->cpu_current,
-                                livejob->memory);
+        if (gstreamill->daemon && (job->worker_pid != 0)) {
+                job_stat_update (job);
+                GST_INFO ("Job %s's average cpu: %d%%, cpu: %d%%, rss: %d",
+                                job->name,
+                                job->cpu_average,
+                                job->cpu_current,
+                                job->memory);
         }
 }
 
@@ -469,20 +467,20 @@ static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClock
 
         gstreamill = (Gstreamill *)user_data;
 
-        g_mutex_lock (&(gstreamill->livejob_list_mutex));
+        g_mutex_lock (&(gstreamill->job_list_mutex));
 
-        /* remove stoped livejob from job list */
+        /* remove stoped job from job list */
         clean_job_list (gstreamill);
 
         /* stop? */
-        if (gstreamill->stop && g_slist_length (gstreamill->livejob_list) == 0) {
+        if (gstreamill->stop && g_slist_length (gstreamill->job_list) == 0) {
                 GST_ERROR ("streamill stopped");
                 exit (0);
         }
 
-        /* check livejob stat */
+        /* check job stat */
         if (!gstreamill->stop) {
-                list = gstreamill->livejob_list;
+                list = gstreamill->job_list;
                 g_slist_foreach (list, job_check_func, gstreamill);
         }
 
@@ -491,7 +489,7 @@ static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClock
                 log_rotate (gstreamill);
         }
 
-        g_mutex_unlock (&(gstreamill->livejob_list_mutex));
+        g_mutex_unlock (&(gstreamill->job_list_mutex));
 
         /* register streamill monitor */
         now = gst_clock_get_time (gstreamill->system_clock);
@@ -537,24 +535,24 @@ gint gstreamill_start (Gstreamill *gstreamill)
  * gstreamill_stop:
  * @gstreamill: (in): gstreamill to be stop
  *
- * stop gstreamill, stop livejob first before stop gstreamill.
+ * stop gstreamill, stop job first before stop gstreamill.
  *
  * Returns: none
  */
 void gstreamill_stop (Gstreamill *gstreamill)
 {
-        LiveJob *livejob;
+        Job *job;
         GSList *list;
 
         gstreamill->stop = TRUE;
-        g_mutex_lock (&(gstreamill->livejob_list_mutex));
-        list = gstreamill->livejob_list;
+        g_mutex_lock (&(gstreamill->job_list_mutex));
+        list = gstreamill->job_list;
         while (list != NULL) {
-                livejob = list->data;
-                stop_livejob (livejob, SIGUSR2);
+                job = list->data;
+                stop_job (job, SIGUSR2);
                 list = list->next;
         }
-        g_mutex_unlock (&(gstreamill->livejob_list_mutex));
+        g_mutex_unlock (&(gstreamill->job_list_mutex));
 
         return;
 }
@@ -572,42 +570,42 @@ gchar * gstreamill_get_start_time (Gstreamill *gstreamill)
         return gstreamill->start_time;
 }
 
-static void child_watch_cb (GPid pid, gint status, LiveJob *livejob)
+static void child_watch_cb (GPid pid, gint status, Job *job)
 {
         /* Close pid */
         g_spawn_close_pid (pid);
-        livejob->age += 1;
-        livejob->worker_pid = 0;
+        job->age += 1;
+        job->worker_pid = 0;
 
         if (WIFEXITED (status) && (WEXITSTATUS (status) == 0)) {
-                GST_ERROR ("LiveJob with pid %d normaly exit, status is %d", pid, WEXITSTATUS (status));
-                *(livejob->output->state) = GST_STATE_NULL;
+                GST_ERROR ("Job with pid %d normaly exit, status is %d", pid, WEXITSTATUS (status));
+                *(job->output->state) = GST_STATE_NULL;
         }
 
         if (WIFSIGNALED (status)) {
                 gchar *ret;
 
-                if (*(livejob->output->state) == GST_STATE_PAUSED) {
-                        GST_ERROR ("LiveJob with pid %d exit on an unhandled signal and paused, stopping gstreamill...", pid);
-                        *(livejob->output->state) = GST_STATE_NULL;
+                if (*(job->output->state) == GST_STATE_PAUSED) {
+                        GST_ERROR ("Job with pid %d exit on an unhandled signal and paused, stopping gstreamill...", pid);
+                        *(job->output->state) = GST_STATE_NULL;
                         return;
                 }
 
-                GST_ERROR ("LiveJob with pid %d exit on an unhandled signal, restart.", pid);
-                livejob_reset (livejob);
-                ret = create_livejob_process (livejob);
+                GST_ERROR ("Job with pid %d exit on an unhandled signal, restart.", pid);
+                job_reset (job);
+                ret = create_job_process (job);
                 if (g_str_has_suffix (ret, "failure")) {
                         /* create process failure, clean from job list */
-                        *(livejob->output->state) = GST_STATE_NULL;
+                        *(job->output->state) = GST_STATE_NULL;
                 }
-                GST_ERROR ("create_livejob_process: %s", ret);
+                GST_ERROR ("create_job_process: %s", ret);
                 g_free (ret);
         }
 
         return;
 }
 
-static gchar * create_livejob_process (LiveJob *livejob)
+static gchar * create_job_process (Job *job)
 {
         GError *error = NULL;
         gchar *argv[16], path[512], *p;
@@ -622,19 +620,19 @@ static gchar * create_livejob_process (LiveJob *livejob)
         i = 0;
         argv[i++] = g_strdup (path);
         argv[i++] = g_strdup ("-l");
-        argv[i++] = g_strdup (livejob->log_dir);
+        argv[i++] = g_strdup (job->log_dir);
         argv[i++] = g_strdup ("-n");
-        argv[i++] = g_strdup_printf ("%s", livejob->name);
+        argv[i++] = g_strdup_printf ("%s", job->name);
         argv[i++] = g_strdup ("-q");
-        argv[i++] = g_strdup_printf ("%ld", strlen (livejob->job));
-        p = jobdesc_get_debug (livejob->job);
+        argv[i++] = g_strdup_printf ("%ld", strlen (job->job));
+        p = jobdesc_get_debug (job->job);
         if (p != NULL) {
                 argv[i++] = g_strdup_printf ("--gst-debug=%s", p);
                 g_free (p);
         }
         argv[i++] = NULL;
         if (!g_spawn_async (NULL, argv, NULL, G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &pid, &error)) {
-                GST_ERROR ("Start livejob %s error, reason: %s.", livejob->name, error->message);
+                GST_ERROR ("Start job %s error, reason: %s.", job->name, error->message);
                 for (j = 0; j < i; j++) {
                         if (argv[j] != NULL) {
                                 g_free (argv[j]);
@@ -649,92 +647,92 @@ static gchar * create_livejob_process (LiveJob *livejob)
                         g_free (argv[j]);
                 }
         }
-        livejob->worker_pid = pid;
-        g_child_watch_add (pid, (GChildWatchFunc)child_watch_cb, livejob);
+        job->worker_pid = pid;
+        g_child_watch_add (pid, (GChildWatchFunc)child_watch_cb, job);
 
         return g_strdup ("create live job process success");
 }
 
-static LiveJob * get_livejob (Gstreamill *gstreamill, gchar *name)
+static Job * get_job (Gstreamill *gstreamill, gchar *name)
 {
-        LiveJob *livejob;
+        Job *job;
         GSList *list;
 
-        g_mutex_lock (&(gstreamill->livejob_list_mutex));
-        list = gstreamill->livejob_list;
+        g_mutex_lock (&(gstreamill->job_list_mutex));
+        list = gstreamill->job_list;
         if (list == NULL) {
-                g_mutex_unlock (&(gstreamill->livejob_list_mutex));
+                g_mutex_unlock (&(gstreamill->job_list_mutex));
                 return NULL;
         }
 
         while (list != NULL) {
-                livejob = list->data;
-                if (g_strcmp0 (livejob->name, name) == 0) {
+                job = list->data;
+                if (g_strcmp0 (job->name, name) == 0) {
                         break;
 
                 } else {
-                        livejob = NULL;
+                        job = NULL;
                 }
                 list = list->next;
         }
-        g_mutex_unlock (&(gstreamill->livejob_list_mutex));
+        g_mutex_unlock (&(gstreamill->job_list_mutex));
 
-        return livejob;
+        return job;
 }
 
-static gchar * gstreamill_livejob_start (Gstreamill *gstreamill, gchar *job)
+static gchar * gjob_start (Gstreamill *gstreamill, gchar *job_desc)
 {
         gchar *p, *name;
-        LiveJob *livejob;
+        Job *job;
 
-        /* create livejob object */
-        name = jobdesc_get_name (job);
-        if (get_livejob (gstreamill, name) != NULL) {
+        /* create job object */
+        name = jobdesc_get_name (job_desc);
+        if (get_job (gstreamill, name) != NULL) {
                 GST_ERROR ("start live job failure, duplicated name %s.", name);
                 p = g_strdup_printf ("start live job failure, duplicated name %s.", name);
                 g_free (name);
                 return p;
         }
-        livejob = livejob_new ("job", job, "name", name, NULL);
+        job = job_new ("job", job_desc, "name", name, NULL);
         g_free (name);
 
-        /* livejob initialize */
-        livejob->log_dir = gstreamill->log_dir;
-        g_mutex_init (&(livejob->access_mutex));
-        livejob->is_live = jobdesc_is_live (job);
-        livejob->current_access = 0;
-        livejob->age = 0;
-        livejob->last_start_time = NULL;
-        if (livejob_initialize (livejob, gstreamill->daemon) != 0) {
-                p = g_strdup ("initialize livejob failure");
-                g_object_unref (livejob);
+        /* job initialize */
+        job->log_dir = gstreamill->log_dir;
+        g_mutex_init (&(job->access_mutex));
+        job->is_live = jobdesc_is_live (job_desc);
+        job->current_access = 0;
+        job->age = 0;
+        job->last_start_time = NULL;
+        if (job_initialize (job, gstreamill->daemon) != 0) {
+                p = g_strdup ("initialize job failure");
+                g_object_unref (job);
                 return p;
         }
 
         /* m3u8 master playlist */
-        if (jobdesc_m3u8streaming (livejob->job)) {
-                livejob->output->master_m3u8_playlist = livejob_get_master_m3u8_playlist (livejob);
+        if (jobdesc_m3u8streaming (job->job)) {
+                job->output->master_m3u8_playlist = job_get_master_m3u8_playlist (job);
         }
 
-        /* reset and start livejob */
-        livejob_reset (livejob);
+        /* reset and start job */
+        job_reset (job);
         if (gstreamill->daemon) {
-                p = create_livejob_process (livejob);
-                GST_ERROR ("%s: %s", p, livejob->name);
+                p = create_job_process (job);
+                GST_ERROR ("%s: %s", p, job->name);
                 if (g_str_has_suffix (p, "success")) {
-                        g_mutex_lock (&(gstreamill->livejob_list_mutex));
-                        gstreamill->livejob_list = g_slist_append (gstreamill->livejob_list, livejob);
-                        g_mutex_unlock (&(gstreamill->livejob_list_mutex));
+                        g_mutex_lock (&(gstreamill->job_list_mutex));
+                        gstreamill->job_list = g_slist_append (gstreamill->job_list, job);
+                        g_mutex_unlock (&(gstreamill->job_list_mutex));
 
                 } else {
-                        g_object_unref (livejob);
+                        g_object_unref (job);
                 }
 
         } else {
-                if (livejob_start (livejob) == 0) {
-                        g_mutex_lock (&(gstreamill->livejob_list_mutex));
-                        gstreamill->livejob_list = g_slist_append (gstreamill->livejob_list, livejob);
-                        g_mutex_unlock (&(gstreamill->livejob_list_mutex));
+                if (job_start (job) == 0) {
+                        g_mutex_lock (&(gstreamill->job_list_mutex));
+                        gstreamill->job_list = g_slist_append (gstreamill->job_list, job);
+                        g_mutex_unlock (&(gstreamill->job_list_mutex));
                         p = g_strdup ("success");
 
                 } else {
@@ -762,11 +760,11 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job)
 
         if (jobdesc_is_live (job)) {
                 GST_ERROR ("live job arrived");
-                p = gstreamill_livejob_start (gstreamill, job);
+                p = gjob_start (gstreamill, job);
         } else {
 
                 GST_ERROR ("transcode job arrived");
-                p = gstreamill_livejob_start (gstreamill, job);
+                p = gjob_start (gstreamill, job);
         }
 
         return p;
@@ -774,35 +772,35 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job)
 
 /**
  * gstreamill_job_stop:
- * @name: (in): livejob name to be stoped
+ * @name: (in): job name to be stoped
  *
  * Returns: plain text.
  */
 gchar * gstreamill_job_stop (Gstreamill *gstreamill, gchar *name)
 {
-        LiveJob *livejob;
+        Job *job;
 
-        livejob = get_livejob (gstreamill, name);
-        if (livejob != NULL) {
-                stop_livejob (livejob, SIGUSR2);
+        job = get_job (gstreamill, name);
+        if (job != NULL) {
+                stop_job (job, SIGUSR2);
                 return g_strdup ("ok");
 
         } else {
-                return g_strdup ("livejob not found");
+                return g_strdup ("job not found");
         }
 }
 
 /**
- * gstreamill_get_livejob:
+ * gstreamill_get_job:
  * @uri: (in): access uri, e.g. /live/test/encoder/0
  *
- * Get the LiveJob by access uri.
+ * Get the Job by access uri.
  *
- * Returns: livejob
+ * Returns: job
  */
-LiveJob *gstreamill_get_livejob (Gstreamill *gstreamill, gchar *uri)
+Job *gstreamill_get_job (Gstreamill *gstreamill, gchar *uri)
 {
-        LiveJob *livejob = NULL;
+        Job *job = NULL;
         GRegex *regex;
         GMatchInfo *match_info;
         gchar *name = NULL;
@@ -816,23 +814,23 @@ LiveJob *gstreamill_get_livejob (Gstreamill *gstreamill, gchar *uri)
         }
 
         if (name != NULL) {
-                livejob = get_livejob (gstreamill, name);
+                job = get_job (gstreamill, name);
                 g_free (name);
         }
         if (match_info != NULL) {
                 g_match_info_free (match_info);
         }
 
-        return livejob;
+        return job;
 }
 
-gint gstreamill_livejob_number (Gstreamill *gstreamill)
+gint gstreamill_job_number (Gstreamill *gstreamill)
 {
         gint number;
 
-        g_mutex_lock (&(gstreamill->livejob_list_mutex));
-        number = g_slist_length (gstreamill->livejob_list);
-        g_mutex_unlock (&(gstreamill->livejob_list_mutex));
+        g_mutex_lock (&(gstreamill->job_list_mutex));
+        number = g_slist_length (gstreamill->job_list);
+        g_mutex_unlock (&(gstreamill->job_list_mutex));
 
         return number;
 }
@@ -847,7 +845,7 @@ gint gstreamill_livejob_number (Gstreamill *gstreamill)
  */
 EncoderOutput * gstreamill_get_encoder_output (Gstreamill *gstreamill, gchar *uri)
 {
-        LiveJob *livejob;
+        Job *job;
         gint index;
         GRegex *regex = NULL;
         GMatchInfo *match_info = NULL;
@@ -871,20 +869,20 @@ EncoderOutput * gstreamill_get_encoder_output (Gstreamill *gstreamill, gchar *ur
                 GST_INFO ("Not a encoder uri: %s", uri);
                 return NULL;
         }
-        livejob = gstreamill_get_livejob (gstreamill, uri);
-        if (livejob == NULL) {
-                GST_ERROR ("LiveJob %s not found.", uri);
+        job = gstreamill_get_job (gstreamill, uri);
+        if (job == NULL) {
+                GST_ERROR ("Job %s not found.", uri);
                 return NULL;
         }
-        if (index >= livejob->output->encoder_count) {
+        if (index >= job->output->encoder_count) {
                 GST_ERROR ("Encoder %s not found.", uri);
                 return NULL;
         }
-        g_mutex_lock (&(livejob->access_mutex));
-        livejob->current_access += 1;
-        g_mutex_unlock (&(livejob->access_mutex));
+        g_mutex_lock (&(job->access_mutex));
+        job->current_access += 1;
+        g_mutex_unlock (&(job->access_mutex));
 
-        return &livejob->output->encoders[index];
+        return &job->output->encoders[index];
 }
 
 /**
@@ -912,26 +910,26 @@ gchar * gstreamill_get_m3u8playlist (Gstreamill *gstreamill, EncoderOutput *enco
 
 /**
  * gstreamill_get_master_m3u8playlist:
- * @uri: (in): livejob uri
+ * @uri: (in): job uri
  *
- * Get LiveJob's master playlist.
+ * Get Job's master playlist.
  *
  * Returns: master m3u8 playlist
  */
 gchar * gstreamill_get_master_m3u8playlist (Gstreamill *gstreamill, gchar *uri)
 {
-        LiveJob *livejob;
+        Job *job;
         gchar *master_m3u8_playlist, *p;
 
-        livejob = gstreamill_get_livejob (gstreamill, uri);
-        if (livejob == NULL) {
-                GST_ERROR ("LiveJob %s not found.", uri);
+        job = gstreamill_get_job (gstreamill, uri);
+        if (job == NULL) {
+                GST_ERROR ("Job %s not found.", uri);
                 return NULL;
         }
 
-        p = g_strdup_printf ("/live/%s/playlist.m3u8", livejob->name);
+        p = g_strdup_printf ("/live/%s/playlist.m3u8", job->name);
         if (g_strcmp0 (p, uri) == 0) {
-                master_m3u8_playlist = g_strdup (livejob->output->master_m3u8_playlist);
+                master_m3u8_playlist = g_strdup (job->output->master_m3u8_playlist);
 
         } else {
                 master_m3u8_playlist = NULL;
@@ -943,7 +941,7 @@ gchar * gstreamill_get_master_m3u8playlist (Gstreamill *gstreamill, gchar *uri)
 
 /**
  * gstreamill_unaccess:
- * @uri: (in): livejob access uri.
+ * @uri: (in): job access uri.
  *
  * current_access minus 1.
  *
@@ -951,16 +949,16 @@ gchar * gstreamill_get_master_m3u8playlist (Gstreamill *gstreamill, gchar *uri)
  */
 void gstreamill_unaccess (Gstreamill *gstreamill, gchar *uri)
 {
-        LiveJob *livejob;
+        Job *job;
 
-        livejob = gstreamill_get_livejob (gstreamill, uri);
-        if (livejob == NULL) {
-                GST_ERROR ("LiveJob %s not found.", uri);
+        job = gstreamill_get_job (gstreamill, uri);
+        if (job == NULL) {
+                GST_ERROR ("Job %s not found.", uri);
                 return;
         }
-        g_mutex_lock (&(livejob->access_mutex));
-        livejob->current_access -= 1;
-        g_mutex_unlock (&(livejob->access_mutex));
+        g_mutex_lock (&(job->access_mutex));
+        job->current_access -= 1;
+        g_mutex_unlock (&(job->access_mutex));
 
         return;
 }
@@ -975,7 +973,7 @@ void gstreamill_unaccess (Gstreamill *gstreamill, gchar *uri)
  *     builddate:
  *     buildtime:
  *     starttime:
- *     livejob: [job1, job2]
+ *     job: [job1, job2]
  * }
  *
  */
@@ -986,18 +984,18 @@ gchar * gstreamill_stat (Gstreamill *gstreamill)
                           "    \"builddate\": %s,\n"
                           "    \"buildtime\": %s,\n"
                           "    \"starttime\": %s,\n"
-                          "    \"livejob\": %s]\n}\n";
+                          "    \"job\": %s]\n}\n";
         gchar *stat, *jobarray, *p;
         GSList *list;
-        LiveJob *livejob;
+        Job *job;
 
         jobarray = g_strdup_printf ("[");
-        g_mutex_lock (&(gstreamill->livejob_list_mutex));
-        list = gstreamill->livejob_list;
+        g_mutex_lock (&(gstreamill->job_list_mutex));
+        list = gstreamill->job_list;
         while (list != NULL) {
-                livejob = list->data;
+                job = list->data;
                 p = jobarray;
-                jobarray = g_strdup_printf ("%s\"%s\"", p, livejob->name);
+                jobarray = g_strdup_printf ("%s\"%s\"", p, job->name);
                 g_free (p);
                 list = list->next;
                 if (list != NULL) {
@@ -1006,7 +1004,7 @@ gchar * gstreamill_stat (Gstreamill *gstreamill)
                         g_free (p);
                 }
         }
-        g_mutex_unlock (&(gstreamill->livejob_list_mutex));
+        g_mutex_unlock (&(gstreamill->job_list_mutex));
         stat = g_strdup_printf (template,
                                 VERSION,
                                 __DATE__,
@@ -1018,7 +1016,7 @@ gchar * gstreamill_stat (Gstreamill *gstreamill)
         return stat;
 }
 
-static gchar * source_streams_stat (LiveJob *livejob)
+static gchar * source_streams_stat (Job *job)
 {
         SourceStreamState *stat;
         GstDateTime *time;
@@ -1030,7 +1028,7 @@ static gchar * source_streams_stat (LiveJob *livejob)
                                         "                \"heartbeat\": %s\n"
                                         "            }";
 
-        stat = &(livejob->output->source.streams[0]);
+        stat = &(job->output->source.streams[0]);
         time = gst_date_time_new_from_unix_epoch_local_time (stat->last_heartbeat/GST_SECOND);
         p1 = gst_date_time_to_iso8601_string (time);
         gst_date_time_unref (time);
@@ -1039,8 +1037,8 @@ static gchar * source_streams_stat (LiveJob *livejob)
                                           stat->current_timestamp,
                                           p1);
         g_free (p1);
-        for (i = 1; i < livejob->output->source.stream_count; i++) {
-                stat = &(livejob->output->source.streams[i]);
+        for (i = 1; i < job->output->source.stream_count; i++) {
+                stat = &(job->output->source.streams[i]);
                 time = gst_date_time_new_from_unix_epoch_local_time (stat->last_heartbeat/GST_SECOND);
                 p1 = gst_date_time_to_iso8601_string (time);
                 gst_date_time_unref (time);
@@ -1117,17 +1115,17 @@ static gchar * encoder_stat (EncoderOutput *encoder)
         return encoder_stat;
 }
 
-static gchar * encoders_stat (LiveJob *livejob)
+static gchar * encoders_stat (Job *job)
 {
         EncoderOutput *encoder;
         gint i;
         gchar *encoders, *p1, *p2;
 
-        encoder = &(livejob->output->encoders[0]);
+        encoder = &(job->output->encoders[0]);
         encoders = encoder_stat (encoder);
-        for (i = 1; i < livejob->output->encoder_count; i++) {
+        for (i = 1; i < job->output->encoder_count; i++) {
                 p1 = encoders;
-                encoder = &(livejob->output->encoders[i]);
+                encoder = &(job->output->encoders[i]);
                 p2 = encoder_stat (encoder);
                 encoders = g_strdup_printf ("%s,\n%s", p1, p2);
                 g_free (p1);
@@ -1199,11 +1197,11 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
                           "    ]\n"
                           "}\n";
         gchar *stat, *name, *source_streams, *encoders;
-        LiveJob *livejob;
+        Job *job;
         GRegex *regex = NULL;
         GMatchInfo *match_info = NULL;
 
-        regex = g_regex_new ("/livejob/(?<name>[^/]*).*", G_REGEX_OPTIMIZE, 0, NULL);
+        regex = g_regex_new ("/job/(?<name>[^/]*).*", G_REGEX_OPTIMIZE, 0, NULL);
         match_info = NULL;
         g_regex_match (regex, uri, 0, &match_info);
         g_regex_unref (regex);
@@ -1214,25 +1212,25 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
                 GST_ERROR ("wrong uri");
                 return g_strdup ("wrong uri");
         }
-        livejob = get_livejob (gstreamill, name);
-        if (livejob == NULL) {
+        job = get_job (gstreamill, name);
+        if (job == NULL) {
                 GST_ERROR ("uri %s not found.", uri);
                 return g_strdup ("not found");
         }
-        source_streams = source_streams_stat (livejob);
-        encoders = encoders_stat (livejob);
+        source_streams = source_streams_stat (job);
+        encoders = encoders_stat (job);
         stat = g_strdup_printf (template,
-                                livejob->name,
-                                livejob->age,
-                                livejob->last_start_time,
-                                livejob->current_access,
-                                livejob->cpu_average,
-                                livejob->cpu_current,
-                                livejob->memory,
-                                livejob->output->source.sync_error_times,
-                                livejob->output->source.stream_count,
+                                job->name,
+                                job->age,
+                                job->last_start_time,
+                                job->current_access,
+                                job->cpu_average,
+                                job->cpu_current,
+                                job->memory,
+                                job->output->source.sync_error_times,
+                                job->output->source.stream_count,
                                 source_streams,
-                                livejob->output->encoder_count,
+                                job->output->encoder_count,
                                 encoders);
         g_free (source_streams);
         g_free (encoders);

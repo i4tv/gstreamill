@@ -464,8 +464,8 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
                         /* http progressive streaming request */
                         GST_INFO ("Play %s.", request_data->uri);
                         priv_data = (PrivateData *)g_malloc (sizeof (PrivateData));
-                        priv_data->livejob = gstreamill_get_livejob (httpstreaming->gstreamill, request_data->uri);
-                        priv_data->livejob_age = priv_data->livejob->age;
+                        priv_data->job = gstreamill_get_job (httpstreaming->gstreamill, request_data->uri);
+                        priv_data->livejob_age = priv_data->job->age;
                         priv_data->chunk_size = 0;
                         priv_data->send_count = 2;
                         priv_data->chunk_size_str = g_strdup ("");
@@ -495,8 +495,8 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
 
         case HTTP_CONTINUE:
                 priv_data = request_data->priv_data;
-                if ((priv_data->livejob_age != priv_data->livejob->age) ||
-                    (*(priv_data->livejob->output->state) != GST_STATE_PLAYING)) {
+                if ((priv_data->livejob_age != priv_data->job->age) ||
+                    (*(priv_data->job->output->state) != GST_STATE_PLAYING)) {
                         g_free (request_data->priv_data);
                         request_data->priv_data = NULL;
                         gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);

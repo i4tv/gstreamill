@@ -1,11 +1,11 @@
 /*
- *  livejob
+ *  job
  *
  *  Copyright (C) Zhang Ping <zhangping@163.com>
  */
 
-#ifndef __LIVEJOB_H__
-#define __LIVEJOB_H__
+#ifndef __JOB_H__
+#define __JOB_H__
 
 #include "config.h"
 #include "source.h"
@@ -25,8 +25,8 @@
                     "Host: %s\r\n" \
                     "Accept: */*\r\n\r\n"
 
-typedef struct _LiveJob LiveJob;
-typedef struct _LiveJobClass LiveJobClass;
+typedef struct _Job Job;
+typedef struct _JobClass JobClass;
 
 typedef struct _m3u8PushRequest {
         gchar *rm_segment;
@@ -35,7 +35,7 @@ typedef struct _m3u8PushRequest {
         guint64 sequence_number;
 } m3u8PushRequest;
 
-typedef struct _LiveJobOutput {
+typedef struct _JobOutput {
         gchar *job_description;
         guint64 *state;
         SourceState source;
@@ -43,21 +43,21 @@ typedef struct _LiveJobOutput {
         EncoderOutput *encoders;
 
         gchar *master_m3u8_playlist;
-} LiveJobOutput;
+} JobOutput;
 
-struct _LiveJob {
+struct _Job {
         GObject parent;
 
         gchar *job;
-        gchar *name; /* same as the name in livejob config file */
+        gchar *name; /* same as the name in job config file */
         gboolean is_live;
         gint id;
         gchar *log_dir;
         GstClock *system_clock;
         gsize output_size;
         gint output_fd;
-        LiveJobOutput *output; /* Interface for producing */
-        gint64 age; /* (re)start times of the livejob */
+        JobOutput *output; /* Interface for producing */
+        gint64 age; /* (re)start times of the job */
         gchar *last_start_time; /* last start up time */
         pid_t worker_pid;
 
@@ -82,24 +82,24 @@ struct _LiveJob {
         GThreadPool *m3u8push_thread_pool;
 };
 
-struct _LiveJobClass {
+struct _JobClass {
         GObjectClass parent;
 };
 
-#define TYPE_LIVEJOB           (livejob_get_type())
-#define LIVEJOB(obj)           (G_TYPE_CHECK_INSTANCE_CAST ((obj), TYPE_LIVEJOB, LiveJob))
-#define LIVEJOB_CLASS(cls)     (G_TYPE_CHECK_CLASS_CAST    ((cls), TYPE_LIVEJOB, LiveJobClass))
-#define IS_LIVEJOB(obj)        (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TYPE_LIVEJOB))
-#define IS_LIVEJOB_CLASS(cls)  (G_TYPE_CHECK_CLASS_TYPE    ((cls), TYPE_LIVEJOB))
-#define LIVEJOB_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS  ((obj), TYPE_LIVEJOB, LiveJobClass))
-#define livejob_new(...)       (g_object_new(TYPE_LIVEJOB, ## __VA_ARGS__, NULL))
+#define TYPE_JOB           (job_get_type())
+#define JOB(obj)           (G_TYPE_CHECK_INSTANCE_CAST ((obj), TYPE_JOB, Job))
+#define JOB_CLASS(cls)     (G_TYPE_CHECK_CLASS_CAST    ((cls), TYPE_JOB, JobClass))
+#define IS_JOB(obj)        (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TYPE_JOB))
+#define IS_JOB_CLASS(cls)  (G_TYPE_CHECK_CLASS_TYPE    ((cls), TYPE_JOB))
+#define JOB_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS  ((obj), TYPE_JOB, JobClass))
+#define job_new(...)       (g_object_new(TYPE_JOB, ## __VA_ARGS__, NULL))
 
-GType livejob_get_type (void);
+GType job_get_type (void);
 
-gint livejob_initialize (LiveJob *livejob, gboolean daemon);
-void livejob_reset (LiveJob *livejob);
-void livejob_stat_update (LiveJob *livejob);
-gint livejob_start (LiveJob *livejob);
-gchar * livejob_get_master_m3u8_playlist (LiveJob *livejob);
+gint job_initialize (Job *job, gboolean daemon);
+void job_reset (Job *job);
+void job_stat_update (Job *job);
+gint job_start (Job *job);
+gchar * job_get_master_m3u8_playlist (Job *job);
 
-#endif /* __LIVEJOB_H__ */
+#endif /* __JOB_H__ */
