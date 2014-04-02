@@ -481,6 +481,12 @@ static void job_check_func (gpointer data, gpointer user_data)
                         if (!(*(job->output->encoders[i].eos))) {
                                 eos = FALSE;
                                 break;
+
+                        } else {
+                                /* add #EXT-X-ENDLIST to encodrs.i.hlssink.propery.playlist-location */
+                                gchar *location;
+
+                                location = jobdesc_element_property_value (job->description, location);
                         }
                 }
                 if (eos) {
@@ -658,8 +664,8 @@ static gchar * create_job_process (Job *job)
         argv[i++] = g_strdup ("-n");
         argv[i++] = g_strdup_printf ("%s", job->name);
         argv[i++] = g_strdup ("-q");
-        argv[i++] = g_strdup_printf ("%ld", strlen (job->job));
-        p = jobdesc_get_debug (job->job);
+        argv[i++] = g_strdup_printf ("%ld", strlen (job->description));
+        p = jobdesc_get_debug (job->description);
         if (p != NULL) {
                 argv[i++] = g_strdup_printf ("--gst-debug=%s", p);
                 g_free (p);
@@ -763,7 +769,7 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
         }
 
         /* m3u8 master playlist */
-        if (jobdesc_m3u8streaming (job->job)) {
+        if (jobdesc_m3u8streaming (job->description)) {
                 job->output->master_m3u8_playlist = job_get_master_m3u8_playlist (job);
         }
 

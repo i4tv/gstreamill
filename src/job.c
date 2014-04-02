@@ -21,7 +21,7 @@ GST_DEBUG_CATEGORY_EXTERN (GSTREAMILL);
 enum {
         JOB_PROP_0,
         JOB_PROP_NAME,
-        JOB_PROP_JOB,
+        JOB_PROP_DESCRIPTION,
 };
 
 static void job_set_property (GObject *obj, guint prop_id, const GValue *value, GParamSpec *pspec);
@@ -55,7 +55,7 @@ static void job_class_init (JobClass *jobclass)
                 NULL,
                 G_PARAM_WRITABLE | G_PARAM_READABLE
         );
-        g_object_class_install_property (g_object_class, JOB_PROP_JOB, param);
+        g_object_class_install_property (g_object_class, JOB_PROP_DESCRIPTION, param);
 }
 
 static void job_init (Job *job)
@@ -75,8 +75,8 @@ static void job_set_property (GObject *obj, guint prop_id, const GValue *value, 
                 JOB (obj)->name = (gchar *)g_value_dup_string (value);
                 break;
 
-        case JOB_PROP_JOB:
-                JOB (obj)->job = (gchar *)g_value_dup_string (value);
+        case JOB_PROP_DESCRIPTION:
+                JOB (obj)->description = (gchar *)g_value_dup_string (value);
                 break;
 
         default:
@@ -94,8 +94,8 @@ static void job_get_property (GObject *obj, guint prop_id, GValue *value, GParam
                 g_value_set_string (value, job->name);
                 break;
 
-        case JOB_PROP_JOB:
-                g_value_set_string (value, job->job);
+        case JOB_PROP_DESCRIPTION:
+                g_value_set_string (value, job->description);
                 break;
 
         default:
@@ -160,9 +160,9 @@ static void job_dispose (GObject *obj)
                 job->name = NULL;
         }
 
-        if (job->job != NULL) {
-                g_free (job->job);
-                job->job = NULL;
+        if (job->description != NULL) {
+                g_free (job->description);
+                job->description = NULL;
         }
 
         G_OBJECT_CLASS (parent_class)->dispose (obj);
@@ -369,7 +369,7 @@ gint job_initialize (Job *job, gboolean daemon)
         JobOutput *output;
         gchar *name, *p;
 
-        job->output_size = status_output_size (job->job);
+        job->output_size = status_output_size (job->description);
         if (daemon) {
                 /* daemon, use share memory */
                 fd = shm_open (job->name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
@@ -386,23 +386,23 @@ gint job_initialize (Job *job, gboolean daemon)
         }
         output = (JobOutput *)g_malloc (sizeof (JobOutput));
         output->job_description = (gchar *)p;
-        g_stpcpy (output->job_description, job->job);
-        p += (strlen (job->job) / 8 + 1) * 8;
+        g_stpcpy (output->job_description, job->description);
+        p += (strlen (job->description) / 8 + 1) * 8;
         output->state = (guint64 *)p;
         p += sizeof (guint64); /* state */
         output->source.sync_error_times = 0;
-        output->source.stream_count = jobdesc_streams_count (job->job, "source");
+        output->source.stream_count = jobdesc_streams_count (job->description, "source");
         output->source.streams = (struct _SourceStreamState *)p;
         for (i = 0; i < output->source.stream_count; i++) {
                 output->source.streams[i].last_heartbeat = gst_clock_get_time (job->system_clock);
         }
         p += output->source.stream_count * sizeof (struct _SourceStreamState);
-        output->encoder_count = jobdesc_encoders_count (job->job);
+        output->encoder_count = jobdesc_encoders_count (job->description);
         output->encoders = (struct _EncoderOutput *)g_malloc (output->encoder_count * sizeof (struct _EncoderOutput));
         for (i = 0; i < output->encoder_count; i++) {
                 name = g_strdup_printf ("encoder.%d", i);
                 g_strlcpy (output->encoders[i].name, name, STREAM_NAME_LEN);
-                output->encoders[i].stream_count = jobdesc_streams_count (job->job, name);
+                output->encoders[i].stream_count = jobdesc_streams_count (job->description, name);
                 g_free (name);
                 name = g_strdup_printf ("/%s.%d", job->name, i);
                 output->encoders[i].semaphore = sem_open (name, O_CREAT, 0600, 1);
@@ -469,7 +469,7 @@ gint job_initialize (Job *job, gboolean daemon)
         }
         job->output = output;
 
-        job->m3u8push_uri = jobdesc_m3u8streaming_push_server_uri (job->job);
+        job->m3u8push_uri = jobdesc_m3u8streaming_push_server_uri (job->description);
         if (job->m3u8push_uri != NULL) {
                 GError *err = NULL;
 
@@ -636,17 +636,17 @@ void job_reset (Job *job)
                 return;
         }
 
-        version = jobdesc_m3u8streaming_version (job->job);
+        version = jobdesc_m3u8streaming_version (job->description);
         if (version == 0) {
                 version = 3;
         }
-        window_size = jobdesc_m3u8streaming_window_size (job->job);
+        window_size = jobdesc_m3u8streaming_window_size (job->description);
 
         for (i = 0; i < job->output->encoder_count; i++) {
                 encoder = &(job->output->encoders[i]);
                 name = g_strdup_printf ("/%s.%d", job->name, i);
 
-                if (jobdesc_m3u8streaming (job->job)) {
+                if (jobdesc_m3u8streaming (job->description)) {
                         /* reset m3u8 playlist */
                         if (encoder->m3u8_playlist != NULL) {
                                 g_mutex_clear (&(encoder->m3u8_playlist_mutex));
@@ -714,13 +714,13 @@ gint job_start (Job *job)
         GstStateChangeReturn ret;
         gint i;
 
-        job->source = source_initialize (job->job, &(job->output->source));
+        job->source = source_initialize (job->description, &(job->output->source));
         if (job->source == NULL) {
                 GST_ERROR ("Initialize job source error.");
                 return 1;
         }
 
-        if (encoder_initialize (job->encoder_array, job->job, job->output->encoders, job->source) != 0) {
+        if (encoder_initialize (job->encoder_array, job->description, job->output->encoders, job->source) != 0) {
                 GST_ERROR ("Initialize job encoder error.");
                 return 1;
         }
@@ -762,23 +762,23 @@ gchar * job_get_master_m3u8_playlist (Job *job)
         gchar *p, *value;
         gint i;
 
-        if (!jobdesc_m3u8streaming (job->job)) {
+        if (!jobdesc_m3u8streaming (job->description)) {
                 /* m3u8streaming no enabled */
                 return "not found";
         }
 
         master_m3u8_playlist = g_string_new ("");
         g_string_append_printf (master_m3u8_playlist, M3U8_HEADER_TAG);
-        if (jobdesc_m3u8streaming_version (job->job) == 0) {
+        if (jobdesc_m3u8streaming_version (job->description) == 0) {
                 g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, 3);
 
         } else {
-                g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, jobdesc_m3u8streaming_version (job->job));
+                g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, jobdesc_m3u8streaming_version (job->description));
         }
 
         for (i = 0; i < job->output->encoder_count; i++) {
                 p = g_strdup_printf ("encoder.%d.elements.x264enc.property.bitrate", i);
-                value = jobdesc_element_property_value (job->job, p);
+                value = jobdesc_element_property_value (job->description, p);
                 g_string_append_printf (master_m3u8_playlist, M3U8_STREAM_INF_TAG, 1, value);
                 g_string_append_printf (master_m3u8_playlist, "encoder/%d/playlist.m3u8\n", i);
                 g_free (p);

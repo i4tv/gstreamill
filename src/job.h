@@ -48,7 +48,7 @@ typedef struct _JobOutput {
 struct _Job {
         GObject parent;
 
-        gchar *job;
+        gchar *description;
         gchar *name; /* same as the name in job config file */
         gboolean is_live;
         gboolean eos;
