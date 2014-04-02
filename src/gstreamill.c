@@ -278,36 +278,39 @@ static gint stop_job (Job *job, gint sig)
         }
 }
 
-static void nonlivejob_check_func (Gstreamill *gstreamill, Job *job)
+static void source_check (Gstreamill *gstreamill, Job *job)
 {
-}
-
-static void livejob_check_func (Gstreamill *gstreamill, Job *job)
-{
-        JobOutput *output;
-        gint j, k;
+        gint i;
         GstClockTimeDiff time_diff;
-        GstClockTime now, min, max;
+        GstClockTime now;
 
-        output = job->output;
-        if (*(output->state) != GST_STATE_PLAYING) {
+        /* log source timestamp. */
+        for (i = 0; i < job->output->source.stream_count; i++) {
+                GST_INFO ("%s.source.%s timestamp %" GST_TIME_FORMAT,
+                                job->name,
+                                job->output->source.streams[i].name,
+                                GST_TIME_ARGS (job->output->source.streams[i].current_timestamp));
+        }
+
+        /* non live job, don't check heartbeat */
+        if (!job->is_live) {
                 return;
         }
 
         /* source heartbeat check */
-        for (j = 0; j < output->source.stream_count; j++) {
+        for (i = 0; i < job->output->source.stream_count; i++) {
                 /* check video and audio */
-                if (!g_str_has_prefix (output->source.streams[j].name, "video") &&
-                    !g_str_has_prefix (output->source.streams[j].name, "audio")) {
+                if (!g_str_has_prefix (job->output->source.streams[i].name, "video") &&
+                    !g_str_has_prefix (job->output->source.streams[i].name, "audio")) {
                         continue;
                 }
 
                 now = gst_clock_get_time (gstreamill->system_clock);
-                time_diff = GST_CLOCK_DIFF (output->source.streams[j].last_heartbeat, now);
+                time_diff = GST_CLOCK_DIFF (job->output->source.streams[i].last_heartbeat, now);
                 if ((time_diff > HEARTBEAT_THRESHHOLD) && gstreamill->daemon) {
                         GST_ERROR ("%s.source.%s heart beat error %lu, restart job.",
                                         job->name,
-                                        output->source.streams[j].name,
+                                        job->output->source.streams[i].name,
                                         time_diff);
                         /* restart job. */
                         stop_job (job, SIGKILL);
@@ -316,34 +319,50 @@ static void livejob_check_func (Gstreamill *gstreamill, Job *job)
                 } else {
                         GST_INFO ("%s.source.%s heartbeat %" GST_TIME_FORMAT,
                                         job->name,
-                                        output->source.streams[j].name,
-                                        GST_TIME_ARGS (output->source.streams[j].last_heartbeat));
+                                        job->output->source.streams[i].name,
+                                        GST_TIME_ARGS (job->output->source.streams[i].last_heartbeat));
+                }
+        }
+}
+
+static void encoders_check (Gstreamill *gstreamill, Job *job)
+{
+        gint j, k;
+        GstClockTimeDiff time_diff;
+        GstClockTime now;
+
+        /* log encoder current timestamp. */
+        for (j = 0; j < job->output->encoder_count; j++) {
+                for (k = 0; k < job->output->encoders[j].stream_count; k++) {
+                        GST_INFO ("%s.encoders.%s.%s timestamp %" GST_TIME_FORMAT,
+                                        job->name,
+                                        job->output->encoders[j].name,
+                                        job->output->encoders[j].streams[k].name,
+                                        GST_TIME_ARGS (job->output->encoders[j].streams[k].current_timestamp));
                 }
         }
 
-        /* log source timestamp. */
-        for (j = 0; j < output->source.stream_count; j++) {
-                GST_INFO ("%s.source.%s timestamp %" GST_TIME_FORMAT,
-                                job->name,
-                                output->source.streams[j].name,
-                                GST_TIME_ARGS (output->source.streams[j].current_timestamp));
+        /* non live job, don't check heartbeat */
+        if (!job->is_live) {
+                return;
         }
 
         /* encoder heartbeat check */
-        for (j = 0; j < output->encoder_count; j++) {
-                for (k = 0; k < output->encoders[j].stream_count; k++) {
-                        if (!g_str_has_prefix (output->encoders[j].streams[k].name, "video") &&
-                            !g_str_has_prefix (output->encoders[j].streams[k].name, "audio")) {
+        for (j = 0; j < job->output->encoder_count; j++) {
+
+                for (k = 0; k < job->output->encoders[j].stream_count; k++) {
+                        if (!g_str_has_prefix (job->output->encoders[j].streams[k].name, "video") &&
+                            !g_str_has_prefix (job->output->encoders[j].streams[k].name, "audio")) {
                                 continue;
                         }
 
                         now = gst_clock_get_time (gstreamill->system_clock);
-                        time_diff = GST_CLOCK_DIFF (output->encoders[j].streams[k].last_heartbeat, now);
+                        time_diff = GST_CLOCK_DIFF (job->output->encoders[j].streams[k].last_heartbeat, now);
                         if ((time_diff > HEARTBEAT_THRESHHOLD) && gstreamill->daemon) {
                                 GST_ERROR ("%s.encoders.%s.%s heartbeat error %lu, restart",
                                                 job->name,
-                                                output->encoders[j].name,
-                                                output->encoders[j].streams[k].name,
+                                                job->output->encoders[j].name,
+                                                job->output->encoders[j].streams[k].name,
                                                 time_diff);
                                 /* restart job. */
                                 stop_job (job, SIGKILL);
@@ -352,75 +371,70 @@ static void livejob_check_func (Gstreamill *gstreamill, Job *job)
                         } else {
                                 GST_INFO ("%s.encoders.%s.%s heartbeat %" GST_TIME_FORMAT,
                                                 job->name,
-                                                output->encoders[j].name,
-                                                output->encoders[j].streams[k].name,
-                                                GST_TIME_ARGS (output->encoders[j].streams[k].last_heartbeat));
+                                                job->output->encoders[j].name,
+                                                job->output->encoders[j].streams[k].name,
+                                                GST_TIME_ARGS (job->output->encoders[j].streams[k].last_heartbeat));
                         }
                 }
         }
 
-        /* log encoder current timestamp. */
-        for (j = 0; j < output->encoder_count; j++) {
-                for (k = 0; k < output->encoders[j].stream_count; k++) {
-                        GST_INFO ("%s.encoders.%s.%s timestamp %" GST_TIME_FORMAT,
-                                        job->name,
-                                        output->encoders[j].name,
-                                        output->encoders[j].streams[k].name,
-                                        GST_TIME_ARGS (output->encoders[j].streams[k].current_timestamp));
-                }
-        }
-
-        /* encoder output heartbeat check. */
-        for (j = 0; j < output->encoder_count; j++) {
+        /* encoder job->output heartbeat check. */
+        for (j = 0; j < job->output->encoder_count; j++) {
                 now = gst_clock_get_time (gstreamill->system_clock);
-                time_diff = GST_CLOCK_DIFF (*(output->encoders[j].heartbeat), now);
+                time_diff = GST_CLOCK_DIFF (*(job->output->encoders[j].heartbeat), now);
                 if ((time_diff > ENCODER_OUTPUT_HEARTBEAT_THRESHHOLD) && gstreamill->daemon) {
-                        GST_ERROR ("%s.encoders.%s output heart beat error %lu, restart",
+                        GST_ERROR ("%s.encoders.%s job->output heart beat error %lu, restart",
                                         job->name,
-                                        output->encoders[j].name,
+                                        job->output->encoders[j].name,
                                         time_diff);
                         /* restart job. */
                         stop_job (job, SIGKILL);
                         return;
 
                 } else {
-                        GST_INFO ("%s.encoders.%s output heartbeat %" GST_TIME_FORMAT,
+                        GST_INFO ("%s.encoders.%s job->output heartbeat %" GST_TIME_FORMAT,
                                         job->name,
-                                        output->encoders[j].name,
-                                        GST_TIME_ARGS (*(output->encoders[j].heartbeat)));
+                                        job->output->encoders[j].name,
+                                        GST_TIME_ARGS (*(job->output->encoders[j].heartbeat)));
                 }
         }
+}
 
-        /* sync check */
+static void sync_check (Gstreamill *gstreamill, Job *job)
+{
+        gint j;
+        GstClockTimeDiff time_diff;
+        GstClockTime now, min, max;
+
         min = GST_CLOCK_TIME_NONE;
         max = 0;
-        for (j = 0; j < output->source.stream_count; j++) {
-                if (!g_str_has_prefix (output->source.streams[j].name, "video") &&
-                    !g_str_has_prefix (output->source.streams[j].name, "audio")) {
+        for (j = 0; j < job->output->source.stream_count; j++) {
+                if (!g_str_has_prefix (job->output->source.streams[j].name, "video") &&
+                    !g_str_has_prefix (job->output->source.streams[j].name, "audio")) {
                         continue;
                 }
 
-                if (min > output->source.streams[j].current_timestamp) {
-                        min = output->source.streams[j].current_timestamp;
+                if (min > job->output->source.streams[j].current_timestamp) {
+                        min = job->output->source.streams[j].current_timestamp;
                 }
 
-                if (max < output->source.streams[j].current_timestamp) {
-                        max = output->source.streams[j].current_timestamp;
+                if (max < job->output->source.streams[j].current_timestamp) {
+                        max = job->output->source.streams[j].current_timestamp;
                 }
         }
         time_diff = GST_CLOCK_DIFF (min, max);
         if ((time_diff > SYNC_THRESHHOLD) && gstreamill->daemon){
                 GST_ERROR ("%s sync error %lu", job->name, time_diff);
-                output->source.sync_error_times += 1;
-                if (output->source.sync_error_times == 3) {
-                        GST_ERROR ("sync error times %ld, restart %s", output->source.sync_error_times, job->name);
+                job->output->source.sync_error_times += 1;
+                if (job->output->source.sync_error_times == 3) {
+                        GST_ERROR ("sync error times %ld, restart %s", job->output->source.sync_error_times, job->name);
                         /* restart job. */
                         stop_job (job, SIGKILL);
                         return;
                 }
 
         } else {
-                output->source.sync_error_times = 0;
+                job->output->source.sync_error_times = 0;
         }
 }
 
@@ -428,22 +442,22 @@ static void job_check_func (gpointer data, gpointer user_data)
 {
         Job *job = (Job *)data;
         Gstreamill *gstreamill = (Gstreamill *)user_data;
-        JobOutput *output;
-        gint j, k;
-        GstClockTimeDiff time_diff;
-        GstClockTime now, min, max;
 
         if (gstreamill->stop) {
                 GST_ERROR ("waitting %s stopped", job->name);
                 return;
         }
 
-        /* job check */
-        if (job->is_live) {
-                livejob_check_func (gstreamill, job);
+        if (*(job->output->state) != GST_STATE_PLAYING) {
+                return;
+        }
 
-        } else {
-                nonlivejob_check_func (gstreamill, job);
+        source_check (gstreamill, job);
+
+        encoders_check (gstreamill, job);
+
+        if (job->is_live) {
+                sync_check (gstreamill, job);
         }
 
         /* stat report. */

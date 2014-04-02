@@ -737,9 +737,7 @@ gint job_start (Job *job)
                 }
                 encoder->state = GST_STATE_PLAYING;
         }
-        if (job->is_live) {
-                *(job->output->state) = GST_STATE_PLAYING;
-        }
+        *(job->output->state) = GST_STATE_PLAYING;
 
         return 0;
 }
