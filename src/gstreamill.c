@@ -448,6 +448,16 @@ static void job_check_func (gpointer data, gpointer user_data)
                 return;
         }
 
+        /* stat report. */
+        if (gstreamill->daemon && (job->worker_pid != 0)) {
+                job_stat_update (job);
+                GST_INFO ("Job %s's average cpu: %d%%, cpu: %d%%, rss: %d",
+                                job->name,
+                                job->cpu_average,
+                                job->cpu_current,
+                                job->memory);
+        }
+
         if (*(job->output->state) != GST_STATE_PLAYING) {
                 return;
         }
@@ -458,16 +468,6 @@ static void job_check_func (gpointer data, gpointer user_data)
 
         if (job->is_live) {
                 sync_check (gstreamill, job);
-        }
-
-        /* stat report. */
-        if (gstreamill->daemon && (job->worker_pid != 0)) {
-                job_stat_update (job);
-                GST_INFO ("Job %s's average cpu: %d%%, cpu: %d%%, rss: %d",
-                                job->name,
-                                job->cpu_average,
-                                job->cpu_current,
-                                job->memory);
         }
 }
 
