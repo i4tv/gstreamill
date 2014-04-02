@@ -484,11 +484,19 @@ static void job_check_func (gpointer data, gpointer user_data)
 
                         } else {
                                 /* add #EXT-X-ENDLIST to encodrs.i.hlssink.propery.playlist-location */
-                                gchar *location;
+                                gchar *location, *property, *playlist1, *playlist2;
 
-                                location = jobdesc_element_property_value (job->description, location);
+                                property = g_strdup_printf ("encoder.%d.elements.hlssink.property.playlist-location", i);
+                                location = jobdesc_element_property_value (job->description, property);
+                                g_file_get_contents (location, &playlist1, NULL, NULL);
+                                playlist2 = g_strdup_printf ("%s#EXT-X-ENDLIST\n",  playlist1);
+                                g_file_set_contents (location, playlist2, strlen(playlist2), NULL);
+                                g_free (playlist1);
+                                g_free (playlist2);
+                                g_free (property);
                         }
                 }
+
                 if (eos) {
                         stop_job (job, SIGUSR2);
                         job->eos = TRUE;

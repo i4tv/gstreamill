@@ -135,10 +135,10 @@ static void job_dispose (GObject *obj)
                 if (sem_unlink (name) == -1) {
                         GST_ERROR ("sem_unlink %s error: %s", name, g_strerror (errno));
                 }
-                if (mq_close (output->encoders[i].mqdes) == -1) {
+                if ((output->encoders[i].mqdes != -1) && (mq_close (output->encoders[i].mqdes) == -1)) {
                         GST_ERROR ("mq_close %s error: %s", name, g_strerror (errno));
                 }
-                if (mq_unlink (name) == -1) {
+                if ((output->encoders[i].mqdes != -1) && (mq_unlink (name) == -1)) {
                         GST_ERROR ("mq_unlink %s error: %s", name, g_strerror (errno));
                 }
                 g_free (name);
@@ -421,6 +421,8 @@ gint job_initialize (Job *job, gboolean daemon)
                 output->encoders[i].streams = (struct _EncoderStreamState *)p;
                 p += output->encoders[i].stream_count * sizeof (struct _EncoderStreamState); /* encoder state */
 
+                output->encoders[i].mqdes = -1;
+
                 /* non live job has no output */
                 if (!job->is_live) {
                         output->encoders[i].cache_fd = -1;
@@ -463,7 +465,6 @@ gint job_initialize (Job *job, gboolean daemon)
                 p += sizeof (guint64); /* total count */
                 output->encoders[i].m3u8_playlist = NULL;
                 output->encoders[i].last_timestamp = 0;
-                output->encoders[i].mqdes = -1;
                 output->encoders[i].sequence_number = 0;
                 output->encoders[i].pushed_sequence_number = 0;
         }
