@@ -53,7 +53,7 @@ GType gstreamill_get_type (void);
 gint gstreamill_start (Gstreamill *gstreamill);
 void gstreamill_stop (Gstreamill *gstreamill);
 gchar * gstreamill_get_start_time (Gstreamill *gstreamill);
-gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job);
+gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc);
 gchar * gstreamill_job_stop (Gstreamill *gstreamill, gchar *name);
 gchar * gstreamill_stat (Gstreamill *gstreamill);
 gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *name);
