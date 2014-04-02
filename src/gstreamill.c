@@ -244,7 +244,10 @@ static void clean_job_list (Gstreamill *gstreamill)
                         }
 
                         /* clean non live job */
-                        if (!job->is_live && FALSE) {
+                        if (!job->is_live && job->eos) {
+                                GST_WARNING ("Remove non-live job: %s.", job->name);
+                                gstreamill->job_list = g_slist_remove (gstreamill->job_list, job);
+                                g_object_unref (job);
                                 break;
                         }
 
@@ -349,7 +352,6 @@ static void encoders_check (Gstreamill *gstreamill, Job *job)
 
         /* encoder heartbeat check */
         for (j = 0; j < job->output->encoder_count; j++) {
-
                 for (k = 0; k < job->output->encoders[j].stream_count; k++) {
                         if (!g_str_has_prefix (job->output->encoders[j].streams[k].name, "video") &&
                             !g_str_has_prefix (job->output->encoders[j].streams[k].name, "audio")) {
@@ -468,6 +470,23 @@ static void job_check_func (gpointer data, gpointer user_data)
 
         if (job->is_live) {
                 sync_check (gstreamill, job);
+        }
+
+        /* check non live job eos */
+        if (!job->is_live) {
+                gint i;
+                gboolean eos = TRUE;
+
+                for (i = 0; i < job->output->encoder_count; i++) {
+                        if (!(*(job->output->encoders[i].eos))) {
+                                eos = FALSE;
+                                break;
+                        }
+                }
+                if (eos) {
+                        stop_job (job, SIGUSR2);
+                        job->eos = TRUE;
+                }
         }
 }
 
@@ -732,6 +751,7 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
         job->log_dir = gstreamill->log_dir;
         g_mutex_init (&(job->access_mutex));
         job->is_live = jobdesc_is_live (job_desc);
+        job->eos = FALSE;
         job->current_access = 0;
         job->age = 0;
         job->last_start_time = NULL;

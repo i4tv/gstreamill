@@ -23,6 +23,7 @@ typedef struct _EncoderOutput {
         gchar name[STREAM_NAME_LEN];
         sem_t *semaphore; /* access of encoder output should be exclusive */
         GstClockTime *heartbeat;
+        gboolean *eos;
         gint cache_fd;
         gchar *cache_addr;
         guint64 cache_size;
@@ -59,8 +60,6 @@ struct _Encoder {
         gint id;
         GstClock *system_clock;
         GstState state; /* state of the pipeline */
-        gboolean eos;
-        GstClockTime *output_heartbeat;
         GSList *bins;
         GstElement *pipeline;
         GArray *streams;

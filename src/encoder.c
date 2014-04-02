@@ -457,7 +457,7 @@ static GstPadProbeReturn encoder_appsink_event_probe (GstPad *pad, GstPadProbeIn
 
         if (GST_EVENT_TYPE (event) == GST_EVENT_EOS) {
                 GST_ERROR ("End of Stream of encoder %s", encoder->name);
-                encoder->eos = TRUE;
+                *(encoder->output->eos) = TRUE;
                 return GST_PAD_PROBE_OK;
         }
 
@@ -669,7 +669,6 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
         for (i = 0; i < count; i++) {
                 pipeline = g_strdup_printf ("encoder.%d", i);
                 encoder = encoder_new ("name", pipeline, NULL);
-                encoder->eos = FALSE;
                 encoder->id = i;
                 encoder->last_running_time = GST_CLOCK_TIME_NONE;
                 encoder->output = &(encoders[i]);
