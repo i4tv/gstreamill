@@ -416,6 +416,12 @@ gint job_initialize (Job *job, gboolean daemon)
                 p += sizeof (GstClockTime); /* encoder heartbeat */
                 output->encoders[i].streams = (struct _EncoderStreamState *)p;
                 p += output->encoders[i].stream_count * sizeof (struct _EncoderStreamState); /* encoder state */
+
+                /* non live job has no output */
+                if (!job->is_live) {
+                        continue;
+                }
+
                 if (daemon) {
                         /* daemon, use share memory. */
                         name = g_strdup_printf ("%s.%d", job->name, i);
@@ -700,27 +706,16 @@ void job_reset (Job *job)
 gint job_start (Job *job)
 {
         Encoder *encoder;
-        EncoderOutput *encoders;
-        SourceState *source_stat;
         GstStateChangeReturn ret;
         gint i;
 
-        if (job->is_live) {
-                source_stat = &(job->output->source);
-                encoders = job->output->encoders;
-
-        } else {
-                source_stat = NULL;
-                encoders = NULL;
-        }
-
-        job->source = source_initialize (job->job, source_stat);
+        job->source = source_initialize (job->job, &(job->output->source));
         if (job->source == NULL) {
                 GST_ERROR ("Initialize job source error.");
                 return 1;
         }
 
-        if (encoder_initialize (job->encoder_array, job->job, encoders, job->source) != 0) {
+        if (encoder_initialize (job->encoder_array, job->job, job->output->encoders, job->source) != 0) {
                 GST_ERROR ("Initialize job encoder error.");
                 return 1;
         }

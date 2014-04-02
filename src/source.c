@@ -696,9 +696,7 @@ static GstFlowReturn new_sample_callback (GstAppSink *elt, gpointer user_data)
 
         sample = gst_app_sink_pull_sample (GST_APP_SINK (elt));
         buffer = gst_sample_get_buffer (sample);
-        if (stream->is_live) {
-                stream->state->last_heartbeat = gst_clock_get_time (stream->system_clock);
-        }
+        stream->state->last_heartbeat = gst_clock_get_time (stream->system_clock);
         stream->current_position = (stream->current_position + 1) % SOURCE_RING_SIZE;
 
         /* output running status */
@@ -726,9 +724,7 @@ static GstFlowReturn new_sample_callback (GstAppSink *elt, gpointer user_data)
                 gst_sample_unref (stream->ring[stream->current_position]);
         }
         stream->ring[stream->current_position] = sample;
-        if (stream->is_live) {
-                stream->state->current_timestamp = GST_BUFFER_PTS (buffer);
-        }
+        stream->state->current_timestamp = GST_BUFFER_PTS (buffer);
 
         return GST_FLOW_OK;
 }
@@ -862,10 +858,8 @@ Source * source_initialize (gchar *job, SourceState *source_stat)
                 for (j = 0; j < SOURCE_RING_SIZE; j++) {
                         stream->ring[j] = NULL;
                 }
-                if (source_stat != NULL) {
-                        stream->state = &(source_stat->streams[i]);
-                        g_strlcpy (source_stat->streams[i].name, stream->name, STREAM_NAME_LEN);
-                }
+                stream->state = &(source_stat->streams[i]);
+                g_strlcpy (source_stat->streams[i].name, stream->name, STREAM_NAME_LEN);
         }
 
         /* parse bins and create pipeline. */

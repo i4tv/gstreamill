@@ -672,13 +672,11 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
                 encoder->eos = FALSE;
                 encoder->id = i;
                 encoder->last_running_time = GST_CLOCK_TIME_NONE;
-                if (encoders != NULL) {
-                        encoder->output = &(encoders[i]);
-                        encoder->segment_duration = jobdesc_m3u8streaming_segment_duration (job);
-                        encoder->duration_accumulation = 0;
-                        encoder->last_segment_duration = 0;
-                        encoder->force_key_count = 0;
-                }
+                encoder->output = &(encoders[i]);
+                encoder->segment_duration = jobdesc_m3u8streaming_segment_duration (job);
+                encoder->duration_accumulation = 0;
+                encoder->last_segment_duration = 0;
+                encoder->force_key_count = 0;
 
                 bins = jobdesc_bins (job, pipeline);
                 if (encoder_extract_streams (encoder, bins) != 0) {
@@ -691,13 +689,8 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
 
                 for (j = 0; j < encoder->streams->len; j++) {
                         estream = g_array_index (encoder->streams, gpointer, j);
-                        if (encoders != NULL) {
-                                estream->state = &(encoders[i].streams[j]);
-                                g_strlcpy (encoders[i].streams[j].name, estream->name, STREAM_NAME_LEN);
-
-                        } else {
-                                estream->state = NULL;
-                        }
+                        estream->state = &(encoders[i].streams[j]);
+                        g_strlcpy (encoders[i].streams[j].name, estream->name, STREAM_NAME_LEN);
                         estream->encoder = encoder;
                         estream->source = NULL;
                         for (k = 0; k < source->streams->len; k++) {
