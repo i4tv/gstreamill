@@ -211,6 +211,7 @@ static gsize status_output_size (gchar *job)
         size += jobdesc_streams_count (job, "source") * sizeof (struct _SourceStreamState);
         for (i = 0; i < jobdesc_encoders_count (job); i++) {
                 size += sizeof (GstClockTime); /* encoder heartbeat */
+                size += sizeof (gboolean); /* end of stream */
                 pipeline = g_strdup_printf ("encoder.%d", i);
                 size += jobdesc_streams_count (job, pipeline) * sizeof (struct _EncoderStreamState); /* encoder state */
                 g_free (pipeline);
@@ -414,11 +415,15 @@ gint job_initialize (Job *job, gboolean daemon)
                 output->encoders[i].heartbeat = (GstClockTime *)p;
                 *(output->encoders[i].heartbeat) = gst_clock_get_time (job->system_clock);
                 p += sizeof (GstClockTime); /* encoder heartbeat */
+                output->encoders[i].eos = (gboolean *)p;
+                *(output->encoders[i].eos) = FALSE;
+                p += sizeof (gboolean);
                 output->encoders[i].streams = (struct _EncoderStreamState *)p;
                 p += output->encoders[i].stream_count * sizeof (struct _EncoderStreamState); /* encoder state */
 
                 /* non live job has no output */
                 if (!job->is_live) {
+                        output->encoders[i].cache_fd = -1;
                         continue;
                 }
 

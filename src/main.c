@@ -220,6 +220,7 @@ int main (int argc, char *argv[])
                 /* launch a job. */
                 job = job_new ("name", job_name, "job", job_desc, NULL);
                 job->is_live = jobdesc_is_live (job_desc);
+                job->eos = FALSE;
                 signal (SIGPIPE, SIG_IGN);
                 signal (SIGUSR1, sighandler);
                 signal (SIGUSR2, stop_job);

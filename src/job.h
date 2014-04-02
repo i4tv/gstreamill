@@ -51,6 +51,7 @@ struct _Job {
         gchar *job;
         gchar *name; /* same as the name in job config file */
         gboolean is_live;
+        gboolean eos;
         gint id;
         gchar *log_dir;
         GstClock *system_clock;
