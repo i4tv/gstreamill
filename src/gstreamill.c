@@ -680,10 +680,28 @@ static Job * get_job (Gstreamill *gstreamill, gchar *name)
         return job;
 }
 
-static gchar * gjob_start (Gstreamill *gstreamill, gchar *job_desc)
+/**
+ * gstreamill_job_start:
+ * @job: (in): json type of job description.
+ *
+ * Returns: json type of job execution result. 
+ */
+gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
 {
         gchar *p, *name;
         Job *job;
+
+        if (!jobdesc_is_valid (job_desc)) {
+                p = g_strdup ("Invalid job");
+                return p;
+        }
+
+        if (jobdesc_is_live (job_desc)) {
+                GST_ERROR ("live job arrived");
+
+        } else {
+                GST_ERROR ("transcode job arrived");
+        }
 
         /* create job object */
         name = jobdesc_get_name (job_desc);
@@ -738,33 +756,6 @@ static gchar * gjob_start (Gstreamill *gstreamill, gchar *job_desc)
                 } else {
                         p = g_strdup ("failure");
                 }
-        }
-
-        return p;
-}
-
-/**
- * gstreamill_job_start:
- * @job: (in): json type of job description.
- *
- * Returns: json type of job execution result. 
- */
-gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job)
-{
-        gchar *p;
-
-        if (!jobdesc_is_valid (job)) {
-                p = g_strdup ("Invalid job");
-                return p;
-        }
-
-        if (jobdesc_is_live (job)) {
-                GST_ERROR ("live job arrived");
-                p = gjob_start (gstreamill, job);
-        } else {
-
-                GST_ERROR ("transcode job arrived");
-                p = gjob_start (gstreamill, job);
         }
 
         return p;
