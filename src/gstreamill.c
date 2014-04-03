@@ -211,8 +211,8 @@ log_rotate (Gstreamill *gstreamill)
         list = gstreamill->job_list;
         while (list != NULL) {
                 job = list->data;
-                if (job->worker_pid == 0) {
-                        /* pid == 0, do not care about job which is stoped */
+                if ((job->worker_pid == 0) || job->is_live) {
+                        /* pid == 0 and non-live job, do not care about job which is stoped */
                         list = list->next;
                         continue;
                 }
