@@ -16,6 +16,7 @@ gint jobdesc_encoders_count (gchar *job);
 gint jobdesc_streams_count (gchar *job, gchar *pipeline);
 gboolean jobdesc_is_live (gchar *job);
 gchar * jobdesc_get_debug (gchar *job);
+gchar * jobdesc_get_log_path (gchar *job);
 gchar ** jobdesc_bins (gchar *job, gchar *pipeline);
 gchar * jobdesc_udpstreaming (gchar *job, gchar *pipeline);
 gchar ** jobdesc_element_properties (gchar *job, gchar *element);

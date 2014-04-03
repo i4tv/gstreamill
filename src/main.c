@@ -194,26 +194,33 @@ int main (int argc, char *argv[])
                 gchar *log_path;
                 gint ret;
 
-                /* initialize log */
-                log_path = g_build_filename (log_dir, job_name, "gstreamill.log", NULL);
-                ret = init_log (log_path);
-                g_free (log_path);
-                if (ret != 0) {
-                        exit (1);
-                }
-
                 /* read job description from share memory */
                 job_desc = NULL;
                 fd = shm_open (job_name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
                 if (ftruncate (fd, job_length) == -1) {
-                        GST_ERROR ("ftruncate error: %s", g_strerror (errno));
-                        exit (1);
+                        exit (2);
                 }
                 p = mmap (NULL, job_length, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
                 job_desc = g_strdup (p);
 
                 if ((job_desc != NULL) && (!jobdesc_is_valid (job_desc))) {
-                        GST_ERROR ("invalide job description");
+                        exit (3);
+                }
+
+                /* initialize log */
+                if (!jobdesc_is_live (job_desc)) {
+                        gchar *p;
+
+                        p = jobdesc_get_log_path (job_desc);
+                        log_path = g_build_filename (p, "gstreamill.log", NULL);
+                        g_free (p);
+
+                } else {
+                        log_path = g_build_filename (log_dir, job_name, "gstreamill.log", NULL);
+                }
+                ret = init_log (log_path);
+                g_free (log_path);
+                if (ret != 0) {
                         exit (1);
                 }
 

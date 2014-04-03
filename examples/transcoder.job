@@ -2,6 +2,7 @@
     "name" : "transcode",
     "debug" : "4",
     "is-live" : false,
+    "log-path" : "/home/zhangping/tmp/cctv2",
     "source" : {
         "elements" : {
             "filesrc" : {

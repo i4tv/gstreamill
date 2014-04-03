@@ -143,6 +143,26 @@ gchar * jobdesc_get_debug (gchar *job)
         return debug;
 }
 
+gchar * jobdesc_get_log_path (gchar *job)
+{
+        JSON_Value *val;
+        JSON_Object *obj;
+        gchar *log_path, *p;
+
+        val = json_parse_string (job);
+        obj = json_value_get_object (val);
+        p = (gchar *)json_object_get_string (obj, "log-path");
+        if (p == NULL) {
+                log_path = NULL;
+
+        } else {
+                log_path = g_strdup (p);
+        }
+        json_value_free (val);
+
+        return log_path;
+}
+
 gchar ** jobdesc_bins (gchar *job, gchar *pipeline)
 {
         JSON_Value *val;
