@@ -172,7 +172,7 @@ name : job name
 
 debug : debug option, reference gst-launch gst-debug, optional.
 
-is-live : true for live source, false otherwise, for example transcode.
+is-live : true for live source, false otherwise, for example transcode, default is true.
 
 log-path : dont log to default log direcotry for non-live source, log to log-path if it is presented.
 
