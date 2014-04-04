@@ -155,6 +155,8 @@ JOB file structure:
     {
         'name' : 'cctv2',
         'debug' : '3',
+        'is-live' : false,
+        'log-path' : '/home/zhangping/tmp/cctv2',
         'source' : {
             ...
         },
@@ -169,6 +171,10 @@ JOB file structure:
 name : job name
 
 debug : debug option, reference gst-launch gst-debug, optional.
+
+is-live : true for live source, false otherwise, for example transcode.
+
+log-path : dont log to default log direcotry for non-live source, log to log-path if it is presented.
 
 source : source of encoders.
 
