@@ -32,6 +32,9 @@
                         "format" : 3
                     }
                 },
+                "videoscale" : {
+                    "caps" : "video/x-raw,width=720,height=576"
+                },
                 "x264enc" : {
                     "property" : {
                         "name" : "x264enc",
@@ -58,7 +61,7 @@
             },
             "bins" : [
                 "appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc name=voaacenc0! queue ! muxer.",
-                "appsrc name=video ! queue ! x264enc ! queue ! muxer.",
+                "appsrc name=video ! queue ! videoscale ! queue ! x264enc ! queue ! muxer.",
                 "mpegtsmux name=muxer ! queue ! hlssink"
             ]
         },
