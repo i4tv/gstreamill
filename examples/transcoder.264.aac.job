@@ -7,7 +7,7 @@
         "elements" : {
             "filesrc" : {
                 "property" : {
-                    "location" : "/home/zhangping/tmp/CCTV/CCTV-HD-720P-1M.ts"
+                    "location" : "/home/encoder/cctv/CCTV-HD-720P-1M.ts"
                 }
             },
             "appsink" : {
@@ -19,8 +19,8 @@
         },
         "bins" : [
             "filesrc ! queue ! tsdemux name=demuxer",
-            "demuxer.video ! queue ! avdec_h264 ! queue ! appsink name = video",
-            "demuxer.audio ! queue ! avdec_aac ! queue ! appsink name = audio"
+            "demuxer.video ! queue ! h264parse ! queue ! avdec_h264 ! queue ! appsink name = video",
+            "demuxer.audio ! queue ! aacparse ! queue ! avdec_aac ! queue ! appsink name = audio"
         ]
     },
     "encoders" : [
@@ -48,8 +48,8 @@
                 },
                 "hlssink" : {
                     "property" : {
-                        "playlist-location" : "/home/zhangping/tmp/CCTV/800/playlist.m3u8",
-                        "location" : "/home/zhangping/tmp/CCTV/800/segment%05d.ts",
+                        "playlist-location" : "/home/encoder/cctv/800/playlist.m3u8",
+                        "location" : "/home/encoder/cctv/800/segment%05d.ts",
                         "max-files" : 1000,
                         "playlist-length" : 1000,
                         "target-duration" : 10
@@ -86,8 +86,8 @@
                 },
                 "hlssink" : {
                     "property" : {
-                        "playlist-location" : "/home/zhangping/tmp/CCTV/1000/playlist.m3u8",
-                        "location" : "/home/zhangping/tmp/CCTV/1000/segment%05d.ts",
+                        "playlist-location" : "/home/encoder/cctv/1000/playlist.m3u8",
+                        "location" : "/home/encoder/cctv/1000/segment%05d.ts",
                         "max-files" : 1000,
                         "playlist-length" : 1000,
                         "target-duration" : 10
