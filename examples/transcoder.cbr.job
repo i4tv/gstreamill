@@ -1,0 +1,66 @@
+{
+    "name" : "transcode",
+    "debug" : "4",
+    "is-live" : false,
+    "log-path" : "/home/encoder/aa",
+    "source" : {
+        "elements" : {
+            "filesrc" : {
+                "property" : {
+                    "location" : "/home/encoder/aa/aa.ts"
+                }
+            },
+            "appsink" : {
+                "property" : {
+                   "sync" : false,
+                   "drop" : true
+                }
+            }
+        },
+        "bins" : [
+            "filesrc ! queue ! tsdemux name=demuxer",
+            "demuxer.video ! queue ! h264parse ! queue ! avdec_h264 ! queue ! appsink name = video",
+            "demuxer.audio ! mpegaudioparse ! queue ! mad ! queue ! appsink name = audio"
+        ]
+    },
+    "encoders" : [
+        {
+            "elements" : {
+                "appsrc" : {
+                    "property" : {
+                        "is-live" : true,
+                        "format" : 3
+                    }
+                },
+                "x264enc" : {
+                    "property" : {
+                        "name" : "x264enc",
+                        "bitrate" : 3000,
+                        "bframes" : 3,
+                        "threads" : 4,
+                        "byte-stream" : "TRUE",
+                        "rc-lookahead" : 250,
+                        "key-int-max" : 100,
+                        "pass" : 0,
+                        "mb-tree" : true,
+                        "dct8x8" : true,
+                        "speed-preset" : 0,
+                        "qp-min" : 20,
+                        "option-string" : ":ref=3:me=dia:subme=16:merange=24:nf=1:deblock=1,-2:weightp=1:b-pyramid=2:direct=spatial:vbv-bufsize=3000:qcomp=0.2"
+                    }
+                },
+                "filesink" : {
+                    "property" : {
+                        "location" : "/home/encoder/aa/aa_encoder.ts"
+                    }
+                }
+            },
+            "bins" : [
+                "appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc name=voaacenc1 ! queue ! muxer.",
+                "appsrc name=video ! queue ! x264enc ! queue ! muxer.",
+                "mpegtsmux name=muxer ! queue ! filesink"
+            ]
+        }
+    ]
+}
+
