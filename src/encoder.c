@@ -219,13 +219,17 @@ static void move_last_rap (Encoder *encoder, GstBuffer *buffer)
                 size = encoder->output->cache_size - *(encoder->output->last_rap_addr) + *(encoder->output->tail_addr);
         }
 
-        if (*(encoder->output->last_rap_addr) + 12 <= encoder->output->cache_size) {
+        if (*(encoder->output->last_rap_addr) + 12 < encoder->output->cache_size) {
                 memcpy (encoder->output->cache_addr + *(encoder->output->last_rap_addr) + 8, &size, 4);
 
-        } else {
+        } else if (*(encoder->output->last_rap_addr) + 8 < encoder->output->cache_size) {
                 n = encoder->output->cache_size - *(encoder->output->last_rap_addr) - 8;
-                memcpy (encoder->output->cache_addr + *(encoder->output->last_rap_addr), &size, n);
+                memcpy (encoder->output->cache_addr + *(encoder->output->last_rap_addr) + 8, &size, n);
                 memcpy (encoder->output->cache_addr, &size + n, 4 - n);
+
+        } else {
+                n = *(encoder->output->last_rap_addr) + 8 - encoder->output->cache_size;
+                memcpy (encoder->output->cache_addr + n, &size, 4);
         }
 
         /* new gop timestamp, 4bytes reservation for gop size. */
