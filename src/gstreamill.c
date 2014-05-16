@@ -630,6 +630,12 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
                 job->eos = TRUE;
         }
 
+        if (WIFEXITED (status) && (WEXITSTATUS (status) != 0)) {
+                GST_ERROR ("Job with pid %d abnormaly exit, status is %d", pid, WEXITSTATUS (status));
+                *(job->output->state) = GST_STATE_NULL;
+                job->eos = TRUE;
+        }
+
         if (WIFSIGNALED (status)) {
                 gchar *ret;
 
