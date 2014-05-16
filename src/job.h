@@ -101,6 +101,5 @@ gint job_initialize (Job *job, gboolean daemon);
 void job_reset (Job *job);
 void job_stat_update (Job *job);
 gint job_start (Job *job);
-gchar * job_get_master_m3u8_playlist (Job *job);
 
 #endif /* __JOB_H__ */

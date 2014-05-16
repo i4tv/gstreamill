@@ -355,6 +355,41 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
         g_free (m3u8_push_request);
 }
 
+static gchar * render_master_m3u8_playlist (Job *job)
+{
+        GString *master_m3u8_playlist;
+        gchar *p, *value;
+        gint i;
+
+        if (!jobdesc_m3u8streaming (job->description)) {
+                /* m3u8streaming no enabled */
+                return "not found";
+        }
+
+        master_m3u8_playlist = g_string_new ("");
+        g_string_append_printf (master_m3u8_playlist, M3U8_HEADER_TAG);
+        if (jobdesc_m3u8streaming_version (job->description) == 0) {
+                g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, 3);
+
+        } else {
+                g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, jobdesc_m3u8streaming_version (job->description));
+        }
+
+        for (i = 0; i < job->output->encoder_count; i++) {
+                p = g_strdup_printf ("encoder.%d.elements.x264enc.property.bitrate", i);
+                value = jobdesc_element_property_value (job->description, p);
+                g_string_append_printf (master_m3u8_playlist, M3U8_STREAM_INF_TAG, 1, value);
+                g_string_append_printf (master_m3u8_playlist, "encoder/%d/playlist.m3u8\n", i);
+                g_free (p);
+                g_free (value);
+        }
+
+        p = master_m3u8_playlist->str;
+        g_string_free (master_m3u8_playlist, FALSE);
+
+        return p;
+}
+
 /**
  * job_initialize:
  * @job: (in): the job to be initialized.
@@ -472,6 +507,12 @@ gint job_initialize (Job *job, gboolean daemon)
         }
         job->output = output;
 
+        /* m3u8 master playlist */
+        if (jobdesc_m3u8streaming (job->description)) {
+                job->output->master_m3u8_playlist = render_master_m3u8_playlist (job);
+        }
+
+        /* push to web server? */
         job->m3u8push_uri = jobdesc_m3u8streaming_push_server_uri (job->description);
         if (job->m3u8push_uri != NULL) {
                 GError *err = NULL;
@@ -748,49 +789,5 @@ gint job_start (Job *job)
         *(job->output->state) = GST_STATE_PLAYING;
 
         return 0;
-}
-
-/*
- * job_master_m3u8_playlist:
- * @job: (in): the job object
- *
- * get master m3u8 playlist of the job
- *
- * Returns: master m3u8 playlist
- *
- */
-gchar * job_get_master_m3u8_playlist (Job *job)
-{
-        GString *master_m3u8_playlist;
-        gchar *p, *value;
-        gint i;
-
-        if (!jobdesc_m3u8streaming (job->description)) {
-                /* m3u8streaming no enabled */
-                return "not found";
-        }
-
-        master_m3u8_playlist = g_string_new ("");
-        g_string_append_printf (master_m3u8_playlist, M3U8_HEADER_TAG);
-        if (jobdesc_m3u8streaming_version (job->description) == 0) {
-                g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, 3);
-
-        } else {
-                g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, jobdesc_m3u8streaming_version (job->description));
-        }
-
-        for (i = 0; i < job->output->encoder_count; i++) {
-                p = g_strdup_printf ("encoder.%d.elements.x264enc.property.bitrate", i);
-                value = jobdesc_element_property_value (job->description, p);
-                g_string_append_printf (master_m3u8_playlist, M3U8_STREAM_INF_TAG, 1, value);
-                g_string_append_printf (master_m3u8_playlist, "encoder/%d/playlist.m3u8\n", i);
-                g_free (p);
-                g_free (value);
-        }
-
-        p = master_m3u8_playlist->str;
-        g_string_free (master_m3u8_playlist, FALSE);
-
-        return p;
 }
 

@@ -776,11 +776,6 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
                 return p;
         }
 
-        /* m3u8 master playlist */
-        if (jobdesc_m3u8streaming (job->description)) {
-                job->output->master_m3u8_playlist = job_get_master_m3u8_playlist (job);
-        }
-
         /* reset and start job */
         job_reset (job);
         if (gstreamill->daemon) {
