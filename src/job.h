@@ -30,7 +30,7 @@ typedef struct _JobClass JobClass;
 
 typedef struct _m3u8PushRequest {
         gchar *rm_segment;
-        EncoderOutput *encoder;
+        EncoderOutput *encoder_output;
         GstClockTime timestamp;
         guint64 sequence_number;
 } m3u8PushRequest;

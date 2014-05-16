@@ -285,20 +285,20 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
         guint8 *buf, *playlist;
 
         /* seek gop */
-        sem_wait (m3u8_push_request->encoder->semaphore);
-        rap_addr = *(m3u8_push_request->encoder->head_addr);
-        while (rap_addr != *(m3u8_push_request->encoder->last_rap_addr)) {
-                t = encoder_output_rap_timestamp (m3u8_push_request->encoder, rap_addr);
+        sem_wait (m3u8_push_request->encoder_output->semaphore);
+        rap_addr = *(m3u8_push_request->encoder_output->head_addr);
+        while (rap_addr != *(m3u8_push_request->encoder_output->last_rap_addr)) {
+                t = encoder_output_rap_timestamp (m3u8_push_request->encoder_output, rap_addr);
                 if (m3u8_push_request->timestamp == t) {
                         break;
                 }
-                rap_addr = encoder_output_rap_next (m3u8_push_request->encoder, rap_addr);
+                rap_addr = encoder_output_rap_next (m3u8_push_request->encoder_output, rap_addr);
         }
-        sem_post (m3u8_push_request->encoder->semaphore);
+        sem_post (m3u8_push_request->encoder_output->semaphore);
 
         /* header */
-        segment_size = encoder_output_gop_size (m3u8_push_request->encoder, rap_addr);
-        request_uri = g_strdup_printf ("%s/%s/%lu.ts", job->m3u8push_path, m3u8_push_request->encoder->name, m3u8_push_request->timestamp);
+        segment_size = encoder_output_gop_size (m3u8_push_request->encoder_output, rap_addr);
+        request_uri = g_strdup_printf ("%s/%s/%lu.ts", job->m3u8push_path, m3u8_push_request->encoder_output->name, m3u8_push_request->timestamp);
         header = g_strdup_printf (HTTP_PUT, request_uri, PACKAGE_NAME, PACKAGE_VERSION, job->m3u8push_host, segment_size);
 
         /* copy header to buffer */
@@ -307,18 +307,18 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
         memcpy (buf, header, strlen (header));
 
         /* copy body(segment) to buffer */
-        if (rap_addr + segment_size + 12 < m3u8_push_request->encoder->cache_size) {
-                memcpy (buf + strlen (header), m3u8_push_request->encoder->cache_addr + rap_addr + 12, segment_size);
+        if (rap_addr + segment_size + 12 < m3u8_push_request->encoder_output->cache_size) {
+                memcpy (buf + strlen (header), m3u8_push_request->encoder_output->cache_addr + rap_addr + 12, segment_size);
 
         } else {
                 gint n;
                 guint8 *p;
 
-                n = m3u8_push_request->encoder->cache_size - rap_addr - 12;
+                n = m3u8_push_request->encoder_output->cache_size - rap_addr - 12;
                 p = buf + strlen (header);
-                memcpy (p, m3u8_push_request->encoder->cache_addr + rap_addr + 12, n);
+                memcpy (p, m3u8_push_request->encoder_output->cache_addr + rap_addr + 12, n);
                 p += n;
-                memcpy (p, m3u8_push_request->encoder->cache_addr, segment_size - n);
+                memcpy (p, m3u8_push_request->encoder_output->cache_addr, segment_size - n);
         }
         g_free (header);
 
@@ -326,25 +326,25 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
         http_client_request (job, buf, count);
 
         /* put playlist */
-        while ((m3u8_push_request->encoder->pushed_sequence_number + 1) != m3u8_push_request->sequence_number) {
+        while ((m3u8_push_request->encoder_output->pushed_sequence_number + 1) != m3u8_push_request->sequence_number) {
                 /* waiting previous segment pushed */
                 g_usleep (50000);
         }
         g_free (request_uri);
-        request_uri = g_strdup_printf ("%s/%s/playlist.m3u8", job->m3u8push_path, m3u8_push_request->encoder->name);
-        g_mutex_lock (&(m3u8_push_request->encoder->m3u8_playlist_mutex));
-        playlist = m3u8playlist_render (m3u8_push_request->encoder->m3u8_playlist);
-        g_mutex_unlock (&(m3u8_push_request->encoder->m3u8_playlist_mutex));
+        request_uri = g_strdup_printf ("%s/%s/playlist.m3u8", job->m3u8push_path, m3u8_push_request->encoder_output->name);
+        g_mutex_lock (&(m3u8_push_request->encoder_output->m3u8_playlist_mutex));
+        playlist = m3u8playlist_render (m3u8_push_request->encoder_output->m3u8_playlist);
+        g_mutex_unlock (&(m3u8_push_request->encoder_output->m3u8_playlist_mutex));
         header = g_strdup_printf (HTTP_PUT, request_uri, PACKAGE_NAME, PACKAGE_VERSION, job->m3u8push_host, strlen (playlist));
         buf = g_strdup_printf ("%s%s", header, playlist);
         g_free (header);
         http_client_request (job, buf, strlen (buf));
-        m3u8_push_request->encoder->pushed_sequence_number++;
+        m3u8_push_request->encoder_output->pushed_sequence_number++;
 
         /* remove segment */
         if (m3u8_push_request->rm_segment != NULL) {
                 g_free (request_uri);
-                request_uri = g_strdup_printf ("%s/%s/%s", job->m3u8push_path, m3u8_push_request->encoder->name, m3u8_push_request->rm_segment);
+                request_uri = g_strdup_printf ("%s/%s/%s", job->m3u8push_path, m3u8_push_request->encoder_output->name, m3u8_push_request->rm_segment);
                 header = g_strdup_printf (HTTP_DELETE, request_uri,  PACKAGE_NAME, PACKAGE_VERSION, job->m3u8push_host);
                 http_client_request (job, header, strlen (header));
                 g_free (m3u8_push_request->rm_segment);
@@ -580,7 +580,7 @@ void job_stat_update (Job *job)
 
 static void notify_function (union sigval sv)
 {
-        EncoderOutput *encoder;
+        EncoderOutput *encoder_output;
         struct sigevent sev;
         GstClockTime last_timestamp;
         GstClockTime segment_duration;
@@ -589,18 +589,18 @@ static void notify_function (union sigval sv)
         m3u8PushRequest *m3u8_push_request;
         GError *err = NULL;
 
-        encoder = (EncoderOutput *)sv.sival_ptr;
+        encoder_output = (EncoderOutput *)sv.sival_ptr;
 
         /* mq_notify first */
         sev.sigev_notify = SIGEV_THREAD;
         sev.sigev_notify_function = notify_function;
         sev.sigev_notify_attributes = NULL;
         sev.sigev_value.sival_ptr = sv.sival_ptr;
-        if (mq_notify (encoder->mqdes, &sev) == -1) {
+        if (mq_notify (encoder_output->mqdes, &sev) == -1) {
                 GST_ERROR ("mq_notify error : %s", g_strerror (errno));
         }
 
-        size = mq_receive (encoder->mqdes, buf, 128, NULL);
+        size = mq_receive (encoder_output->mqdes, buf, 128, NULL);
         if (size == -1) {
                 GST_ERROR ("mq_receive error : %s", g_strerror (errno));
                 return;
@@ -608,20 +608,20 @@ static void notify_function (union sigval sv)
         buf[size] = '\0';
         sscanf (buf, "%lu", &segment_duration);
 
-        last_timestamp = encoder_output_rap_timestamp (encoder, *(encoder->last_rap_addr));
-        url = g_strdup_printf ("%lu.ts", encoder->last_timestamp);
+        last_timestamp = encoder_output_rap_timestamp (encoder_output, *(encoder_output->last_rap_addr));
+        url = g_strdup_printf ("%lu.ts", encoder_output->last_timestamp);
 
-        g_mutex_lock (&(encoder->m3u8_playlist_mutex));
+        g_mutex_lock (&(encoder_output->m3u8_playlist_mutex));
 
         /* put segment */
-        if (encoder->m3u8push_thread_pool != NULL) {
+        if (encoder_output->m3u8push_thread_pool != NULL) {
                 m3u8_push_request = g_malloc (sizeof (m3u8PushRequest));
-                encoder->sequence_number++;
-                m3u8_push_request->sequence_number = encoder->sequence_number;
-                m3u8_push_request->encoder = encoder;
-                m3u8_push_request->timestamp = encoder->last_timestamp;
-                m3u8_push_request->rm_segment = m3u8playlist_remove_entry (encoder->m3u8_playlist);
-                g_thread_pool_push (encoder->m3u8push_thread_pool, m3u8_push_request, &err);
+                encoder_output->sequence_number++;
+                m3u8_push_request->sequence_number = encoder_output->sequence_number;
+                m3u8_push_request->encoder_output = encoder_output;
+                m3u8_push_request->timestamp = encoder_output->last_timestamp;
+                m3u8_push_request->rm_segment = m3u8playlist_remove_entry (encoder_output->m3u8_playlist);
+                g_thread_pool_push (encoder_output->m3u8push_thread_pool, m3u8_push_request, &err);
                 if (err != NULL) {
                         GST_FIXME ("m3u8push thread pool push error %s", err->message);
                         g_error_free (err);
@@ -629,11 +629,11 @@ static void notify_function (union sigval sv)
         }
 
         /* add new m3u8 playlist entry */
-        m3u8playlist_add_entry (encoder->m3u8_playlist, url, segment_duration);
+        m3u8playlist_add_entry (encoder_output->m3u8_playlist, url, segment_duration);
 
-        g_mutex_unlock (&(encoder->m3u8_playlist_mutex));
+        g_mutex_unlock (&(encoder_output->m3u8_playlist_mutex));
 
-        encoder->last_timestamp = last_timestamp;
+        encoder_output->last_timestamp = last_timestamp;
         g_free (url);
 }
 
