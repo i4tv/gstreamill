@@ -320,6 +320,7 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
                 p += n;
                 memcpy (p, m3u8_push_request->encoder->cache_addr, segment_size - n);
         }
+        g_free (header);
 
         /* put segment */
         http_client_request (job, buf, count);
@@ -331,15 +332,16 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
         }
         g_free (request_uri);
         request_uri = g_strdup_printf ("%s/%s/playlist.m3u8", job->m3u8push_path, m3u8_push_request->encoder->name);
+        g_mutex_lock (&(m3u8_push_request->encoder->m3u8_playlist_mutex));
         playlist = m3u8playlist_render (m3u8_push_request->encoder->m3u8_playlist);
-        g_free (header);
+        g_mutex_unlock (&(m3u8_push_request->encoder->m3u8_playlist_mutex));
         header = g_strdup_printf (HTTP_PUT, request_uri, PACKAGE_NAME, PACKAGE_VERSION, job->m3u8push_host, strlen (playlist));
         buf = g_strdup_printf ("%s%s", header, playlist);
+        g_free (header);
         http_client_request (job, buf, strlen (buf));
         m3u8_push_request->encoder->pushed_sequence_number++;
 
         /* remove segment */
-        g_free (header);
         if (m3u8_push_request->rm_segment != NULL) {
                 g_free (request_uri);
                 request_uri = g_strdup_printf ("%s/%s/%s", job->m3u8push_path, m3u8_push_request->encoder->name, m3u8_push_request->rm_segment);
