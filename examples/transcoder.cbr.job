@@ -45,8 +45,9 @@
                         "mb-tree" : true,
                         "dct8x8" : true,
                         "speed-preset" : 0,
-                        "qp-min" : 20,
-                        "option-string" : ":ref=3:me=dia:subme=16:merange=24:nf=1:deblock=1,-2:weightp=1:b-pyramid=2:direct=spatial:vbv-bufsize=3000:qcomp=0.2"
+                        "qp-min" : 1,
+                        "qp-step" : 20,
+                        "option-string" : ":ref=3:me=umh:subme=16:merange=64:nf=1:deblock=1,-2:weightp=1:b-pyramid=2:direct=spatial:qcomp=0.2:nal-hrd=cbr:vbv-bufsize=300:vbv-maxrate=3000"
                     }
                 },
                 "filesink" : {
