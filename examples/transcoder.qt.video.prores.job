@@ -1,0 +1,64 @@
+{
+    "name" : "transcode",
+    "debug" : "4",
+    "is-live" : false,
+    "log-path" : "/home/encoder/cctv10",
+    "source" : {
+        "elements" : {
+            "filesrc" : {
+                "property" : {
+                    "location" : "/home/encoder/HD/AppleProResTestClip.mov"
+                }
+            },
+            "appsink" : {
+                "property" : {
+                   "sync" : false,
+                   "drop" : true
+                }
+            }
+        },
+        "bins" : [
+            "filesrc ! queue ! qtdemux name=demuxer",
+            "demuxer.video_0 ! queue ! avdec_prores ! queue ! appsink name = video_0",
+            "demuxer.audio_0 ! queue ! audioconvert ! queue ! appsink name = audio_0"
+        ]
+    },
+    "encoders" : [
+        {
+            "elements" : {
+                "appsrc" : {
+                    "property" : {
+                        "is-live" : true,
+                        "format" : 3
+                    }
+                },
+                "x264enc" : {
+                    "property" : {
+                        "name" : "x264enc",
+                        "bitrate" : 4000,
+                        "bframes" : 3,
+                        "threads" : 16,
+                        "byte-stream" : "TRUE",
+                        "rc-lookahead" : 100,
+                        "pass" : 5,
+                        "mb-tree" : true,
+                        "dct8x8" : true,
+                        "speed-preset" : 0,
+                        "option-string" : ":ref=3:me=umh:subme=16:merange=32:nf=1:deblock=1,-2:weightp=1:b-pyramid=2:direct=spatial"
+                    }
+                },
+                "filesink" : {
+                    "property" : {
+                        "location" : "/home/encoder/HD/AppleProResTestClip-1920x1080.ts"
+                    }
+                }
+            },
+            "bins" : [
+                "appsrc name=video_0 ! queue ! videoconvert ! queue ! x264enc ! queue ! muxer.",
+                "appsrc name=audio_0 ! queue ! voaacenc name=voaacenc1 ! queue ! muxer.",
+                "mpegtsmux name=muxer ! queue ! filesink"
+            ]
+        }
+    ]
+}
+
