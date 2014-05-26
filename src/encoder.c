@@ -707,9 +707,9 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
                                 }
                         }
                         if (estream->source == NULL) {
+                                GST_ERROR ("cant find job %s source %s.", job_name, estream->name);
                                 g_free (job_name);
                                 g_free (pipeline);
-                                GST_ERROR ("cant find job %s source %s.", job_name, estream->name);
                                 return 1;
                         }
                 }
