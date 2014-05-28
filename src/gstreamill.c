@@ -1022,9 +1022,9 @@ gchar * gstreamill_stat (Gstreamill *gstreamill)
 {
         gchar *template = "{\n"
                           "    \"version\": \"%s\",\n"
-                          "    \"builddate\": %s,\n"
-                          "    \"buildtime\": %s,\n"
-                          "    \"starttime\": %s,\n"
+                          "    \"builddate\": \"%s\",\n"
+                          "    \"buildtime\": \"%s\",\n"
+                          "    \"starttime\": \"%s\",\n"
                           "    \"job\": %s]\n}\n";
         gchar *stat, *jobarray, *p;
         GSList *list;
