@@ -463,7 +463,9 @@ gint job_initialize (Job *job, gboolean daemon)
                 p += sizeof (gboolean);
                 output->encoders[i].streams = (struct _EncoderStreamState *)p;
                 p += output->encoders[i].stream_count * sizeof (struct _EncoderStreamState); /* encoder state */
-
+                output->encoders[i].total_count = (guint64 *)p;
+                *(output->encoders[i].total_count) = 0;
+                p += sizeof (guint64); /* total count size */
                 output->encoders[i].mqdes = -1;
 
                 /* non live job has no output */
@@ -503,9 +505,6 @@ gint job_initialize (Job *job, gboolean daemon)
                 output->encoders[i].last_rap_addr = (guint64 *)p;
                 *(output->encoders[i].last_rap_addr) = 0;
                 p += sizeof (guint64); /* last rap addr */
-                output->encoders[i].total_count = (guint64 *)p;
-                *(output->encoders[i].total_count) = 0;
-                p += sizeof (guint64); /* total count */
                 output->encoders[i].m3u8_playlist = NULL;
                 output->encoders[i].last_timestamp = 0;
                 output->encoders[i].sequence_number = 0;
