@@ -1066,7 +1066,7 @@ static gchar * source_streams_stat (Job *job)
         gchar *template_source_stream = "            {\n"
                                         "                \"name\": \"%s\",\n"
                                         "                \"timestamp\": %lu,\n"
-                                        "                \"heartbeat\": %s\n"
+                                        "                \"heartbeat\": \"%s\"\n"
                                         "            }";
 
         stat = &(job->output->source.streams[0]);
@@ -1106,13 +1106,13 @@ static gchar * encoder_stat (EncoderOutput *encoder)
         gchar *template_encoder_stream = "                {\n"
                                          "                    \"name\": \"%s\",\n"
                                          "                    \"timestamp\": %lu,\n"
-                                         "                    \"heartbeat\": %s\n"
+                                         "                    \"heartbeat\": \"%s\"\n"
                                          "                }";
         gchar *template_encoder = "        {\n"
-                                  "            \"name\": \"%s\"\n"
-                                  "            \"heartbeat\": %s\n"
-                                  "            \"count\": %ld\n"
-                                  "            \"streamcount\": %ld\n"
+                                  "            \"name\": \"%s\",\n"
+                                  "            \"heartbeat\": \"%s\",\n"
+                                  "            \"count\": %ld,\n"
+                                  "            \"streamcount\": %ld,\n"
                                   "            \"streams\": [\n"
                                   "%s\n"
                                   "            ]\n"
@@ -1220,7 +1220,7 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
         gchar *template = "{\n"
                           "    \"name\": \"%s\",\n"
                           "    \"age:\": %d,\n"
-                          "    \"last_start_time\": %s,\n"
+                          "    \"last_start_time\": \"%s\",\n"
                           "    \"current_access\": %d, \n"
                           "    \"cpu_average\": %d,\n"
                           "    \"cpu_current\": %d,\n"
