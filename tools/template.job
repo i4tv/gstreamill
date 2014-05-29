@@ -1,0 +1,71 @@
+{
+    "name" : "yangnv-%d",
+    "debug" : "4",
+    "is-live" : false,
+    "log-path" : "/home/encoder/movie/yangnv-%d",
+    "source" : {
+        "elements" : {
+            "filesrc" : {
+                "property" : {
+                    "location" : "/home/encoder/movie/电视剧/养女01-35/%s.ts"
+                }
+            },
+            "videoscale" : {
+                "caps" : "video/x-raw,width=1024,height=576"
+            },
+            "appsink" : {
+                "property" : {
+                   "sync" : false,
+                   "drop" : true
+                }
+            }
+        },
+        "bins" : [
+            "filesrc ! queue ! tsdemux name=demuxer",
+            "demuxer.video ! queue ! h264parse ! avdec_h264 ! queue ! videoscale ! queue ! appsink name = video",
+            "demuxer.audio ! mpegaudioparse ! queue ! mad ! queue ! appsink name = audio"
+        ]
+    },
+    "encoders" : [
+        {
+            "elements" : {
+                "appsrc" : {
+                    "property" : {
+                        "is-live" : true,
+                        "format" : 3
+                    }
+                },
+                "deinterlace" : {
+                    "property" : {
+                        "method" : 4,
+                        "fields" : 1
+                    }
+                },
+                "x264enc" : {
+                    "property" : {
+                        "name" : "x264enc",
+                        "bitrate" : 800,
+                        "bframes" : 3,
+                        "byte-stream" : "TRUE",
+                        "pass" : 5,
+                        "mb-tree" : true,
+                        "dct8x8" : true,
+                        "speed-preset" : 0,
+                        "option-string" : ":ref=3:me=dia:subme=16:merange=16:nf=1:deblock=1,-2:weightp=1:b-pyramid=2:direct=spatial"
+                    }
+                },
+                "filesink" : {
+                    "property" : {
+                        "location" : "/home/encoder/movie/电视剧/养女01-35/%s.1024x576.mp4"
+                    }
+                }
+            },
+            "bins" : [
+                "appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc name=voaacenc1 ! queue ! muxer.",
+                "appsrc name=video ! queue ! deinterlace ! queue ! x264enc ! queue ! muxer.",
+                "mp4mux name=muxer ! queue ! filesink"
+            ]
+        }
+    ]
+}
+
