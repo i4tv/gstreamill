@@ -683,6 +683,7 @@ static void eos_callback (GstAppSink *appsink, gpointer user_data)
 {
         SourceStream *stream = (SourceStream *)user_data;
 
+        GST_INFO ("EOS of %s", stream->name);
         stream->eos = TRUE;
 }
 
