@@ -390,7 +390,10 @@ static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data
                 /* insure next buffer isn't current buffer */
                 if ((current_position == stream->source->current_position) || stream->source->current_position == -1) {
                         if ((current_position == stream->source->current_position) && stream->source->eos) {
-                                gst_app_src_end_of_stream (src);
+                                GstFlowReturn ret;
+
+                                ret = gst_app_src_end_of_stream (src);
+                                GST_INFO ("EOS of source %s, tell encoder %s, return %s", stream->source->name, stream->name, gst_flow_get_name (ret));
                                 break;
                         }
                         GST_DEBUG ("waiting %s source ready", stream->name);
@@ -534,7 +537,9 @@ static gint create_encoder_pipeline (Encoder *encoder)
                 element = bin->last;
                 element_factory = gst_element_get_factory (element);
                 type = gst_element_factory_get_element_type (element_factory);
-                if ((g_strcmp0 ("GstAppSink", g_type_name (type)) == 0) || (g_strcmp0 ("GstHlsSink", g_type_name (type)) == 0)) {
+                if ((g_strcmp0 ("GstAppSink", g_type_name (type)) == 0) ||
+                    (g_strcmp0 ("GstHlsSink", g_type_name (type)) == 0) ||
+                    (g_strcmp0 ("GstFileSink", g_type_name (type)) == 0)) {
                         GstPad *pad;
 
                         if (g_strcmp0 ("GstAppSink", g_type_name (type)) == 0) {
