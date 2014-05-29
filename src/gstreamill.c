@@ -483,7 +483,7 @@ static void job_check_func (gpointer data, gpointer user_data)
                                 break;
 
                         } else {
-                                /* add #EXT-X-ENDLIST to encodrs.i.hlssink.propery.playlist-location */
+                                /* add #EXT-X-ENDLIST to playlist */
                                 gchar *location, *property, *playlist1, *playlist2;
 
                                 property = g_strdup_printf ("encoder.%d.elements.hlssink.property.playlist-location", i);
