@@ -1,0 +1,11 @@
+# ---------------- #
+#   Main Configs   #
+# ---------------- #
+baseurl: http://zhangping.github.io/gstreamill
+url: http://zhangping.github.io/gstreamill
+date_format: "ordinal"
+title: gstreamill, stream mill.
+author: Zhuang Ping
+
+
+

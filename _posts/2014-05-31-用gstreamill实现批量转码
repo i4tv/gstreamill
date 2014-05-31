@@ -1,0 +1,160 @@
+---
+layout: post
+title: 用gstreamill实现批量转码
+---
+
+批量向gstreamill提交转码任务用到了gstreamill的两个接口，一个是状态查询接口，通过这个接口查询当前gstreamill有多少个转码任务正在处理，从而避免向gstreamill提交过多的转码任务，超过硬件服务器的负载。另一个是向gstreamill提交任务的接口，通过这个接口可以向gstreamill提交转码任务。
+
+先来介绍如何向gstreamill提交转码任务用到的接口，假定已经在后台启动了gstreamill：
+
+    sudo gstreamill --gst-debug=gstreamill:4
+
+向gstreamill提交一个转码任务，就是通过HTTP POST向gstreamill提交一个json格式的job文件。比如可以利用curl命令向gstreamill提交一个转码任务，转码任务对应的job文件为transcode.job：
+
+     curl -H "Content-Type: application/json" --data @transcoder.job http://localhost:20118/start
+
+以上假定在gstreamill运行的计算机上提交转码任务，且gstreamill管理端口为默认启动的20118。
+
+再来看看查询gstreamill当前运行状态的接口，查询gstreamill当前状态就是向gstreamill管理接口发送一个GET请求：
+
+    curl http://localhost:20118/stat/gstreamill
+
+上面的请求应答如下，其中job对应的array是当前正在执行的job的清单，这里只有一个名为test的job在执行：
+
+'''
+    {
+        "version": "0.4.0",
+        "builddate": "May 29 2014",
+        "buildtime": "20:36:58",
+        "starttime": "2014-05-29T20:37:29+0800",
+        "job": ["test"]
+    }
+'''
+
+接下来看看如何实现用gstreamill进行批量转码：
+
+1. 读取文件夹下的影片文件名。
+1. 根据给定的job的模板和读取到的影片文件名生成job。
+1. 查询gstreamill当前正在处理的job个数。
+1. 当处理的job个数少于给定的数目就提交2中生成的job，并生成下一个job并继续第3步。
+1. 如果不少于给定的个数就等待几秒再继续第3步。
+1. 直到把当前目录下所有的影片文件都提交给gstreamill。
+
+具体实现包括两个部分，一个是模板文件，一个python代码，使用方法就是把这两个文件放在影片目录中，假定影片的扩展名是ts，然后执行python代码即可。其中job模板文件如下，请注意红色部分：
+
+'''
+{
+    "name" : "yangnv-%d",
+    "debug" : "4",
+    "is-live" : false,
+    "log-path" : "/home/encoder/movie/yangnv-%d",
+    "source" : {
+        "elements" : {
+            "filesrc" : {
+                "property" : {
+                    "location" : "/home/encoder/movie/电视剧/养女01-35/%s.ts"
+                }
+            },
+            "videoscale" : {
+                "caps" : "video/x-raw,width=1024,height=576"
+            },
+            "appsink" : {
+                "property" : {
+                   "sync" : false,
+                   "drop" : true
+                }
+            }
+        },
+        "bins" : [
+            "filesrc ! queue ! tsdemux name=demuxer",
+            "demuxer.video ! queue ! h264parse ! avdec_h264 ! queue ! videoscale ! queue ! appsink name = video",
+            "demuxer.audio ! mpegaudioparse ! queue ! mad ! queue ! appsink name = audio"
+        ]
+    },
+    "encoders" : [
+        {
+            "elements" : {
+                "appsrc" : {
+                    "property" : {
+                        "is-live" : true,
+                        "format" : 3
+                    }
+                },
+                "deinterlace" : {
+                    "property" : {
+                        "method" : 4,
+                        "fields" : 1
+                    }
+                },
+                "x264enc" : {
+                    "property" : {
+                        "name" : "x264enc",
+                        "bitrate" : 800,
+                        "bframes" : 3,
+                        "byte-stream" : "TRUE",
+                        "pass" : 5,
+                        "mb-tree" : true,
+                        "dct8x8" : true,
+                        "speed-preset" : 0,
+                        "option-string" : ":ref=3:me=dia:subme=16:merange=16:nf=1:deblock=1,-2:weightp=1:b-pyramid=2:direct=spatial"
+                    }
+                },
+                "filesink" : {
+                    "property" : {
+                        "location" : "/home/encoder/movie/电视剧/养女01-35/%s.1024x576.mp4"
+                    }
+                }
+            },
+            "bins" : [
+                "appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc name=voaacenc1 ! queue ! muxer.",
+                "appsrc name=video ! queue ! deinterlace ! queue ! x264enc ! queue ! muxer.",
+                "mp4mux name=muxer ! queue ! filesink"
+            ]
+        }
+    ]
+}
+'''
+
+python代码如下：
+
+'''
+# -*- coding: utf-8 -*-
+
+"""
+向gstreamill提交转码任务，当转码任务多于n个的时候等待，否则提交。
+可用于批量对电视剧或者电影进行无人值守的转码。
+"""
+
+import glob
+import httplib
+import json
+import time
+
+movies = glob.glob("*.ts")
+index = 1
+
+for movie in movies:
+
+    gstreamill = httplib.HTTPConnection("localhost:20118")
+    gstreamill.request("GET", "/stat/gstreamill")
+    response = gstreamill.getresponse()
+    status = json.loads(response.read())
+
+    while len(status["job"]) >= 5: # 当前运行的job数达到了4个，等待10s
+        print "%d job, waitting ..." % len(status["job"])
+        time.sleep(10)
+        gstreamill = httplib.HTTPConnection("localhost:20118")
+        gstreamill.request("GET", "/stat/gstreamill")
+        response = gstreamill.getresponse()
+        status = json.loads(response.read())
+        continue
+
+    # 当前运行的job数少于4个，提交一个job
+    name = movie[0:-3] #去掉 .ts 扩展名
+    template = open("template.job").read()
+    job = template % (index, index, name, name)
+    gstreamill.request("POST", "/start", job)
+    response = gstreamill.getresponse()
+    print "post job %d, return %s" % (index, response.reason)
+    index += 1
+'''
