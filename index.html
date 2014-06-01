@@ -1,12 +1,7 @@
----
-layout: default
----
-
-<div class="postlist">
-    {% for post in paginator.posts %}
-    <div class="overview">
-        <div class="date">{{ post.date | date: "%b %d, %Y" }}</div>
-        <div class="detail"><a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a></div>
-    </div>
-    {% endfor %}
-</div>
+<ul>
+  {% for post in site.posts %}
+    <li>
+      <a href="{{ post.url }}">{{ post.title }}</a>
+    </li>
+  {% endfor %}
+</ul>
