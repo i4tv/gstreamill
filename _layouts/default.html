@@ -1,0 +1,9 @@
+{% include header.html %}
+<div id="container">
+    {% include navigation.html %}
+    <div id="main">
+        <h2> {% if page.title %} {{ page.title }} {% else %} {{ site.title }} {% endif %} </h2>
+        {{ content }}
+    </div>
+</div>
+{% include footer.html %}
