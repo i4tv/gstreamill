@@ -1,0 +1,216 @@
+﻿/* modified from https://github.com/yinwang0/blog-cn/blob/gh-pages/main.css */
+body {
+    background-color: white;
+}
+
+#main{
+    font-family: "Palatino Linotype", "URW Palladio L", "palladio l", palatino, "book antiqua", times, serif;
+    font-size: 18px;
+    margin: 0 20% 5% 20%;
+    padding: 2% 5% 5% 5%;
+    width: 50%;
+    line-height: 150%;
+    border: 1px solid LightGrey;
+    box-shadow: 2px 2px 5px #ccc;
+}
+
+H1 {
+}
+
+H2 {
+    margin-bottom: 60px;
+    margin-bottom: 40px;
+    padding: 5px;
+    border-bottom: 2px LightGrey solid;
+    width: 90%;
+    line-height: 150%;
+    color: #666666;
+}
+
+
+H3 {
+    margin-top: 40px;
+    margin-bottom: 30px;
+    border-bottom: 1px LightGrey solid;
+    width: 80%;
+    line-height: 150%;
+    color: #666666;
+}
+
+
+H4 {
+    margin-top: 40px;
+    margin-bottom: 30px;
+    border-bottom: 1px LightGrey solid;
+    width: 80%;
+    line-height: 150%;
+    color: #666666;
+}
+
+
+li {
+    margin-left: 10px;
+    /* display: block; */
+}
+
+
+blockquote {
+    border-left: 4px lightgrey solid;
+    padding-left: 5px;
+    margin-left: 20px;
+}
+
+
+pre {
+    font-family: Inconsolata, Consolas, "DEJA VU SANS MONO", "DROID SANS MONO", Proggy, monospace;
+    border: solid 1px #ddd;
+    border-radius: 3px;
+    background-color: #f8f8f8;
+    padding: 6px 10px;
+    font-size: 75%;
+    line-height: 130%;
+    width: 95%;
+    overflow: auto;
+}
+
+
+code {
+    font-family: Inconsolata, Consolas, "DEJA VU SANS MONO", "DROID SANS MONO", Proggy, monospace;
+    font-size: 90%;
+    border: solid 1px #ddd;
+    border-radius: 3px;
+    background-color: #f8f8f8;
+    margin: 0 2px;
+    padding: 0px 5px;
+}
+
+pre code {
+    border: none;
+    margin: 0;
+    padding: 0;
+    background-color: transparent;
+    word-wrap: normal;
+}
+
+
+a {
+    text-decoration: none;
+    padding: 1px;
+    color: #204A87;
+}
+
+
+a:hover {
+    text-decoration: underline;
+}
+
+div.nav a {
+    text-decoration: none;
+    color: #555;
+}
+
+div.nav a:hover {
+    background-color: LightGrey;
+    color: #ffffff;
+}
+
+div.nav {
+    border-top: 1px solid #d4d4d4;
+    border-left: 1px solid #d4d4d4;
+    border-right: 1px solid #d4d4d4;
+    margin: 0 20% 0 20%;
+    padding: 0 5% 0 5%;
+    width: 50%;
+    height: 27px;
+    line-height: 150%;
+    font-size: 18px;
+    box-shadow: 2px 2px 5px #ccc;
+    text-shadow: 2px 2px 1px #ccc;
+}
+
+div.nav_rss {
+    width: 20%;
+    text-align: right;
+    float: right;
+}
+
+div.nav_nav {
+    width: 80%;
+    float: left;
+}
+
+img {
+    margin-left: 10px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+
+hr {
+    color: LightGrey;
+    margin: .7em 0;
+    border-top: 1px solid LightGrey;
+    border-bottom: 1px solid LightGrey;
+}
+
+div.overview {
+    margin: 25px 22px 25px 22px;
+}
+
+div.detail {
+    margin-left: 28%;
+}
+
+div.date { 
+    padding-top: 1px;
+    float: left; 
+    width: 25%; 
+    color: #555;
+    text-align: right; 
+    font-style: italic; 
+    font-size: 12px;
+}
+
+div.paginator {
+    margin-left: 20%;
+    float: center;
+    width: 60%;
+    color: #555;
+    text-align: center;
+    font-size: 12px;
+}
+
+div.pre_next {
+    height: 23px;
+}
+
+div.post_pre {
+    width: 50%;
+    text-align: left;
+    float: left;
+}
+
+div.post_next {
+    width: 50%;
+    text-align: right;
+    float: right;
+}
+
+table {
+    border-collapse: collapse;
+    border: 1px solid #666;
+}
+
+th {
+    border: 1px solid #666;
+    background-color: #dedede;
+    font-size: 90%;
+}
+
+td {
+    border: 1px solid #666;
+    font-size: 75%
+}
