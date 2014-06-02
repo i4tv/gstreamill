@@ -290,6 +290,7 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
 
         /* gop not found? */
         if (rap_addr == G_MAXUINT64) {
+                GST_ERROR ("Segment not found!");
                 return;
         }
 

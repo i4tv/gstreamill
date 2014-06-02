@@ -339,6 +339,7 @@ static void get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *encod
         } else {
                 /* segment not found */
                 sem_post (encoder_output->semaphore);
+                GST_ERROR ("Segment not found!");
                 buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
                 if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
                         GST_ERROR ("Write sock error: %s", g_strerror (errno));
