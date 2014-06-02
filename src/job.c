@@ -280,21 +280,18 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
         m3u8PushRequest *m3u8_push_request = (m3u8PushRequest *)data;
         gchar *header, *request_uri, *encoder_output_path, *p;
         guint64 rap_addr;
-        GstClockTime t;
         gsize segment_size, count;
         guint8 *buf, *playlist;
 
         /* seek gop it's timestamp is m3u8_push_request->timestamp */
         sem_wait (m3u8_push_request->encoder_output->semaphore);
-        rap_addr = *(m3u8_push_request->encoder_output->head_addr);
-        while (rap_addr != *(m3u8_push_request->encoder_output->last_rap_addr)) {
-                t = encoder_output_rap_timestamp (m3u8_push_request->encoder_output, rap_addr);
-                if (m3u8_push_request->timestamp == t) {
-                        break;
-                }
-                rap_addr = encoder_output_rap_next (m3u8_push_request->encoder_output, rap_addr);
-        }
+        rap_addr = encoder_output_gop_seek (m3u8_push_request->encoder_output, m3u8_push_request->timestamp);
         sem_post (m3u8_push_request->encoder_output->semaphore);
+
+        /* gop not found? */
+        if (rap_addr == G_MAXUINT64) {
+                return;
+        }
 
         /* encoder output path */
         encoder_output_path = g_strdup (m3u8_push_request->encoder_output->name);

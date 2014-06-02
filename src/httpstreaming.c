@@ -298,7 +298,7 @@ static GstClockTime send_chunk (EncoderOutput *encoder_output, RequestData *requ
 
 static void get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *encoder_output)
 {
-        GstClockTime timestamp, t;
+        GstClockTime timestamp;
         gchar *buf;
         guint64 rap_addr;
 
@@ -306,17 +306,10 @@ static void get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *encod
         sem_wait (encoder_output->semaphore);
 
         /* seek gop */
-        rap_addr = *(encoder_output->head_addr);
-        while (rap_addr != *(encoder_output->last_rap_addr)) {
-                t = encoder_output_rap_timestamp (encoder_output, rap_addr);
-                if (timestamp == t) {
-                        break;
-                }
-                rap_addr = encoder_output_rap_next (encoder_output, rap_addr);
-        }
+        rap_addr = encoder_output_gop_seek (encoder_output, timestamp);
 
         /* segment found, send it */
-        if (t == timestamp) {
+        if (rap_addr != G_MAXUINT64) {
                 gsize gop_size;
 
                 gop_size = encoder_output_gop_size (encoder_output, rap_addr);
@@ -342,16 +335,16 @@ static void get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *encod
                                 GST_ERROR ("Write segment error: %s", g_strerror (errno));
                         }
                 }
-                return;
-        }
 
-        /* segment not found */
-        sem_post (encoder_output->semaphore);
-        buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
-        if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
-                GST_ERROR ("Write sock error: %s", g_strerror (errno));
+        } else {
+                /* segment not found */
+                sem_post (encoder_output->semaphore);
+                buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+                if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
+                        GST_ERROR ("Write sock error: %s", g_strerror (errno));
+                }
+                g_free (buf);
         }
-        g_free (buf);
 }
 
 static is_http_progress_play_url (RequestData *request_data)

@@ -790,17 +790,7 @@ GstClockTime encoder_output_rap_timestamp (EncoderOutput *encoder_output, guint6
         return timestamp;
 }
 
-/*
- * encoder_output_rap_next:
- * @encoder_output: (in): the encoder output.
- * @rap_addr: (in): the rap addr
- *
- * get next random access address.
- *
- * Returns: next random access address.
- *
- */
-guint64 encoder_output_rap_next (EncoderOutput *encoder_output, guint64 rap_addr)
+static guint64 encoder_output_rap_next (EncoderOutput *encoder_output, guint64 rap_addr)
 {
         gint gop_size;
         guint64 next_rap_addr;
@@ -815,6 +805,38 @@ guint64 encoder_output_rap_next (EncoderOutput *encoder_output, guint64 rap_addr
         }
 
         return next_rap_addr;
+}
+
+/*
+ * encoder_output_gop_seek:
+ * @encoder_output: (in): the encoder output.
+ * @timestamp: (in): time stamp of the top to seek
+ *
+ * return the address of the gop with time stamp of timestamp.
+ *
+ * Returns: gop addr if found, otherwise G_MAXUINT64 or 18446744073709551615(0xffffffffffffffff).
+ *
+ */
+guint64 encoder_output_gop_seek (EncoderOutput *encoder_output, GstClockTime timestamp)
+{
+        guint64 rap_addr;
+        GstClockTime t;
+
+        rap_addr = *(encoder_output->head_addr);
+        while (rap_addr != *(encoder_output->last_rap_addr)) {
+                t = encoder_output_rap_timestamp (encoder_output, rap_addr);
+                if (timestamp == t) {
+                        break;
+                }
+                rap_addr = encoder_output_rap_next (encoder_output, rap_addr);
+        }
+
+        if (rap_addr != *(encoder_output->last_rap_addr)) {
+                return rap_addr;
+
+        } else {
+                return G_MAXUINT64;
+        }
 }
 
 /*
