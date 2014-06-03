@@ -215,6 +215,10 @@ gboolean bus_callback (GstBus *bus, GstMessage *msg, gpointer user_data)
                 gst_tag_list_foreach (tags, print_one_tag, NULL);
                 break;
 
+        /*
+        an error occurred. When the application receives an error message it should
+        stop playback of the pipeline and not assume that more data will be played.
+        */
         case GST_MESSAGE_ERROR: 
                 gst_message_parse_error (msg, &error, &debug);
                 g_free (debug);
@@ -247,6 +251,7 @@ gboolean bus_callback (GstBus *bus, GstMessage *msg, gpointer user_data)
                 gst_message_parse_new_clock (msg, &clock);
                 GST_INFO ("New source clock %s", GST_OBJECT_NAME (clock));
                 break;
+
         case GST_MESSAGE_ASYNC_DONE:
                 GST_INFO ("source %s message: %s", g_value_get_string (&name), GST_MESSAGE_TYPE_NAME (msg));
                 break;
