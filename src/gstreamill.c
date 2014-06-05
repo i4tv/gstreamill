@@ -453,7 +453,7 @@ static void job_check_func (gpointer data, gpointer user_data)
         /* stat report. */
         if (gstreamill->daemon && (job->worker_pid != 0)) {
                 job_stat_update (job);
-                GST_INFO ("Job %s's average cpu: %d%%, cpu: %d%%, rss: %d",
+                GST_INFO ("Job %s's average cpu: %d%%, cpu: %d%%, rss: %lu",
                                 job->name,
                                 job->cpu_average,
                                 job->cpu_current,

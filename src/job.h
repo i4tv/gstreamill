@@ -71,7 +71,7 @@ struct _Job {
         guint64 start_ctime; /* cpu time at process start */
         gint cpu_average;
         gint cpu_current;
-        gint memory;
+        guint64 memory;
 
         Source *source; 
         GArray *encoder_array;
