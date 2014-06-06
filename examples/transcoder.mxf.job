@@ -1,5 +1,5 @@
 {
-    "name" : "apple",
+    "name" : "transcode",
     "debug" : "4",
     "is-live" : false,
     "log-path" : "/home/encoder/cctv10",
@@ -7,7 +7,7 @@
         "elements" : {
             "filesrc" : {
                 "property" : {
-                    "location" : "/home/encoder/HD/AppleProResTestClip.mov"
+                    "location" : "/home/encoder/HD/HollywoodTrashFeature.MXF"
                 }
             },
             "appsink" : {
@@ -18,12 +18,10 @@
             }
         },
         "bins" : [
-            "filesrc ! queue ! qtdemux name=demuxer",
-            "demuxer.video_0 ! queue ! avdec_prores ! queue ! appsink name = video_0",
-            "demuxer.audio_0 ! queue ! audioconvert ! queue ! appsink name = audio_0",
-            "demuxer.audio_1 ! queue ! audioconvert ! queue ! appsink name = audio_1",
-            "demuxer.audio_2 ! queue ! audioconvert ! queue ! appsink name = audio_2",
-            "demuxer.audio_3 ! queue ! audioconvert ! queue ! appsink name = audio_3"
+            "filesrc ! queue ! mxfdemux name=demuxer",
+            "demuxer.track_2 ! queue ! mpeg2dec ! queue ! appsink name = track_2",
+            "demuxer.track_3 ! queue ! appsink name = track_3",
+            "demuxer.track_4 ! queue ! appsink name = track_4"
         ]
     },
     "encoders" : [
@@ -61,16 +59,14 @@
                 },
                 "filesink" : {
                     "property" : {
-                        "location" : "/home/encoder/HD/AppleProResTestClip-1920x1080-5M.mp4"
+                        "location" : "/home/encoder/HD/HollywoodTrashFeature-1920x1080-5M.mp4"
                     }
                 }
             },
             "bins" : [
-                "appsrc name=video_0 ! queue ! videoconvert ! queue ! x264enc ! queue ! muxer.",
-                "appsrc name=audio_0 ! queue ! voaacenc name=voaacenc0 ! queue ! muxer.",
-                "appsrc name=audio_1 ! queue ! voaacenc name=voaacenc1 ! queue ! muxer.",
-                "appsrc name=audio_2 ! queue ! voaacenc name=voaacenc2 ! queue ! muxer.",
-                "appsrc name=audio_3 ! queue ! voaacenc name=voaacenc3 ! queue ! muxer.",
+                "appsrc name=track_2 ! queue ! videoconvert ! queue ! x264enc ! queue ! muxer.",
+                "appsrc name=track_3 ! queue ! audioconvert ! voaacenc ! queue ! muxer.",
+                "appsrc name=track_4 ! queue ! audioconvert ! voaacenc ! queue ! muxer.",
                 "mp4mux name=muxer ! queue ! filesink"
             ]
         },
@@ -111,16 +107,14 @@
                 },
                 "filesink" : {
                     "property" : {
-                        "location" : "/home/encoder/HD/AppleProResTestClip-1280x720-2M.mp4"
+                        "location" : "/home/encoder/HD/HollywoodTrashFeature-1280x720-2M.mp4"
                     }
                 }
             },
             "bins" : [
-                "appsrc name=video_0 ! queue ! videoconvert ! queue ! videoscale ! queue ! x264enc ! queue ! muxer.",
-                "appsrc name=audio_0 ! queue ! voaacenc name=voaacenc0 ! queue ! muxer.",
-                "appsrc name=audio_1 ! queue ! voaacenc name=voaacenc1 ! queue ! muxer.",
-                "appsrc name=audio_2 ! queue ! voaacenc name=voaacenc2 ! queue ! muxer.",
-                "appsrc name=audio_3 ! queue ! voaacenc name=voaacenc3 ! queue ! muxer.",
+                "appsrc name=track_2 ! queue ! videoconvert ! queue ! videoscale ! queue ! x264enc ! queue ! muxer.",
+                "appsrc name=track_3 ! queue ! audioconvert ! voaacenc ! queue ! muxer.",
+                "appsrc name=track_4 ! queue ! audioconvert ! voaacenc ! queue ! muxer.",
                 "mp4mux name=muxer ! queue ! filesink"
             ]
         },
@@ -161,16 +155,14 @@
                 },
                 "filesink" : {
                     "property" : {
-                        "location" : "/home/encoder/HD/AppleProResTestClip-1280x720-1.5M.mp4"
+                        "location" : "/home/encoder/HD/HollywoodTrashFeature-1280x720-1.5M.mp4"
                     }
                 }
             },
             "bins" : [
-                "appsrc name=video_0 ! queue ! videoconvert ! queue ! videoscale ! queue ! x264enc ! queue ! muxer.",
-                "appsrc name=audio_0 ! queue ! voaacenc name=voaacenc0 ! queue ! muxer.",
-                "appsrc name=audio_1 ! queue ! voaacenc name=voaacenc1 ! queue ! muxer.",
-                "appsrc name=audio_2 ! queue ! voaacenc name=voaacenc2 ! queue ! muxer.",
-                "appsrc name=audio_3 ! queue ! voaacenc name=voaacenc3 ! queue ! muxer.",
+                "appsrc name=track_2 ! queue ! videoconvert ! queue ! videoscale ! queue ! x264enc ! queue ! muxer.",
+                "appsrc name=track_3 ! queue ! audioconvert ! voaacenc ! queue ! muxer.",
+                "appsrc name=track_4 ! queue ! audioconvert ! voaacenc ! queue ! muxer.",
                 "mp4mux name=muxer ! queue ! filesink"
             ]
         },
@@ -211,16 +203,14 @@
                 },
                 "filesink" : {
                     "property" : {
-                        "location" : "/home/encoder/HD/AppleProResTestClip-1024x576-800k.mp4"
+                        "location" : "/home/encoder/HD/HollywoodTrashFeature-1024x576-800k.mp4"
                     }
                 }
             },
             "bins" : [
-                "appsrc name=video_0 ! queue ! videoconvert ! queue ! videoscale ! queue ! x264enc ! queue ! muxer.",
-                "appsrc name=audio_0 ! queue ! voaacenc name=voaacenc0 ! queue ! muxer.",
-                "appsrc name=audio_1 ! queue ! voaacenc name=voaacenc1 ! queue ! muxer.",
-                "appsrc name=audio_2 ! queue ! voaacenc name=voaacenc2 ! queue ! muxer.",
-                "appsrc name=audio_3 ! queue ! voaacenc name=voaacenc3 ! queue ! muxer.",
+                "appsrc name=track_2 ! queue ! videoconvert ! queue ! videoscale ! queue ! x264enc ! queue ! muxer.",
+                "appsrc name=track_3 ! queue ! audioconvert ! voaacenc ! queue ! muxer.",
+                "appsrc name=track_4 ! queue ! audioconvert ! voaacenc ! queue ! muxer.",
                 "mp4mux name=muxer ! queue ! filesink"
             ]
         },
@@ -261,16 +251,14 @@
                 },
                 "filesink" : {
                     "property" : {
-                        "location" : "/home/encoder/HD/AppleProResTestClip-640x369-300k.mp4"
+                        "location" : "/home/encoder/HD/HollywoodTrashFeature-640x369-300k.mp4"
                     }
                 }
             },
             "bins" : [
-                "appsrc name=video_0 ! queue ! videoconvert ! queue ! videoscale ! queue ! x264enc ! queue ! muxer.",
-                "appsrc name=audio_0 ! queue ! voaacenc name=voaacenc0 ! queue ! muxer.",
-                "appsrc name=audio_1 ! queue ! voaacenc name=voaacenc1 ! queue ! muxer.",
-                "appsrc name=audio_2 ! queue ! voaacenc name=voaacenc2 ! queue ! muxer.",
-                "appsrc name=audio_3 ! queue ! voaacenc name=voaacenc3 ! queue ! muxer.",
+                "appsrc name=track_2 ! queue ! videoconvert ! queue ! videoscale ! queue ! x264enc ! queue ! muxer.",
+                "appsrc name=track_3 ! queue ! audioconvert ! voaacenc ! queue ! muxer.",
+                "appsrc name=track_4 ! queue ! audioconvert ! voaacenc ! queue ! muxer.",
                 "mp4mux name=muxer ! queue ! filesink"
             ]
         }
