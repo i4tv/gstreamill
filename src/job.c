@@ -513,6 +513,9 @@ gint job_initialize (Job *job, gboolean daemon)
         /* m3u8 master playlist */
         if (jobdesc_m3u8streaming (job->description)) {
                 job->output->master_m3u8_playlist = render_master_m3u8_playlist (job);
+
+        } else {
+                job->output->master_m3u8_playlist = NULL;
         }
 
         /* push to web server? */

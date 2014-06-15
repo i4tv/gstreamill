@@ -960,7 +960,7 @@ gchar * gstreamill_get_m3u8playlist (Gstreamill *gstreamill, EncoderOutput *enco
 gchar * gstreamill_get_master_m3u8playlist (Gstreamill *gstreamill, gchar *uri)
 {
         Job *job;
-        gchar *master_m3u8_playlist, *p;
+        gchar *master_m3u8_playlist;
 
         job = gstreamill_get_job (gstreamill, uri);
         if (job == NULL) {
@@ -968,14 +968,12 @@ gchar * gstreamill_get_master_m3u8playlist (Gstreamill *gstreamill, gchar *uri)
                 return NULL;
         }
 
-        p = g_strdup_printf ("/live/%s/playlist.m3u8", job->name);
-        if (g_strcmp0 (p, uri) == 0) {
-                master_m3u8_playlist = g_strdup (job->output->master_m3u8_playlist);
+        if (job->output->master_m3u8_playlist == NULL) {
+                master_m3u8_playlist = NULL;
 
         } else {
-                master_m3u8_playlist = NULL;
+                master_m3u8_playlist = g_strdup (job->output->master_m3u8_playlist);
         }
-        g_free (p);
 
         return master_m3u8_playlist;
 }
