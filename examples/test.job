@@ -1,3 +1,6 @@
+/*
+ * test job, videotestsrc and audiotestsrc
+ */
 {
     "name" : "test",
     "debug" : "gstreamill:3",

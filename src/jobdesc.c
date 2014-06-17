@@ -18,7 +18,7 @@ gboolean jobdesc_is_valid (gchar *job)
         JSON_Value *val;
         JSON_Object *obj;
 
-        val = json_parse_string(job);
+        val = json_parse_string_with_comments(job);
         if (val == NULL) {
                 GST_ERROR ("parse job error.");
                 return FALSE;
@@ -46,7 +46,7 @@ gchar * jobdesc_get_name (gchar *job)
         JSON_Object *obj;
         gchar *name, *ret;
 
-        val = json_parse_string (job);
+        val = json_parse_string_with_comments (job);
         obj = json_value_get_object (val);
         name = (gchar *)json_object_get_string (obj, "name");
         ret = g_strdup (name);
@@ -64,7 +64,7 @@ gint jobdesc_streams_count (gchar *job, gchar *pipeline)
         gint count, index;
         gchar *bin, *ptype;
 
-        val = json_parse_string (job);
+        val = json_parse_string_with_comments (job);
         obj = json_value_get_object (val);
         if (g_str_has_prefix (pipeline, "encoder")) {
                 ptype = "appsrc";
@@ -96,7 +96,7 @@ gint jobdesc_encoders_count (gchar *job)
         JSON_Array *encoders;
         gint count;
 
-        val = json_parse_string (job);
+        val = json_parse_string_with_comments (job);
         obj = json_value_get_object (val);
         encoders = json_object_dotget_array (obj, "encoders");
         count = json_array_get_count (encoders);
@@ -110,7 +110,7 @@ gboolean jobdesc_is_live (gchar *job)
         JSON_Value *val;
         JSON_Object *obj;
 
-        val = json_parse_string (job);
+        val = json_parse_string_with_comments (job);
         obj = json_value_get_object (val);
 
         /* without is-live configure item, default is live */
@@ -129,7 +129,7 @@ gchar * jobdesc_get_debug (gchar *job)
         JSON_Object *obj;
         gchar *debug, *p;
 
-        val = json_parse_string (job);
+        val = json_parse_string_with_comments (job);
         obj = json_value_get_object (val);
         p = (gchar *)json_object_get_string (obj, "debug");
         if (p == NULL) {
@@ -149,7 +149,7 @@ gchar * jobdesc_get_log_path (gchar *job)
         JSON_Object *obj;
         gchar *log_path, *p;
 
-        val = json_parse_string (job);
+        val = json_parse_string_with_comments (job);
         obj = json_value_get_object (val);
         p = (gchar *)json_object_get_string (obj, "log-path");
         if (p == NULL) {
@@ -171,7 +171,7 @@ gchar ** jobdesc_bins (gchar *job, gchar *pipeline)
         gint i, count, index;
         gchar **p, *bin;
 
-        val = json_parse_string (job);
+        val = json_parse_string_with_comments (job);
         obj = json_value_get_object (val);
         if (g_str_has_prefix (pipeline, "encoder")) {
                 array = json_object_dotget_array (obj, "encoders");
@@ -202,7 +202,7 @@ gchar * jobdesc_udpstreaming (gchar *job, gchar *pipeline)
         gint index;
         gchar *p, *udpstreaming;
 
-        val = json_parse_string (job);
+        val = json_parse_string_with_comments (job);
         obj = json_value_get_object (val);
         array = json_object_dotget_array (obj, "encoders");
         sscanf (pipeline, "encoder.%d", &index);
@@ -228,7 +228,7 @@ gchar ** jobdesc_element_properties (gchar *job, gchar *element)
         gsize count;
         gint i, index;
 
-        val = json_parse_string (job);
+        val = json_parse_string_with_comments (job);
         obj = json_value_get_object (val);
         if (g_str_has_prefix (element, "encoder")) {
                 array = json_object_get_array (obj, "encoders");
@@ -274,7 +274,7 @@ gchar * jobdesc_element_property_value (gchar *job, gchar *property)
         gdouble n;
         gint index;
 
-        val = json_parse_string (job);
+        val = json_parse_string_with_comments (job);
         obj = json_value_get_object (val);
         if (g_str_has_prefix (property, "encoder")) {
                 array = json_object_dotget_array (obj, "encoders");
@@ -328,7 +328,7 @@ gchar * jobdesc_element_caps (gchar *job, gchar *element)
         gchar *p, *caps;
         gint index;
 
-        val = json_parse_string (job);
+        val = json_parse_string_with_comments (job);
         obj = json_value_get_object (val);
         if (g_str_has_prefix (element, "encoder")) {
                 array = json_object_dotget_array (obj, "encoders");
@@ -357,7 +357,7 @@ gboolean jobdesc_m3u8streaming (gchar *job)
         JSON_Object *obj;
         gboolean m3u8streaming;
 
-        val = json_parse_string (job);
+        val = json_parse_string_with_comments (job);
         obj = json_value_get_object (val);
         if (json_object_get_object (obj, "m3u8streaming") != NULL) {
                 m3u8streaming = TRUE;
@@ -376,7 +376,7 @@ guint jobdesc_m3u8streaming_version (gchar *job)
         JSON_Object *obj;
         guint version;
 
-        val = json_parse_string (job);
+        val = json_parse_string_with_comments (job);
         obj = json_value_get_object (val);
         version = json_object_dotget_number (obj, "m3u8streaming.version");
         json_value_free (val);
@@ -390,7 +390,7 @@ guint jobdesc_m3u8streaming_window_size (gchar *job)
         JSON_Object *obj;
         guint window_size;
 
-        val = json_parse_string (job);
+        val = json_parse_string_with_comments (job);
         obj = json_value_get_object (val);
         window_size = json_object_dotget_number (obj, "m3u8streaming.window-size");
         json_value_free (val);
@@ -404,7 +404,7 @@ GstClockTime jobdesc_m3u8streaming_segment_duration (gchar *job)
         JSON_Object *obj;
         GstClockTime segment_duration;
 
-        val = json_parse_string (job);
+        val = json_parse_string_with_comments (job);
         obj = json_value_get_object (val);
         segment_duration = GST_SECOND * json_object_dotget_number (obj, "m3u8streaming.segment-duration");
         json_value_free (val);
@@ -418,7 +418,7 @@ gchar * jobdesc_m3u8streaming_push_server_uri (gchar *job)
         JSON_Object *obj;
         gchar *ret, *push_url;
 
-        val = json_parse_string (job);
+        val = json_parse_string_with_comments (job);
         obj = json_value_get_object (val);
         push_url = (gchar *)json_object_dotget_string (obj, "m3u8streaming.push-server-uri");
         ret = g_strdup (push_url);
