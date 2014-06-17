@@ -400,8 +400,8 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
                         gchar *master_m3u8_playlist;
 
                         master_m3u8_playlist = gstreamill_get_master_m3u8playlist (httpstreaming->gstreamill, request_data->uri);
-                        if (master_m3u8_playlist != NULL) {
-                                buf = g_strdup_printf (http_200,
+			if (master_m3u8_playlist != NULL) {
+				buf = g_strdup_printf (http_200,
                                                        PACKAGE_NAME,
                                                        PACKAGE_VERSION,
                                                        "application/vnd.apple.mpegurl",
@@ -512,11 +512,6 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
 
         default:
                 GST_ERROR ("Unknown status %d", request_data->status);
-                buf = g_strdup_printf (http_400, PACKAGE_NAME, PACKAGE_VERSION);
-                if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
-                        GST_ERROR ("Write sock error: %s", g_strerror (errno));
-                }
-                g_free (buf);
                 return 0;
         }
 }
