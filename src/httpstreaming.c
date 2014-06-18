@@ -382,6 +382,122 @@ static is_http_progress_play_url (RequestData *request_data)
         return TRUE;
 }
 
+static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestData *request_data)
+{
+        EncoderOutput *encoder_output;
+        GstClock *system_clock = httpstreaming->httpserver->system_clock;
+        PrivateData *priv_data;
+        gchar *buf;
+        gint ret;
+
+        encoder_output = gstreamill_get_encoder_output (httpstreaming->gstreamill, request_data->uri);
+        if (encoder_output == NULL) {
+                /* no such encoder */
+                gchar *master_m3u8_playlist;
+
+                master_m3u8_playlist = gstreamill_get_master_m3u8playlist (httpstreaming->gstreamill, request_data->uri);
+			if (master_m3u8_playlist != NULL) {
+				buf = g_strdup_printf (http_200,
+                                               PACKAGE_NAME,
+                                               PACKAGE_VERSION,
+                                               "application/vnd.apple.mpegurl",
+                                               strlen (master_m3u8_playlist),
+                                               master_m3u8_playlist);
+                        g_free (master_m3u8_playlist);
+
+                } else {
+                        buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+                }
+                ret = write (request_data->sock, buf, strlen (buf));
+                if (ret == strlen (buf)) {
+                        /* send complete */
+                        g_free (buf);
+                        return 0;
+
+                } else if ((ret > 0) || ((ret == -1) && (errno == EAGAIN))) {
+                        /* send not completed, or socket block, resend late */
+                        priv_data = (PrivateData *)g_malloc (sizeof (PrivateData));
+                        priv_data->buf = buf;
+                        priv_data->buf_size = strlen (buf);
+                        priv_data->job = NULL;
+                        priv_data->send_position = ret > 0? : ret, 0;
+                        return ret > 0? : 10 * GST_MSECOND + g_random_int_range (1, 1000000), GST_CLOCK_TIME_NONE;
+
+                } else {
+                        GST_ERROR ("Write sock error: %s", g_strerror (errno));
+                        return 0;
+                }
+
+        } else if (*(encoder_output->head_addr) == *(encoder_output->tail_addr)) {
+                /* not ready */
+                GST_DEBUG ("%s not ready.", request_data->uri);
+                buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+                if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
+                        GST_ERROR ("Write sock error: %s", g_strerror (errno));
+                }
+                g_free (buf);
+                gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
+                return 0;
+
+        } else if (g_str_has_suffix (request_data->uri, ".ts")) {
+                /* get mpeg2 transport stream segment */
+                get_mpeg2ts_segment (request_data, encoder_output);
+                gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
+                return 0;
+
+        } else if (g_str_has_suffix (request_data->uri, "playlist.m3u8")) {
+                /* get m3u8 playlist */
+                gchar *m3u8playlist;
+
+                m3u8playlist = gstreamill_get_m3u8playlist (httpstreaming->gstreamill, encoder_output);
+                buf = g_strdup_printf (http_200,
+                                       PACKAGE_NAME,
+                                       PACKAGE_VERSION,
+                                       "application/vnd.apple.mpegurl",
+                                       strlen (m3u8playlist),
+                                       m3u8playlist); 
+                if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
+                        GST_ERROR ("Write sock error: %s", g_strerror (errno));
+                }
+                g_free (m3u8playlist);
+                g_free (buf);
+                gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
+                return 0;
+
+        } else if (is_http_progress_play_url (request_data)) {
+                /* http progressive streaming request */
+                GST_INFO ("Play %s.", request_data->uri);
+                priv_data = (PrivateData *)g_malloc (sizeof (PrivateData));
+                priv_data->job = gstreamill_get_job (httpstreaming->gstreamill, request_data->uri);
+                priv_data->buf = NULL;
+                priv_data->livejob_age = priv_data->job->age;
+                priv_data->chunk_size = 0;
+                priv_data->send_count = 2;
+                priv_data->chunk_size_str = g_strdup ("");
+                priv_data->chunk_size_str_len = 0;
+                priv_data->encoder_output = encoder_output;
+                priv_data->rap_addr = *(encoder_output->last_rap_addr);
+                priv_data->send_position = *(encoder_output->last_rap_addr) + 12;
+                request_data->priv_data = priv_data;
+                request_data->bytes_send = 0;
+                buf = g_strdup_printf (http_chunked, PACKAGE_NAME, PACKAGE_VERSION);
+                if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
+                        GST_ERROR ("Write sock error: %s", g_strerror (errno));
+                }
+                g_free (buf);
+                return gst_clock_get_time (system_clock);
+
+        } else {
+                buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+                if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
+                        GST_ERROR ("Write sock error: %s", g_strerror (errno));
+                }
+                g_free (buf);
+                gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
+                return 0;
+        }
+}
+
 static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
 {
         RequestData *request_data = data;
@@ -395,6 +511,8 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
         switch (request_data->status) {
         case HTTP_REQUEST:
                 GST_INFO ("new request arrived, socket is %d, uri is %s", request_data->sock, request_data->uri);
+                http_request_process (httpstreaming, request_data);
+#if 0
                 encoder_output = gstreamill_get_encoder_output (httpstreaming->gstreamill, request_data->uri);
                 if (encoder_output == NULL) {
                         /* no such encoder */
@@ -501,6 +619,7 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
                         gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
                         return 0;
                 }
+#endif
                 break;
 
         case HTTP_CONTINUE:
