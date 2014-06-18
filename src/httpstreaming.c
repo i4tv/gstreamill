@@ -395,14 +395,15 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
                 /* no such encoder */
                 gchar *master_m3u8_playlist;
 
+                /* m3u8 request? */
                 master_m3u8_playlist = gstreamill_get_master_m3u8playlist (httpstreaming->gstreamill, request_data->uri);
-			if (master_m3u8_playlist != NULL) {
-				buf = g_strdup_printf (http_200,
-                                               PACKAGE_NAME,
-                                               PACKAGE_VERSION,
-                                               "application/vnd.apple.mpegurl",
-                                               strlen (master_m3u8_playlist),
-                                               master_m3u8_playlist);
+                if (master_m3u8_playlist != NULL) {
+                        buf = g_strdup_printf (http_200,
+                                       PACKAGE_NAME,
+                                       PACKAGE_VERSION,
+                                       "application/vnd.apple.mpegurl",
+                                       strlen (master_m3u8_playlist),
+                                       master_m3u8_playlist);
                         g_free (master_m3u8_playlist);
 
                 } else {
@@ -519,8 +520,8 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
                         gchar *master_m3u8_playlist;
 
                         master_m3u8_playlist = gstreamill_get_master_m3u8playlist (httpstreaming->gstreamill, request_data->uri);
-			if (master_m3u8_playlist != NULL) {
-				buf = g_strdup_printf (http_200,
+                        if (master_m3u8_playlist != NULL) {
+                                buf = g_strdup_printf (http_200,
                                                        PACKAGE_NAME,
                                                        PACKAGE_VERSION,
                                                        "application/vnd.apple.mpegurl",
