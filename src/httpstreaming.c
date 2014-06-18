@@ -464,10 +464,10 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
                 priv_data->buf = buf;
                 priv_data->buf_size = buf_size;
                 priv_data->job = NULL;
-                priv_data->send_position = ret > 0? : ret, 0;
+                priv_data->send_position = ret > 0? ret : 0;
                 priv_data->encoder_output = encoder_output;
                 request_data->priv_data = priv_data;
-                return ret > 0? : 10 * GST_MSECOND + g_random_int_range (1, 1000000), GST_CLOCK_TIME_NONE;
+                return ret > 0? 10 * GST_MSECOND + g_random_int_range (1, 1000000) : GST_CLOCK_TIME_NONE;
 
         } else if (ret == -1) {
                 GST_ERROR ("Write sock error: %s", g_strerror (errno));
