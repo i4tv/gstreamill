@@ -738,6 +738,48 @@ static gpointer block_thread (gpointer data)
         }
 }
 
+static invoke_user_callback (HTTPServer *http_server, RequestData **request_data_pointer)
+{
+        RequestData *request_data = *request_data_pointer;
+        GstClockTime cb_ret;
+
+        cb_ret = http_server->user_callback (request_data, http_server->user_data);
+        if (cb_ret == GST_CLOCK_TIME_NONE) {
+                /* block */
+                g_mutex_lock (&(http_server->block_queue_mutex));
+                request_data->status = HTTP_BLOCK;
+                /* block time out is 300ms */
+                request_data->wakeup_time = gst_clock_get_time (http_server->system_clock) + 300 * GST_MSECOND;
+                g_queue_push_head (http_server->block_queue, request_data_pointer);
+                g_mutex_unlock (&(http_server->block_queue_mutex));
+
+        } else if (cb_ret > 0) {
+                /* idle */
+                GST_DEBUG ("insert idle queue end, sock %d wakeuptime %lu", request_data->sock, cb_ret);
+                http_server->encoder_click += 1;
+                request_data->wakeup_time = cb_ret;
+                g_mutex_lock (&(http_server->idle_queue_mutex));
+                while (g_tree_lookup (http_server->idle_queue, &(request_data->wakeup_time)) != NULL) {
+                        /* avoid time conflict */
+                        request_data->wakeup_time++;
+                }
+                request_data->status = HTTP_IDLE;
+                g_tree_insert (http_server->idle_queue, &(request_data->wakeup_time), request_data_pointer);
+                g_cond_signal (&(http_server->idle_queue_cond));
+                g_mutex_unlock (&(http_server->idle_queue_mutex));
+
+        } else {
+                /* finish */
+                GST_DEBUG ("callback return 0, request finish, sock %d", request_data->sock);
+                request_data->status = HTTP_NONE;
+                close_socket_gracefully (request_data->sock);
+                g_mutex_lock (&(http_server->request_data_queue_mutex));
+                request_data->events = 0;
+                g_queue_push_head (http_server->request_data_queue, request_data_pointer);
+                g_mutex_unlock (&(http_server->request_data_queue_mutex));
+        }
+}
+
 static void thread_pool_func (gpointer data, gpointer user_data)
 {
         HTTPServer *http_server = (HTTPServer *)user_data;
@@ -800,32 +842,7 @@ static void thread_pool_func (gpointer data, gpointer user_data)
                 if (ret == 0) {
                         /* parse complete, call back user function */
                         request_data->events ^= EPOLLIN;
-                        cb_ret = http_server->user_callback (request_data, http_server->user_data);
-                        if (cb_ret > 0) {
-                                /* idle */
-                                GST_DEBUG ("insert idle queue end, sock %d wakeuptime %lu", request_data->sock, cb_ret);
-                                http_server->encoder_click += 1;
-                                request_data->wakeup_time = cb_ret;
-                                g_mutex_lock (&(http_server->idle_queue_mutex));
-                                while (g_tree_lookup (http_server->idle_queue, &(request_data->wakeup_time)) != NULL) {
-                                        /* avoid time conflict */
-                                        request_data->wakeup_time++;
-                                }
-                                request_data->status = HTTP_IDLE;
-                                g_tree_insert (http_server->idle_queue, &(request_data->wakeup_time), request_data_pointer);
-                                g_cond_signal (&(http_server->idle_queue_cond));
-                                g_mutex_unlock (&(http_server->idle_queue_mutex));
-
-                        } else {
-                                /* finish */
-                                GST_DEBUG ("callback return 0, request finish, sock %d", request_data->sock);
-                                request_data->status = HTTP_NONE;
-                                close_socket_gracefully (request_data->sock);
-                                g_mutex_lock (&(http_server->request_data_queue_mutex));
-                                request_data->events = 0;
-                                g_queue_push_head (http_server->request_data_queue, request_data_pointer);
-                                g_mutex_unlock (&(http_server->request_data_queue_mutex));
-                        }
+                        invoke_user_callback (http_server, request_data_pointer);
 
                 } else if (ret == 1) {
                         /* need read more data */
