@@ -474,7 +474,8 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
 
         /* send complete or socket error */
         g_free (buf);
-        if (is_http_progress_play_request) {
+        if ((is_http_progress_play_request) && (ret == buf_size)) {
+                /* http progress play request and send complete */
                 priv_data = (HTTPStreamingPrivateData *)g_malloc (sizeof (HTTPStreamingPrivateData));
                 http_progress_play_priv_data_init (httpstreaming, request_data, priv_data);
                 priv_data->encoder_output = encoder_output;
