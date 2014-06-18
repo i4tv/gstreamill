@@ -34,7 +34,7 @@
                 },
                 "x264enc" : {
                     "property" : {
-                        "bitrate" : 1000,
+                        "bitrate" : 100,
                         "byte-stream" : true,
                         "threads" : 4,
                         "bframes" :3
@@ -52,6 +52,11 @@
                 "mpegtsmux name=muxer ! queue ! appsink"
             ]
         }
-    ]
+    ],
+    "m3u8streaming" : {
+        "version" : 3,
+        "window-size" : 10,
+        "segment-duration" : 3.00
+    }
 }
 
