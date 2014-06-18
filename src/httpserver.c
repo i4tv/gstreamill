@@ -738,7 +738,7 @@ static gpointer block_thread (gpointer data)
         }
 }
 
-static invoke_user_callback (HTTPServer *http_server, RequestData **request_data_pointer)
+static void invoke_user_callback (HTTPServer *http_server, RequestData **request_data_pointer)
 {
         RequestData *request_data = *request_data_pointer;
         GstClockTime cb_ret;
