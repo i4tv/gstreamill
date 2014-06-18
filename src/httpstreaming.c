@@ -447,30 +447,6 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
                 buf = g_strdup_printf (http_chunked, PACKAGE_NAME, PACKAGE_VERSION);
                 buf_size = strlen (buf);
                 is_http_progress_play_request = TRUE;
-#if 0
-                ret = write (request_data->sock, buf, strlen (buf));
-                if ((ret == -1) && (errno != EAGAIN)) {
-                        GST_ERROR ("Write sock error: %s", g_strerror (errno));
-                        return 0;
-                }
-                priv_data = (PrivateData *)g_malloc (sizeof (PrivateData));
-                if (ret == strlen (buf)) {
-                        priv_data->job = gstreamill_get_job (httpstreaming->gstreamill, request_data->uri);
-                        priv_data->livejob_age = priv_data->job->age;
-                        priv_data->chunk_size = 0;
-                        priv_data->send_count = 2;
-                        priv_data->chunk_size_str = g_strdup ("");
-                        priv_data->chunk_size_str_len = 0;
-                        priv_data->encoder_output = encoder_output;
-                        priv_data->rap_addr = *(encoder_output->last_rap_addr);
-                        priv_data->send_position = *(encoder_output->last_rap_addr) + 12;
-                        request_data->priv_data = priv_data;
-                        request_data->bytes_send = 0;
-                        g_free (buf);
-                        priv_data->buf = NULL;
-                        return gst_clock_get_time (system_clock);
-                }
-#endif
 
         } else {
                 buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
@@ -514,6 +490,57 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
         return 0;
 }
 
+static GstClockTime http_continue_process (HTTPStreaming *httpstreaming, RequestData *request_data)
+{
+        PrivateData *priv_data;
+        EncoderOutput *encoder_output;
+        GstClock *system_clock = httpstreaming->httpserver->system_clock;
+        gint ret;
+
+        priv_data = request_data->priv_data;
+        if (priv_data->buf != NULL) {
+                ret = write (request_data->sock, priv_data->buf + priv_data->send_position, priv_data->buf_size - priv_data->send_position);
+                if ((ret + priv_data->send_position == priv_data->buf_size) ||
+                    ((ret == -1) && (errno != EAGAIN))) {
+                        /* send complete or send error, finish the request */
+                        if ((ret == -1) && (errno != EAGAIN)) {
+                                GST_ERROR ("Write sock error: %s", g_strerror (errno));
+                        }
+                        g_free (priv_data->buf);
+                        if (is_http_progress_play_url (request_data)) {
+                                priv_data->send_position = *(encoder_output->last_rap_addr) + 12;
+                                priv_data->buf = NULL;
+                                return gst_clock_get_time (system_clock);
+                        }
+                        g_free (priv_data);
+                        request_data->priv_data = NULL;
+                        if (encoder_output != NULL) {
+                                gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
+                        }
+                        return 0;
+
+                } else if ((ret > 0) || ((ret == -1) && (errno == EAGAIN))) {
+                        /* send not completed or socket block, resend late */
+                        priv_data->send_position += ret > 0? ret : 0;
+                        return ret > 0? 10 * GST_MSECOND + g_random_int_range (1, 1000000) : GST_CLOCK_TIME_NONE;
+                }
+        }
+        if ((priv_data->livejob_age != priv_data->job->age) ||
+            (*(priv_data->job->output->state) != GST_STATE_PLAYING)) {
+                g_free (request_data->priv_data);
+                request_data->priv_data = NULL;
+                gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
+                return 0;
+        }
+        encoder_output = priv_data->encoder_output;
+        if (priv_data->send_position == *(encoder_output->tail_addr)) {
+                /* no more stream, wait 10ms */
+                GST_DEBUG ("current:%lu == tail:%lu", priv_data->send_position, *(encoder_output->tail_addr));
+                return gst_clock_get_time (system_clock) + 500 * GST_MSECOND + g_random_int_range (1, 1000000);
+        }
+        return send_chunk (encoder_output, request_data) + gst_clock_get_time (system_clock);
+}
+
 static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
 {
         RequestData *request_data = data;
@@ -528,159 +555,9 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
         case HTTP_REQUEST:
                 GST_INFO ("new request arrived, socket is %d, uri is %s", request_data->sock, request_data->uri);
                 return http_request_process (httpstreaming, request_data);
-#if 0
-                encoder_output = gstreamill_get_encoder_output (httpstreaming->gstreamill, request_data->uri);
-                if (encoder_output == NULL) {
-                        /* no such encoder */
-                        gchar *master_m3u8_playlist;
-
-                        master_m3u8_playlist = gstreamill_get_master_m3u8playlist (httpstreaming->gstreamill, request_data->uri);
-                        if (master_m3u8_playlist != NULL) {
-                                buf = g_strdup_printf (http_200,
-                                                       PACKAGE_NAME,
-                                                       PACKAGE_VERSION,
-                                                       "application/vnd.apple.mpegurl",
-                                                       strlen (master_m3u8_playlist),
-                                                       master_m3u8_playlist);
-                                g_free (master_m3u8_playlist);
-
-                        } else {
-                                buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
-                        }
-                        ret = write (request_data->sock, buf, strlen (buf));
-                        if (ret == strlen (buf)) {
-                                /* send complete */
-                                g_free (buf);
-                                return 0;
-
-                        } else if ((ret > 0) || ((ret == -1) && (errno == EAGAIN))) {
-                                /* send not completed, or socket block, resend late */
-                                priv_data = (PrivateData *)g_malloc (sizeof (PrivateData));
-                                priv_data->buf = buf;
-                                priv_data->buf_size = strlen (buf);
-                                priv_data->job = NULL;
-                                priv_data->send_position = ret > 0? : ret, 0;
-                                return ret > 0? : 10 * GST_MSECOND + g_random_int_range (1, 1000000), GST_CLOCK_TIME_NONE;
-
-                        } else {
-                                GST_ERROR ("Write sock error: %s", g_strerror (errno));
-                                return 0;
-                        }
-
-                } else if (*(encoder_output->head_addr) == *(encoder_output->tail_addr)) {
-                        /* not ready */
-                        GST_DEBUG ("%s not ready.", request_data->uri);
-                        buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
-                        if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
-                                GST_ERROR ("Write sock error: %s", g_strerror (errno));
-                        }
-                        g_free (buf);
-                        gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
-                        return 0;
-
-                } else if (g_str_has_suffix (request_data->uri, ".ts")) {
-                        /* get mpeg2 transport stream segment */
-                        get_mpeg2ts_segment (request_data, encoder_output);
-                        gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
-                        return 0;
-
-                } else if (g_str_has_suffix (request_data->uri, "playlist.m3u8")) {
-                        /* get m3u8 playlist */
-                        gchar *m3u8playlist;
-
-                        m3u8playlist = gstreamill_get_m3u8playlist (httpstreaming->gstreamill, encoder_output);
-                        buf = g_strdup_printf (http_200,
-                                               PACKAGE_NAME,
-                                               PACKAGE_VERSION,
-                                               "application/vnd.apple.mpegurl",
-                                               strlen (m3u8playlist),
-                                               m3u8playlist); 
-                        if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
-                                GST_ERROR ("Write sock error: %s", g_strerror (errno));
-                        }
-                        g_free (m3u8playlist);
-                        g_free (buf);
-                        gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
-                        return 0;
-
-                } else if (is_http_progress_play_url (request_data)) {
-                        /* http progressive streaming request */
-                        GST_INFO ("Play %s.", request_data->uri);
-                        priv_data = (PrivateData *)g_malloc (sizeof (PrivateData));
-                        priv_data->job = gstreamill_get_job (httpstreaming->gstreamill, request_data->uri);
-                        priv_data->buf = NULL;
-                        priv_data->livejob_age = priv_data->job->age;
-                        priv_data->chunk_size = 0;
-                        priv_data->send_count = 2;
-                        priv_data->chunk_size_str = g_strdup ("");
-                        priv_data->chunk_size_str_len = 0;
-                        priv_data->encoder_output = encoder_output;
-                        priv_data->rap_addr = *(encoder_output->last_rap_addr);
-                        priv_data->send_position = *(encoder_output->last_rap_addr) + 12;
-                        request_data->priv_data = priv_data;
-                        request_data->bytes_send = 0;
-                        buf = g_strdup_printf (http_chunked, PACKAGE_NAME, PACKAGE_VERSION);
-                        if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
-                                GST_ERROR ("Write sock error: %s", g_strerror (errno));
-                        }
-                        g_free (buf);
-                        return gst_clock_get_time (system_clock);
-
-                } else {
-                        buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
-                        if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
-                                GST_ERROR ("Write sock error: %s", g_strerror (errno));
-                        }
-                        g_free (buf);
-                        gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
-                        return 0;
-                }
-#endif
-                break;
 
         case HTTP_CONTINUE:
-                priv_data = request_data->priv_data;
-                if (priv_data->buf != NULL) {
-                        ret = write (request_data->sock, priv_data->buf + priv_data->send_position, priv_data->buf_size - priv_data->send_position);
-                        if ((ret + priv_data->send_position == priv_data->buf_size) ||
-                            ((ret == -1) && (errno != EAGAIN))) {
-                                /* send complete or send error, finish the request */
-                                if ((ret == -1) && (errno != EAGAIN)) {
-                                        GST_ERROR ("Write sock error: %s", g_strerror (errno));
-                                }
-                                g_free (priv_data->buf);
-                                if (is_http_progress_play_url (request_data)) {
-                                        priv_data->send_position = *(encoder_output->last_rap_addr) + 12;
-                                        priv_data->buf = NULL;
-                                        return gst_clock_get_time (system_clock);
-                                }
-                                g_free (priv_data);
-                                request_data->priv_data = NULL;
-                                if (encoder_output != NULL) {
-                                        gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
-                                }
-                                return 0;
-
-                        } else if ((ret > 0) || ((ret == -1) && (errno == EAGAIN))) {
-                                /* send not completed or socket block, resend late */
-                                priv_data->send_position += ret > 0? ret : 0;
-                                return ret > 0? 10 * GST_MSECOND + g_random_int_range (1, 1000000) : GST_CLOCK_TIME_NONE;
-                        }
-                }
-                if ((priv_data->livejob_age != priv_data->job->age) ||
-                    (*(priv_data->job->output->state) != GST_STATE_PLAYING)) {
-                        g_free (request_data->priv_data);
-                        request_data->priv_data = NULL;
-                        gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
-                        return 0;
-                }
-                encoder_output = priv_data->encoder_output;
-                if (priv_data->send_position == *(encoder_output->tail_addr)) {
-                        /* no more stream, wait 10ms */
-                        GST_DEBUG ("current:%lu == tail:%lu", priv_data->send_position, *(encoder_output->tail_addr));
-                        return gst_clock_get_time (system_clock) + 500 * GST_MSECOND + g_random_int_range (1, 1000000);
-                }
-                return send_chunk (encoder_output, request_data) + gst_clock_get_time (system_clock);
+                return http_continue_process (httpstreaming, request_data);
 
         case HTTP_FINISH:
                 g_free (request_data->priv_data);
