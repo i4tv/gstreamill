@@ -296,56 +296,47 @@ static GstClockTime send_chunk (EncoderOutput *encoder_output, RequestData *requ
         }
 }
 
-static void get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *encoder_output)
+static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *encoder_output, gchar **buf)
 {
         GstClockTime timestamp;
-        gchar *buf;
+        gchar *header;
         guint64 rap_addr;
+        gsize buf_size;
 
         sscanf (request_data->uri, "/live/%*[^/]/encoder/%*[^/]/%lu.ts", &timestamp);
         sem_wait (encoder_output->semaphore);
-
         /* seek gop */
         rap_addr = encoder_output_gop_seek (encoder_output, timestamp);
-
-        /* segment found, send it */
         if (rap_addr != G_MAXUINT64) {
+                /* segment found, send it */
                 gsize gop_size;
 
                 gop_size = encoder_output_gop_size (encoder_output, rap_addr);
-                sem_post (encoder_output->semaphore);
-                buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "video/mpeg", gop_size, ""); 
-                if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
-                        GST_ERROR ("Write segment http head error: %s", g_strerror (errno));
-                }
-                g_free (buf);
+                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "video/mpeg", gop_size, ""); 
+                *buf = g_malloc (strlen (header) + gop_size);
+                memcpy (*buf, header, strlen(header));
                 if (rap_addr + gop_size + 12 < encoder_output->cache_size) {
-                        if (httpserver_write (request_data->sock, encoder_output->cache_addr + rap_addr + 12, gop_size) != gop_size) {
-                                GST_ERROR ("Write segment error: %s", g_strerror (errno));
-                        }
+                        memcpy (*buf + strlen (header), encoder_output->cache_addr + rap_addr + 12, gop_size);
 
                 } else {
                         gint n;
 
                         n = encoder_output->cache_size - rap_addr - 12;
-                        if (httpserver_write (request_data->sock, encoder_output->cache_addr + rap_addr + 12, n) != n) {
-                                GST_ERROR ("Write segment error: %s", g_strerror (errno));
-                        }
-                        if (httpserver_write (request_data->sock, encoder_output->cache_addr, gop_size - n) != gop_size - n) {
-                                GST_ERROR ("Write segment error: %s", g_strerror (errno));
-                        }
+                        memcpy (*buf + strlen (header), encoder_output->cache_addr + rap_addr + 12, n);
+                        memcpy (*buf + strlen (header) + n, encoder_output->cache_addr, gop_size - n);
                 }
+                buf_size = strlen (header) + gop_size;
+                g_free (header);
 
         } else {
                 /* segment not found */
-                sem_post (encoder_output->semaphore);
                 GST_ERROR ("Segment not found!");
-                buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
-                if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
-                        GST_ERROR ("Write sock error: %s", g_strerror (errno));
-                }
-                g_free (buf);
+                *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+                buf_size = strlen (*buf);
         }
+        sem_post (encoder_output->semaphore);
+
+        return buf_size;
 }
 
 static is_http_progress_play_url (RequestData *request_data)
@@ -388,6 +379,7 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
         GstClock *system_clock = httpstreaming->httpserver->system_clock;
         PrivateData *priv_data;
         gchar *buf;
+        gsize buf_size;
         gint ret;
 
         encoder_output = gstreamill_get_encoder_output (httpstreaming->gstreamill, request_data->uri);
@@ -410,17 +402,17 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
                         /* bad request */
                         buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
                 }
+                buf_size = strlen (buf);
 
         } else if (*(encoder_output->head_addr) == *(encoder_output->tail_addr)) {
                 /* not ready */
                 GST_DEBUG ("%s not ready.", request_data->uri);
                 buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+                buf_size = strlen (buf);
 
         } else if (g_str_has_suffix (request_data->uri, ".ts")) {
                 /* get mpeg2 transport stream segment */
-                get_mpeg2ts_segment (request_data, encoder_output);
-                gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
-                return 0;
+                buf_size = get_mpeg2ts_segment (request_data, encoder_output, &buf);
 
         } else if (g_str_has_suffix (request_data->uri, "playlist.m3u8")) {
                 /* get m3u8 playlist */
@@ -434,6 +426,7 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
                                        strlen (m3u8playlist),
                                        m3u8playlist); 
                 g_free (m3u8playlist);
+                buf_size = strlen (buf);
 
         } else if (is_http_progress_play_url (request_data)) {
                 /* http progressive streaming request */
@@ -460,18 +453,20 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
 
         } else {
                 buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+                buf_size = strlen (buf);
         }
 
         /* write out buf */
-        ret = write (request_data->sock, buf, strlen (buf));
-        if (((ret > 0) && (ret != strlen (buf))) || ((ret == -1) && (errno == EAGAIN))) {
+        ret = write (request_data->sock, buf, buf_size);
+        if (((ret > 0) && (ret != buf_size)) || ((ret == -1) && (errno == EAGAIN))) {
                 /* send not completed, or socket block, resend late */
                 priv_data = (PrivateData *)g_malloc (sizeof (PrivateData));
                 priv_data->buf = buf;
-                priv_data->buf_size = strlen (buf);
+                priv_data->buf_size = buf_size;
                 priv_data->job = NULL;
                 priv_data->send_position = ret > 0? : ret, 0;
                 priv_data->encoder_output = encoder_output;
+                request_data->priv_data = priv_data;
                 return ret > 0? : 10 * GST_MSECOND + g_random_int_range (1, 1000000), GST_CLOCK_TIME_NONE;
 
         } else if (ret == -1) {
@@ -498,7 +493,7 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
         switch (request_data->status) {
         case HTTP_REQUEST:
                 GST_INFO ("new request arrived, socket is %d, uri is %s", request_data->sock, request_data->uri);
-                http_request_process (httpstreaming, request_data);
+                return http_request_process (httpstreaming, request_data);
 #if 0
                 encoder_output = gstreamill_get_encoder_output (httpstreaming->gstreamill, request_data->uri);
                 if (encoder_output == NULL) {
@@ -613,9 +608,9 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
                 priv_data = request_data->priv_data;
                 if (priv_data->buf != NULL) {
                         ret = write (request_data->sock, priv_data->buf + priv_data->send_position, priv_data->buf_size - priv_data->send_position);
-                        /* send complete or send error? finish the request */
                         if ((ret + priv_data->send_position == priv_data->buf_size) ||
                             ((ret == -1) && (errno != EAGAIN))) {
+                                /* send complete or send error, finish the request */
                                 if ((ret == -1) && (errno != EAGAIN)) {
                                         GST_ERROR ("Write sock error: %s", g_strerror (errno));
                                 }
@@ -629,9 +624,8 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
 
                         } else if ((ret > 0) || ((ret == -1) && (errno == EAGAIN))) {
                                 /* send not completed or socket block, resend late */
-                                priv_data = (PrivateData *)g_malloc (sizeof (PrivateData));
-                                priv_data->send_position += ret > 0? : ret, 0;
-                                return ret > 0? : 10 * GST_MSECOND + g_random_int_range (1, 1000000), GST_CLOCK_TIME_NONE;
+                                priv_data->send_position += ret > 0? ret : 0;
+                                return ret > 0? 10 * GST_MSECOND + g_random_int_range (1, 1000000) : GST_CLOCK_TIME_NONE;
                         }
                 }
                 if ((priv_data->livejob_age != priv_data->job->age) ||
