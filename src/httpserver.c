@@ -868,6 +868,8 @@ static void thread_pool_func (gpointer data, gpointer user_data)
                 }
 
         } else if (request_data->status == HTTP_CONTINUE) {
+                invoke_user_callback (http_server, request_data_pointer);
+#if 0
                 cb_ret = http_server->user_callback (request_data, http_server->user_data);
                 if (cb_ret == GST_CLOCK_TIME_NONE) {
                         /* block */
@@ -903,7 +905,6 @@ static void thread_pool_func (gpointer data, gpointer user_data)
                         g_tree_insert (http_server->idle_queue, &(request_data->wakeup_time), request_data_pointer);
                         g_cond_signal (&(http_server->idle_queue_cond));
                         g_mutex_unlock (&(http_server->idle_queue_mutex));
-
                 } else {
                         /* finish */
                         g_mutex_lock (&(http_server->idle_queue_mutex));
@@ -916,6 +917,7 @@ static void thread_pool_func (gpointer data, gpointer user_data)
                         g_queue_push_head (http_server->request_data_queue, request_data_pointer);
                         g_mutex_unlock (&(http_server->request_data_queue_mutex));
                 }
+#endif
 
         } else if (request_data->status == HTTP_FINISH) { // FIXME: how about if have continue request in idle queue??
                 cb_ret = http_server->user_callback (request_data, http_server->user_data);
