@@ -390,6 +390,7 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
         EncoderOutput *encoder_output;
         PrivateData *priv_data;
         GstClock *system_clock = httpstreaming->httpserver->system_clock;
+        gint ret;
 
         switch (request_data->status) {
         case HTTP_REQUEST:
@@ -412,11 +413,25 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
                         } else {
                                 buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
                         }
-                        if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
+                        ret = write (request_data->sock, buf, strlen (buf));
+                        if (ret == strlen (buf)) {
+                                /* send complete */
+                                g_free (buf);
+                                return 0;
+
+                        } else if ((ret > 0) || ((ret == -1) && (errno == EAGAIN))) {
+                                /* send not completed, or socket block, resend late */
+                                priv_data = (PrivateData *)g_malloc (sizeof (PrivateData));
+                                priv_data->buf = buf;
+                                priv_data->buf_size = strlen (buf);
+                                priv_data->job = NULL;
+                                priv_data->send_position = ret > 0? : ret, 0;
+                                return ret > 0? : 10 * GST_MSECOND + g_random_int_range (1, 1000000), GST_CLOCK_TIME_NONE;
+
+                        } else {
                                 GST_ERROR ("Write sock error: %s", g_strerror (errno));
+                                return 0;
                         }
-                        g_free (buf);
-                        return 0;
 
                 } else if (*(encoder_output->head_addr) == *(encoder_output->tail_addr)) {
                         /* not ready */
@@ -459,6 +474,7 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
                         GST_INFO ("Play %s.", request_data->uri);
                         priv_data = (PrivateData *)g_malloc (sizeof (PrivateData));
                         priv_data->job = gstreamill_get_job (httpstreaming->gstreamill, request_data->uri);
+                        priv_data->buf = NULL;
                         priv_data->livejob_age = priv_data->job->age;
                         priv_data->chunk_size = 0;
                         priv_data->send_count = 2;
@@ -489,6 +505,27 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
 
         case HTTP_CONTINUE:
                 priv_data = request_data->priv_data;
+                if (priv_data->buf != NULL) {
+                        ret = write (request_data->sock, priv_data->buf + priv_data->send_position, priv_data->buf_size - priv_data->send_position);
+                        /* send complete or send error? finish the request */
+                        if ((ret + priv_data->send_position == priv_data->buf_size) ||
+                            ((ret == -1) && (errno != EAGAIN))) {
+                                if ((ret == -1) && (errno != EAGAIN)) {
+                                        GST_ERROR ("Write sock error: %s", g_strerror (errno));
+                                }
+                                g_free (priv_data->buf);
+                                g_free (priv_data);
+                                request_data->priv_data = NULL;
+                                //FIXME gstreamill_unaccess
+                                return 0;
+
+                        } else if ((ret > 0) || ((ret == -1) && (errno == EAGAIN))) {
+                                /* send not completed or socket block, resend late */
+                                priv_data = (PrivateData *)g_malloc (sizeof (PrivateData));
+                                priv_data->send_position += ret > 0? : ret, 0;
+                                return ret > 0? : 10 * GST_MSECOND + g_random_int_range (1, 1000000), GST_CLOCK_TIME_NONE;
+                        }
+                }
                 if ((priv_data->livejob_age != priv_data->job->age) ||
                     (*(priv_data->job->output->state) != GST_STATE_PLAYING)) {
                         g_free (request_data->priv_data);
