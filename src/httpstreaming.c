@@ -131,7 +131,7 @@ GType httpstreaming_get_type (void)
 
 static gint send_data (EncoderOutput *encoder_output, RequestData *request_data)
 {
-        PrivateData *priv_data;
+        HTTPStreamingPrivateData *priv_data;
         struct iovec iov[3];
         gint ret;
 
@@ -167,7 +167,7 @@ static gint send_data (EncoderOutput *encoder_output, RequestData *request_data)
 /*
  * return -1 means the gop is current output gop.
  */
-static gint64 get_current_gop_end (EncoderOutput *encoder_output, PrivateData *priv_data)
+static gint64 get_current_gop_end (EncoderOutput *encoder_output, HTTPStreamingPrivateData *priv_data)
 {
         gint32 current_gop_size, n;
         gint64 current_gop_end_addr;
@@ -199,7 +199,7 @@ static gint64 get_current_gop_end (EncoderOutput *encoder_output, PrivateData *p
 
 static GstClockTime send_chunk (EncoderOutput *encoder_output, RequestData *request_data)
 {
-        PrivateData *priv_data;
+        HTTPStreamingPrivateData *priv_data;
         gint64 current_gop_end_addr, tail_addr;
         gint32 ret;
 
@@ -373,7 +373,7 @@ static is_http_progress_play_url (RequestData *request_data)
         return TRUE;
 }
 
-static void http_progress_play_priv_data_init (HTTPStreaming *httpstreaming, RequestData *request_data, PrivateData *priv_data)
+static void http_progress_play_priv_data_init (HTTPStreaming *httpstreaming, RequestData *request_data, HTTPStreamingPrivateData *priv_data)
 {
         priv_data->job = gstreamill_get_job (httpstreaming->gstreamill, request_data->uri);
         priv_data->livejob_age = priv_data->job->age;
@@ -389,7 +389,7 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
 {
         EncoderOutput *encoder_output;
         GstClock *system_clock = httpstreaming->httpserver->system_clock;
-        PrivateData *priv_data;
+        HTTPStreamingPrivateData *priv_data;
         gchar *buf;
         gsize buf_size;
         gint ret;
@@ -457,7 +457,7 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
         ret = write (request_data->sock, buf, buf_size);
         if (((ret > 0) && (ret != buf_size)) || ((ret == -1) && (errno == EAGAIN))) {
                 /* send not completed or socket block, resend late */
-                priv_data = (PrivateData *)g_malloc (sizeof (PrivateData));
+                priv_data = (HTTPStreamingPrivateData *)g_malloc (sizeof (HTTPStreamingPrivateData));
                 priv_data->buf = buf;
                 priv_data->buf_size = buf_size;
                 priv_data->job = NULL;
@@ -475,7 +475,7 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
         /* send complete or socket error */
         g_free (buf);
         if (is_http_progress_play_request) {
-                priv_data = (PrivateData *)g_malloc (sizeof (PrivateData));
+                priv_data = (HTTPStreamingPrivateData *)g_malloc (sizeof (HTTPStreamingPrivateData));
                 http_progress_play_priv_data_init (httpstreaming, request_data, priv_data);
                 priv_data->encoder_output = encoder_output;
                 priv_data->rap_addr = *(encoder_output->last_rap_addr);
@@ -492,7 +492,7 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
 
 static GstClockTime http_continue_process (HTTPStreaming *httpstreaming, RequestData *request_data)
 {
-        PrivateData *priv_data;
+        HTTPStreamingPrivateData *priv_data;
         EncoderOutput *encoder_output;
         GstClock *system_clock = httpstreaming->httpserver->system_clock;
         gint ret;
@@ -547,7 +547,7 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
         HTTPStreaming *httpstreaming = (HTTPStreaming *)user_data;
         gchar *buf;
         EncoderOutput *encoder_output;
-        PrivateData *priv_data;
+        HTTPStreamingPrivateData *priv_data;
         GstClock *system_clock = httpstreaming->httpserver->system_clock;
         gint ret;
 

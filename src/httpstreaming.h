@@ -14,7 +14,7 @@
 #include "httpserver.h"
 #include "gstreamill.h"
 
-typedef struct _PrivateData {
+typedef struct _HTTPStreamingPrivateData {
         Job *job;
         gint64 livejob_age;
         gint64 rap_addr;
@@ -26,7 +26,7 @@ typedef struct _PrivateData {
         gpointer encoder_output;
         gchar *buf;
         gsize buf_size;
-} PrivateData;
+} HTTPStreamingPrivateData;
 
 typedef struct _HTTPStreaming      HTTPStreaming;
 typedef struct _HTTPStreamingClass HTTPStreamingClass;
