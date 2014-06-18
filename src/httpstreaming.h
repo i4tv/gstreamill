@@ -24,6 +24,8 @@ typedef struct _PrivateData {
         gint chunk_size_str_len;
         gint send_count;
         gpointer encoder_output;
+        gchar *buf;
+        gsize buf_size;
 } PrivateData;
 
 typedef struct _HTTPStreaming      HTTPStreaming;
