@@ -261,6 +261,7 @@ static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
                         priv_data->buf = buf;
                         priv_data->buf_size = buf_size;
                         priv_data->send_position = ret > 0? ret : 0;
+                        request_data->priv_data = priv_data;
                         return ret > 0? 10 * GST_MSECOND + g_random_int_range (1, 1000000) : GST_CLOCK_TIME_NONE;
 
                 } else if (ret == -1) {
@@ -271,9 +272,9 @@ static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
                 return 0;
 
         case HTTP_CONTINUE:
+                priv_data = request_data->priv_data;
                 ret = write (request_data->sock, priv_data->buf + priv_data->send_position, priv_data->buf_size - priv_data->send_position);
-                if ((ret + priv_data->send_position == priv_data->buf_size) ||
-                    ((ret == -1) && (errno != EAGAIN))) {
+                if ((ret + priv_data->send_position == priv_data->buf_size) || ((ret == -1) && (errno != EAGAIN))) {
                         /* send complete or send error, finish the request */
                         if ((ret == -1) && (errno != EAGAIN)) {
                                 GST_ERROR ("Write sock error: %s", g_strerror (errno));
