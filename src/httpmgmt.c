@@ -165,10 +165,8 @@ static gchar * stop_job (HTTPMgmt *httpmgmt, RequestData *request_data)
                         p = gstreamill_job_stop (httpmgmt->gstreamill, buf);
                         g_free (buf);
                         buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), p);
-                        httpserver_write (request_data->sock, buf, strlen (buf));
-                        g_free (buf);
                         g_free (p);
-                        return;
+                        return buf;
                 }
         }
         buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
@@ -298,11 +296,6 @@ static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
 
         default:
                 GST_ERROR ("Unknown status %d", request_data->status);
-                buf = g_strdup_printf (http_400, PACKAGE_NAME, PACKAGE_VERSION);
-                if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
-                        GST_ERROR ("Write sock error: %s", g_strerror (errno));
-                }
-                g_free (buf);
         }
 
         return 0;
