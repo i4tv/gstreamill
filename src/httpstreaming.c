@@ -366,7 +366,7 @@ static is_http_progress_play_url (RequestData *request_data)
                 g_regex_unref (regex);
         }
         if (index == -1) {
-                GST_ERROR ("not http progress play uri: %s", request_data->uri);
+                GST_DEBUG ("not http progress play uri: %s", request_data->uri);
                 return FALSE;
         }
 
@@ -462,10 +462,10 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
                 priv_data->buf_size = buf_size;
                 priv_data->job = NULL;
                 priv_data->send_position = ret > 0? ret : 0;
+                priv_data->encoder_output = encoder_output;
                 request_data->priv_data = priv_data;
                 if (is_http_progress_play_request) {
                         http_progress_play_priv_data_init (httpstreaming, request_data, priv_data);
-                        priv_data->encoder_output = encoder_output;
                         priv_data->rap_addr = *(encoder_output->last_rap_addr);
                 }
                 return ret > 0? 10 * GST_MSECOND + g_random_int_range (1, 1000000) : GST_CLOCK_TIME_NONE;
@@ -516,11 +516,11 @@ static GstClockTime http_continue_process (HTTPStreaming *httpstreaming, Request
                                 priv_data->buf = NULL;
                                 return gst_clock_get_time (system_clock);
                         }
-                        g_free (priv_data);
-                        request_data->priv_data = NULL;
                         if (encoder_output != NULL) {
                                 gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
                         }
+                        g_free (priv_data);
+                        request_data->priv_data = NULL;
                         return 0;
 
                 } else if ((ret > 0) || ((ret == -1) && (errno == EAGAIN))) {
