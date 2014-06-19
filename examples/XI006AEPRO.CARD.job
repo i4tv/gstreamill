@@ -31,6 +31,9 @@
                         "is-live" : true
                     }
                 },
+                "videoconvert" : {
+                    "caps" : "video/x-raw,format=I420"
+                },
                 "x264enc" : {
                     "property" : {
                         "bitrate" : 800,
@@ -47,7 +50,7 @@
             },
             "bins" : [
                 "appsrc name=audio ! audioresample ! audioconvert ! voaacenc ! muxer.",
-                "appsrc name=video ! videoconvert ! queue ! x264enc ! queue ! muxer.",
+                "appsrc name=video ! queue ! videoconvert ! queue ! x264enc ! queue ! muxer.",
                 "mpegtsmux name=muxer ! queue ! appsink"
             ]
         }
