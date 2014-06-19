@@ -780,6 +780,30 @@ static void invoke_user_callback (HTTPServer *http_server, RequestData **request
         }
 }
 
+static gint httpserver_write (gint sock, gchar *buf, gsize count)
+{
+        gsize sent;
+        gint ret, len;
+        
+        sent = 0;
+        while (sent < count) {
+                len = INT_MAX < count - sent ? INT_MAX : count - sent;
+                ret = write (sock, buf + sent, len);
+                if (ret == -1) {
+                        if (errno == EAGAIN) {
+                                /* block, wait 50ms */
+                                g_usleep (50000);
+                                continue;
+                        }
+                        GST_INFO ("Write error: %s", g_strerror (errno));
+                        break;
+                }
+                sent += ret;
+        }
+
+        return sent;
+}
+
 static void thread_pool_func (gpointer data, gpointer user_data)
 {
         HTTPServer *http_server = (HTTPServer *)user_data;
@@ -908,40 +932,6 @@ gint httpserver_start (HTTPServer *http_server, http_callback_t user_callback, g
         http_server->block_thread = g_thread_new ("block_thread", block_thread, http_server);
 
         return 0;
-}
-
-/**
- * httpserver_write:
- * @sock: (in): socket
- * @buf: (in): buffer to be sent
- * @count: (in): size of buffer to be sent
- *
- * loop write until complete all of buf
- *
- * Returns: send count
- */
-gint httpserver_write (gint sock, gchar *buf, gsize count)
-{
-        gsize sent;
-        gint ret, len;
-        
-        sent = 0;
-        while (sent < count) {
-                len = INT_MAX < count - sent ? INT_MAX : count - sent;
-                ret = write (sock, buf + sent, len);
-                if (ret == -1) {
-                        if (errno == EAGAIN) {
-                                /* block, wait 50ms */
-                                g_usleep (50000);
-                                continue;
-                        }
-                        GST_INFO ("Write error: %s", g_strerror (errno));
-                        break;
-                }
-                sent += ret;
-        }
-
-        return sent;
 }
 
 gint httpserver_report_request_data (HTTPServer *http_server)
