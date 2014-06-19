@@ -366,7 +366,7 @@ static is_http_progress_play_url (RequestData *request_data)
                 g_regex_unref (regex);
         }
         if (index == -1) {
-                GST_ERROR ("invalid uri: %s", request_data->uri);
+                GST_ERROR ("not http progress play uri: %s", request_data->uri);
                 return FALSE;
         }
 
@@ -499,6 +499,7 @@ static GstClockTime http_continue_process (HTTPStreaming *httpstreaming, Request
         gint ret;
 
         priv_data = request_data->priv_data;
+        encoder_output = priv_data->encoder_output;
         if (priv_data->buf != NULL) {
                 ret = write (request_data->sock, priv_data->buf + priv_data->send_position, priv_data->buf_size - priv_data->send_position);
                 if ((ret + priv_data->send_position == priv_data->buf_size) ||
@@ -533,7 +534,6 @@ static GstClockTime http_continue_process (HTTPStreaming *httpstreaming, Request
                 gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
                 return 0;
         }
-        encoder_output = priv_data->encoder_output;
         if (priv_data->send_position == *(encoder_output->tail_addr)) {
                 /* no more stream, wait 10ms */
                 GST_DEBUG ("current:%lu == tail:%lu", priv_data->send_position, *(encoder_output->tail_addr));
