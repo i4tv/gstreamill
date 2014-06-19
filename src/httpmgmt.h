@@ -14,6 +14,12 @@
 #include "gstreamill.h"
 #include "httpserver.h"
 
+typedef struct _HTTPMgmtPrivateData {
+        gchar *buf;
+        gsize buf_size;
+        gint64 send_position;
+} HTTPMgmtPrivateData;
+
 typedef struct _HTTPMgmt      HTTPMgmt;
 typedef struct _HTTPMgmtClass HTTPMgmtClass;
 

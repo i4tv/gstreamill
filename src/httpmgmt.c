@@ -131,7 +131,7 @@ GType httpmgmt_get_type (void)
         return type;
 }
 
-static void start_job (HTTPMgmt *httpmgmt, RequestData *request_data)
+static gchar * start_job (HTTPMgmt *httpmgmt, RequestData *request_data)
 {
         gchar *buf, *p, *var;
 
@@ -145,13 +145,11 @@ static void start_job (HTTPMgmt *httpmgmt, RequestData *request_data)
         } else {
                 buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
         }
-        httpserver_write (request_data->sock, buf, strlen (buf));
-        g_free (buf);
 
-        return;
+        return buf;
 }
 
-static void stop_job (HTTPMgmt *httpmgmt, RequestData *request_data)
+static gchar * stop_job (HTTPMgmt *httpmgmt, RequestData *request_data)
 {
         gchar *buf, *p;
         GRegex *regex;
@@ -174,13 +172,11 @@ static void stop_job (HTTPMgmt *httpmgmt, RequestData *request_data)
                 }
         }
         buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
-        httpserver_write (request_data->sock, buf, strlen (buf));
-        g_free (buf);
 
-        return;
+        return buf;
 }
 
-static void request_gstreamill_stat (HTTPMgmt *httpmgmt, RequestData *request_data)
+static gchar * request_gstreamill_stat (HTTPMgmt *httpmgmt, RequestData *request_data)
 {
         gchar *buf, *p;
 
@@ -217,59 +213,88 @@ static void request_gstreamill_stat (HTTPMgmt *httpmgmt, RequestData *request_da
                 buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
         }
 
-        if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
-                GST_ERROR ("Write sock error: %s", g_strerror (errno));
-        }
-        g_free (buf);
-
-        return;
+        return buf;
 }
 
-static void request_gstreamer_stat (HTTPMgmt *httpmgmt, RequestData *request_data)
+static gchar * request_gstreamer_stat (HTTPMgmt *httpmgmt, RequestData *request_data)
 {
         gchar *buf, *p;
 
         p = gstreamill_gstreamer_stat (httpmgmt->gstreamill, request_data->uri);
         buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (p), p);
         g_free (p);
-        httpserver_write (request_data->sock, buf, strlen (buf));
-        g_free (buf);
 
-        return;
+        return buf;
 }
  
 static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
 {
         RequestData *request_data = data;
         HTTPMgmt *httpmgmt = user_data;
+        HTTPMgmtPrivateData *priv_data;
         gchar *buf;
+        gsize buf_size;
+        gint ret;
 
         switch (request_data->status) {
         case HTTP_REQUEST:
                 GST_INFO ("new request arrived, socket is %d, uri is %s", request_data->sock, request_data->uri);
                 if (g_str_has_prefix (request_data->uri, "/start")) {
-                        start_job (httpmgmt, request_data);
+                        buf = start_job (httpmgmt, request_data);
 
                 } else if (g_str_has_prefix (request_data->uri, "/stop")) {
-                        stop_job (httpmgmt, request_data);
+                        buf = stop_job (httpmgmt, request_data);
 
                 } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamill")) {
-                        request_gstreamill_stat (httpmgmt, request_data);
+                        buf = request_gstreamill_stat (httpmgmt, request_data);
 
                 } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamer")) {
-                        request_gstreamer_stat (httpmgmt, request_data);
+                        buf = request_gstreamer_stat (httpmgmt, request_data);
 
                 } else {
                         buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
-                        if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
+                }
+
+                buf_size = strlen (buf);
+                ret = write (request_data->sock, buf, buf_size);
+                if (((ret > 0) && (ret != buf_size)) || ((ret == -1) && (errno == EAGAIN))) {
+                        /* send not completed or socket block, resend late */
+                        priv_data = (HTTPMgmtPrivateData *)g_malloc (sizeof (HTTPMgmtPrivateData));
+                        priv_data->buf = buf;
+                        priv_data->buf_size = buf_size;
+                        priv_data->send_position = ret > 0? ret : 0;
+                        return ret > 0? 10 * GST_MSECOND + g_random_int_range (1, 1000000) : GST_CLOCK_TIME_NONE;
+
+                } else if (ret == -1) {
+                        GST_ERROR ("Write sock error: %s", g_strerror (errno));
+                }
+                /* send complete or socket error */
+                g_free (buf);
+                return 0;
+
+        case HTTP_CONTINUE:
+                ret = write (request_data->sock, priv_data->buf + priv_data->send_position, priv_data->buf_size - priv_data->send_position);
+                if ((ret + priv_data->send_position == priv_data->buf_size) ||
+                    ((ret == -1) && (errno != EAGAIN))) {
+                        /* send complete or send error, finish the request */
+                        if ((ret == -1) && (errno != EAGAIN)) {
                                 GST_ERROR ("Write sock error: %s", g_strerror (errno));
                         }
-                        g_free (buf);
+                        g_free (priv_data->buf);
+                        g_free (priv_data);
+                        request_data->priv_data = NULL;
+                        return 0;
+
+                } else if ((ret > 0) || ((ret == -1) && (errno == EAGAIN))) {
+                        /* send not completed or socket block, resend late */
+                        priv_data->send_position += ret > 0? ret : 0;
+                        return ret > 0? 10 * GST_MSECOND + g_random_int_range (1, 1000000) : GST_CLOCK_TIME_NONE;
                 }
-                break;
 
         case HTTP_FINISH:
-                break;
+                g_free (request_data->priv_data);
+                request_data->priv_data = NULL;
+                return 0;
 
         default:
                 GST_ERROR ("Unknown status %d", request_data->status);
