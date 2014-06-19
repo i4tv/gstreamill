@@ -869,55 +869,6 @@ static void thread_pool_func (gpointer data, gpointer user_data)
 
         } else if (request_data->status == HTTP_CONTINUE) {
                 invoke_user_callback (http_server, request_data_pointer);
-#if 0
-                cb_ret = http_server->user_callback (request_data, http_server->user_data);
-                if (cb_ret == GST_CLOCK_TIME_NONE) {
-                        /* block */
-                        g_mutex_lock (&(http_server->block_queue_mutex));
-                        request_data->status = HTTP_BLOCK;
-                        /* block time out is 300ms */
-                        request_data->wakeup_time = gst_clock_get_time (http_server->system_clock) + 300 * GST_MSECOND;
-                        g_queue_push_head (http_server->block_queue, request_data_pointer);
-                        g_mutex_unlock (&(http_server->block_queue_mutex));
-
-                } else if (cb_ret > 0) {
-                        /* idle */
-                        int iiii=0;
-                        request_data->wakeup_time = cb_ret;
-                        g_mutex_lock (&(http_server->idle_queue_mutex));
-                        if (request_data->status != HTTP_CONTINUE) {
-                                GST_FIXME ("insert a un continue request to idle queue sock %d", request_data->sock);
-                        }
-                        if (g_tree_nnodes (http_server->idle_queue) > 0) {
-                                RequestData **rr;
-                                RequestData *r;
-                                while ((rr = (RequestData **)g_tree_lookup (http_server->idle_queue, &(request_data->wakeup_time))) != NULL) {
-                                        /* avoid time conflict */
-                                        r = *rr;
-                                        GST_WARNING ("tree node number %d find sock %d wakeuptime %lu", g_tree_nnodes (http_server->idle_queue), request_data->sock, request_data->wakeup_time);
-                                        GST_WARNING ("look up, find sock %d wakeuptime %lu", r->sock, r->wakeup_time);
-                                        request_data->wakeup_time++;
-                                        if (iiii++==10) exit (0);
-                                }
-                        }
-                        request_data->status = HTTP_IDLE;
-                        GST_DEBUG ("insert idle queue end, sock %d wakeuptime %lu", request_data->sock, cb_ret);
-                        g_tree_insert (http_server->idle_queue, &(request_data->wakeup_time), request_data_pointer);
-                        g_cond_signal (&(http_server->idle_queue_cond));
-                        g_mutex_unlock (&(http_server->idle_queue_mutex));
-                } else {
-                        /* finish */
-                        g_mutex_lock (&(http_server->idle_queue_mutex));
-                        g_tree_remove (http_server->idle_queue, &(request_data->wakeup_time));
-                        g_mutex_unlock (&(http_server->idle_queue_mutex));
-                        request_data->status = HTTP_NONE;
-                        close_socket_gracefully (request_data->sock);
-                        g_mutex_lock (&(http_server->request_data_queue_mutex));
-                        request_data->events = 0;
-                        g_queue_push_head (http_server->request_data_queue, request_data_pointer);
-                        g_mutex_unlock (&(http_server->request_data_queue_mutex));
-                }
-#endif
 
         } else if (request_data->status == HTTP_FINISH) { // FIXME: how about if have continue request in idle queue??
                 cb_ret = http_server->user_callback (request_data, http_server->user_data);
