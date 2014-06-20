@@ -1,0 +1,10 @@
+[Unit]
+Description=The gstreamill encoder server
+
+[Service]
+ExecStart=/usr/local/bin/gstreamill --gst-debug=gstreamill:4
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+Alias=gstreamill.service
