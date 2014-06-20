@@ -385,6 +385,51 @@ static void http_progress_play_priv_data_init (HTTPStreaming *httpstreaming, Req
         request_data->bytes_send = 0;
 }
 
+static gchar * request_crossdomain (RequestData *request_data)
+{
+        gchar *buf;
+        gchar *crossdomain = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                             "<cross-domain-policy>\n"
+                             "    <allow-access-from domain=\"*\"/>\n"
+                             "</cross-domain-policy>\n";
+
+        if (g_str_has_suffix (request_data->uri, "crossdomain.xml")) {
+                buf = g_strdup_printf (http_200,
+                               PACKAGE_NAME,
+                               PACKAGE_VERSION,
+                               "text/xml",
+                               strlen (crossdomain),
+                               crossdomain);
+        } else {
+                buf = NULL;
+        }
+
+        return buf;
+}
+
+static gchar * request_master_m3u8_playlist (HTTPStreaming *httpstreaming, RequestData *request_data)
+{
+        gchar *buf;
+        gchar *master_m3u8_playlist;
+
+        /* master m3u8 request? */
+        master_m3u8_playlist = gstreamill_get_master_m3u8playlist (httpstreaming->gstreamill, request_data->uri);
+        if (master_m3u8_playlist != NULL) {
+                buf = g_strdup_printf (http_200,
+                               PACKAGE_NAME,
+                               PACKAGE_VERSION,
+                               "application/vnd.apple.mpegurl",
+                               strlen (master_m3u8_playlist),
+                               master_m3u8_playlist);
+                g_free (master_m3u8_playlist);
+
+        } else {
+                buf = NULL;
+        }
+
+        return buf;
+}
+
 static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestData *request_data)
 {
         EncoderOutput *encoder_output;
@@ -397,22 +442,13 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
 
         encoder_output = gstreamill_get_encoder_output (httpstreaming->gstreamill, request_data->uri);
         if (encoder_output == NULL) {
-                /* no such encoder */
-                gchar *master_m3u8_playlist;
-
-                /* master m3u8 request? */
-                master_m3u8_playlist = gstreamill_get_master_m3u8playlist (httpstreaming->gstreamill, request_data->uri);
-                if (master_m3u8_playlist != NULL) {
-                        buf = g_strdup_printf (http_200,
-                                       PACKAGE_NAME,
-                                       PACKAGE_VERSION,
-                                       "application/vnd.apple.mpegurl",
-                                       strlen (master_m3u8_playlist),
-                                       master_m3u8_playlist);
-                        g_free (master_m3u8_playlist);
-
-                } else {
-                        /* bad request */
+                buf = request_crossdomain (request_data);
+                /* not crossdomain request if buf == NULL */
+                if (buf == NULL) {
+                        buf = request_master_m3u8_playlist (httpstreaming, request_data);
+                }
+                /* not master m3u8 playlist request if buf == NULL */
+                if (buf == NULL) {
                         buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
                 }
                 buf_size = strlen (buf);
