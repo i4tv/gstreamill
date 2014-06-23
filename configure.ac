@@ -44,6 +44,7 @@ PKG_CHECK_MODULES([gstreamerpluginsbase], [gstreamer-plugins-base-1.0])
 AC_CONFIG_FILES([
 Makefile
 src/Makefile
+admin/Makefile
 gstreamill.spec
 ])
 
