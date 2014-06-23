@@ -225,9 +225,10 @@ static gchar * request_gstreamer_stat (HTTPMgmt *httpmgmt, RequestData *request_
         return buf;
 }
  
-static gchar * request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_data)
+static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_data, gchar **buf)
 {
-        gchar *buf, *p;
+        gchar *p;
+        gsize buf_size;
 
         if (g_strcmp0 (request_data->uri, "/admin/") == 0) {
                 p = g_strdup_printf ("/usr/local/share/gstreamill/admin/index.html");
@@ -235,13 +236,13 @@ static gchar * request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request
         } else {
                 p = g_strdup_printf ("/usr/local/share/gstreamill%s", request_data->uri);
         }
-        if (!g_file_get_contents (p, &buf, NULL, NULL)) {
-                buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
-
+        if (!g_file_get_contents (p, buf, &buf_size, NULL)) {
+                *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+                buf_size = strlen (*buf);
         }
         g_free (p);
 
-        return buf;
+        return buf_size;
 }
 
 static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
@@ -258,24 +259,28 @@ static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
                 GST_INFO ("new request arrived, socket is %d, uri is %s", request_data->sock, request_data->uri);
                 if (g_str_has_prefix (request_data->uri, "/start")) {
                         buf = start_job (httpmgmt, request_data);
+                        buf_size = strlen (buf);
 
                 } else if (g_str_has_prefix (request_data->uri, "/stop")) {
                         buf = stop_job (httpmgmt, request_data);
+                        buf_size = strlen (buf);
 
                 } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamill")) {
                         buf = request_gstreamill_stat (httpmgmt, request_data);
+                        buf_size = strlen (buf);
 
                 } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamer")) {
                         buf = request_gstreamer_stat (httpmgmt, request_data);
+                        buf_size = strlen (buf);
 
                 } else if (g_str_has_prefix (request_data->uri, "/admin")) {
-                        buf = request_gstreamer_admin (httpmgmt, request_data);
+                        buf_size = request_gstreamer_admin (httpmgmt, request_data, &buf);
 
                 } else {
                         buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+                        buf_size = strlen (buf);
                 }
 
-                buf_size = strlen (buf);
                 ret = write (request_data->sock, buf, buf_size);
                 if (((ret > 0) && (ret != buf_size)) || ((ret == -1) && (errno == EAGAIN))) {
                         /* send not completed or socket block, resend late */
