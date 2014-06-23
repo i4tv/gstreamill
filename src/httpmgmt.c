@@ -229,15 +229,17 @@ static gchar * request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request
 {
         gchar *buf, *p;
 
-        if ((g_strcmp0 (request_data->uri, "/admin") == 0) ||
-            (g_strcmp0 (request_data->uri, "/admin/") == 0)) {
-                if (!g_file_get_contents ("/usr/local/share/gstreamill/data/index.html", &buf, NULL, NULL)) {
-                        buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
-                }
+        if (g_strcmp0 (request_data->uri, "/admin/") == 0) {
+                p = g_strdup_printf ("/usr/local/share/gstreamill/admin/index.html");
 
         } else {
-                buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+                p = g_strdup_printf ("/usr/local/share/gstreamill%s", request_data->uri);
         }
+        if (!g_file_get_contents (p, &buf, NULL, NULL)) {
+                buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+
+        }
+        g_free (p);
 
         return buf;
 }
