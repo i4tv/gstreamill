@@ -249,6 +249,10 @@ static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
                 } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamer")) {
                         buf = request_gstreamer_stat (httpmgmt, request_data);
 
+                } else if (g_str_has_prefix (request_data->uri, "/admin/index.html")) {
+                        if (!g_file_get_contents ("/usr/local/share/gstreamill/data/index.html", &buf, NULL, NULL)) {
+                                buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+                        }
                 } else {
                         buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
                 }
