@@ -225,6 +225,23 @@ static gchar * request_gstreamer_stat (HTTPMgmt *httpmgmt, RequestData *request_
         return buf;
 }
  
+static gchar * request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_data)
+{
+        gchar *buf, *p;
+
+        if ((g_strcmp0 (request_data->uri, "/admin") == 0) ||
+            (g_strcmp0 (request_data->uri, "/admin/") == 0)) {
+                if (!g_file_get_contents ("/usr/local/share/gstreamill/data/index.html", &buf, NULL, NULL)) {
+                        buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+                }
+
+        } else {
+                buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+        }
+
+        return buf;
+}
+
 static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
 {
         RequestData *request_data = data;
@@ -249,10 +266,9 @@ static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
                 } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamer")) {
                         buf = request_gstreamer_stat (httpmgmt, request_data);
 
-                } else if (g_str_has_prefix (request_data->uri, "/admin/index.html")) {
-                        if (!g_file_get_contents ("/usr/local/share/gstreamill/data/index.html", &buf, NULL, NULL)) {
-                                buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
-                        }
+                } else if (g_str_has_prefix (request_data->uri, "/admin")) {
+                        buf = request_gstreamer_admin (httpmgmt, request_data);
+
                 } else {
                         buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
                 }
