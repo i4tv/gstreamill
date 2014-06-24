@@ -224,24 +224,67 @@ static gchar * request_gstreamer_stat (HTTPMgmt *httpmgmt, RequestData *request_
 
         return buf;
 }
+
+static gchar * gen_http_header (gchar *path, gsize body_size)
+{
+        gchar *header;
+
+        if (g_str_has_suffix (path, ".html")) {
+                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/html", body_size, "");
+
+        } else if (g_str_has_suffix (path, ".css")) {
+                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/css", body_size, "");
+
+        } else if (g_str_has_suffix (path, ".js")) {
+                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/x-javascript", body_size, "");
+
+        } else if (g_str_has_suffix (path, ".ttf")) {
+                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/x-font-ttf", body_size, "");
+
+        } else if (g_str_has_suffix (path, ".svg")) {
+                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "image/svg+xml", body_size, "");
+
+        } else if (g_str_has_suffix (path, ".ico")) {
+                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "image/x-icon", body_size, "");
+
+        } else {
+                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/octet-stream", body_size, "");
+        }
+
+        return header;
+}
  
 static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_data, gchar **buf)
 {
-        gchar *p;
+        gchar *path, *header, *p;
         gsize buf_size;
 
+        /* prepare file path */
         if (g_strcmp0 (request_data->uri, "/admin/") == 0) {
-                p = g_strdup_printf ("%s/gstreamill/admin/index.html", DATADIR);
+                path = g_strdup_printf ("%s/gstreamill/admin/index.html", DATADIR);
 
         } else {
-                p = g_strdup_printf ("%s/gstreamill%s", DATADIR, request_data->uri);
+                path = g_strdup_printf ("%s/gstreamill%s", DATADIR, request_data->uri);
         }
-        if (!g_file_get_contents (p, buf, &buf_size, NULL)) {
+
+        /* read file content */
+        if (!g_file_get_contents (path, buf, &buf_size, NULL)) {
                 GST_ERROR ("read file %s failure", p);
                 *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
                 buf_size = strlen (*buf);
+
+        } else {
+                header = gen_http_header (path, buf_size);
+                p = g_malloc (buf_size + strlen (header));
+                memcpy (p, header, strlen (header));
+                memcpy (p + strlen (header), *buf, buf_size);
+                g_free (*buf);
+                *buf = p;
+                buf_size += strlen (header);
+                g_free (header);
         }
-        g_free (p);
+
+        g_free (path);
 
         return buf_size;
 }
