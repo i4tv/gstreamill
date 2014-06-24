@@ -231,12 +231,13 @@ static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_d
         gsize buf_size;
 
         if (g_strcmp0 (request_data->uri, "/admin/") == 0) {
-                p = g_strdup_printf ("/usr/local/share/gstreamill/admin/index.html");
+                p = g_strdup_printf ("%s/gstreamill/admin/index.html", DATADIR);
 
         } else {
-                p = g_strdup_printf ("/usr/local/share/gstreamill%s", request_data->uri);
+                p = g_strdup_printf ("%s/gstreamill%s", DATADIR, request_data->uri);
         }
         if (!g_file_get_contents (p, buf, &buf_size, NULL)) {
+                GST_ERROR ("read file %s failure", p);
                 *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
                 buf_size = strlen (*buf);
         }
