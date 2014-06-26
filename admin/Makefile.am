@@ -1,7 +1,9 @@
 
 admindir = $(datadir)/gstreamill/admin
 admin_DATA = \
-        index.html
+        index.html \
+        header.html \
+        footer.html
 
 admincssdir = $(datadir)/gstreamill/admin/css
 admincss_DATA = \

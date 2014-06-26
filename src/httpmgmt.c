@@ -254,9 +254,32 @@ static gchar * gen_http_header (gchar *path, gsize body_size)
         return header;
 }
  
+static gchar * add_top_bottom (gchar *middle)
+{
+        gchar *buf, *path, *top, *bottom;
+
+        path = g_strdup_printf ("%s/gstreamill/admin/header.html", DATADIR);
+        if (!g_file_get_contents (path, &top, NULL, NULL)) {
+                g_free (path);
+                return g_strdup ("Internal error, file header.html not found.");
+        }
+        g_free (path);
+        path = g_strdup_printf ("%s/gstreamill/admin/footer.html", DATADIR);
+        if (!g_file_get_contents (path, &bottom, NULL, NULL)) {
+                g_free (path);
+                return g_strdup ("Internal error, file footer.html not found.");
+        }
+        g_free (path);
+        buf = g_strdup_printf ("%s%s%s", top, middle, bottom);
+        g_free (top);
+        g_free (bottom);
+
+        return buf;
+}
+
 static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_data, gchar **buf)
 {
-        gchar *path, *header, *p;
+        gchar *path, *http_header, *p;
         gsize buf_size;
 
         /* prepare file path */
@@ -274,14 +297,23 @@ static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_d
                 buf_size = strlen (*buf);
 
         } else {
-                header = gen_http_header (path, buf_size);
-                p = g_malloc (buf_size + strlen (header));
-                memcpy (p, header, strlen (header));
-                memcpy (p + strlen (header), *buf, buf_size);
+                /* html file? add top and bottom */
+                if (g_str_has_suffix (path, ".html")) {
+                        gchar *middle;
+
+                        middle = *buf;
+                        *buf = add_top_bottom (middle);
+                        g_free (middle);
+                        buf_size = strlen (*buf);
+                }
+                http_header = gen_http_header (path, buf_size);
+                p = g_malloc (buf_size + strlen (http_header));
+                memcpy (p, http_header, strlen (http_header));
+                memcpy (p + strlen (http_header), *buf, buf_size);
                 g_free (*buf);
                 *buf = p;
-                buf_size += strlen (header);
-                g_free (header);
+                buf_size += strlen (http_header);
+                g_free (http_header);
         }
 
         g_free (path);
