@@ -3,7 +3,8 @@ admindir = $(datadir)/gstreamill/admin
 admin_DATA = \
         index.html \
         header.html \
-        footer.html
+        footer.html \
+        newencoderjob.html
 
 admincssdir = $(datadir)/gstreamill/admin/css
 admincss_DATA = \
