@@ -9,12 +9,14 @@ admin_DATA = \
 admincssdir = $(datadir)/gstreamill/admin/css
 admincss_DATA = \
         css/bootstrap.css \
-        css/bootstrap-theme.css
+        css/bootstrap-theme.css \
+        css/gstreamill.css
 
 adminjsdir = $(datadir)/gstreamill/admin/js
 adminjs_DATA = \
         js/bootstrap.js \
-        js/jquery.js
+        js/jquery.js \
+        js/gstreamill.js
 
 adminfontsdir = $(datadir)/gstreamill/admin/fonts
 adminfonts_DATA = \
