@@ -6,6 +6,7 @@
                 <!-- progressbar -->
                 <ul id="progressbar">
                     <li class="active">Select Live Origin</li>
+                    <li>Select Capture Device</li>
                     <li>Video Encoder Parameters</li>
                     <li>Audio Encoder Parameters</li>
                 </ul>
@@ -17,19 +18,33 @@
                     <input type="button" name="next" class="next action-button" value="Next" />
                 </fieldset>
                 <fieldset>
-                    <h2 class="fs-title">Select Capture Device</h2>
-                    <input type="text" name="twitter" placeholder="Twitter" />
-                    <input type="text" name="facebook" placeholder="Facebook" />
-                    <input type="text" name="gplus" placeholder="Google Plus" />
+                    <h2>Select Capture Device</h2>
+                    <select name="Select Video Capture">
+                        <option value="volvo">/dev/video0</option>
+                        <option value="saab">/dev/video1</option>
+                        <option value="fiat">/dev/video2</option>
+                        <option value="audi">/dev/video3</option>
+                    </select><br>
+                    <select name="Select Audio Capture">
+                        <option value="volvo">/dev/snd/pcmC0D0c</option>
+                        <option value="saab">/dev/snd/pcmC1D1c</option>
+                        <option value="fiat">/dev/snd/pcmC2D2c</option>
+                        <option value="audi">/dev/snd/pcmC3D3c</option>
+                    </select><br>
                     <input type="button" name="previous" class="previous action-button" value="Previous" />
                     <input type="button" name="next" class="next action-button" value="Next" />
                 </fieldset>
                 <fieldset style="display:none">
-                    <h2 class="fs-title">Video Encoder Parameters</h2>
-                    <input type="text" name="fname" placeholder="First Name" />
-                    <input type="text" name="lname" placeholder="Last Name" />
-                    <input type="text" name="phone" placeholder="Phone" />
-                    <textarea name="address" placeholder="Address"></textarea>
+                    <h2>Video Encoder Parameters</h2>
+                    <input type="text" name="fname" placeholder="First Name" /><br>
+                    <input type="text" name="lname" placeholder="Last Name" /><br>
+                    <input type="text" name="phone" placeholder="Phone" /><br>
+                    <input type="button" name="previous" class="previous action-button" value="Previous" />
+                    <input type="button" name="next" class="next action-button" value="Next" />
+                </fieldset>
+                <fieldset>
+                    <h2>Audio Encoder Parameters</h2>
+                    <input type="text" name="bitrate" placeholder="First Name" /><br>
                     <input type="button" name="previous" class="previous action-button" value="Previous" />
                     <input type="submit" name="submit" class="submit action-button" value="Submit" />
                 </fieldset>

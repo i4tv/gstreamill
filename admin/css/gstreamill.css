@@ -19,19 +19,6 @@
 #msform .action-button:hover, #msform .action-button:focus {
     box-shadow: 0 0 0 2px white, 0 0 0 3px #27AE60;
 }
-/*headings*/
-.fs-title {
-    font-size: 15px;
-    text-transform: uppercase;
-    color: #2C3E50;
-    margin-bottom: 10px;
-}
-.fs-subtitle {
-    font-weight: normal;
-    font-size: 13px;
-    color: #666;
-    margin-bottom: 20px;
-}
 /*progressbar*/
 #progressbar {
     margin-bottom: 30px;
@@ -45,7 +32,7 @@
     color: white;
     text-transform: uppercase;
     font-size: 9px;
-    width: 33.33%;
+    width: 25%;
     float: left;
     position: relative;
 }
