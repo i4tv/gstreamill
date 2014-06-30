@@ -6,6 +6,7 @@
  */
 
 #include <unistd.h>
+#include <glob.h>
 #include <gst/gst.h>
 #include <string.h>
 #include <stdlib.h>
@@ -286,18 +287,66 @@ static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_d
         if (g_strcmp0 (request_data->uri, "/admin/") == 0) {
                 path = g_strdup_printf ("%s/gstreamill/admin/index.html", DATADIR);
 
+        } else if (g_strcmp0 (request_data->uri, "/admin/capturedevices") == 0) {
+                glob_t pglob;
+                gint i;
+
+                p = g_strdup_printf ("{\n    audio: [");
+                /* alsa audio cature devices */
+                if (glob ("/dev/snd/pcmC*c", 0, NULL, &pglob) == 0) {
+                        for (i = 0; i < pglob.gl_pathc; i++) {
+                                *buf = g_strdup_printf ("%s\"%s\",", p, pglob.gl_pathv[i]);
+                                g_free (p);
+                                p = *buf;
+                        }
+                        globfree (&pglob);
+                }
+                if (p[strlen (p) - 1] == ',') {
+                        p[strlen (p) - 1] = ']';
+                        *buf = g_strdup_printf ("%s,\n    video: [", p);
+
+                } else {
+                        *buf = g_strdup_printf ("%s,\n    video: [", p);
+                }
+                g_free (p);
+                p = *buf;
+                /* v4l2 video capture devices */
+                if (glob ("/dev/video*", 0, NULL, &pglob) == 0) {
+                        for (i = 0; i < pglob.gl_pathc; i++) {
+                                *buf = g_strdup_printf ("%s\"%s\",", p, pglob.gl_pathv[i]);
+                                g_free (p);
+                                p = *buf;
+                        }
+                        globfree (&pglob);
+                }
+                if (p[strlen (p) - 1] == ',') {
+                        p[strlen (p) - 1] = ']';
+                        *buf = g_strdup_printf ("%s\n}", p);
+
+                } else {
+                        *buf = g_strdup_printf ("%s]\n}", p);
+                }
+                g_free (p);
+                p = *buf;
+                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), p);
+                g_free (p);
+                path = NULL;
+
         } else {
                 path = g_strdup_printf ("%s/gstreamill%s", DATADIR, request_data->uri);
         }
 
-        /* read file content */
-        if (!g_file_get_contents (path, buf, &buf_size, NULL)) {
+        if (path == NULL) {
+                /* not static content */
+                buf_size = strlen (*buf);
+
+        } else if (!g_file_get_contents (path, buf, &buf_size, NULL)) {
                 GST_ERROR ("read file %s failure", p);
                 *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
                 buf_size = strlen (*buf);
 
         } else {
-                /* html file? add top and bottom */
+                /* read file success, html file? add top and bottom */
                 if (g_str_has_suffix (path, ".html")) {
                         gchar *middle;
 
@@ -316,7 +365,9 @@ static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_d
                 g_free (http_header);
         }
 
-        g_free (path);
+        if (path != NULL) {
+                g_free (path);
+        }
 
         return buf_size;
 }
