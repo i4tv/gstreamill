@@ -1,12 +1,13 @@
 /*form styles*/
 #msform {
-    width: 400px;
-        margin: 50px auto;
+    width: 800px;
+    margin: 50px auto;
     text-align: center;
     position: relative;
 }
 
 #msform fieldset {
+    width: 400px;
     text-align: left;
     position: absolute;
 }
@@ -29,7 +30,6 @@
 
 #progressbar li {
     list-style-type: none;
-    color: white;
     text-transform: uppercase;
     font-size: 9px;
     width: 25%;
