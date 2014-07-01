@@ -42,6 +42,11 @@
                         "bframes" :3
                     }
                 },
+                "voaacenc" : {
+                    "property" : {
+                        "bitrate" : 64000
+                    }
+                },
                 "appsink" : {
                     "property" : {
                         "sync" : false
