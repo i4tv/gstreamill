@@ -291,7 +291,7 @@ static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_d
                 glob_t pglob;
                 gint i;
 
-                p = g_strdup_printf ("{\n    audio: [");
+                p = g_strdup_printf ("{\n    \"audio\": [");
                 /* alsa audio cature devices */
                 if (glob ("/dev/snd/pcmC*c", 0, NULL, &pglob) == 0) {
                         for (i = 0; i < pglob.gl_pathc; i++) {
@@ -303,10 +303,10 @@ static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_d
                 }
                 if (p[strlen (p) - 1] == ',') {
                         p[strlen (p) - 1] = ']';
-                        *buf = g_strdup_printf ("%s,\n    video: [", p);
+                        *buf = g_strdup_printf ("%s,\n    \"video\": [", p);
 
                 } else {
-                        *buf = g_strdup_printf ("%s,\n    video: [", p);
+                        *buf = g_strdup_printf ("%s,\n    \"video\": [", p);
                 }
                 g_free (p);
                 p = *buf;
@@ -324,7 +324,7 @@ static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_d
                         *buf = g_strdup_printf ("%s\n}", p);
 
                 } else {
-                        *buf = g_strdup_printf ("%s]\n}", p);
+                        *buf = g_strdup_printf ("%s]\n}\n", p);
                 }
                 g_free (p);
                 p = *buf;
