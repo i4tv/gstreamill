@@ -887,7 +887,7 @@ gint gstreamill_job_number (Gstreamill *gstreamill)
 EncoderOutput * gstreamill_get_encoder_output (Gstreamill *gstreamill, gchar *uri)
 {
         Job *job;
-        gint index;
+        guint index;
         GRegex *regex = NULL;
         GMatchInfo *match_info = NULL;
         gchar *e;
