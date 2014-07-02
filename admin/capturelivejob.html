@@ -5,29 +5,23 @@
             <form id="msform">
                 <!-- progressbar -->
                 <ul id="progressbar">
-                    <li class="active">Select Live Origin</li>
-                    <li>Select Capture Device</li>
+                    <li class="active">Select Capture Device</li>
                     <li>Video Encoder Parameters</li>
                     <li>Audio Encoder Parameters</li>
                 </ul>
                 <!-- use javascript -->
                 <fieldset>
-                    <input type="radio" name="liveorigin" value="capture">Capture Device</br>
-                    <input type="radio" name="liveorigin" value="network">Network</br>
-                    <input type="button" name="next" class="next action-button" value="Next" />
-                </fieldset>
-                <fieldset>
                     <select name="Select Video Capture">
-                        <option value="volvo">/dev/video0</option>
-                        <option value="saab">/dev/video1</option>
-                        <option value="fiat">/dev/video2</option>
-                        <option value="audi">/dev/video3</option>
-                    </select><br>
+                        <option value="/dev/video0">/dev/video0</option>
+                        <option value="/dev/video1">/dev/video1</option>
+                        <option value="/dev/video2">/dev/video2</option>
+                        <option value="/dev/video3">/dev/video3</option>
+                    </select>
                     <select name="Select Audio Capture">
-                        <option value="volvo">/dev/snd/pcmC0D0c</option>
-                        <option value="saab">/dev/snd/pcmC1D1c</option>
-                        <option value="fiat">/dev/snd/pcmC2D2c</option>
-                        <option value="audi">/dev/snd/pcmC3D3c</option>
+                        <option value="hw:0,0">/dev/snd/pcmC0D0c</option>
+                        <option value="hw:1,1">/dev/snd/pcmC1D1c</option>
+                        <option value="hw:2,2">/dev/snd/pcmC2D2c</option>
+                        <option value="hw:3,3">/dev/snd/pcmC3D3c</option>
                     </select><br>
                     <input type="button" name="previous" class="previous action-button" value="Previous" />
                     <input type="button" name="next" class="next action-button" value="Next" />
