@@ -762,6 +762,23 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
         return 0;
 }
 
+gboolean is_encoder_output_ready (EncoderOutput *encoder_output)
+{
+        gboolean ready;
+
+        
+        sem_wait (encoder_output->semaphore);
+        if (*(encoder_output->head_addr) == *(encoder_output->tail_addr)) {
+                ready = FALSE;
+
+        } else {
+                ready = TRUE;
+        }
+        sem_post (encoder_output->semaphore);
+
+        return ready;
+}
+
 /*
  * encoder_output_rap_timestamp:
  * @encoder_output: (in): the encoder output.

@@ -453,7 +453,7 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
                 }
                 buf_size = strlen (buf);
 
-        } else if (*(encoder_output->head_addr) == *(encoder_output->tail_addr)) {
+        } else if (!is_encoder_output_ready (encoder_output)) {
                 /* not ready */
                 GST_DEBUG ("%s not ready.", request_data->uri);
                 buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);

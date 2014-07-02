@@ -97,6 +97,7 @@ struct _EncoderClass {
 GType encoder_get_type (void);
 
 guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, Source *source);
+gboolean is_encoder_output_ready (EncoderOutput *encoder_output);
 GstClockTime encoder_output_rap_timestamp (EncoderOutput *encoder_output, guint64 rap_addr);
 guint64 encoder_output_gop_seek (EncoderOutput *encoder_output, GstClockTime timestamp);
 guint64 encoder_output_gop_size (EncoderOutput *encoder_output, guint64 rap_addr);
