@@ -4,7 +4,8 @@ admin_DATA = \
         index.html \
         header.html \
         footer.html \
-        newencoderjob.html
+        capturelivejob.html \
+        networklivejob.html
 
 admincssdir = $(datadir)/gstreamill/admin/css
 admincss_DATA = \
