@@ -28,7 +28,7 @@
                 <ul id="progressbar">
                     <li class="active">Select Capture Device</li>
                     <li>Video Encoder Parameters</li>
-                    <li>Audio Encoder Parameters</li>
+                    <li>HLS Parameters</li>
                 </ul>
                 <!-- use javascript -->
                 <fieldset>
@@ -39,14 +39,13 @@
                     <input type="button" name="next" class="next action-button" value="Next" />
                 </fieldset>
                 <fieldset style="display:none">
-                    <input type="text" name="fname" placeholder="First Name" /><br>
-                    <input type="text" name="lname" placeholder="Last Name" /><br>
-                    <input type="text" name="phone" placeholder="Phone" /><br>
+                    Video Bitrate<input type="text" name="vbitrate" /><br>
                     <input type="button" name="previous" class="previous action-button" value="Previous" />
                     <input type="button" name="next" class="next action-button" value="Next" />
                 </fieldset>
                 <fieldset>
-                    <input type="text" name="bitrate" placeholder="First Name" /><br>
+                    Window Size<input type="text" name="wsize"><br>
+                    Segment Duration<input type="text" name="sduration"><br>
                     <input type="button" name="previous" class="previous action-button" value="Previous" />
                     <input type="submit" name="submit" class="submit action-button" value="Submit" />
                 </fieldset>
