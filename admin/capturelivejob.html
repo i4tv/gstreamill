@@ -1,4 +1,25 @@
 
+
+    <script type="text/javascript">
+        $(document).ready(function(){
+            $.getJSON('capturedevices', function(data){
+                $.each(data, function(key, value){
+                    var html = ''
+                    for (i = 0; i < value.length; i++) {
+                        html += '<option>' + value[i] + '</option>';
+                    }
+                    if (key == "video") {
+                        $('#video').append(html);
+                    } else {
+                        $('#audio').append(html);
+                    }
+                });
+            });
+            return false;
+        });
+    </script>
+
+
     <div class="container-fluid">
         <div class="row">
             <!-- multistep form -->
@@ -11,17 +32,9 @@
                 </ul>
                 <!-- use javascript -->
                 <fieldset>
-                    <select name="Select Video Capture">
-                        <option value="/dev/video0">/dev/video0</option>
-                        <option value="/dev/video1">/dev/video1</option>
-                        <option value="/dev/video2">/dev/video2</option>
-                        <option value="/dev/video3">/dev/video3</option>
+                    <select name="Select Video Capture" id="video">
                     </select>
-                    <select name="Select Audio Capture">
-                        <option value="hw:0,0">/dev/snd/pcmC0D0c</option>
-                        <option value="hw:1,1">/dev/snd/pcmC1D1c</option>
-                        <option value="hw:2,2">/dev/snd/pcmC2D2c</option>
-                        <option value="hw:3,3">/dev/snd/pcmC3D3c</option>
+                    <select name="Select Audio Capture" id="audio">
                     </select><br>
                     <input type="button" name="previous" class="previous action-button" value="Previous" />
                     <input type="button" name="next" class="next action-button" value="Next" />
