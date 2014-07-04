@@ -242,6 +242,7 @@ static gint http_client_request (Job *job, guint8 *data, gsize count)
                 if (hostp == (struct hostent *)NULL) {
                         GST_ERROR ("put segment, host %s not found", job->m3u8push_host);
                         g_free (data);
+                        close (socketfd);
                         return -1;
                 }
                 memcpy (&serveraddr.sin_addr, hostp->h_addr, sizeof (serveraddr.sin_addr));
@@ -250,6 +251,7 @@ static gint http_client_request (Job *job, guint8 *data, gsize count)
         if (ret < 0) {
                 GST_ERROR ("put segment, connect error: %s", g_strerror (errno));
                 g_free (data);
+                close (socketfd);
                 return  -1;
         }
 
