@@ -12,9 +12,9 @@
                 "property" : {
                     "device" : "/dev/video0",
                     "io-mode" : 1,
-                    "do-timestamp" : true,
-                    "norm" : "PAL"
-                }
+                    "do-timestamp" : true
+                },
+                "caps" : "video/x-raw,width=720,height=576"
             }
         },
         "bins" : [
@@ -36,10 +36,19 @@
                 },
                 "x264enc" : {
                     "property" : {
-                        "bitrate" : 800,
+                        "bitrate" : 1200,
                         "byte-stream" : true,
                         "threads" : 4,
-                        "bframes" :3
+                        "bframes" :3,
+                        "qp-min" : 1,
+                        "qp-max" : 51,
+                        "qp-step" : 10,
+                        "vbv-buf-capacity" : 5000,
+                        "rc-lookahead" : 50,
+                        "mb-tree" : true,
+                        "dct8x8" : true,
+                        "speed-preset" : 0,
+                        "option-string" : ":ref=3:me=umh:subme=16:merange=64:nf=1:deblock=1,-2:weightp=1:b-pyramid=2:direct=spatial:nal-hrd=vbr"
                     }
                 },
                 "voaacenc" : {
