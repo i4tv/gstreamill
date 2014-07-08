@@ -3,45 +3,18 @@
         <div class="row">
             <!-- multistep form -->
             <form id="msform">
-                <!-- progressbar -->
-                <ul id="progressbar">
-                    <li class="active">Select Live Origin</li>
-                    <li>Select Capture Device</li>
-                    <li>Video Encoder Parameters</li>
-                    <li>Audio Encoder Parameters</li>
-                </ul>
-                <!-- use javascript -->
                 <fieldset>
-                    <input type="radio" name="liveorigin" value="capture">Capture Device</br>
-                    <input type="radio" name="liveorigin" value="network">Network</br>
-                    <input type="button" name="next" class="next action-button" value="Next" />
-                </fieldset>
-                <fieldset>
-                    <select name="Select Video Capture">
-                        <option value="volvo">/dev/video0</option>
-                        <option value="saab">/dev/video1</option>
-                        <option value="fiat">/dev/video2</option>
-                        <option value="audi">/dev/video3</option>
-                    </select><br>
-                    <select name="Select Audio Capture">
-                        <option value="volvo">/dev/snd/pcmC0D0c</option>
-                        <option value="saab">/dev/snd/pcmC1D1c</option>
-                        <option value="fiat">/dev/snd/pcmC2D2c</option>
-                        <option value="audi">/dev/snd/pcmC3D3c</option>
-                    </select><br>
-                    <input type="button" name="previous" class="previous action-button" value="Previous" />
-                    <input type="button" name="next" class="next action-button" value="Next" />
-                </fieldset>
-                <fieldset style="display:none">
-                    <input type="text" name="fname" placeholder="First Name" /><br>
-                    <input type="text" name="lname" placeholder="Last Name" /><br>
-                    <input type="text" name="phone" placeholder="Phone" /><br>
-                    <input type="button" name="previous" class="previous action-button" value="Previous" />
-                    <input type="button" name="next" class="next action-button" value="Next" />
-                </fieldset>
-                <fieldset>
-                    <input type="text" name="bitrate" placeholder="First Name" /><br>
-                    <input type="button" name="previous" class="previous action-button" value="Previous" />
+                    <label for="name">Job name: </label></br>
+                    <input type="text" name="name" id="name" placeholder="Job Name" /><br>
+                    <label for="source">Input: </label></br>
+                    <input type="radio" name="source" id="source" value="capturer">Capture Device
+                    <input type="radio" name="source" id="source" value="network">Network</br>
+                    <label for="udp">Multi bitrate output: </label></br>
+                    <input type=checkbox name="multi" id="multi">Multi bitrate output</br>
+                    <label for="udp">UDP output: </label></br>
+                    <input type=checkbox name="udp" id="udp">UDP output</br>
+                    <label for="m3u8">M3U8 output: </label></br>
+                    <input type=checkbox name="m3u8" id="m3u8">M3U8 output</br>
                     <input type="submit" name="submit" class="submit action-button" value="Submit" />
                 </fieldset>
             </form>
