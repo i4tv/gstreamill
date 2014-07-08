@@ -1,15 +1,28 @@
 /*form styles*/
 #msform {
-    width: 800px;
+    width: 600px;
     margin: 50px auto;
     text-align: center;
     position: relative;
 }
 
 #msform fieldset {
-    width: 400px;
+    width: 600px;
     text-align: left;
     position: absolute;
+}
+
+#msform fieldset .agroup {
+    border-bottom: 1px solid lightgray;
+}
+
+#msform fieldset input {
+    margin-top: 5px;
+    margin-bottom: 20px;
+}
+
+#msform fieldset label {
+    margin-top: 20px;
 }
 
 /*Hide all except first fieldset*/

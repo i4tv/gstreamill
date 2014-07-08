@@ -4,17 +4,27 @@
             <!-- multistep form -->
             <form id="msform">
                 <fieldset>
-                    <label for="name">Job name: </label></br>
-                    <input type="text" name="name" id="name" placeholder="Job Name" /><br>
-                    <label for="source">Input: </label></br>
-                    <input type="radio" name="source" id="source" value="capturer">Capture Device
-                    <input type="radio" name="source" id="source" value="network">Network</br>
-                    <label for="udp">Multi bitrate output: </label></br>
-                    <input type=checkbox name="multi" id="multi">Multi bitrate output</br>
-                    <label for="udp">UDP output: </label></br>
-                    <input type=checkbox name="udp" id="udp">UDP output</br>
-                    <label for="m3u8">M3U8 output: </label></br>
-                    <input type=checkbox name="m3u8" id="m3u8">M3U8 output</br>
+                    <div class="agroup">
+                        <label for="name">Job name: </label></br>
+                        <input type="text" name="name" id="name" placeholder="Job Name" style="border-bottom"/><br>
+                    </div>
+                    <div class="agroup">
+                        <label for="source">Input: </label></br>
+                        <input type="radio" name="source" id="source" value="capturer">v4l2src capture Device
+                        <input type="radio" name="source" id="source" value="network">Network</br>
+                    </div>
+                    <div class="agroup">
+                        <label for="udp">Multi bitrate output: </label></br>
+                        <input type=checkbox name="multi" id="multi">Multi bitrate output</br>
+                    </div>
+                    <div class="agroup">
+                        <label for="udp">UDP output: </label></br>
+                        <input type=checkbox name="udp" id="udp">UDP output</br>
+                    </div>
+                    <div class="agroup">
+                        <label for="m3u8">M3U8 output: </label></br>
+                        <input type=checkbox name="m3u8" id="m3u8">M3U8 output</br>
+                    </div>
                     <input type="submit" name="submit" class="submit action-button" value="Submit" />
                 </fieldset>
             </form>
