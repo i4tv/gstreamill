@@ -287,6 +287,11 @@ static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_d
         if (g_strcmp0 (request_data->uri, "/admin/") == 0) {
                 path = g_strdup_printf ("%s/gstreamill/admin/index.html", DATADIR);
 
+        } else if ((request_data->method == HTTP_POST) && (g_strcmp0 (request_data->uri, "/admin/newlivejob") == 0)) {
+                p = request_data->raw_request + request_data->header_size;
+                GST_ERROR ("%s", p);
+                path = NULL;
+
         } else if (g_strcmp0 (request_data->uri, "/admin/capturedevices") == 0) {
                 glob_t pglob;
                 gint i;

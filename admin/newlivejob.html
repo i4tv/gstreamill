@@ -23,8 +23,18 @@
                         <input type=checkbox name="udp" id="udp"> UDP output</br>
                         <input type=checkbox name="m3u8" id="m3u8"> M3U8 output</br>
                     </div>
-                    <input type="submit" name="submit" value="Create job" />
+                    <input type="button" name="newjob" onclick="newlivejob();" value="Create job" />
                 </fieldset>
             </form>
         </div>
     </div>
+
+
+    <script type="text/javascript">
+    function newlivejob()
+    {
+        var newjob = {"name" : $("#name").val(), "source" : $("#source").val(), "multi" : $("#multi").val(), "udp" : $("#udp").val(), "m3u8" : $("#m3u8").val()};
+
+        var posting = $.post("newlivejob", JSON.stringify(newjob));
+    }
+    </script>
