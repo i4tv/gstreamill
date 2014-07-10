@@ -24,3 +24,7 @@ adminfonts_DATA = \
         fonts/glyphicons-halflings-regular.svg \
         fonts/glyphicons-halflings-regular.ttf \
         fonts/glyphicons-halflings-regular.woff
+
+adminjobsdir = $(datadir)/gstreamill/admin/jobtemplates
+adminjobs_DATA = \
+        jobtemplates/v4l2src_multibitrate_1_udp_n_m3u8_y.job
