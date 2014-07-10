@@ -36,6 +36,7 @@
                  "Server: %s-%s\r\n" \
                  "Content-Type: %s\r\n" \
                  "Content-Length: %zu\r\n" \
+                 "Access-Control-Allow-Origin: *\r\n" \
                  "Connection: Close\r\n\r\n" \
                  "%s"
 
