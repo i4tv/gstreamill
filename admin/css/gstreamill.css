@@ -20,9 +20,9 @@
     border-bottom: 1px solid lightgray;
 }
 
-#msform fieldset input, label {
-    margin-top: 5px;
-    margin-bottom: 5px;
+#msform fieldset input, label, select {
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 /*Hide all except first fieldset*/

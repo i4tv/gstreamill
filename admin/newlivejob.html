@@ -19,7 +19,12 @@
                     <div class="agroup">
                         <label for="udp">Output type: </label></br>
                         have multi bitrate output? udp output? m3u8 output.</br>
-                        <input type=checkbox name="multi" id="multi"> Multi bitrate output</br>
+                        multibitrate number: 
+                        <select name="multi" id="multi">
+                            <option value="1">one</option>
+                            <option value="2">two</option>
+                            <option value="3">three</option>
+                        </select></br>
                         <input type=checkbox name="udp" id="udp"> UDP output</br>
                         <input type=checkbox name="m3u8" id="m3u8"> M3U8 output</br>
                     </div>
@@ -33,8 +38,31 @@
     <script type="text/javascript">
     function newlivejob()
     {
-        var newjob = {"name" : $("#name").val(), "source" : $("#source").val(), "multi" : $("#multi").val(), "udp" : $("#udp").val(), "m3u8" : $("#m3u8").val()};
+        var newjob = { };
 
+        if ($("#name").val() == "") {
+            alert ("Input name please!");
+            return;
+        }
+        newjob.name = $("#name").val();
+        if (!$("#source").is(":checked")) {
+            alert ("select input type");
+            return;
+        }
+        newjob.source = $("#source:checked").val();
+        newjob.multi = $("#multi").val();
+        if ($("#udp").is(":checked")) {
+            newjob.udp = "yes";
+        } else {
+            newjob.udp = "no";
+        }
+        if ($("#m3u8").is(":checked")) {
+            newjob.m3u8 = "yes";
+        } else {
+            newjob.m3u8 = "no";
+        }
+alert (JSON.stringify(newjob));
+return;
         var posting = $.post("newlivejob", JSON.stringify(newjob));
     }
     </script>
