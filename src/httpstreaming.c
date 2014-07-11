@@ -312,7 +312,7 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
                 gsize gop_size;
 
                 gop_size = encoder_output_gop_size (encoder_output, rap_addr);
-                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "video/mpeg", gop_size, ""); 
+                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "video/mpeg", gop_size, CACHE_60s, ""); 
                 *buf = g_malloc (strlen (header) + gop_size);
                 memcpy (*buf, header, strlen(header));
                 if (rap_addr + gop_size + 12 < encoder_output->cache_size) {
@@ -399,6 +399,7 @@ static gchar * request_crossdomain (RequestData *request_data)
                                PACKAGE_VERSION,
                                "text/xml",
                                strlen (crossdomain),
+                               NO_CACHE,
                                crossdomain);
         } else {
                 buf = NULL;
@@ -420,6 +421,7 @@ static gchar * request_master_m3u8_playlist (HTTPStreaming *httpstreaming, Reque
                                PACKAGE_VERSION,
                                "application/vnd.apple.mpegurl",
                                strlen (master_m3u8_playlist),
+                               CACHE_60s,
                                master_m3u8_playlist);
                 g_free (master_m3u8_playlist);
 
@@ -473,6 +475,7 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
                                        PACKAGE_VERSION,
                                        "application/vnd.apple.mpegurl",
                                        strlen (m3u8playlist),
+                                       CACHE_60s,
                                        m3u8playlist); 
                 g_free (m3u8playlist);
                 buf_size = strlen (buf);

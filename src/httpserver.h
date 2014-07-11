@@ -37,8 +37,12 @@
                  "Content-Type: %s\r\n" \
                  "Content-Length: %zu\r\n" \
                  "Access-Control-Allow-Origin: *\r\n" \
+                 "Cache-Control: %s\r\n" \
                  "Connection: Close\r\n\r\n" \
                  "%s"
+
+#define NO_CACHE "no-cache"
+#define CACHE_60s "max-age=60"
 
 #define http_chunked "HTTP/1.1 200 OK\r\n" \
                      "Content-Type: video/mpeg\r\n" \

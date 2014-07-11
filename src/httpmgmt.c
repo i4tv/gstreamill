@@ -140,7 +140,7 @@ static gchar * start_job (HTTPMgmt *httpmgmt, RequestData *request_data)
                 /* start a job. */
                 var = request_data->raw_request + request_data->header_size;
                 p = gstreamill_job_start (httpmgmt->gstreamill, var);
-                buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), p);
+                buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
         } else {
@@ -165,7 +165,7 @@ static gchar * stop_job (HTTPMgmt *httpmgmt, RequestData *request_data)
                         g_match_info_free (match_info);
                         p = gstreamill_job_stop (httpmgmt->gstreamill, buf);
                         g_free (buf);
-                        buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), p);
+                        buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                         g_free (p);
                         return buf;
                 }
@@ -181,32 +181,32 @@ static gchar * request_gstreamill_stat (HTTPMgmt *httpmgmt, RequestData *request
 
         if (g_strcmp0 (request_data->uri, "/stat/gstreamill") == 0) {
                 p = gstreamill_stat (httpmgmt->gstreamill);
-                buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), p);
+                buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
         } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamill/job/number")) {
                 p = g_strdup_printf ("%d", gstreamill_job_number (httpmgmt->gstreamill));
-                buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (p), p);
+                buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (p), NO_CACHE, p);
                 g_free (p);
 
         } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamill/job/")) {
                 p = gstreamill_job_stat (httpmgmt->gstreamill, request_data->uri);
-                buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (p), p);
+                buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (p), NO_CACHE, p);
                 g_free (p);
 
         } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamill/starttime")) {
                 p = g_strdup_printf ("%s", gstreamill_get_start_time (httpmgmt->gstreamill));
-                buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (p), p);
+                buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (p), NO_CACHE, p);
                 g_free (p);
 
         } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamill/version")) {
-                buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (VERSION), VERSION);
+                buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (VERSION), NO_CACHE, VERSION);
 
         } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamill/builddate")) {
-                buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (__DATE__), __DATE__);
+                buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (__DATE__), NO_CACHE, __DATE__);
 
         } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamill/buildtime")) {
-                buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (__TIME__), __TIME__);
+                buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (__TIME__), NO_CACHE, __TIME__);
 
         } else {
                 buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
@@ -220,7 +220,7 @@ static gchar * request_gstreamer_stat (HTTPMgmt *httpmgmt, RequestData *request_
         gchar *buf, *p;
 
         p = gstreamill_gstreamer_stat (httpmgmt->gstreamill, request_data->uri);
-        buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (p), p);
+        buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (p), NO_CACHE, p);
         g_free (p);
 
         return buf;
@@ -231,25 +231,25 @@ static gchar * gen_http_header (gchar *path, gsize body_size)
         gchar *header;
 
         if (g_str_has_suffix (path, ".html")) {
-                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/html", body_size, "");
+                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/html", body_size, NO_CACHE, "");
 
         } else if (g_str_has_suffix (path, ".css")) {
-                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/css", body_size, "");
+                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/css", body_size, NO_CACHE, "");
 
         } else if (g_str_has_suffix (path, ".js")) {
-                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/x-javascript", body_size, "");
+                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/x-javascript", body_size, NO_CACHE, "");
 
         } else if (g_str_has_suffix (path, ".ttf")) {
-                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/x-font-ttf", body_size, "");
+                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/x-font-ttf", body_size, NO_CACHE, "");
 
         } else if (g_str_has_suffix (path, ".svg")) {
-                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "image/svg+xml", body_size, "");
+                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "image/svg+xml", body_size, NO_CACHE, "");
 
         } else if (g_str_has_suffix (path, ".ico")) {
-                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "image/x-icon", body_size, "");
+                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "image/x-icon", body_size, NO_CACHE, "");
 
         } else {
-                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/octet-stream", body_size, "");
+                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/octet-stream", body_size, NO_CACHE, "");
         }
 
         return header;
@@ -333,7 +333,7 @@ static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_d
                 }
                 g_free (p);
                 p = *buf;
-                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), p);
+                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
                 path = NULL;
 
