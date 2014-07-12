@@ -12,7 +12,7 @@
                     <div class="agroup">
                         <label for="source">Input type: </label></br>
                         Audio and video source, v4l2src, network or test source(videotestsrc for video and audiotestsrc for audio).</br>
-                        <input type="radio" name="source" id="source" value="capturer"> v4l2src capture Device</br>
+                        <input type="radio" name="source" id="source" value="v4l2src"> v4l2src capture Device</br>
                         <input type="radio" name="source" id="source" value="network"> Network</br>
                         <input type="radio" name="source" id="source" value="testsrc"> Test src</br>
                     </div>
@@ -20,7 +20,7 @@
                         <label for="udp">Output type: </label></br>
                         have multi bitrate output? udp output? m3u8 output.</br>
                         multibitrate number: 
-                        <select name="multi" id="multi">
+                        <select name="multibitrate" id="multibitrate">
                             <option value="1">one</option>
                             <option value="2">two</option>
                             <option value="3">three</option>
@@ -50,7 +50,7 @@
             return;
         }
         newjob.source = $("#source:checked").val();
-        newjob.multi = $("#multi").val();
+        newjob.multibitrate = $("#multibitrate").val();
         if ($("#udp").is(":checked")) {
             newjob.udp = "yes";
         } else {
@@ -61,8 +61,7 @@
         } else {
             newjob.m3u8 = "no";
         }
-alert (JSON.stringify(newjob));
-return;
+
         var posting = $.post("newlivejob", JSON.stringify(newjob));
     }
     </script>

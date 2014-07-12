@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "parson.h"
 #include "httpmgmt.h"
 #include "gstreamill.h"
 
@@ -278,6 +279,79 @@ static gchar * add_top_bottom (gchar *middle)
         return buf;
 }
 
+static gchar * new_live_job (gchar *newjob)
+{
+        JSON_Value *val;
+        JSON_Object *obj;
+        gchar *name, *template, *p1, *p2;
+
+        val = json_parse_string_with_comments(newjob);
+        if (val == NULL) {
+                GST_ERROR ("invalid json type of new job description");
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid json type of new job description\"}\n");
+        }
+
+        obj = json_value_get_object (val);
+        name = (gchar *)json_object_get_string (obj, "name");
+        if (name == NULL) {
+                GST_ERROR ("invalid new job without name");
+                json_value_free (val);
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without name\"}\n");
+        }
+        p1 = (gchar *)json_object_get_string (obj, "source");
+        if (p1 == NULL) {
+                GST_ERROR ("invalid new job without source");
+                json_value_free (val);
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without source\"\n}");
+        }
+        template = g_strdup_printf ("source_%s", p1);
+        p1 = (gchar *)json_object_get_string (obj, "multibitrate");
+        if (p1 == NULL) {
+                GST_ERROR ("invalid new job without multibitrate");
+                json_value_free (val);
+                g_free (template);
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without multirate\"\n}");
+        }
+        p2 = template;
+        template = g_strdup_printf ("%s.multibitrate_%s", p2, p1);
+        g_free (p2);
+        p1 = (gchar *)json_object_get_string (obj, "udp");
+        if (p1 == NULL) {
+                GST_ERROR ("invalid new job without udp");
+                json_value_free (val);
+                g_free (template);
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without udp\"\n}");
+        }
+        p2 = template;
+        template = g_strdup_printf ("%s.udp_%s", p2, p1);
+        g_free (p2);
+        p1 = (gchar *)json_object_get_string (obj, "m3u8");
+        if (p1 == NULL) {
+                GST_ERROR ("invalid new job without m3u8");
+                json_value_free (val);
+                g_free (template);
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without m3u8\"\n}");
+        }
+        p2 = template;
+        template = g_strdup_printf ("%s/gstreamill/admin/jobtemplates/%s.m3u8_%s", DATADIR, p2, p1);
+        g_free (p2);
+        if (!g_file_get_contents (template, &p1, NULL, NULL)) {
+                GST_ERROR ("no template %s found", template);
+                g_free (template);
+                json_value_free (val);
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"no suited template found\"\n}");
+        }
+        p2 = g_strdup_printf ("/etc/gstreamill.d/%s.job", name);
+GST_ERROR ("job file %s", p2);
+        g_file_set_contents (p2, p1, strlen(p1), NULL);
+        g_free (template);
+        g_free (p1);
+        g_free (p2);
+        json_value_free (val);
+
+        return g_strdup ("{\n    \"result\": \"success\"\n}");
+}
+
 static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_data, gchar **buf)
 {
         gchar *path, *http_header, *p;
@@ -290,6 +364,7 @@ static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_d
         } else if ((request_data->method == HTTP_POST) && (g_strcmp0 (request_data->uri, "/admin/newlivejob") == 0)) {
                 p = request_data->raw_request + request_data->header_size;
                 GST_ERROR ("%s", p);
+                *buf = new_live_job (p);
                 path = NULL;
 
         } else if (g_strcmp0 (request_data->uri, "/admin/capturedevices") == 0) {
