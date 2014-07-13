@@ -398,7 +398,7 @@ static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_d
                         *buf = g_strdup_printf ("%s,\n    \"video\": [", p);
 
                 } else {
-                        *buf = g_strdup_printf ("%s,\n    \"video\": [", p);
+                        *buf = g_strdup_printf ("%s],\n    \"video\": [", p);
                 }
                 g_free (p);
                 p = *buf;
