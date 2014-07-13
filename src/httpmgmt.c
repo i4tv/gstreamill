@@ -298,7 +298,7 @@ static gchar * new_live_job (gchar *newjob)
                 json_value_free (val);
                 return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without name\"\n}\n");
         }
-        p1 = g_strdup_printf ("/etc/gstreamill.d/%s", name);
+        p1 = g_strdup_printf ("/etc/gstreamill.d/%s.job", name);
         if (g_file_test (p1, G_FILE_TEST_EXISTS)) {
                 GST_ERROR ("new job %s, already exist", name);
                 json_value_free (val);
