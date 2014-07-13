@@ -288,7 +288,7 @@ static gchar * new_live_job (gchar *newjob)
         val = json_parse_string_with_comments(newjob);
         if (val == NULL) {
                 GST_ERROR ("invalid json type of new job description");
-                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid json type of new job description\"}\n");
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid json type of new job description\"\n}\n");
         }
 
         obj = json_value_get_object (val);
@@ -296,7 +296,18 @@ static gchar * new_live_job (gchar *newjob)
         if (name == NULL) {
                 GST_ERROR ("invalid new job without name");
                 json_value_free (val);
-                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without name\"}\n");
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without name\"\n}\n");
+        }
+        p1 = g_strdup_printf ("/etc/gstreamill.d/%s", name);
+        if (g_file_test (p1, G_FILE_TEST_EXISTS)) {
+                GST_ERROR ("new job %s, already exist", name);
+                json_value_free (val);
+                g_free (p1);
+                return  g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"already exist\"\n}\n");
+        }
+        g_free (p1);
+        if (!g_file_test ("/etc/gstreamill.d", G_FILE_TEST_EXISTS & G_FILE_TEST_IS_DIR)) {
+                g_mkdir ("/etc/gstreamill.d", S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
         }
         p1 = (gchar *)json_object_get_string (obj, "source");
         if (p1 == NULL) {
@@ -341,9 +352,11 @@ static gchar * new_live_job (gchar *newjob)
                 json_value_free (val);
                 return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"no suited template found\"\n}");
         }
-        p2 = g_strdup_printf ("/etc/gstreamill.d/%s.job", name);
-GST_ERROR ("job file %s", p2);
-        g_file_set_contents (p2, p1, strlen(p1), NULL);
+        p2 = g_strdup_printf (p1, name);
+        g_free (p1);
+        p1 = g_strdup_printf ("/etc/gstreamill.d/%s.job", name);
+
+        g_file_set_contents (p1, p2, strlen(p2), NULL);
         g_free (template);
         g_free (p1);
         g_free (p2);
@@ -363,7 +376,6 @@ static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_d
 
         } else if ((request_data->method == HTTP_POST) && (g_strcmp0 (request_data->uri, "/admin/newlivejob") == 0)) {
                 p = request_data->raw_request + request_data->header_size;
-                GST_ERROR ("%s", p);
                 *buf = new_live_job (p);
                 path = NULL;
 

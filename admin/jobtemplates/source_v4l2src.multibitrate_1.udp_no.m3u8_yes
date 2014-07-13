@@ -1,5 +1,5 @@
 {
-    "name" : "<%name%>",
+    "name" : "%s",
     "debug" : "mpegtsmux:2",
     "source" : {
         "elements" : {
