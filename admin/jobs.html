@@ -1,6 +1,6 @@
 
     <div class="container-fluid joblist">
-        <table class="table joblist">
+        <table class="table" id="jobtable">
                 <tr>
                     <th>Job</th>
                     <th>Type</th>
@@ -13,3 +13,10 @@
                 </tr>
         </table>
     </div>
+
+
+    <script type="text/javascript">
+    $(document).ready(function () {
+        $('#jobtable tr:last').after('<tr><td>2</td><td>live</td><td>running</td></tr>');
+    })
+    </script>
