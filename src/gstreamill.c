@@ -1023,7 +1023,7 @@ gchar * gstreamill_stat (Gstreamill *gstreamill)
                           "    \"builddate\": \"%s\",\n"
                           "    \"buildtime\": \"%s\",\n"
                           "    \"starttime\": \"%s\",\n"
-                          "    \"job\": %s]\n}\n";
+                          "    \"jobs\": %s]\n}\n";
         gchar *stat, *jobarray, *p;
         GSList *list;
         Job *job;
