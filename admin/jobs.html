@@ -1,22 +1,23 @@
 
     <div class="container-fluid joblist">
         <table class="table" id="jobtable">
-                <tr>
-                    <th>Job</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                </tr>
-                <tr>
-                    <td>Channel1</td>
-                    <td>Live</td>
-                    <td>Running</td>
-                </tr>
+            <tr>
+                <th>Job</th>
+                <th>Type</th>
+                <th>Status</th>
+            </tr>
         </table>
     </div>
 
 
     <script type="text/javascript">
     $(document).ready(function () {
-        $('#jobtable tr:last').after('<tr><td>2</td><td>live</td><td>running</td></tr>');
+        var posting = $.get("/stat/gstreamill", null, function(data) {
+            for (var job in data.jobs) {
+                var tr = '<tr><td>' + job + '</td>';
+                tr += '<td>live</td><td>running</td></tr>';
+                $('#jobtable tr:last').after(tr);
+            }
+        });
     })
     </script>
