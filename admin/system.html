@@ -1,0 +1,26 @@
+
+    <div class="container-fluid joblist">
+        <table class="table" id="system">
+            <tr><td>System Overview</td></tr>
+        </table>
+    </div>
+
+
+    <script type="text/javascript">
+    $(document).ready(function () {
+        var posting = $.get("/stat/gstreamill", function(gstreamill) {
+            var tr = '<tr><td>Verstion: ' + gstreamill.version + '</br>';
+            tr += 'Build date: ' + gstreamill.builddate + '</br>';
+            tr += 'Build time: ' + gstreamill.buildtime + '</br>';
+            tr += 'Start time: ' + gstreamill.starttime + '</br>';
+            $('#system tr:last').after(tr);
+            var jobs = gstreamill.jobs;
+            tr = '<tr><td>'
+            for (var i = 0; i < jobs.length; i++) {
+                tr += ' ' + jobs[i];
+            }
+            tr += '</td></tr>';
+            $('#system tr:last').after(tr);
+        });
+    });
+    </script>
