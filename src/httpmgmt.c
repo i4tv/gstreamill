@@ -192,7 +192,7 @@ static gchar * request_gstreamill_stat (HTTPMgmt *httpmgmt, RequestData *request
 
         } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamill/job/")) {
                 p = gstreamill_job_stat (httpmgmt->gstreamill, request_data->uri);
-                buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (p), NO_CACHE, p);
+                buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
         } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamill/starttime")) {

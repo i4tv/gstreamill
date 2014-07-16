@@ -12,12 +12,16 @@
 
     <script type="text/javascript">
     $(document).ready(function () {
-        var posting = $.get("/stat/gstreamill", null, function(data) {
-            for (var job in data.jobs) {
-                var tr = '<tr><td>' + job + '</td>';
-                tr += '<td>live</td><td>running</td></tr>';
-                $('#jobtable tr:last').after(tr);
+        var posting = $.get("/stat/gstreamill", function(gstreamill) {
+            var jobs = gstreamill.jobs;
+            for (var i = 0; i < jobs.length; i++) {
+                var jobStatUrl = '/stat/gstreamill/job/' + jobs[i];
+                var jobStat = $.get(jobStatUrl, function(job) {
+                    var tr = '<tr><td>' + job.name + '</td>';
+                    tr += '<td>live</td><td>running</td></tr>';
+                    $('#jobtable tr:last').after(tr);
+                });
             }
         });
-    })
+    });
     </script>
