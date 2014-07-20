@@ -45,6 +45,7 @@ AC_CONFIG_FILES([
 Makefile
 src/Makefile
 admin/Makefile
+etc/Makefile
 gstreamill.spec
 ])
 
