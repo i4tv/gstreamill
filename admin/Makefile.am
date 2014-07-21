@@ -30,4 +30,6 @@ adminfonts_DATA = \
 
 adminjobsdir = $(datadir)/gstreamill/admin/jobtemplates
 adminjobs_DATA = \
-        jobtemplates/source_v4l2src.multibitrate_1.udp_no.m3u8_yes
+        jobtemplates/source_v4l2src.multibitrate_1.udp_no.m3u8_yes \
+        jobtemplates/source_v4l2src \
+        jobtemplates/multibitrate_1

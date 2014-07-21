@@ -283,7 +283,7 @@ static gchar * new_live_job (gchar *newjob)
 {
         JSON_Value *val;
         JSON_Object *obj;
-        gchar *name, *template, *p1, *p2;
+        gchar *name, *template, *p1, *p2, *job_desc;
 
         val = json_parse_string_with_comments(newjob);
         if (val == NULL) {
@@ -315,7 +315,15 @@ static gchar * new_live_job (gchar *newjob)
                 json_value_free (val);
                 return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without source\"\n}");
         }
-        template = g_strdup_printf ("source_%s", p1);
+        template = g_strdup_printf ("/%s/gstreamill/admin/jobtemplates/source_%s", DATADIR, p1);
+        if (!g_file_get_contents (template, &p1, NULL, NULL)) {
+                GST_ERROR ("no template %s found", template);
+                g_free (template);
+                json_value_free (val);
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"no suited template found\"\n}");
+        }
+        job_desc = g_strdup_printf ("%s", p1);
+        g_free (p1);
         p1 = (gchar *)json_object_get_string (obj, "multibitrate");
         if (p1 == NULL) {
                 GST_ERROR ("invalid new job without multibitrate");
@@ -323,9 +331,17 @@ static gchar * new_live_job (gchar *newjob)
                 g_free (template);
                 return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without multirate\"\n}");
         }
-        p2 = template;
-        template = g_strdup_printf ("%s.multibitrate_%s", p2, p1);
+        template = g_strdup_printf ("/%s/gstreamill/admin/jobtemplates/multibitrate_%s", DATADIR, p1);
+        if (!g_file_get_contents (template, &p1, NULL, NULL)) {
+                GST_ERROR ("no template %s found", template);
+                g_free (template);
+                json_value_free (val);
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"no suited template found\"\n}");
+        }
+        p2 = job_desc;
+        job_desc = g_strdup_printf ("%s%s", p2, p1);
         g_free (p2);
+        g_free (p1);
         p1 = (gchar *)json_object_get_string (obj, "udp");
         if (p1 == NULL) {
                 GST_ERROR ("invalid new job without udp");
@@ -333,9 +349,15 @@ static gchar * new_live_job (gchar *newjob)
                 g_free (template);
                 return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without udp\"\n}");
         }
-        p2 = template;
-        template = g_strdup_printf ("%s.udp_%s", p2, p1);
+        p2 = job_desc;
+        if (g_strcmp0 (p1, "yes") == 0) {
+                job_desc = g_strdup_printf ("%s,\n            \"udpstreaming\" : \"127.0.0.1:22345\"\n        }", p2);
+
+        } else {
+                job_desc = g_strdup_printf ("%s\n        }", p2);
+        }
         g_free (p2);
+/*
         p1 = (gchar *)json_object_get_string (obj, "m3u8");
         if (p1 == NULL) {
                 GST_ERROR ("invalid new job without m3u8");
@@ -343,7 +365,6 @@ static gchar * new_live_job (gchar *newjob)
                 g_free (template);
                 return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without m3u8\"\n}");
         }
-        p2 = template;
         template = g_strdup_printf ("%s/gstreamill/admin/jobtemplates/%s.m3u8_%s", DATADIR, p2, p1);
         g_free (p2);
         if (!g_file_get_contents (template, &p1, NULL, NULL)) {
@@ -351,15 +372,15 @@ static gchar * new_live_job (gchar *newjob)
                 g_free (template);
                 json_value_free (val);
                 return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"no suited template found\"\n}");
-        }
-        p2 = g_strdup_printf (p1, name);
-        g_free (p1);
+        }*/
+        p2 = g_strdup_printf (job_desc, name);
+        g_free (job_desc);
+        job_desc = p2;
         p1 = g_strdup_printf ("/etc/gstreamill.d/%s.job", name);
 
-        g_file_set_contents (p1, p2, strlen(p2), NULL);
-        g_free (template);
+        g_file_set_contents (p1, job_desc, strlen(job_desc), NULL);
         g_free (p1);
-        g_free (p2);
+        g_free (job_desc);
         json_value_free (val);
 
         return g_strdup ("{\n    \"result\": \"success\"\n}");

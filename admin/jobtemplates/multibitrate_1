@@ -1,0 +1,28 @@
+    "encoders" : [
+        {
+            "elements" : {
+                "appsrc" : {
+                    "property" : {
+                        "format" : 3,
+                        "is-live" : true
+                    }
+                },
+                "x264enc" : {
+                    "property" : {
+                        "bitrate" : 1000,
+                        "byte-stream" : true,
+                        "threads" : 4,
+                        "bframes" :3
+                    }
+                },
+                "appsink" : {
+                    "property" : {
+                        "sync" : false
+                    }
+                }
+            },
+            "bins" : [
+                "appsrc name=audio ! audioresample ! audioconvert ! voaacenc ! muxer.",
+                "appsrc name=video ! videoconvert ! queue ! x264enc ! queue ! muxer.",
+                "mpegtsmux name=muxer ! queue ! appsink"
+            ]
