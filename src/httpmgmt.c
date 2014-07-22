@@ -311,6 +311,8 @@ static gchar * new_live_job (gchar *newjob)
         if (!g_file_test ("/etc/gstreamill.d", G_FILE_TEST_EXISTS & G_FILE_TEST_IS_DIR)) {
                 g_mkdir ("/etc/gstreamill.d", S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
         }
+
+        /* source */
         p1 = (gchar *)json_object_get_string (obj, "source");
         if (p1 == NULL) {
                 GST_ERROR ("invalid new job without source");
@@ -326,6 +328,8 @@ static gchar * new_live_job (gchar *newjob)
         }
         job_desc = p1;
         g_free (template);
+
+        /* multibitrate and udp */
         multibitrate = json_object_get_number (obj, "multibitrate");
         if (multibitrate == 0) {
                 GST_ERROR ("invalid new job without multibitrate");
@@ -362,27 +366,38 @@ static gchar * new_live_job (gchar *newjob)
         }
         job_desc[strlen (job_desc) - 2] = '\0';
         g_free (p1);
-/*
-        p1 = (gchar *)json_object_get_string (obj, "m3u8");
-        if (p1 == NULL) {
+
+        /* m3u8 */
+        p2 = (gchar *)json_object_get_string (obj, "m3u8");
+        if (p2 == NULL) {
                 GST_ERROR ("invalid new job without m3u8");
                 json_value_free (val);
                 g_free (template);
                 return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without m3u8\"\n}");
         }
-        template = g_strdup_printf ("%s/gstreamill/admin/jobtemplates/%s.m3u8_%s", DATADIR, p2, p1);
-        g_free (p2);
-        if (!g_file_get_contents (template, &p1, NULL, NULL)) {
-                GST_ERROR ("no template %s found", template);
-                g_free (template);
-                json_value_free (val);
-                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"no suited template found\"\n}");
-        }*/
-        p2 = g_strdup_printf (job_desc, name);
-        g_free (job_desc);
-        job_desc = p2;
-        p1 = g_strdup_printf ("/etc/gstreamill.d/%s.job", name);
+        if (g_strcmp0 (p2, "yes") == 0) {
+                template = g_strdup_printf ("%s/gstreamill/admin/jobtemplates/m3u8", DATADIR);
+                if (!g_file_get_contents (template, &p1, NULL, NULL)) {
+                        GST_ERROR ("no template %s found", template);
+                        g_free (template);
+                        json_value_free (val);
+                        g_free (job_desc);
+                        return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"no suited template found\"\n}");
+                }
+                p3 = job_desc;
+                job_desc = g_strdup_printf ("%s\n    ],\n%s", p3, p1);
+                g_free (p1);
+                g_free (p3);
 
+        } else {
+                p3 = job_desc;
+                job_desc = g_strdup_printf ("%s\n    ]\n}", p3);
+                g_free (p3);
+        }
+        p1 = g_strdup_printf (job_desc, name);
+        g_free (job_desc);
+        job_desc = p1;
+        p1 = g_strdup_printf ("/etc/gstreamill.d/%s.job", name);
         g_file_set_contents (p1, job_desc, strlen(job_desc), NULL);
         g_free (p1);
         g_free (job_desc);
