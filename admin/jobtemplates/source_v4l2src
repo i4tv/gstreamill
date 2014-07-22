@@ -22,3 +22,4 @@
             "v4l2src ! queue ! appsink name=video"
         ]
     },
+    "encoders" : [

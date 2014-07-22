@@ -283,7 +283,9 @@ static gchar * new_live_job (gchar *newjob)
 {
         JSON_Value *val;
         JSON_Object *obj;
-        gchar *name, *template, *p1, *p2, *job_desc;
+        gchar *name, *template, *p1, *p2, *p3, *job_desc;
+        gdouble multibitrate;
+        gint i;
 
         val = json_parse_string_with_comments(newjob);
         if (val == NULL) {
@@ -320,43 +322,46 @@ static gchar * new_live_job (gchar *newjob)
                 GST_ERROR ("no template %s found", template);
                 g_free (template);
                 json_value_free (val);
-                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"no suited template found\"\n}");
+                return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"no %s template found\"\n}", template);
         }
-        job_desc = g_strdup_printf ("%s", p1);
-        g_free (p1);
-        p1 = (gchar *)json_object_get_string (obj, "multibitrate");
-        if (p1 == NULL) {
+        job_desc = p1;
+        g_free (template);
+        multibitrate = json_object_get_number (obj, "multibitrate");
+        if (multibitrate == 0) {
                 GST_ERROR ("invalid new job without multibitrate");
                 json_value_free (val);
-                g_free (template);
-                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without multirate\"\n}");
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without multibitrate\"\n}");
         }
-        template = g_strdup_printf ("/%s/gstreamill/admin/jobtemplates/multibitrate_%s", DATADIR, p1);
+        template = g_strdup_printf ("/%s/gstreamill/admin/jobtemplates/encoder", DATADIR);
         if (!g_file_get_contents (template, &p1, NULL, NULL)) {
                 GST_ERROR ("no template %s found", template);
                 g_free (template);
                 json_value_free (val);
-                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"no suited template found\"\n}");
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"no encoder template found\"\n}");
         }
-        p2 = job_desc;
-        job_desc = g_strdup_printf ("%s%s", p2, p1);
-        g_free (p2);
-        g_free (p1);
-        p1 = (gchar *)json_object_get_string (obj, "udp");
-        if (p1 == NULL) {
+        g_free (template);
+        p2 = (gchar *)json_object_get_string (obj, "udp");
+        if (p2 == NULL) {
                 GST_ERROR ("invalid new job without udp");
                 json_value_free (val);
-                g_free (template);
                 return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without udp\"\n}");
         }
-        p2 = job_desc;
-        if (g_strcmp0 (p1, "yes") == 0) {
-                job_desc = g_strdup_printf ("%s,\n            \"udpstreaming\" : \"127.0.0.1:22345\"\n        }", p2);
-
-        } else {
-                job_desc = g_strdup_printf ("%s\n        }", p2);
+        for (i = 0; i < multibitrate; i++) {
+                p3 = job_desc;
+                if (g_strcmp0 (p2, "yes") == 0) {
+                        job_desc = g_strdup_printf ("%s%s", p3, p1);
+                        job_desc[strlen (job_desc) - 1] = ',';
+                        g_free (p3);
+                        p3 = job_desc;
+                        job_desc = g_strdup_printf ("%s\n            \"udpstreaming\" : \"127.0.0.1:22345\"\n        },\n", p3);
+        
+                } else {
+                        job_desc = g_strdup_printf ("%s%s        },\n", p3, p1);
+                }
+                g_free (p3);
         }
-        g_free (p2);
+        job_desc[strlen (job_desc) - 2] = '\0';
+        g_free (p1);
 /*
         p1 = (gchar *)json_object_get_string (obj, "m3u8");
         if (p1 == NULL) {

@@ -50,7 +50,7 @@
             return;
         }
         newjob.source = $("#source:checked").val();
-        newjob.multibitrate = $("#multibitrate").val();
+        newjob.multibitrate = parseInt($("#multibitrate").val());
         if ($("#udp").is(":checked")) {
             newjob.udp = "yes";
         } else {
@@ -61,7 +61,7 @@
         } else {
             newjob.m3u8 = "no";
         }
-
+alert(JSON.stringify(newjob));
         var posting = $.post("newlivejob", JSON.stringify(newjob), function(data) {
             alert(data);
         });
