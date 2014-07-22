@@ -293,6 +293,7 @@ static gchar * new_live_job (gchar *newjob)
                 return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid json type of new job description\"\n}\n");
         }
 
+        /* name */
         obj = json_value_get_object (val);
         name = (gchar *)json_object_get_string (obj, "name");
         if (name == NULL) {
@@ -394,6 +395,8 @@ static gchar * new_live_job (gchar *newjob)
                 job_desc = g_strdup_printf ("%s\n    ]\n}", p3);
                 g_free (p3);
         }
+
+        /* save new created live job */
         p1 = g_strdup_printf (job_desc, name);
         g_free (job_desc);
         job_desc = p1;
