@@ -13,7 +13,7 @@
                         <label for="source">Input type: </label></br>
                         Audio and video source, v4l2src, network or test source(videotestsrc for video and audiotestsrc for audio).</br>
                         <input type="radio" name="source" id="source" value="v4l2src"> v4l2src capture Device</br>
-                        <input type="radio" name="source" id="source" value="network"> Network</br>
+                        <input type="radio" name="source" id="source" value="networksrc"> Network</br>
                         <input type="radio" name="source" id="source" value="testsrc"> Test src</br>
                     </div>
                     <div class="agroup">
@@ -45,11 +45,11 @@
             return;
         }
         newjob.name = $("#name").val();
-        if (!$("#source").is(":checked")) {
+        newjob.source = $("#source:checked").val();
+        if (newjob.source == undefined) {
             alert ("select input type");
             return;
         }
-        newjob.source = $("#source:checked").val();
         newjob.multibitrate = parseInt($("#multibitrate").val());
         if ($("#udp").is(":checked")) {
             newjob.udp = "yes";
@@ -61,7 +61,7 @@
         } else {
             newjob.m3u8 = "no";
         }
-alert(JSON.stringify(newjob));
+
         var posting = $.post("newlivejob", JSON.stringify(newjob), function(data) {
             alert(data);
         });

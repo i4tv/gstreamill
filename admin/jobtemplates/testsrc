@@ -1,0 +1,20 @@
+{
+    "name" : "%s",
+    "debug" : "gstreamill:3",
+    "source" : {
+        "elements" : {
+            "videotestsrc" : {
+                "caps" : "video/x-raw,width=720,height=576,framerate=25/1"
+            },
+            "audiotestsrc" : {
+                "property" : {
+                    "wave" : 8
+                }
+            }
+        },
+        "bins" : [
+            "videotestsrc ! appsink name=video",
+            "audiotestsrc ! appsink name=audio"
+        ]
+    },
+    "encoders" : [

@@ -320,7 +320,7 @@ static gchar * new_live_job (gchar *newjob)
                 json_value_free (val);
                 return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without source\"\n}");
         }
-        template = g_strdup_printf ("/%s/gstreamill/admin/jobtemplates/source_%s", DATADIR, p1);
+        template = g_strdup_printf ("/%s/gstreamill/admin/jobtemplates/%s", DATADIR, p1);
         if (!g_file_get_contents (template, &p1, NULL, NULL)) {
                 GST_ERROR ("no template %s found", template);
                 g_free (template);
