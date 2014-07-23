@@ -428,7 +428,7 @@ static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_d
                 gint i;
 
                 p = g_strdup_printf ("{\n    \"audio\": [");
-                /* alsa audio cature devices */
+                /* alsa audio capture devices */
                 if (glob ("/dev/snd/pcmC*c", 0, NULL, &pglob) == 0) {
                         for (i = 0; i < pglob.gl_pathc; i++) {
                                 *buf = g_strdup_printf ("%s\"%s\",", p, pglob.gl_pathv[i]);
