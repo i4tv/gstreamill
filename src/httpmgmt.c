@@ -409,6 +409,30 @@ static gchar * new_live_job (gchar *newjob)
         return g_strdup ("{\n    \"result\": \"success\"\n}");
 }
 
+static gchar * capture_devices (gchar *pattern)
+{
+        glob_t pglob;
+        gint i;
+        gchar *devices, *p;
+
+        p = g_strdup ("[");
+        if (glob (pattern, 0, NULL, &pglob) == 0) {
+                for (i = 0; i < pglob.gl_pathc; i++) {
+                        devices = g_strdup_printf ("%s\"%s\",", p, pglob.gl_pathv[i]);
+                        g_free (p);
+                        p = devices;
+                }
+                globfree (&pglob);
+                devices[strlen (devices) - 1] = ']';
+
+        } else {
+                devices = g_strdup_printf ("%s]", p);
+                g_free (p);
+        }
+
+        return devices;
+}
+
 static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_data, gchar **buf)
 {
         gchar *path, *http_header, *p;
@@ -423,47 +447,14 @@ static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_d
                 *buf = new_live_job (p);
                 path = NULL;
 
-        } else if (g_strcmp0 (request_data->uri, "/admin/capturedevices") == 0) {
-                glob_t pglob;
-                gint i;
-
-                p = g_strdup_printf ("{\n    \"audio\": [");
-                /* alsa audio capture devices */
-                if (glob ("/dev/snd/pcmC*c", 0, NULL, &pglob) == 0) {
-                        for (i = 0; i < pglob.gl_pathc; i++) {
-                                *buf = g_strdup_printf ("%s\"%s\",", p, pglob.gl_pathv[i]);
-                                g_free (p);
-                                p = *buf;
-                        }
-                        globfree (&pglob);
-                }
-                if (p[strlen (p) - 1] == ',') {
-                        p[strlen (p) - 1] = ']';
-                        *buf = g_strdup_printf ("%s,\n    \"video\": [", p);
-
-                } else {
-                        *buf = g_strdup_printf ("%s],\n    \"video\": [", p);
-                }
+        } else if (g_strcmp0 (request_data->uri, "/admin/audiodevices") == 0) {
+                p = capture_devices ("/dev/snd/pcmC*c");
+                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
-                p = *buf;
-                /* v4l2 video capture devices */
-                if (glob ("/dev/video*", 0, NULL, &pglob) == 0) {
-                        for (i = 0; i < pglob.gl_pathc; i++) {
-                                *buf = g_strdup_printf ("%s\"%s\",", p, pglob.gl_pathv[i]);
-                                g_free (p);
-                                p = *buf;
-                        }
-                        globfree (&pglob);
-                }
-                if (p[strlen (p) - 1] == ',') {
-                        p[strlen (p) - 1] = ']';
-                        *buf = g_strdup_printf ("%s\n}", p);
+                path = NULL;
 
-                } else {
-                        *buf = g_strdup_printf ("%s]\n}\n", p);
-                }
-                g_free (p);
-                p = *buf;
+        } else if (g_strcmp0 (request_data->uri, "/admin/videodevices") == 0) {
+                p = capture_devices ("/dev/video*");
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
                 path = NULL;
