@@ -5,7 +5,8 @@
         "elements" : {
             "alsasrc" : {
                 "property" : {
-                    "blocksize" : 8192
+                    "blocksize" : 8192,
+                    "device" : "hw:0,0"
                 },
                 "caps" : "audio/x-raw,width=16,depth=16,rate=48000,channels=2,endianness=1234"
             },
@@ -14,11 +15,12 @@
                     "device" : "/dev/video0",
                     "io-mode" : 1,
                     "do-timestamp" : true
-                }
+                },
+                "caps" : "video/x-raw,width=720,height=576"
             }
         },
         "bins" : [
-            "alsasrc device=hw:0 ! queue ! appsink name=audio",
+            "alsasrc ! queue ! appsink name=audio",
             "v4l2src ! queue ! appsink name=video"
         ]
     },
