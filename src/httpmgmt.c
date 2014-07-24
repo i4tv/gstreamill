@@ -289,12 +289,15 @@ static gchar * new_live_job (gchar *newjob)
 
         val = json_parse_string_with_comments(newjob);
         if (val == NULL) {
-                GST_ERROR ("invalid json type of new job description");
-                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid json type of new job description\"\n}\n");
+                GST_ERROR ("invalid job description");
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid job description\"\n}\n");
+        }
+        obj = json_value_get_object (val);
+        if (!g_file_test ("/etc/gstreamill.d", G_FILE_TEST_EXISTS & G_FILE_TEST_IS_DIR)) {
+                g_mkdir ("/etc/gstreamill.d", S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
         }
 
         /* name */
-        obj = json_value_get_object (val);
         name = (gchar *)json_object_get_string (obj, "name");
         if (name == NULL) {
                 GST_ERROR ("invalid new job without name");
@@ -303,15 +306,12 @@ static gchar * new_live_job (gchar *newjob)
         }
         p1 = g_strdup_printf ("/etc/gstreamill.d/%s.job", name);
         if (g_file_test (p1, G_FILE_TEST_EXISTS)) {
-                GST_ERROR ("new job %s, already exist", name);
+                GST_ERROR ("job %s, already exist", name);
                 json_value_free (val);
                 g_free (p1);
                 return  g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"already exist\"\n}\n");
         }
         g_free (p1);
-        if (!g_file_test ("/etc/gstreamill.d", G_FILE_TEST_EXISTS & G_FILE_TEST_IS_DIR)) {
-                g_mkdir ("/etc/gstreamill.d", S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
-        }
 
         /* source */
         p1 = (gchar *)json_object_get_string (obj, "source");
