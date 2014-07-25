@@ -279,53 +279,106 @@ static gchar * add_top_bottom (gchar *middle)
         return buf;
 }
 
-static gchar * new_live_job (gchar *newjob)
+static gboolean generate_configurable_para (JSON_Object *obj, gchar *name, gchar **result)
 {
-        JSON_Value *val;
-        JSON_Object *obj;
-        gchar *name, *template, *p1, *p2, *p3, *job_desc;
+        gchar *template, *p1, *p2, *p3, *configurable_para;
         gdouble multibitrate;
         gint i;
 
-        val = json_parse_string_with_comments(newjob);
-        if (val == NULL) {
-                GST_ERROR ("invalid job description");
-                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid job description\"\n}\n");
+        /* source */
+        p1 = (gchar *)json_object_get_string (obj, "source");
+        template = g_strdup_printf ("/%s/gstreamill/admin/jobtemplates/%s.conf", DATADIR, p1);
+        if (!g_file_get_contents (template, &p1, NULL, NULL)) {
+                GST_ERROR ("no template %s found", template);
+                g_free (template);
+                *result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"no %s template found\"\n}", template);
+                return FALSE;
         }
-        obj = json_value_get_object (val);
-        if (!g_file_test ("/etc/gstreamill.d", G_FILE_TEST_EXISTS & G_FILE_TEST_IS_DIR)) {
-                g_mkdir ("/etc/gstreamill.d", S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+        configurable_para = p1;
+        g_free (template);
+
+        /* multibitrate and udp */
+        multibitrate = json_object_get_number (obj, "multibitrate");
+        template = g_strdup_printf ("%s/gstreamill/admin/jobtemplates/encoder.conf", DATADIR);
+        if (!g_file_get_contents (template, &p1, NULL, NULL)) {
+                GST_ERROR ("no template %s found", template);
+                g_free (template);
+                *result = g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"no encoder template found\"\n}");
+                return FALSE;
+        }
+        g_free (template);
+        p2 = (gchar *)json_object_get_string (obj, "udp");
+        for (i = 0; i < multibitrate; i++) {
+                p3 = configurable_para;
+                if (g_strcmp0 (p2, "yes") == 0) {
+                        configurable_para = g_strdup_printf ("%s%s", p3, p1);
+                        configurable_para[strlen (configurable_para) - 1] = ',';
+                        g_free (p3);
+                        p3 = configurable_para;
+                        configurable_para = g_strdup_printf ("%s\n            \"udpstreaming\" : \"127.0.0.1:22345\"\n        },\n", p3);
+        
+                } else {
+                        configurable_para = g_strdup_printf ("%s%s        },\n", p3, p1);
+                }
+                g_free (p3);
+        }
+        configurable_para[strlen (configurable_para) - 2] = '\0';
+        g_free (p1);
+
+        /* m3u8 */
+        p2 = (gchar *)json_object_get_string (obj, "m3u8");
+        if (g_strcmp0 (p2, "yes") == 0) {
+                template = g_strdup_printf ("%s/gstreamill/admin/jobtemplates/m3u8.conf", DATADIR);
+                if (!g_file_get_contents (template, &p1, NULL, NULL)) {
+                        GST_ERROR ("no template %s found", template);
+                        g_free (template);
+                        g_free (configurable_para);
+                        *result = g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"no suited template found\"\n}");
+                        return FALSE;
+                }
+                p3 = configurable_para;
+                configurable_para = g_strdup_printf ("%s\n    ],\n%s", p3, p1);
+                g_free (p1);
+                g_free (p3);
+
+        } else {
+                p3 = configurable_para;
+                configurable_para = g_strdup_printf ("%s\n    ]\n}", p3);
+                g_free (p3);
         }
 
-        /* name */
-        name = (gchar *)json_object_get_string (obj, "name");
-        if (name == NULL) {
-                GST_ERROR ("invalid new job without name");
-                json_value_free (val);
-                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without name\"\n}\n");
-        }
-        p1 = g_strdup_printf ("/etc/gstreamill.d/%s.job", name);
-        if (g_file_test (p1, G_FILE_TEST_EXISTS)) {
-                GST_ERROR ("job %s, already exist", name);
-                json_value_free (val);
-                g_free (p1);
-                return  g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"already exist\"\n}\n");
-        }
+        /* save new created live job */
+        p1 = g_strdup_printf (configurable_para, name);
+        g_free (configurable_para);
+        configurable_para = p1;
+        p1 = g_strdup_printf ("/etc/gstreamill.d/conf/%s.conf", name);
+        g_file_set_contents (p1, configurable_para, strlen(configurable_para), NULL);
         g_free (p1);
+        g_free (configurable_para);
+
+        *result = NULL;
+        return TRUE;
+}
+
+static gboolean generate_job (JSON_Object *obj, gchar *name, gchar **result)
+{
+        gchar *template, *p1, *p2, *p3, *job_desc;
+        gdouble multibitrate;
+        gint i;
 
         /* source */
         p1 = (gchar *)json_object_get_string (obj, "source");
         if (p1 == NULL) {
                 GST_ERROR ("invalid new job without source");
-                json_value_free (val);
-                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without source\"\n}");
+                *result = g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without source\"\n}");
+                return FALSE;
         }
-        template = g_strdup_printf ("/%s/gstreamill/admin/jobtemplates/%s", DATADIR, p1);
+        template = g_strdup_printf ("%s/gstreamill/admin/jobtemplates/%s", DATADIR, p1);
         if (!g_file_get_contents (template, &p1, NULL, NULL)) {
                 GST_ERROR ("no template %s found", template);
                 g_free (template);
-                json_value_free (val);
-                return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"no %s template found\"\n}", template);
+                *result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"no %s template found\"\n}", template);
+                return FALSE;
         }
         job_desc = p1;
         g_free (template);
@@ -334,22 +387,22 @@ static gchar * new_live_job (gchar *newjob)
         multibitrate = json_object_get_number (obj, "multibitrate");
         if (multibitrate == 0) {
                 GST_ERROR ("invalid new job without multibitrate");
-                json_value_free (val);
-                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without multibitrate\"\n}");
+                *result = g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without multibitrate\"\n}");
+                return FALSE;
         }
-        template = g_strdup_printf ("/%s/gstreamill/admin/jobtemplates/encoder", DATADIR);
+        template = g_strdup_printf ("%s/gstreamill/admin/jobtemplates/encoder", DATADIR);
         if (!g_file_get_contents (template, &p1, NULL, NULL)) {
                 GST_ERROR ("no template %s found", template);
                 g_free (template);
-                json_value_free (val);
-                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"no encoder template found\"\n}");
+                *result = g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"no encoder template found\"\n}");
+                return FALSE;
         }
         g_free (template);
         p2 = (gchar *)json_object_get_string (obj, "udp");
         if (p2 == NULL) {
                 GST_ERROR ("invalid new job without udp");
-                json_value_free (val);
-                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without udp\"\n}");
+                *result = g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without udp\"\n}");
+                return FALSE;
         }
         for (i = 0; i < multibitrate; i++) {
                 p3 = job_desc;
@@ -372,18 +425,18 @@ static gchar * new_live_job (gchar *newjob)
         p2 = (gchar *)json_object_get_string (obj, "m3u8");
         if (p2 == NULL) {
                 GST_ERROR ("invalid new job without m3u8");
-                json_value_free (val);
                 g_free (template);
-                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without m3u8\"\n}");
+                *result = g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without m3u8\"\n}");
+                return FALSE;
         }
         if (g_strcmp0 (p2, "yes") == 0) {
                 template = g_strdup_printf ("%s/gstreamill/admin/jobtemplates/m3u8", DATADIR);
                 if (!g_file_get_contents (template, &p1, NULL, NULL)) {
                         GST_ERROR ("no template %s found", template);
                         g_free (template);
-                        json_value_free (val);
                         g_free (job_desc);
-                        return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"no suited template found\"\n}");
+                        *result = g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"no suited template found\"\n}");
+                        return FALSE;
                 }
                 p3 = job_desc;
                 job_desc = g_strdup_printf ("%s\n    ],\n%s", p3, p1);
@@ -404,9 +457,53 @@ static gchar * new_live_job (gchar *newjob)
         g_file_set_contents (p1, job_desc, strlen(job_desc), NULL);
         g_free (p1);
         g_free (job_desc);
+
+        *result = NULL;
+        return TRUE;
+}
+
+static gchar * new_live_job (gchar *newjob)
+{
+        JSON_Value *val;
+        JSON_Object *obj;
+        gchar *name, *result, *p1;//, *p2, *p3, *job_desc;
+
+        val = json_parse_string_with_comments(newjob);
+        if (val == NULL) {
+                GST_ERROR ("invalid job description");
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid job description\"\n}\n");
+        }
+        obj = json_value_get_object (val);
+        if (!g_file_test ("/etc/gstreamill.d", G_FILE_TEST_EXISTS & G_FILE_TEST_IS_DIR)) {
+                g_mkdir ("/etc/gstreamill.d", S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+        }
+        if (!g_file_test ("/etc/gstreamill.d/conf", G_FILE_TEST_EXISTS & G_FILE_TEST_IS_DIR)) {
+                g_mkdir ("/etc/gstreamill.d/conf", S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+        }
+
+        /* name */
+        name = (gchar *)json_object_get_string (obj, "name");
+        if (name == NULL) {
+                GST_ERROR ("invalid new job without name");
+                json_value_free (val);
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid new job without name\"\n}\n");
+        }
+        p1 = g_strdup_printf ("/etc/gstreamill.d/%s.job", name);
+        if (g_file_test (p1, G_FILE_TEST_EXISTS)) {
+                GST_ERROR ("job %s, already exist", name);
+                json_value_free (val);
+                g_free (p1);
+                return  g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"already exist\"\n}\n");
+        }
+        g_free (p1);
+
+        /* generate job and configurable para success? */
+        if (generate_job (obj, name, &result) && generate_configurable_para (obj, name, &result)) {
+                result = g_strdup ("{\n    \"result\": \"success\"\n}");
+        }
         json_value_free (val);
 
-        return g_strdup ("{\n    \"result\": \"success\"\n}");
+        return result;
 }
 
 static gchar * capture_devices (gchar *pattern)

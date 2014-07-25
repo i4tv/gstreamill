@@ -31,7 +31,12 @@ adminfonts_DATA = \
 adminjobsdir = $(datadir)/gstreamill/admin/jobtemplates
 adminjobs_DATA = \
         jobtemplates/v4l2src \
+        jobtemplates/v4l2src.conf \
         jobtemplates/testsrc \
+        jobtemplates/testsrc.conf \
         jobtemplates/networksrc \
+        jobtemplates/networksrc.conf \
         jobtemplates/encoder \
-        jobtemplates/m3u8
+        jobtemplates/encoder.conf \
+        jobtemplates/m3u8 \
+        jobtemplates/m3u8.conf
