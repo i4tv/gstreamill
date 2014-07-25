@@ -42,4 +42,3 @@
                 "appsrc name=video ! queue ! videoconvert ! queue ! x264enc ! queue ! muxer.",
                 "mpegtsmux name=muxer ! queue ! appsink"
             ]
-
