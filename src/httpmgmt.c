@@ -259,15 +259,20 @@ static gchar * gen_http_header (gchar *path, gsize body_size)
 static gchar * add_top_bottom (gchar *middle)
 {
         gchar *buf, *path, *top, *bottom;
+        GError *err = NULL;
 
         path = g_strdup_printf ("%s/gstreamill/admin/header.html", DATADIR);
-        if (!g_file_get_contents (path, &top, NULL, NULL)) {
+        if (!g_file_get_contents (path, &top, NULL, &err)) {
                 g_free (path);
+                GST_ERROR ("read %s failure: %s", path, err->message);
+                g_error_free (err);
                 return g_strdup ("Internal error, file header.html not found.");
         }
         g_free (path);
         path = g_strdup_printf ("%s/gstreamill/admin/footer.html", DATADIR);
-        if (!g_file_get_contents (path, &bottom, NULL, NULL)) {
+        if (!g_file_get_contents (path, &bottom, NULL, &err)) {
+                GST_ERROR ("read %s failure: %s", path, err->message);
+                g_error_free (err);
                 g_free (path);
                 return g_strdup ("Internal error, file footer.html not found.");
         }
@@ -284,12 +289,14 @@ static gboolean generate_configurable_para (JSON_Object *obj, gchar *name, gchar
         gchar *template, *p1, *p2, *p3, *configurable_para;
         gdouble multibitrate;
         gint i;
+        GError *err = NULL;
 
         /* source */
         p1 = (gchar *)json_object_get_string (obj, "source");
         template = g_strdup_printf ("/%s/gstreamill/admin/jobtemplates/%s.conf", DATADIR, p1);
-        if (!g_file_get_contents (template, &p1, NULL, NULL)) {
-                GST_ERROR ("no template %s found", template);
+        if (!g_file_get_contents (template, &p1, NULL, &err)) {
+                GST_ERROR ("no template %s found: %s", template, err->message);
+                g_error_free (err);
                 g_free (template);
                 *result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"no %s template found\"\n}", template);
                 return FALSE;
@@ -300,8 +307,9 @@ static gboolean generate_configurable_para (JSON_Object *obj, gchar *name, gchar
         /* multibitrate and udp */
         multibitrate = json_object_get_number (obj, "multibitrate");
         template = g_strdup_printf ("%s/gstreamill/admin/jobtemplates/encoder.conf", DATADIR);
-        if (!g_file_get_contents (template, &p1, NULL, NULL)) {
-                GST_ERROR ("no template %s found", template);
+        if (!g_file_get_contents (template, &p1, NULL, &err)) {
+                GST_ERROR ("no template %s found: %s", template, err->message);
+                g_error_free (err);
                 g_free (template);
                 *result = g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"no encoder template found\"\n}");
                 return FALSE;
@@ -329,8 +337,9 @@ static gboolean generate_configurable_para (JSON_Object *obj, gchar *name, gchar
         p2 = (gchar *)json_object_get_string (obj, "m3u8");
         if (g_strcmp0 (p2, "yes") == 0) {
                 template = g_strdup_printf ("%s/gstreamill/admin/jobtemplates/m3u8.conf", DATADIR);
-                if (!g_file_get_contents (template, &p1, NULL, NULL)) {
-                        GST_ERROR ("no template %s found", template);
+                if (!g_file_get_contents (template, &p1, NULL, &err)) {
+                        GST_ERROR ("no template %s found: %s", template, err->message);
+                        g_error_free (err);
                         g_free (template);
                         g_free (configurable_para);
                         *result = g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"no suited template found\"\n}");
@@ -352,7 +361,14 @@ static gboolean generate_configurable_para (JSON_Object *obj, gchar *name, gchar
         g_free (configurable_para);
         configurable_para = p1;
         p1 = g_strdup_printf ("/etc/gstreamill.d/conf/%s.conf", name);
-        g_file_set_contents (p1, configurable_para, strlen (configurable_para), NULL);
+        if (!g_file_set_contents (p1, configurable_para, strlen (configurable_para), &err)) {
+                GST_ERROR ("save job conf %s failure: %s", p1, err->message);
+                g_error_free (err);
+                g_free (p1);
+                g_free (configurable_para);
+                *result = g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"save job conf failure\"\n}");
+                return FALSE;
+        }
         g_free (p1);
         g_free (configurable_para);
 
@@ -365,6 +381,7 @@ static gboolean generate_job (JSON_Object *obj, gchar *name, gchar **result)
         gchar *template, *p1, *p2, *p3, *job_desc;
         gdouble multibitrate;
         gint i;
+        GError *err = NULL;
 
         /* source */
         p1 = (gchar *)json_object_get_string (obj, "source");
@@ -374,9 +391,10 @@ static gboolean generate_job (JSON_Object *obj, gchar *name, gchar **result)
                 return FALSE;
         }
         template = g_strdup_printf ("%s/gstreamill/admin/jobtemplates/%s", DATADIR, p1);
-        if (!g_file_get_contents (template, &p1, NULL, NULL)) {
-                GST_ERROR ("no template %s found", template);
+        if (!g_file_get_contents (template, &p1, NULL, &err)) {
+                GST_ERROR ("no template %s found: %s", template, err->message);
                 g_free (template);
+                g_error_free (err);
                 *result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"no %s template found\"\n}", template);
                 return FALSE;
         }
@@ -391,9 +409,10 @@ static gboolean generate_job (JSON_Object *obj, gchar *name, gchar **result)
                 return FALSE;
         }
         template = g_strdup_printf ("%s/gstreamill/admin/jobtemplates/encoder", DATADIR);
-        if (!g_file_get_contents (template, &p1, NULL, NULL)) {
-                GST_ERROR ("no template %s found", template);
+        if (!g_file_get_contents (template, &p1, NULL, &err)) {
+                GST_ERROR ("no template %s found: %s", template, err->message);
                 g_free (template);
+                g_error_free (err);
                 *result = g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"no encoder template found\"\n}");
                 return FALSE;
         }
@@ -431,9 +450,10 @@ static gboolean generate_job (JSON_Object *obj, gchar *name, gchar **result)
         }
         if (g_strcmp0 (p2, "yes") == 0) {
                 template = g_strdup_printf ("%s/gstreamill/admin/jobtemplates/m3u8", DATADIR);
-                if (!g_file_get_contents (template, &p1, NULL, NULL)) {
-                        GST_ERROR ("no template %s found", template);
+                if (!g_file_get_contents (template, &p1, NULL, &err)) {
+                        GST_ERROR ("no template %s found: %s", template, err->message);
                         g_free (template);
+                        g_error_free (err);
                         g_free (job_desc);
                         *result = g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"no suited template found\"\n}");
                         return FALSE;
@@ -454,7 +474,14 @@ static gboolean generate_job (JSON_Object *obj, gchar *name, gchar **result)
         g_free (job_desc);
         job_desc = p1;
         p1 = g_strdup_printf ("/etc/gstreamill.d/%s.job", name);
-        g_file_set_contents (p1, job_desc, strlen(job_desc), NULL);
+        if (!g_file_set_contents (p1, job_desc, strlen(job_desc), &err)) {
+                GST_ERROR ("save job %s failure: %s", p1, err->message);
+                g_error_free (err);
+                g_free (p1);
+                g_free (job_desc);
+                *result = g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"save job failure\"\n}");
+                return FALSE;
+        }
         g_free (p1);
         g_free (job_desc);
 
@@ -533,11 +560,13 @@ static gchar * capture_devices (gchar *pattern)
 static gchar * get_job (gchar *uri)
 {
         gchar *job_path, *job;
+        GError *err = NULL;
 
-        job_path = g_strdup_printf ("/etc/gstreamill.d%s", &uri[13]);
-        if (!g_file_get_contents (job_path, &job, NULL, NULL)) {
-                GST_ERROR ("read job %s failure", job_path);
+        job_path = g_strdup_printf ("/etc/gstreamill.d%s.job", &uri[13]);
+        if (!g_file_get_contents (job_path, &job, NULL, &err)) {
+                GST_ERROR ("read job %s failure: %s", job_path, err->message);
                 job = NULL;
+                g_error_free (err);
         }
         g_free (job_path);
 
@@ -546,20 +575,30 @@ static gchar * get_job (gchar *uri)
 
 static gchar * put_job (RequestData *request_data)
 {
-        gchar *job_path, *job;
+        gchar *job_path, *job, *result;
+        GError *err = NULL;
 
         job_path = g_strdup_printf ("/etc/gstreamill.d%s.job", &(request_data->uri[13]));
         job = request_data->raw_request + request_data->header_size;
-        g_file_set_contents (job_path, job, strlen (job), NULL);
+        if (!g_file_set_contents (job_path, job, strlen (job), &err)) {
+                GST_ERROR ("write job %s failure: %s", job_path, err->message);
+                result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"\n}", err->message);
+                g_error_free (err);
+
+        } else {
+                GST_INFO ("write job %s success", job_path);
+                result = g_strdup ("{\n    \"result\": \"success\"\n}");
+        }
         g_free (job_path);
 
-        return g_strdup ("{\n    \"result\": \"success\"\n}");
+        return result;
 }
 
 static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_data, gchar **buf)
 {
         gchar *path, *http_header, *p;
         gsize buf_size;
+        GError *err = NULL;
 
         path = NULL;
         if (g_strcmp0 (request_data->uri, "/admin/") == 0) {
@@ -603,10 +642,11 @@ static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_d
                 /* not static content */
                 buf_size = strlen (*buf);
 
-        } else if (!g_file_get_contents (path, buf, &buf_size, NULL)) {
-                GST_ERROR ("read file %s failure", p);
+        } else if (!g_file_get_contents (path, buf, &buf_size, &err)) {
+                GST_ERROR ("read file %s failure: %s", p, err->message);
                 *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
                 buf_size = strlen (*buf);
+                g_error_free (err);
 
         } else {
                 /* read file success, html file? add top and bottom */
