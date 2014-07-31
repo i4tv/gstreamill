@@ -530,33 +530,55 @@ static gchar * capture_devices (gchar *pattern)
         return devices;
 }
 
+static gchar * get_job (gchar *uri)
+{
+        gchar *job_path, *job;
+
+        job_path = g_strdup_printf ("/etc/gstreamill.d%s", &uri[13]);
+        if (!g_file_get_contents (job_path, &job, NULL, NULL)) {
+                GST_ERROR ("read job %s failure", job_path);
+                job = NULL;
+        }
+        g_free (job_path);
+
+        return job;
+}
+
 static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_data, gchar **buf)
 {
         gchar *path, *http_header, *p;
         gsize buf_size;
 
-        /* prepare file path */
+        path = NULL;
         if (g_strcmp0 (request_data->uri, "/admin/") == 0) {
                 path = g_strdup_printf ("%s/gstreamill/admin/index.html", DATADIR);
 
         } else if ((request_data->method == HTTP_POST) && (g_strcmp0 (request_data->uri, "/admin/newlivejob") == 0)) {
                 p = request_data->raw_request + request_data->header_size;
                 *buf = new_live_job (p);
-                path = NULL;
 
         } else if (g_strcmp0 (request_data->uri, "/admin/audiodevices") == 0) {
                 p = capture_devices ("/dev/snd/pcmC*c");
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
-                path = NULL;
 
         } else if (g_strcmp0 (request_data->uri, "/admin/videodevices") == 0) {
                 p = capture_devices ("/dev/video*");
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
-                path = NULL;
+
+        } else if (g_str_has_prefix (request_data->uri, "/admin/getjob/")) {
+                p = get_job (request_data->uri);
+                if (p != NULL) {
+                        *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+                        g_free (p);
+
+                } else {
+                        *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+                }
 
         } else {
+                /* static content, prepare file path */
                 path = g_strdup_printf ("%s/gstreamill%s", DATADIR, request_data->uri);
         }
 
