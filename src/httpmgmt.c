@@ -352,7 +352,7 @@ static gboolean generate_configurable_para (JSON_Object *obj, gchar *name, gchar
         g_free (configurable_para);
         configurable_para = p1;
         p1 = g_strdup_printf ("/etc/gstreamill.d/conf/%s.conf", name);
-        g_file_set_contents (p1, configurable_para, strlen(configurable_para), NULL);
+        g_file_set_contents (p1, configurable_para, strlen (configurable_para), NULL);
         g_free (p1);
         g_free (configurable_para);
 
@@ -544,6 +544,18 @@ static gchar * get_job (gchar *uri)
         return job;
 }
 
+static gchar * put_job (RequestData *request_data)
+{
+        gchar *job_path, *job;
+
+        job_path = g_strdup_printf ("/etc/gstreamill.d%s.job", &(request_data->uri[13]));
+        job = request_data->raw_request + request_data->header_size;
+        g_file_set_contents (job_path, job, strlen (job), NULL);
+        g_free (job_path);
+
+        return g_strdup ("{\n    \"result\": \"success\"\n}");
+}
+
 static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_data, gchar **buf)
 {
         gchar *path, *http_header, *p;
@@ -576,6 +588,11 @@ static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_d
                 } else {
                         *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
                 }
+
+        } else if ((request_data->method == HTTP_POST) && (g_str_has_prefix (request_data->uri, "/admin/putjob/"))) {
+                p = put_job (request_data);
+                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+                g_free (p);
 
         } else {
                 /* static content, prepare file path */
