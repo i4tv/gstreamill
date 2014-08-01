@@ -256,7 +256,7 @@ static gchar * gen_http_header (gchar *path, gsize body_size)
         return header;
 }
  
-static gchar * add_top_bottom (gchar *middle)
+static gchar * add_header_footer (gchar *middle)
 {
         gchar *buf, *path, *top, *bottom;
         GError *err = NULL;
@@ -654,7 +654,7 @@ static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_d
                         gchar *middle;
 
                         middle = *buf;
-                        *buf = add_top_bottom (middle);
+                        *buf = add_header_footer (middle);
                         g_free (middle);
                         buf_size = strlen (*buf);
                 }
