@@ -668,11 +668,11 @@ static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_d
                 }
                 /* html file? add top and bottom */
                 if (g_str_has_suffix (path, ".html")) {
-                        gchar *middle;
+                        gchar *body;
 
-                        middle = *buf;
-                        *buf = add_header_footer (middle);
-                        g_free (middle);
+                        body = *buf;
+                        *buf = add_header_footer (body);
+                        g_free (body);
                         buf_size = strlen (*buf);
                 }
                 http_header = gen_http_header (path, buf_size);
