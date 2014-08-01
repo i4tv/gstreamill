@@ -633,6 +633,9 @@ static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_d
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
+        } else if (g_str_has_prefix (request_data->uri, "/admin/setjob.html")) {
+                path = g_strdup_printf ("%s/gstreamill/admin/setjob.html", DATADIR);
+
         } else {
                 /* static content, prepare file path */
                 path = g_strdup_printf ("%s/gstreamill%s", DATADIR, request_data->uri);

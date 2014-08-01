@@ -1,0 +1,69 @@
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- multistep form -->
+            <form id="msform">
+                <fieldset>
+                    <div class="agroup">
+                        <label for="name">Job name: </label></br>
+                        Every job has a name, job name must be unique.</br>
+                        <input type="text" name="name" id="name" placeholder="Job Name" style="border-bottom"/><br>
+                    </div>
+                    <div class="agroup">
+                        <label for="source">Input type: </label></br>
+                        Audio and video source, v4l2src, network or test source(videotestsrc for video and audiotestsrc for audio).</br>
+                        <input type="radio" name="source" id="source" value="v4l2src"> v4l2src capture Device</br>
+                        <input type="radio" name="source" id="source" value="networksrc"> Network</br>
+                        <input type="radio" name="source" id="source" value="testsrc"> Test src</br>
+                    </div>
+                    <div class="agroup">
+                        <label for="udp">Output type: </label></br>
+                        have multi bitrate output? udp output? m3u8 output.</br>
+                        multibitrate number: 
+                        <select name="multibitrate" id="multibitrate">
+                            <option value="1">one</option>
+                            <option value="2">two</option>
+                            <option value="3">three</option>
+                        </select></br>
+                        <input type=checkbox name="udp" id="udp"> UDP output</br>
+                        <input type=checkbox name="m3u8" id="m3u8"> M3U8 output</br>
+                    </div>
+                    <input type="button" name="newjob" onclick="newlivejob();" value="Create job" />
+                </fieldset>
+            </form>
+        </div>
+    </div>
+
+
+    <script type="text/javascript">
+    function newlivejob()
+    {
+        var newjob = { };
+
+        if ($("#name").val() == "") {
+            alert ("Input name please!");
+            return;
+        }
+        newjob.name = $("#name").val();
+        newjob.source = $("#source:checked").val();
+        if (newjob.source == undefined) {
+            alert ("select input type");
+            return;
+        }
+        newjob.multibitrate = parseInt($("#multibitrate").val());
+        if ($("#udp").is(":checked")) {
+            newjob.udp = "yes";
+        } else {
+            newjob.udp = "no";
+        }
+        if ($("#m3u8").is(":checked")) {
+            newjob.m3u8 = "yes";
+        } else {
+            newjob.m3u8 = "no";
+        }
+
+        var posting = $.post("newlivejob", JSON.stringify(newjob), function(data) {
+            alert(data);
+        });
+    }
+    </script>
