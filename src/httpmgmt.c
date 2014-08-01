@@ -634,7 +634,12 @@ static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_d
                 g_free (p);
 
         } else if (g_str_has_prefix (request_data->uri, "/admin/setjob.html")) {
-                path = g_strdup_printf ("%s/gstreamill/admin/setjob.html", DATADIR);
+                if (g_str_has_prefix (request_data->parameters, "name=")) {
+                        path = g_strdup_printf ("%s/gstreamill/admin/setjob.html", DATADIR);
+
+                } else {
+                        *buf = g_strdup_printf (http_400, PACKAGE_NAME, PACKAGE_VERSION);
+                }
 
         } else {
                 /* static content, prepare file path */
@@ -652,7 +657,16 @@ static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_d
                 g_error_free (err);
 
         } else {
-                /* read file success, html file? add top and bottom */
+                /* setjob.html? process name parameter */
+                if (g_str_has_suffix (path, "setjob.html")) {
+                        gchar name[32], *temp_buf;
+
+                        sscanf (request_data->parameters, "name=%s", name);
+                        temp_buf = g_strdup_printf (*buf, name);
+                        g_free (*buf);
+                        *buf = temp_buf;
+                }
+                /* html file? add top and bottom */
                 if (g_str_has_suffix (path, ".html")) {
                         gchar *middle;
 

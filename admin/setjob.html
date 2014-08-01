@@ -28,7 +28,7 @@
                         <input type=checkbox name="udp" id="udp"> UDP output</br>
                         <input type=checkbox name="m3u8" id="m3u8"> M3U8 output</br>
                     </div>
-                    <input type="button" name="newjob" onclick="newlivejob();" value="Create job" />
+                    <input type="button" name="newjob" onclick="putjob();" value="Create job" />
                 </fieldset>
             </form>
         </div>
@@ -36,34 +36,9 @@
 
 
     <script type="text/javascript">
-    function newlivejob()
-    {
-        var newjob = { };
-
-        if ($("#name").val() == "") {
-            alert ("Input name please!");
-            return;
-        }
-        newjob.name = $("#name").val();
-        newjob.source = $("#source:checked").val();
-        if (newjob.source == undefined) {
-            alert ("select input type");
-            return;
-        }
-        newjob.multibitrate = parseInt($("#multibitrate").val());
-        if ($("#udp").is(":checked")) {
-            newjob.udp = "yes";
-        } else {
-            newjob.udp = "no";
-        }
-        if ($("#m3u8").is(":checked")) {
-            newjob.m3u8 = "yes";
-        } else {
-            newjob.m3u8 = "no";
-        }
-
-        var posting = $.post("newlivejob", JSON.stringify(newjob), function(data) {
-            alert(data);
-        });
+    $(document).ready(function() {
+        alert('%s');
+    });
+    function putjob() {
     }
     </script>
