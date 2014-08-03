@@ -1,0 +1,22 @@
+{
+    "title": "v4l2src source",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "Job name",
+            "minLength": 1
+        },
+        "source": {
+            "type": "object",
+            "title": "Source",
+            "description": "The source of video and audio",
+            "properties": {
+            }
+        },
+        "encoders": {
+            "type": "array",
+            "title": "Encoders",
+            "description": "encoders",
+            "items": {
+            }
