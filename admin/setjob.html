@@ -1,44 +1,23 @@
 
     <div class="container-fluid">
         <div class="row">
-            <!-- multistep form -->
-            <form id="msform">
-                <fieldset>
-                    <div class="agroup">
-                        <label for="name">Job name: </label></br>
-                        Every job has a name, job name must be unique.</br>
-                        <input type="text" name="name" id="name" placeholder="Job Name" style="border-bottom"/><br>
-                    </div>
-                    <div class="agroup">
-                        <label for="source">Input type: </label></br>
-                        Audio and video source, v4l2src, network or test source(videotestsrc for video and audiotestsrc for audio).</br>
-                        <input type="radio" name="source" id="source" value="v4l2src"> v4l2src capture Device</br>
-                        <input type="radio" name="source" id="source" value="networksrc"> Network</br>
-                        <input type="radio" name="source" id="source" value="testsrc"> Test src</br>
-                    </div>
-                    <div class="agroup">
-                        <label for="udp">Output type: </label></br>
-                        have multi bitrate output? udp output? m3u8 output.</br>
-                        multibitrate number: 
-                        <select name="multibitrate" id="multibitrate">
-                            <option value="1">one</option>
-                            <option value="2">two</option>
-                            <option value="3">three</option>
-                        </select></br>
-                        <input type=checkbox name="udp" id="udp"> UDP output</br>
-                        <input type=checkbox name="m3u8" id="m3u8"> M3U8 output</br>
-                    </div>
-                    <input type="button" name="newjob" onclick="putjob();" value="Create job" />
-                </fieldset>
-            </form>
+            <div id='editor_holder'></div>
         </div>
     </div>
 
 
     <script type="text/javascript">
-    $(document).ready(function() {
-        alert('%s');
-    });
+
+    $("#editor_holder")
+        .jsoneditor({
+            schema: {
+                $ref: "%s.schema"
+            },
+            ajax: true,
+            theme: 'bootstrap3'
+        });
+
     function putjob() {
     }
+
     </script>

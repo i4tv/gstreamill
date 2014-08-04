@@ -20,6 +20,7 @@ adminjsdir = $(datadir)/gstreamill/admin/js
 adminjs_DATA = \
         js/bootstrap.js \
         js/jquery.js \
+        js/jsoneditor.min.js \
         js/gstreamill.js
 
 adminfontsdir = $(datadir)/gstreamill/admin/fonts
