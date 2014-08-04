@@ -42,3 +42,7 @@ adminjobs_DATA = \
         jobtemplates/encoder.conf \
         jobtemplates/m3u8 \
         jobtemplates/m3u8.conf
+
+adminjobschemasdir = $(datadir)/gstreamill/admin/jobschemas
+adminjobschemas_DATA = \
+        jobtemplates/v4l2src.schema

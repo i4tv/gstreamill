@@ -11,9 +11,15 @@
     $("#editor_holder")
         .jsoneditor({
             schema: {
-                $ref: "%s.schema"
+                $ref: "jobschemas/%s.schema"
             },
             ajax: true,
+            disable_collapse: true,
+            disable_edit_json: true,
+            disable_properties: true,
+            disable_array_add: false,
+            disable_array_delete: false,
+            disable_array_reorder: true,
             theme: 'bootstrap3'
         });
 
