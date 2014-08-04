@@ -13,9 +13,11 @@
             "description": "The source of video and audio",
             "properties": {
                 "elements": {
+                    "title": "Function Elements",
                     "type": "object",
                     "properties": {
                         "alsasrc": {
+                            "title": "Audio Source",
                             "type": "object",
                             "properties": {
                                 "property": {
@@ -34,6 +36,7 @@
                             }
                         },
                         "v4l2src": {
+                            "title": "Video Source",
                             "type": "object",
                             "properties": {
                                 "property": {
