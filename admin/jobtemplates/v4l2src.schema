@@ -66,13 +66,8 @@
                 },
                 "bins": {
                     "type": "array",
-                    "items": {
-                        "type": "string",
-                        "format": "hidden"
-                    },
                     "options": {
-                        "disable_array_add": true,
-                        "disable_array_delete": true
+                        "hidden": true
                     },
                     "default": [
                         "alsasrc ! queue ! appsink name=audio",
@@ -152,6 +147,9 @@
                     },
                     "bins": {
                         "type": "array",
+                        "options": {
+                            "hidden": true
+                        },
                         "default": [
                             "appsrc name=audio ! audioresample ! audioconvert ! voaacenc ! muxer.",
                             "appsrc name=video ! queue ! videoconvert ! queue ! x264enc ! queue ! muxer.",
