@@ -31,13 +31,46 @@
                     <input type="button" name="newjob" onclick="newlivejob();" value="Create job" />
                 </fieldset>
             </form>
+            <div id='editor_holder' style="display: none;"></div>
         </div>
     </div>
 
 
     <script type="text/javascript">
+
     function newlivejob()
     {
+        var name = $("#name").val();
+        if (name == "") {
+            alert ("Input name please!");
+            return;
+        }
+
+        var source = $("#source:checked").val();
+        if (source == undefined) {
+            alert ("select input type");
+            return;
+        }
+
+        var element = document.getElementById('editor_holder');
+
+        var editor = new JSONEditor (element, {
+            schema: {
+                $ref: "jobschemas/" + source + ".schema"
+            },
+            ajax: true,
+            hidden: true
+        });
+
+        editor.on('ready', function() {
+            var job_name = editor.getEditor('root.name');
+            job_name.setValue(name);
+            alert (JSON.stringify (editor.getValue (), null, 2));
+        });
+/*
+    function newlivejob()
+    {
+
         var newjob = { };
 
         if ($("#name").val() == "") {
@@ -65,5 +98,6 @@
         var posting = $.post("newlivejob", JSON.stringify(newjob), function(data) {
             alert(data);
         });
+*/
     }
     </script>
