@@ -66,6 +66,14 @@
                 },
                 "bins": {
                     "type": "array",
+                    "items": {
+                        "type": "string",
+                        "format": "hidden"
+                    },
+                    "options": {
+                        "disable_array_add": true,
+                        "disable_array_delete": true
+                    },
                     "default": [
                         "alsasrc ! queue ! appsink name=audio",
                         "v4l2src ! queue ! appsink name=video"
