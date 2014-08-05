@@ -3,27 +3,35 @@
         <div class="row">
             <div id='editor_holder'></div>
         </div>
+        <button class='btn btn-primary' id='putjob'>Save Job</button>
     </div>
 
 
     <script type="text/javascript">
 
-    $("#editor_holder")
-        .jsoneditor({
-            schema: {
-                $ref: "jobschemas/%s.schema"
-            },
-            ajax: true,
-            disable_collapse: true,
-            disable_edit_json: true,
-            disable_properties: true,
-            disable_array_add: false,
-            disable_array_delete: false,
-            disable_array_reorder: true,
-            theme: 'bootstrap3'
-        });
+    var element = document.getElementById('editor_holder');
 
-    function putjob() {
-    }
+    var editor = new JSONEditor (element, {
+        schema: {
+            $ref: "jobschemas/%s.schema"
+        },
+        ajax: true,
+        disable_collapse: true,
+        disable_edit_json: true,
+        disable_properties: true,
+        disable_array_add: false,
+        disable_array_delete: false,
+        disable_array_reorder: true,
+        theme: 'bootstrap3',
+        iconlib: 'bootstrap3'
+    });
+
+
+    editor.on('ready', function() {
+        //editor.getEditor('root.source').disable();
+        $("#putjob").click (function() {
+            alert (JSON.stringify (editor.getValue (), null, 2));
+        });
+    });
 
     </script>
