@@ -488,11 +488,17 @@ static void job_check_func (gpointer data, gpointer user_data)
 
                                 property = g_strdup_printf ("encoder.%d.elements.hlssink.property.playlist-location", i);
                                 location = jobdesc_element_property_value (job->description, property);
-                                g_file_get_contents (location, &playlist1, NULL, NULL);
-                                playlist2 = g_strdup_printf ("%s#EXT-X-ENDLIST\n",  playlist1);
-                                g_file_set_contents (location, playlist2, strlen(playlist2), NULL);
-                                g_free (playlist1);
-                                g_free (playlist2);
+                                if (location == NULL) {
+                                        GST_ERROR ("job %s's property %s not found.", job->name, property);
+
+                                } else {
+                                        g_file_get_contents (location, &playlist1, NULL, NULL);
+                                        playlist2 = g_strdup_printf ("%s#EXT-X-ENDLIST\n",  playlist1);
+                                        g_file_set_contents (location, playlist2, strlen(playlist2), NULL);
+                                        g_free (playlist1);
+                                        g_free (playlist2);
+                                        g_free (location);
+                                }
                                 g_free (property);
                         }
                 }

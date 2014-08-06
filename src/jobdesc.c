@@ -286,6 +286,10 @@ gchar * jobdesc_element_property_value (gchar *job, gchar *property)
         } else if (g_str_has_prefix (property, "source")) {
                 value = json_object_dotget_value (obj, property);
         }
+        if (value == NULL) {
+                json_value_free (val);
+                return NULL;
+        }
         type = json_value_get_type (value);
         switch (type) {
         case JSONString:

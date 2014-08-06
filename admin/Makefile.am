@@ -30,20 +30,7 @@ adminfonts_DATA = \
         fonts/glyphicons-halflings-regular.ttf \
         fonts/glyphicons-halflings-regular.woff
 
-adminjobsdir = $(datadir)/gstreamill/admin/jobtemplates
-adminjobs_DATA = \
-        jobtemplates/v4l2src \
-        jobtemplates/v4l2src.conf \
-        jobtemplates/testsrc \
-        jobtemplates/testsrc.conf \
-        jobtemplates/networksrc \
-        jobtemplates/networksrc.conf \
-        jobtemplates/encoder \
-        jobtemplates/encoder.conf \
-        jobtemplates/m3u8 \
-        jobtemplates/m3u8.conf
-
 adminjobschemasdir = $(datadir)/gstreamill/admin/jobschemas
 adminjobschemas_DATA = \
-        jobtemplates/v4l2src.schema \
-        jobtemplates/encoder.schema
+        jobschemas/v4l2src.schema \
+        jobschemas/encoder.schema

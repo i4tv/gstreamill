@@ -367,12 +367,18 @@ static GstElement * element_create (gchar *job, gchar *pipeline, gchar *param)
                 while (*pp != NULL) {
                         p = g_strdup_printf ("%s.elements.%s.property.%s", pipeline, name, *pp);
                         value = jobdesc_element_property_value (job, p);
-                        g_free (p);
-                        if (!set_element_property (element, *pp, value)) {
-                                GST_ERROR ("Set property error %s=%s", *pp, value);
-                                return NULL;
+                        if (value == NULL) {
+                                GST_ERROR ("property %s not found", p);
+
+                        } else {
+                                if (!set_element_property (element, *pp, value)) {
+                                        GST_ERROR ("Set property error %s=%s", *pp, value);
+                                        return NULL;
+                                }
+                                GST_INFO ("Set property: %s = %s.", *pp, value);
+                                g_free (value);
                         }
-                        GST_INFO ("Set property: %s = %s.", *pp, value);
+                        g_free (p);
                         pp++;
                 }
         }
