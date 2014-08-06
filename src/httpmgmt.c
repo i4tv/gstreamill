@@ -310,17 +310,20 @@ static gchar * capture_devices (gchar *pattern)
 
 static gchar * get_job (gchar *uri)
 {
-        gchar *job_path, *job;
+        gchar *job_path, *job, *p;
         GError *err = NULL;
 
         job_path = g_strdup_printf ("/etc/gstreamill.d%s.job", &uri[13]);
-        if (!g_file_get_contents (job_path, &job, NULL, &err)) {
+        if (!g_file_get_contents (job_path, &p, NULL, &err)) {
                 GST_ERROR ("read job %s failure: %s", job_path, err->message);
-                job = NULL;
+                job = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"\n}", err->message);
                 g_error_free (err);
         }
         g_free (job_path);
 
+        job = g_strdup_printf ("{\n    \"result\": \"success\",\n    \"data\": %s\n}", p);
+        g_free (p);
+        
         return job;
 }
 
