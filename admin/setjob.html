@@ -37,7 +37,15 @@
             editor.getEditor('root.name').disable();
             editor.setValue (data.data);
             $("#putjob").click (function() {
-                alert (JSON.stringify (editor.getValue (), null, 2));
+                var name = data.data.name;
+                var value = editor.getValue ();
+                var posting = $.post("putjob/" + name, JSON.stringify (value, null, 4), function (data) {
+                    if (data.result == 'success') {
+                        alert (data.result);
+                    } else {
+                        alert (data.result + '\n' + data.reason);
+                    }
+                });
             });
         });
 
