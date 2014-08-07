@@ -284,7 +284,7 @@ static gchar * add_header_footer (gchar *middle)
         return buf;
 }
 
-static gchar * list_files (gchar *pattern)
+static gchar * list_files (gchar *pattern, gchar *format)
 {
         glob_t pglob;
         gint i;
@@ -293,7 +293,15 @@ static gchar * list_files (gchar *pattern)
         p = g_strdup ("[");
         if (glob (pattern, 0, NULL, &pglob) == 0) {
                 for (i = 0; i < pglob.gl_pathc; i++) {
-                        devices = g_strdup_printf ("%s\"%s\",", p, pglob.gl_pathv[i]);
+                        gchar name[128];
+
+                        if (format != NULL) {
+                                sscanf (pglob.gl_pathv[i], format, name);
+                                devices = g_strdup_printf ("%s\"%s\",", p, name);
+
+                        } else {
+                                devices = g_strdup_printf ("%s\"%s\",", p, pglob.gl_pathv[i]);
+                        }
                         g_free (p);
                         p = devices;
                 }
@@ -359,17 +367,19 @@ static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_d
                 path = g_strdup_printf ("%s/gstreamill/admin/index.html", DATADIR);
 
         } else if (g_strcmp0 (request_data->uri, "/admin/audiodevices") == 0) {
-                p = list_files ("/dev/snd/pcmC*c");
+                p = list_files ("/dev/snd/pcmC*c", NULL);
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
         } else if (g_strcmp0 (request_data->uri, "/admin/videodevices") == 0) {
-                p = list_files ("/dev/video*");
+                p = list_files ("/dev/video*", NULL);
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
-        } else if (g_str_has_prefix (request_data->uri, "/admin/getjob/")) {
-
+        } else if (g_str_has_prefix (request_data->uri, "/admin/listjob")) {
+                p = list_files ("/etc/gstreamill.d/*.job", "/etc/gstreamill.d/%[^.].job");
+                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+                g_free (p);
 
         } else if (g_str_has_prefix (request_data->uri, "/admin/getjob/")) {
                 p = get_job (request_data->uri);
