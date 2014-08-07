@@ -34,4 +34,5 @@ adminjobschemasdir = $(datadir)/gstreamill/admin/jobschemas
 adminjobschemas_DATA = \
         jobschemas/v4l2src.schema \
         jobschemas/networksrc.schema \
+        jobschemas/testsrc.schema \
         jobschemas/encoder.schema
