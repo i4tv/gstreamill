@@ -1,25 +1,20 @@
 
     <div class="container-fluid joblist">
-        <table class="table" id="jobtable">
-            <tr>
-                <th>Job</th>
-                <th>Type</th>
-                <th>Status</th>
-            </tr>
+        <ul class="list-group" id="joblist">
         </table>
     </div>
 
 
     <script type="text/javascript">
     $(document).ready(function () {
-        var posting = $.get("/stat/gstreamill", function(gstreamill) {
-            var jobs = gstreamill.jobs;
+        var posting = $.get("/admin/listjob", function (jobs) {
             for (var i = 0; i < jobs.length; i++) {
                 var jobStatUrl = '/stat/gstreamill/job/' + jobs[i];
-                var jobStat = $.get(jobStatUrl, function(job) {
-                    var tr = '<tr><td>' + job.name + '</td>';
-                    tr += '<td>live</td><td>running</td></tr>';
-                    $('#jobtable tr:last').after(tr);
+                var jobStat = $.get(jobStatUrl, function (job) {
+                    var li = '<li class="list-group-item">\n';
+                    li += '<span class="glyphicon glyphicon-search"></span>\n ';
+                    li += job.name;
+                    $('#joblist').append(li);
                 });
             }
         });
