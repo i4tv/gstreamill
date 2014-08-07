@@ -12,8 +12,12 @@
                 var jobStatUrl = '/stat/gstreamill/job/' + jobs[i];
                 var jobStat = $.get(jobStatUrl, function (job) {
                     var li = '<li class="list-group-item">\n';
-                    li += '<span class="glyphicon glyphicon-search"></span>\n ';
-                    li += job.name;
+                    if (job.result == "success") {
+                        data = job.data;
+                        li += '<span class="glyphicon glyphicon-search"></span>\n ';
+                        li += '<h3>' + data.name + '</h3>';
+                    }
+                    li += "</li>"
                     $('#joblist').append(li);
                 });
             }
