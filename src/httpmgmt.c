@@ -356,7 +356,7 @@ static gchar * put_job (RequestData *request_data)
         return result;
 }
 
-static gsize request_gstreamer_admin (HTTPMgmt *httpmgmt, RequestData *request_data, gchar **buf)
+static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_data, gchar **buf)
 {
         gchar *path, *http_header, *p;
         gsize buf_size;
@@ -484,7 +484,7 @@ static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
                         buf_size = strlen (buf);
 
                 } else if (g_str_has_prefix (request_data->uri, "/admin")) {
-                        buf_size = request_gstreamer_admin (httpmgmt, request_data, &buf);
+                        buf_size = request_gstreamill_admin (httpmgmt, request_data, &buf);
 
                 } else {
                         buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
