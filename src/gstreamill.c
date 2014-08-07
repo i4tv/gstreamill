@@ -1241,7 +1241,7 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
                           "%s\n"
                           "    ]\n"
                           "}\n";
-        gchar *stat, *name, *source_streams, *encoders;
+        gchar *stat, *name, *source_streams, *encoders, *p;
         Job *job;
         GRegex *regex = NULL;
         GMatchInfo *match_info = NULL;
@@ -1255,16 +1255,16 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
         }
         if (name == NULL) {
                 GST_ERROR ("wrong uri");
-                return g_strdup ("wrong uri");
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"wrong uri\"\n}");
         }
         job = get_job (gstreamill, name);
         if (job == NULL) {
                 GST_ERROR ("uri %s not found.", uri);
-                return g_strdup ("not found");
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"not found\"\n}");
         }
         source_streams = source_streams_stat (job);
         encoders = encoders_stat (job);
-        stat = g_strdup_printf (template,
+        p = g_strdup_printf (template,
                                 job->name,
                                 job->age,
                                 job->last_start_time,
@@ -1279,6 +1279,8 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
                                 encoders);
         g_free (source_streams);
         g_free (encoders);
+        stat = g_strdup_printf ("{\n    \"result\": \"success\",\n    \"data\": %s}", p);
+        g_free (p);
 
         return stat;
 }
