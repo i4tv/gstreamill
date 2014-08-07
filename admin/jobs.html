@@ -12,13 +12,14 @@
                 var jobStatUrl = '/stat/gstreamill/job/' + jobs[i];
                 var jobStat = $.get(jobStatUrl, function (job) {
                     var li = '<li class="list-group-item">\n';
+                    li += '<a href="/admin/setjob.html?name=';
                     if (job.result == "success") {
                         data = job.data;
-                        li += '<a href="/admin/setjob.html?name=' + data.name + '"><h3>' + data.name + '</h3></a>';
+                        li += data.name + '"><h3>' + data.name;
                     } else {
-                        li += '<h3>' + job.name + '</h3>';
+                        li += job.name + '"><h3>' + job.name;
                     }
-                    li += "</li>"
+                    li += '</h3></a></li>';
                     $('#joblist').append(li);
                 });
             }
