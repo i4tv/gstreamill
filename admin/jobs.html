@@ -14,8 +14,9 @@
                     var li = '<li class="list-group-item">\n';
                     if (job.result == "success") {
                         data = job.data;
-                        li += '<span class="glyphicon glyphicon-search"></span>\n ';
-                        li += '<h3>' + data.name + '</h3>';
+                        li += '<a href="/admin/setjob.html?name=' + data.name + '"><h3>' + data.name + '</h3></a>';
+                    } else {
+                        li += '<h3>' + job.name + '</h3>';
                     }
                     li += "</li>"
                     $('#joblist').append(li);

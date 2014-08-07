@@ -1260,7 +1260,7 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
         job = get_job (gstreamill, name);
         if (job == NULL) {
                 GST_ERROR ("uri %s not found.", uri);
-                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"not found\"\n}");
+                return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"not found\",\n    \"name\": \"%s\"\n}", name);
         }
         source_streams = source_streams_stat (job);
         encoders = encoders_stat (job);
