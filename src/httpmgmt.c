@@ -133,49 +133,6 @@ GType httpmgmt_get_type (void)
         return type;
 }
 
-static gchar * start_job (HTTPMgmt *httpmgmt, RequestData *request_data)
-{
-        gchar *buf, *p, *var;
-
-        if (request_data->method == HTTP_POST) {
-                /* start a job. */
-                var = request_data->raw_request + request_data->header_size;
-                p = gstreamill_job_start (httpmgmt->gstreamill, var);
-                buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
-                g_free (p);
-
-        } else {
-                buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
-        }
-
-        return buf;
-}
-
-static gchar * stop_job (HTTPMgmt *httpmgmt, RequestData *request_data)
-{
-        gchar *buf, *p;
-        GRegex *regex;
-        GMatchInfo *match_info;
-
-        if (request_data->method == HTTP_GET) {
-                regex = g_regex_new ("/stop/(?<name>.*)", G_REGEX_OPTIMIZE, 0, NULL);
-                g_regex_match (regex, request_data->uri, 0, &match_info);
-                g_regex_unref (regex);
-                if (g_match_info_matches (match_info)) {
-                        buf = g_match_info_fetch_named (match_info, "name");
-                        g_match_info_free (match_info);
-                        p = gstreamill_job_stop (httpmgmt->gstreamill, buf);
-                        g_free (buf);
-                        buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
-                        g_free (p);
-                        return buf;
-                }
-        }
-        buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
-
-        return buf;
-}
-
 static gchar * request_gstreamill_stat (HTTPMgmt *httpmgmt, RequestData *request_data)
 {
         gchar *buf, *p;
@@ -316,6 +273,45 @@ static gchar * list_files (gchar *pattern, gchar *format)
         return devices;
 }
 
+static gchar * start_job (HTTPMgmt *httpmgmt, RequestData *request_data)
+{
+        gchar *buf, *var;
+
+        if (request_data->method == HTTP_POST) {
+                /* start a job. */
+                var = request_data->raw_request + request_data->header_size;
+                buf = gstreamill_job_start (httpmgmt->gstreamill, var);
+
+        } else {
+                buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+        }
+
+        return buf;
+}
+
+static gchar * stop_job (HTTPMgmt *httpmgmt, RequestData *request_data)
+{
+        gchar *buf, *p;
+        GRegex *regex;
+        GMatchInfo *match_info;
+
+        if (request_data->method == HTTP_GET) {
+                regex = g_regex_new ("/admin/stop/(?<name>.*)", G_REGEX_OPTIMIZE, 0, NULL);
+                g_regex_match (regex, request_data->uri, 0, &match_info);
+                g_regex_unref (regex);
+                if (g_match_info_matches (match_info)) {
+                        p = g_match_info_fetch_named (match_info, "name");
+                        g_match_info_free (match_info);
+                        buf = gstreamill_job_stop (httpmgmt->gstreamill, p);
+                        g_free (p);
+                        return buf;
+                }
+        }
+        buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+
+        return buf;
+}
+
 static gchar * get_job (gchar *uri)
 {
         gchar *job_path, *job, *p;
@@ -367,10 +363,14 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
                 path = g_strdup_printf ("%s/gstreamill/admin/index.html", DATADIR);
 
         } else if (g_str_has_prefix (request_data->uri, "/admin/start")) {
-                *buf = start_job (httpmgmt, request_data);
+                p = start_job (httpmgmt, request_data);
+                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+                g_free (p);
 
         } else if (g_str_has_prefix (request_data->uri, "/admin/stop")) {
-                *buf = stop_job (httpmgmt, request_data);
+                p = stop_job (httpmgmt, request_data);
+                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+                g_free (p);
 
         } else if (g_strcmp0 (request_data->uri, "/admin/audiodevices") == 0) {
                 p = list_files ("/dev/snd/pcmC*c", NULL);
