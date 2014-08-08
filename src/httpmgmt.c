@@ -366,6 +366,12 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
         if (g_strcmp0 (request_data->uri, "/admin/") == 0) {
                 path = g_strdup_printf ("%s/gstreamill/admin/index.html", DATADIR);
 
+        } else if (g_str_has_prefix (request_data->uri, "/admin/start")) {
+                *buf = start_job (httpmgmt, request_data);
+
+        } else if (g_str_has_prefix (request_data->uri, "/admin/stop")) {
+                *buf = stop_job (httpmgmt, request_data);
+
         } else if (g_strcmp0 (request_data->uri, "/admin/audiodevices") == 0) {
                 p = list_files ("/dev/snd/pcmC*c", NULL);
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
@@ -467,15 +473,8 @@ static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
         switch (request_data->status) {
         case HTTP_REQUEST:
                 GST_INFO ("new request arrived, socket is %d, uri is %s", request_data->sock, request_data->uri);
-                if (g_str_has_prefix (request_data->uri, "/start")) {
-                        buf = start_job (httpmgmt, request_data);
-                        buf_size = strlen (buf);
 
-                } else if (g_str_has_prefix (request_data->uri, "/stop")) {
-                        buf = stop_job (httpmgmt, request_data);
-                        buf_size = strlen (buf);
-
-                } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamill")) {
+                if (g_str_has_prefix (request_data->uri, "/stat/gstreamill")) {
                         buf = request_gstreamill_stat (httpmgmt, request_data);
                         buf_size = strlen (buf);
 

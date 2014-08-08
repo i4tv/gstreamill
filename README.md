@@ -91,7 +91,7 @@ gstreamill have been tested in ubuntu 13.10.
 
 default management port is 20118, invoke test job as flowing:
 
-    curl -H "Content-Type: application/json" --data @examples/test.job http://localhost:20118/start
+    curl -H "Content-Type: application/json" --data @examples/test.job http://localhost:20118/admin/start
 
 * invode a job in foreground:
 
@@ -111,13 +111,13 @@ default management port is 20118, invoke test job as flowing:
 
 * start a job over http use curl
 
-    curl -H "Content-Type: application/json" --data @examples/test.job http://localhost:20118/start
+    curl -H "Content-Type: application/json" --data @examples/test.job http://localhost:20118/admin/start
 
 test.job is job description in json, can be found in examples directory.
 
 * stop a job
 
-    curl http://host.name.or.ip:20118/stop/job_name
+    curl http://host.name.or.ip:20118/admin/stop/job_name
 
 job_name is value of the "name" field in job description.
 

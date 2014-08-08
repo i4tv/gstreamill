@@ -18,7 +18,7 @@
 
             var job = JSON.stringify (data.data, null, 4);
 
-            $.post ("/start", job, function (response) {
+            $.post ("/admin/start", job, function (response) {
                 alert (response);
             });
 
@@ -28,13 +28,14 @@
 
     function stopJob (name) {
 
-        $.get ("/stop/" + name, function (response) {
+        $.get ("/admin/stop/" + name, function (response) {
             alert (response);
         });
 
     }
 
     $(document).ready(function () {
+
         $.get("/admin/listjob", function (jobs) {
             for (var i = 0; i < jobs.length; i++) {
                 var jobStatUrl = '/stat/gstreamill/job/' + jobs[i];
