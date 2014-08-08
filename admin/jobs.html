@@ -59,16 +59,23 @@
                 var jobStatUrl = '/stat/gstreamill/job/' + jobs[i];
                 var jobStat = $.get(jobStatUrl, function (job) {
                     var li = '<li class="list-group-item">\n';
+                    li += '<div class="row">';
+                    li += '<div class="col-md-10">';
                     li += '<a href="/admin/setjob.html?name=';
                     if (job.result == "success") {
                         data = job.data;
                         li += data.name + '"><h3>' + data.name + '</h3></a>';
+                        li += '</div>';
+                        li += '<div class="col-md-2">';
                         li += '<button class="btn btn-warning" id="job_' + data.name + '" onclick="stopJob(\'' + data.name + '\')">Stop Job</button>';
                     } else {
                         li += job.name + '"><h3>' + job.name + '</h3></a>';
+                        li += 'The job is not started.';
+                        li += '</div>';
+                        li += '<div class="col-md-2">';
                         li += '<button class="btn btn-primary" id="job_' + job.name + '" onclick="startJob(\'' + job.name + '\')">Start Job</button>';
                     }
-                    li += '</li>';
+                    li += '</div></div></li>';
                     $('#joblist').append(li);
                 });
             }
