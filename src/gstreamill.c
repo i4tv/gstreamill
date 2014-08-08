@@ -717,7 +717,7 @@ static gchar * create_job_process (Job *job)
         job->worker_pid = pid;
         g_child_watch_add (pid, (GChildWatchFunc)child_watch_cb, job);
 
-        return g_strdup ("{\n    \"result\": \"success\"\n}");
+        return g_strdup_printf ("{\n    \"name\": \"%s\",\n    \"result\": \"success\"\n}", job->name);
 }
 
 static Job * get_job (Gstreamill *gstreamill, gchar *name)

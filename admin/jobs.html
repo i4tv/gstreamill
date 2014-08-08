@@ -20,7 +20,11 @@
 
             $.post ("/admin/start", job, function (response) {
                 if (response.result == "success") {
-                    alert (response.result);
+                    var name = response.name;
+                    alert ('start ' + name + ' ' + response.result);
+                    $('#job_' + name).text("Stop Job")
+                        .attr("class", "btn btn-warning")
+                        .attr("onclick", "stopJob('" + name + "')");
 
                 } else {
                     alert (response.result + "\n" + response.reason);
@@ -37,8 +41,9 @@
             if (response.result == "success") {
                 var name = response.name;
                 alert ('stop ' + name + ' ' + response.result);
-                $('#job_' + name).text("Start Job");
-                $('#job_' + name).attr("class", "btn btn-primary");
+                $('#job_' + name).text("Start Job")
+                    .attr("class", "btn btn-primary")
+                    .attr("onclick", "startJob('" + name + "')");
 
             } else {
                 alert (response.result + "\n" + response.reason);
