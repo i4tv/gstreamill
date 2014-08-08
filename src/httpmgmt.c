@@ -283,7 +283,7 @@ static gchar * start_job (HTTPMgmt *httpmgmt, RequestData *request_data)
                 buf = gstreamill_job_start (httpmgmt->gstreamill, var);
 
         } else {
-                buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+                buf = g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"must be post request\"\n}");
         }
 
         return buf;
@@ -307,7 +307,7 @@ static gchar * stop_job (HTTPMgmt *httpmgmt, RequestData *request_data)
                         return buf;
                 }
         }
-        buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+        buf = g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"must be get request\"\n}");
 
         return buf;
 }
