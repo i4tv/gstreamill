@@ -643,7 +643,9 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
         }
 
         if (WIFSIGNALED (status)) {
-                gchar *ret;
+                gchar *p, *result;
+                JSON_Value *val;
+                JSON_Object *obj;
 
                 if (*(job->output->state) == GST_STATE_PAUSED) {
                         GST_ERROR ("Job with pid %d exit on an unhandled signal and paused, stopping gstreamill...", pid);
@@ -653,13 +655,17 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
 
                 GST_ERROR ("Job with pid %d exit on an unhandled signal, restart.", pid);
                 job_reset (job);
-                ret = create_job_process (job);
-                if (g_str_has_suffix (ret, "failure")) {
+                p = create_job_process (job);
+                val = json_parse_string (p);
+                obj = json_value_get_object (val);
+                result = (gchar *)json_object_get_string (obj, "result");
+                if (g_strcmp0 (result, "failure") == 0) {
                         /* create process failure, clean from job list */
                         *(job->output->state) = GST_STATE_NULL;
                 }
-                GST_ERROR ("create_job_process: %s", ret);
-                g_free (ret);
+                GST_ERROR ("create job process: %s", result);
+                json_value_free (val);
+                g_free (p);
         }
 
         return;
@@ -675,7 +681,7 @@ static gchar * create_job_process (Job *job)
         memset (path, '\0', sizeof (path));
         if (readlink ("/proc/self/exe", path, sizeof (path)) == -1) {
                 GST_ERROR ("Read /proc/self/exe error.");
-                return g_strdup ("create live job failure");
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"Read /proc/self/exe error\"\n}");
         }
         i = 0;
         argv[i++] = g_strdup (path);
@@ -698,8 +704,9 @@ static gchar * create_job_process (Job *job)
                                 g_free (argv[j]);
                         }
                 }
+                p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"\n}", error->message);
                 g_error_free (error);
-                return g_strdup ("create live job process failure");
+                return p;
         }
 
         for (j = 0; j < i; j++) {
@@ -710,7 +717,7 @@ static gchar * create_job_process (Job *job)
         job->worker_pid = pid;
         g_child_watch_add (pid, (GChildWatchFunc)child_watch_cb, job);
 
-        return g_strdup ("create live job process success");
+        return g_strdup ("{\n    \"result\": \"success\"\n}");
 }
 
 static Job * get_job (Gstreamill *gstreamill, gchar *name)
@@ -791,9 +798,16 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
         /* reset and start job */
         job_reset (job);
         if (gstreamill->daemon) {
+                JSON_Value *val;
+                JSON_Object *obj;
+                gchar *result;
+
                 p = create_job_process (job);
-                GST_ERROR ("%s: %s", p, job->name);
-                if (g_str_has_suffix (p, "success")) {
+                val = json_parse_string (p);
+                obj = json_value_get_object (val);
+                result = (gchar *)json_object_get_string (obj, "result");
+                GST_ERROR ("Create process %s: %s", result, job->name);
+                if (g_strcmp0 (result, "success") == 0) {
                         g_mutex_lock (&(gstreamill->job_list_mutex));
                         gstreamill->job_list = g_slist_append (gstreamill->job_list, job);
                         g_mutex_unlock (&(gstreamill->job_list_mutex));
@@ -801,6 +815,7 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
                 } else {
                         g_object_unref (job);
                 }
+                json_value_free (val);
 
         } else {
                 if (job_start (job) == 0) {
