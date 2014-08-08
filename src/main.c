@@ -323,17 +323,23 @@ int main (int argc, char *argv[])
 
         } else {
                 /* run in foreground, start job */
-                gchar *job, *p;
+                gchar *job, *p, *result;
+                JSON_Value *val;
+                JSON_Object *obj;
 
                 if (!g_file_get_contents (job_file, &job, NULL, NULL)) {
                         GST_ERROR ("Read job file %s error.", job_file);
                         exit (1);
                 }
                 p = gstreamill_job_start (gstreamill, job);
-                GST_WARNING ("start job result: %s.", p);
-                if (g_strcmp0 (p, "success") != 0) {
+                val = json_parse_string (p);
+                obj = json_value_get_object (val);
+                result = (gchar *)json_object_get_string (obj, "result");
+                GST_WARNING ("start job result: %s.", result);
+                if (g_strcmp0 (result, "success") != 0) {
                         exit (1);
                 }
+                json_value_free (val);
                 g_free (p);
         }
 

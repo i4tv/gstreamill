@@ -19,7 +19,12 @@
             var job = JSON.stringify (data.data, null, 4);
 
             $.post ("/admin/start", job, function (response) {
-                alert (response);
+                if (response.result == "success") {
+                    alert (response.result);
+
+                } else {
+                    alert (response.result + "\n" + response.reason);
+                }
             });
 
         });

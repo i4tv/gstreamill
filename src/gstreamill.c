@@ -752,7 +752,7 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
         Job *job;
 
         if (!jobdesc_is_valid (job_desc)) {
-                p = g_strdup ("Invalid job");
+                p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid job\"\n}");
                 return p;
         }
 
@@ -767,7 +767,7 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
         name = jobdesc_get_name (job_desc);
         if (get_job (gstreamill, name) != NULL) {
                 GST_ERROR ("start live job failure, duplicated name %s.", name);
-                p = g_strdup_printf ("start live job failure, duplicated name %s.", name);
+                p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"duplicated name\"\n}");
                 g_free (name);
                 return p;
         }
@@ -783,7 +783,7 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
         job->age = 0;
         job->last_start_time = NULL;
         if (job_initialize (job, gstreamill->daemon) != 0) {
-                p = g_strdup ("initialize job failure");
+                p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"initialize job failure\"\n}");
                 g_object_unref (job);
                 return p;
         }
@@ -807,10 +807,10 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
                         g_mutex_lock (&(gstreamill->job_list_mutex));
                         gstreamill->job_list = g_slist_append (gstreamill->job_list, job);
                         g_mutex_unlock (&(gstreamill->job_list_mutex));
-                        p = g_strdup ("success");
+                        p = g_strdup ("{\n    \"result\": \"success\"\n}");
 
                 } else {
-                        p = g_strdup ("failure");
+                        p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"unknown\"\n}");
                 }
         }
 
