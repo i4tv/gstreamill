@@ -9,26 +9,36 @@
                 "appsrc": {
                     "type": "object",
                     "properties": {
-                        "is-live": {
-                            "type": "boolean",
-                            "default": true
-                        },
-                        "format": {
-                            "type": "number",
-                            "default": 3
+                        "property": {
+                            "type": "object",
+                            "properties": {
+                                "is-live": {
+                                    "type": "boolean",
+                                    "default": true
+                                },
+                                "format": {
+                                    "type": "number",
+                                    "default": 3
+                                }
+                            }
                         }
                     }
                 },
                 "x264enc": {
                     "type": "object",
                     "properties": {
-                        "bitrate": {
-                            "type": "number",
-                            "default": 1000
-                        },
-                        "byte-stream": {
-                            "type": "boolean",
-                            "default": true
+                        "property": {
+                            "type": "object",
+                            "properties": {
+                                "bitrate": {
+                                    "type": "number",
+                                    "default": 1000
+                                },
+                                "byte-stream": {
+                                    "type": "boolean",
+                                    "default": true
+                                }
+                            }
                         }
                     }
                 },
