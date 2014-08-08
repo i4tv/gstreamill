@@ -6,8 +6,36 @@
 
 
     <script type="text/javascript">
+
+    function startJob (name) {
+
+        $.get ("/admin/getjob/" + name, function (data) {
+
+            if (data.result == "failure") {
+                alert (data.reason);
+                return;
+            }
+
+            var job = JSON.stringify (data.data, null, 4);
+
+            $.post ("/start", job, function (response) {
+                alert (response);
+            });
+
+        });
+
+    }
+
+    function stopJob (name) {
+
+        $.get ("/stop/" + name, function (response) {
+            alert (response);
+        });
+
+    }
+
     $(document).ready(function () {
-        var posting = $.get("/admin/listjob", function (jobs) {
+        $.get("/admin/listjob", function (jobs) {
             for (var i = 0; i < jobs.length; i++) {
                 var jobStatUrl = '/stat/gstreamill/job/' + jobs[i];
                 var jobStat = $.get(jobStatUrl, function (job) {
@@ -15,14 +43,18 @@
                     li += '<a href="/admin/setjob.html?name=';
                     if (job.result == "success") {
                         data = job.data;
-                        li += data.name + '"><h3>' + data.name;
+                        li += data.name + '"><h3>' + data.name + '</h3></a>';
+                        li += '<button class="btn btn-warning" id="stop" onclick="stopJob(\'' + data.name + '\')">Stop Job</button>';
                     } else {
-                        li += job.name + '"><h3>' + job.name;
+                        li += job.name + '"><h3>' + job.name + '</h3></a>';
+                        li += '<button class="btn btn-primary" id="stop" onclick="startJob(\'' + job.name + '\')">Start Job</button>';
                     }
-                    li += '</h3></a></li>';
+                    li += '</li>';
                     $('#joblist').append(li);
                 });
             }
         });
+
     });
+
     </script>
