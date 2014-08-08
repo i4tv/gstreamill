@@ -830,10 +830,10 @@ gchar * gstreamill_job_stop (Gstreamill *gstreamill, gchar *name)
         job = get_job (gstreamill, name);
         if (job != NULL) {
                 stop_job (job, SIGUSR2);
-                return g_strdup ("ok");
+                return g_strdup ("{\n    \"result\": \"success\"\n}");
 
         } else {
-                return g_strdup ("job not found");
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"job not found\"\n}");
         }
 }
 

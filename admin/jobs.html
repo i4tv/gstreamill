@@ -29,7 +29,12 @@
     function stopJob (name) {
 
         $.get ("/admin/stop/" + name, function (response) {
-            alert (response);
+            if (response.result == "success") {
+                alert (response.result);
+
+            } else {
+                alert (response.result + "\n" + response.reason);
+            }
         });
 
     }
