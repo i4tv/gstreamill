@@ -1238,7 +1238,7 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
 {
         gchar *template = "{\n"
                           "    \"name\": \"%s\",\n"
-                          "    \"age:\": %d,\n"
+                          "    \"age\": %d,\n"
                           "    \"last_start_time\": \"%s\",\n"
                           "    \"current_access\": %d, \n"
                           "    \"cpu_average\": %d,\n"
