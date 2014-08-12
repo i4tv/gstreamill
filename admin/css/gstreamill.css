@@ -30,21 +30,25 @@
     display: none;
 }
 
-#setjob {
+#joblist {
     width: 800px;
     margin-top: 50px;
     margin-left: auto;
     margin-right: auto;
 }
 
-#setjob li {
+#joblist li {
     margin: 10px 0px 0px 0px;
-    padding: 0px 0px 0px 0px;
+    padding: 0px 0px 10px 0px;
     border-top: 0px;
     border-left: 0px;
     border-right: 0px;
 }
 
-#setjob li:last-child {
+#joblist li:last-child {
     border: 0;
+}
+
+#joblist h3, h4 {
+    display: inline;
 }

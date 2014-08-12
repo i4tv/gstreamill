@@ -1,6 +1,6 @@
 
     <div class="container-fluid">
-        <ul class="list-group" id="setjob">
+        <ul class="list-group" id="joblist">
         </table>
     </div>
 
@@ -65,18 +65,27 @@
                     if (job.result == "success") {
                         data = job.data;
                         li += data.name + '"><h3>' + data.name + '</h3></a>';
+                        li += ' Restart ' + data.age + ' times,';
+                        li += ' Last time started at ' + data.last_start_time;
                         li += '</div>';
                         li += '<div class="col-md-2">';
                         li += '<button class="btn btn-warning" id="job_' + data.name + '" onclick="stopJob(\'' + data.name + '\')">Stop Job</button>';
+                        li += '</div>';
+                        li += '</div>';
+                        li += '<div class="row">';
+                        li += '<div class="col-md-12">';
+                        li += '<h4>encoder counts: </h4>' + data.encoder_count;
+                        li += ' <h4>Average CPU usage: </h4>' + data.cpu_average;
+                        li += ' <h4>Memory usage: </h4>' + data.memory;
                     } else {
                         li += job.name + '"><h3>' + job.name + '</h3></a>';
-                        li += 'The job is not started.';
+                        li += ' The job is not started.';
                         li += '</div>';
                         li += '<div class="col-md-2">';
                         li += '<button class="btn btn-primary" id="job_' + job.name + '" onclick="startJob(\'' + job.name + '\')">Start Job</button>';
                     }
                     li += '</div></div></li>';
-                    $('#setjob').append(li);
+                    $('#joblist').append(li);
                 });
             }
         });
