@@ -7,6 +7,39 @@
 
     <script type="text/javascript">
 
+    function showJobStatus (response) {
+        var li = '<div class="row">';
+        li += '<div class="col-md-10">';
+        li += '<a href="/admin/setjob.html?name=';
+        if (response.result == "success") {
+            var job = response.data;
+            li += job.name + '"><h3>' + job.name + '</h3></a>';
+            li += ' Restart ' + job.age + ' times,';
+            li += ' Last time started at ' + job.last_start_time;
+            li += '</div>';
+            li += '<div class="col-md-2">';
+            li += '<button class="btn btn-warning" id="job_' + job.name + '" onclick="stopJob(\'' + job.name + '\')">Stop Job</button>';
+            li += '</div>';
+            li += '</div>';
+            li += '<div class="row">';
+            li += '<div class="col-md-12">';
+            li += '<h4>encoder counts: </h4>' + job.encoder_count;
+            li += ' <h4>Average CPU usage: </h4>' + job.cpu_average;
+            li += ' <h4>Memory usage: </h4>' + job.memory;
+            li += '</div></div>';
+            $('#li_' + job.name).html(li);
+        } else {
+            var job = response;
+            li += job.name + '"><h3>' + job.name + '</h3></a>';
+            li += ' The job is not started.';
+            li += '</div>';
+            li += '<div class="col-md-2">';
+            li += '<button class="btn btn-primary" id="job_' + job.name + '" onclick="startJob(\'' + job.name + '\')">Start Job</button>';
+            li += '</div></div>';
+            $('#li_' + job.name).html(li);
+        }
+    }
+
     function startJob (name) {
 
         $.get ("/admin/getjob/" + name, function (data) {
@@ -20,11 +53,11 @@
 
             $.post ("/admin/start", job, function (response) {
                 if (response.result == "success") {
-                    var name = response.name;
                     alert ('start ' + name + ' ' + response.result);
-                    $('#job_' + name).text("Stop Job")
-                        .attr("class", "btn btn-warning")
-                        .attr("onclick", "stopJob('" + name + "')");
+                    var jobStatUrl = '/stat/gstreamill/job/' + response.name;
+                    var jobStat = $.get(jobStatUrl, function (response) {
+                        showJobStatus (response);
+                    });
 
                 } else {
                     alert (response.result + "\n" + response.reason);
@@ -39,11 +72,11 @@
 
         $.get ("/admin/stop/" + name, function (response) {
             if (response.result == "success") {
-                var name = response.name;
-                alert ('stop ' + name + ' ' + response.result);
-                $('#job_' + name).text("Start Job")
-                    .attr("class", "btn btn-primary")
-                    .attr("onclick", "startJob('" + name + "')");
+                alert ('stop ' + response.name + ' ' + response.result);
+                var jobStatUrl = '/stat/gstreamill/job/' + response.name;
+                var jobStat = $.get(jobStatUrl, function (response) {
+                    showJobStatus (response);
+                });
 
             } else {
                 alert (response.result + "\n" + response.reason);
@@ -56,36 +89,11 @@
 
         $.get("/admin/listjob", function (jobs) {
             for (var i = 0; i < jobs.length; i++) {
+                var li = '<li class="list-group-item" id="li_' + jobs[i] + '"></li>';
+                $('#joblist').append(li);
                 var jobStatUrl = '/stat/gstreamill/job/' + jobs[i];
-                var jobStat = $.get(jobStatUrl, function (job) {
-                    var li = '<li class="list-group-item">\n';
-                    li += '<div class="row">';
-                    li += '<div class="col-md-10">';
-                    li += '<a href="/admin/setjob.html?name=';
-                    if (job.result == "success") {
-                        data = job.data;
-                        li += data.name + '"><h3>' + data.name + '</h3></a>';
-                        li += ' Restart ' + data.age + ' times,';
-                        li += ' Last time started at ' + data.last_start_time;
-                        li += '</div>';
-                        li += '<div class="col-md-2">';
-                        li += '<button class="btn btn-warning" id="job_' + data.name + '" onclick="stopJob(\'' + data.name + '\')">Stop Job</button>';
-                        li += '</div>';
-                        li += '</div>';
-                        li += '<div class="row">';
-                        li += '<div class="col-md-12">';
-                        li += '<h4>encoder counts: </h4>' + data.encoder_count;
-                        li += ' <h4>Average CPU usage: </h4>' + data.cpu_average;
-                        li += ' <h4>Memory usage: </h4>' + data.memory;
-                    } else {
-                        li += job.name + '"><h3>' + job.name + '</h3></a>';
-                        li += ' The job is not started.';
-                        li += '</div>';
-                        li += '<div class="col-md-2">';
-                        li += '<button class="btn btn-primary" id="job_' + job.name + '" onclick="startJob(\'' + job.name + '\')">Start Job</button>';
-                    }
-                    li += '</div></div></li>';
-                    $('#joblist').append(li);
+                var jobStat = $.get(jobStatUrl, function (response) {
+                    showJobStatus (response);
                 });
             }
         });
