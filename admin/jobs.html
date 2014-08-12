@@ -1,6 +1,6 @@
 
     <div class="container-fluid">
-        <ul class="list-group" id="joblist">
+        <ul class="list-group" id="setjob">
         </table>
     </div>
 
@@ -76,7 +76,7 @@
                         li += '<button class="btn btn-primary" id="job_' + job.name + '" onclick="startJob(\'' + job.name + '\')">Start Job</button>';
                     }
                     li += '</div></div></li>';
-                    $('#joblist').append(li);
+                    $('#setjob').append(li);
                 });
             }
         });
