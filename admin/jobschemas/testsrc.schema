@@ -33,6 +33,9 @@
                         },
                         "audiotestsrc": {
                             "type": "object",
+                            "options": {
+                                "hidden": true
+                            },
                             "properties": {
                                 "property": {
                                     "type": "object",

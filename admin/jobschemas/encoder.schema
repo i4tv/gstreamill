@@ -8,6 +8,9 @@
             "properties": {
                 "appsrc": {
                     "type": "object",
+                    "options": {
+                        "hidden": true
+                    },
                     "properties": {
                         "property": {
                             "type": "object",
@@ -44,6 +47,9 @@
                 },
                 "voaacenc" : {
                     "type": "object",
+                    "options": {
+                        "hidden": true
+                    },
                     "properties": {
                         "property" : {
                             "type": "object",
@@ -58,6 +64,9 @@
                 },
                 "appsink" : {
                     "type": "object",
+                    "options": {
+                        "hidden": true
+                    },
                     "properties": {
                         "property": {
                             "type": "object",
