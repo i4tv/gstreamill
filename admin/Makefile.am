@@ -33,6 +33,8 @@ adminfonts_DATA = \
 adminjobschemasdir = $(datadir)/gstreamill/admin/jobschemas
 adminjobschemas_DATA = \
         jobschemas/v4l2src.schema \
+        jobschemas/v4l2src.conf \
         jobschemas/networksrc.schema \
         jobschemas/testsrc.schema \
-        jobschemas/encoder.schema
+        jobschemas/encoder.schema \
+        jobschemas/encoder.conf

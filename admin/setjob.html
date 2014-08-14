@@ -1,7 +1,8 @@
 
     <div class="container-fluid">
         <div class="row">
-            <div id='editor_holder'></div>
+            <div id='job_editor_holder' style="display: none;"></div>
+            <div id='job_conf_editor_holder'></div>
         </div>
         <button class='btn btn-primary' id='putjob'>Save Job</button>
     </div>
@@ -17,29 +18,50 @@
         }
 
         var schemaName = data.data.type;
-        var element = document.getElementById ('editor_holder');
-        var editor = new JSONEditor (element, {
+        var element = document.getElementById ('job_editor_holder');
+        var job_editor = new JSONEditor (element, {
             schema: {
                 $ref: "jobschemas/" + schemaName + ".schema"
             },
             ajax: true,
-            disable_collapse: true,
-            disable_edit_json: true,
-            disable_properties: true,
-            disable_array_add: true,
-            disable_array_delete: true,
-            disable_array_reorder: true,
-            theme: 'bootstrap3',
-            iconlib: 'bootstrap3'
+            hidden: true
         });
 
-        editor.on ('ready', function() {
-            editor.getEditor('root.name').disable();
-            editor.setValue (data.data);
-            $("#putjob").click (function() {
+        job_editor.on ('ready', function () {
+
+            job_editor.setValue (data.data);
+            var element = document.getElementById ('job_conf_editor_holder');
+            var conf_editor = new JSONEditor (element, {
+                schema: {
+                    $ref: "jobschemas/" + schemaName + ".conf"
+                },
+                ajax: true,
+                disable_collapse: true,
+                disable_edit_json: true,
+                disable_properties: true,
+                disable_array_add: true,
+                disable_array_delete: true,
+                disable_array_reorder: true,
+                theme: 'bootstrap3',
+                iconlib: 'bootstrap3'
+            });
+
+            conf_editor.on ('ready', function () {
+                conf_value = conf_editor.getValue ();
+
+                /* get source parameters */
+                for (var key in conf_value.source) {
+                    var node_conf = conf_editor.getEditor ('root.source.' + key);
+                    var node = job_editor.getEditor ('root.source.' + key);
+                    var value = node.getValue ();
+                    node_conf.setValue (value);
+                }
+            });
+
+            $("#putjob").click (function () {
                 var name = data.data.name;
-                var value = editor.getValue ();
-                var posting = $.post("putjob/" + name, JSON.stringify (value, null, 4), function (data) {
+                var value = job_editor.getValue ();
+                var posting = $.post ("putjob/" + name, JSON.stringify (value, null, 4), function (data) {
                     if (data.result == 'success') {
                         alert (data.result);
                     } else {
