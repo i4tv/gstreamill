@@ -2,6 +2,7 @@
     <div class="container-fluid">
         <div class="row">
             <div id='job_editor_holder' style="display: none;"></div>
+            <div id='encoder_conf_editor_holder' style="display: none;"></div>
             <div id='job_conf_editor_holder'></div>
         </div>
         <button class='btn btn-primary' id='putjob'>Save Job</button>
@@ -52,10 +53,35 @@
                 /* get source parameters */
                 for (var key in conf_value.source) {
                     var node_conf = conf_editor.getEditor ('root.source.' + key);
-                    var node = job_editor.getEditor ('root.source.' + key);
-                    var value = node.getValue ();
+                    var key_editor = job_editor.getEditor ('root.source.' + key);
+                    var value = key_editor.getValue ();
                     node_conf.setValue (value);
                 }
+
+                /* get encoders parameters */
+                var encoder_element = document.getElementById ('encoder_conf_editor_holder');
+                var encoder_conf_editor = new JSONEditor (encoder_element, {
+                    schema: {
+                        $ref: 'jobschemas/encoder.conf'
+                    },
+                    ajax: true,
+                    hidden: true
+                });
+                encoder_conf_editor.on ('ready', function () {
+                    encoder_conf_value = encoder_conf_editor.getValue ();
+                    var encoders_editor = job_editor.getEditor ('root.encoders');
+                    var encoders_value = encoders_editor.getValue ();
+                    for (var i = 0; i < encoders_value.length; i++) {
+                        for (var key in encoder_conf_value.video) {
+                            var node_conf = encoder_conf_editor.getEditor ('root.video.' + key);
+                            var key_editor = job_editor.getEditor ('root.encoders.' + i + '.' + key);
+                            var value = key_editor.getValue ();
+                            node_conf.setValue (value);
+                        }
+                        conf_value.encoders[i] = encoder_conf_editor.getValue ();
+                    }
+                    conf_editor.setValue (conf_value);
+                });
             });
 
             $("#putjob").click (function () {
