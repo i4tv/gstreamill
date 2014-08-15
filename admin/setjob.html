@@ -68,6 +68,7 @@
                     hidden: true
                 });
                 encoder_conf_editor.on ('ready', function () {
+                    conf_value = conf_editor.getValue ();
                     encoder_conf_value = encoder_conf_editor.getValue ();
                     var encoders_editor = job_editor.getEditor ('root.encoders');
                     var encoders_value = encoders_editor.getValue ();
