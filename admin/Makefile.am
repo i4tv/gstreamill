@@ -35,6 +35,7 @@ adminjobschemas_DATA = \
         jobschemas/v4l2src.schema \
         jobschemas/v4l2src.conf \
         jobschemas/networksrc.schema \
+        jobschemas/networksrc.conf \
         jobschemas/testsrc.schema \
         jobschemas/testsrc.conf \
         jobschemas/encoder.schema \
