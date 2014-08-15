@@ -48,7 +48,7 @@
             });
 
             conf_editor.on ('ready', function () {
-                conf_value = conf_editor.getValue ();
+                var conf_value = conf_editor.getValue ();
 
                 /* get source parameters */
                 for (var key in conf_value.source) {
@@ -82,18 +82,36 @@
                         conf_value.encoders[i] = encoder_conf_editor.getValue ();
                     }
                     conf_editor.setValue (conf_value);
-                });
-            });
 
-            $("#putjob").click (function () {
-                var name = data.data.name;
-                var value = job_editor.getValue ();
-                var posting = $.post ("putjob/" + name, JSON.stringify (value, null, 4), function (data) {
-                    if (data.result == 'success') {
-                        alert (data.result);
-                    } else {
-                        alert (data.result + '\n' + data.reason);
-                    }
+                    /* set putjob click event after encoder_conf ready */
+                    $("#putjob").click (function () {
+                        conf_value = conf_editor.getValue ();
+
+                        /* set source parameters */
+                        for (var key in conf_value.source) {
+                            var key_editor = job_editor.getEditor ('root.source.' + key);
+                            key_editor.setValue (conf_value.source[key]);
+                        }
+
+                        /* set encoders paramerts */
+                        for (var i = 0; i < conf_value.encoders.length; i++) {
+                            for (var key in conf_value.encoders[i].video) {
+                                var key_editor = job_editor.getEditor ('root.encoders.' + i + '.' + key);
+                                key_editor.setValue (conf_value.encoders[i].video[key]);
+                            }
+                        }
+
+                        /* put job */
+                        var name = data.data.name;
+                        var value = job_editor.getValue ();
+                        var posting = $.post ("putjob/" + name, JSON.stringify (value, null, 4), function (data) {
+                            if (data.result == 'success') {
+                                alert (data.result);
+                            } else {
+                                alert (data.result + '\n' + data.reason);
+                            }
+                        });
+                    });
                 });
             });
         });
