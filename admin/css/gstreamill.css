@@ -30,7 +30,7 @@
     display: none;
 }
 
-#joblist {
+#joblist, .setjob {
     width: 800px;
     margin-top: 50px;
     margin-left: auto;
