@@ -88,7 +88,7 @@
             "title": "Encoders",
             "description": "encoders",
             "items": {
-                "$ref": "jobschemas/encoder.schema"
+                "$ref": "schemas/encoder.schema"
             }
         },
         "m3u8streaming": {

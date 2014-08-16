@@ -22,7 +22,7 @@
         var element = document.getElementById ('job_editor_holder');
         var job_editor = new JSONEditor (element, {
             schema: {
-                $ref: "jobschemas/" + schemaName + ".schema"
+                $ref: "schemas/" + schemaName + ".schema"
             },
             ajax: true,
             hidden: true
@@ -34,7 +34,7 @@
             var element = document.getElementById ('job_conf_editor_holder');
             var conf_editor = new JSONEditor (element, {
                 schema: {
-                    $ref: "jobschemas/" + schemaName + ".conf"
+                    $ref: "schemas/" + schemaName + ".conf"
                 },
                 ajax: true,
                 disable_collapse: true,
@@ -62,7 +62,7 @@
                 var encoder_element = document.getElementById ('encoder_conf_editor_holder');
                 var encoder_conf_editor = new JSONEditor (encoder_element, {
                     schema: {
-                        $ref: 'jobschemas/encoder.conf'
+                        $ref: 'schemas/encoder.conf'
                     },
                     ajax: true,
                     hidden: true

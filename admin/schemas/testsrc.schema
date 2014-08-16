@@ -1,6 +1,6 @@
 {
     "type": "object",
-    "title": "network source",
+    "title": "test source",
     "properties": {
         "name": {
             "type": "string",
@@ -22,21 +22,16 @@
                     "title": "Function Elements",
                     "type": "object",
                     "properties": {
-                        "udpsrc" : {
+                        "videotestsrc" : {
                             "type": "object",
                             "properties": {
-                                "property" : {
-                                    "type": "object",
-                                    "properties": {
-                                        "uri": {
-                                            "type": "string",
-                                            "default": "udp://127.0.0.1:6003"
-                                        }
-                                    }
+                                "caps": {
+                                    "type": "string",
+                                    "default": "video/x-raw,width=720,height=576,framerate=25/1"
                                 }
                             }
                         },
-                        "appsink" : {
+                        "audiotestsrc": {
                             "type": "object",
                             "options": {
                                 "hidden": true
@@ -45,13 +40,9 @@
                                 "property": {
                                     "type": "object",
                                     "properties": {
-                                        "sync": {
-                                            "type": "boolean",
-                                            "default": false
-                                        },
-                                        "drop": {
-                                            "type": "boolean",
-                                            "default": true
+                                        "wave": {
+                                            "type": "number",
+                                            "default": 8
                                         }
                                     }
                                 }
@@ -65,9 +56,8 @@
                         "hidden": true
                     },
                     "default": [
-                        "udpsrc ! queue ! tsdemux name=demuxer",
-                        "demuxer.video ! queue ! mpeg2dec ! queue ! appsink name = video",
-                        "demuxer.audio ! mpegaudioparse ! queue ! mad ! queue ! appsink name = audio"
+                        "videotestsrc ! appsink name=video",
+                        "audiotestsrc ! appsink name=audio"
                     ]
                 }
             }
@@ -77,7 +67,7 @@
             "title": "Encoders",
             "description": "encoders",
             "items": {
-                "$ref": "jobschemas/encoder.schema"
+                "$ref": "schemas/encoder.schema"
             }
         },
         "m3u8streaming": {
