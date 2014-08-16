@@ -1,115 +1,95 @@
 
     <div class="container-fluid">
-        <div class="row">
-            <!-- multistep form -->
-            <form id="msform">
-                <fieldset>
-                    <div class="form-group">
-                        <label for="name">Job name: </label></br>
-                        <input type="text" name="name" id="name" placeholder="Job Name" class="form-control"/><br>
-                    </div>
-                    <div class="form-group">
-                        <label for="source">Input type: </label></br>
-                        <input type="radio" name="source" id="source" value="v4l2src"> v4l2src capture Device</br>
-                        <input type="radio" name="source" id="source" value="networksrc"> Network</br>
-                        <input type="radio" name="source" id="source" value="testsrc"> Test src</br>
-                    </div>
-                    <div class="form-group">
-                        <label for="multibitrate">Encoder count: </label></br>
-                        <select name="multibitrate" id="multibitrate">
-                            <option value="1">one</option>
-                            <option value="2">two</option>
-                            <option value="3">three</option>
-                        </select></br>
-                    </div>
-                    <div class="form-group">
-                        <label for="udp">Output select: </label></br>
-                        <input type=checkbox name="udp" id="udp"> UDP output</br>
-                        <input type=checkbox name="m3u8" id="m3u8"> M3U8 output</br>
-                    </div>
-                    <input type="button" name="newjob" class="btn btn-primary" onclick="newLiveJob();" value="Create job" />
-                </fieldset>
-            </form>
-            <div id='editor_holder' style="display: none;"></div>
+        <div class="row newlivejob">
+            <div id='new_live_job_holder'></div>
+            <div id='job_editor_holder' style="display: none;"></div>
             <div id='encoder_editor_holder' style="display: none;"></div>
+            <button class='btn btn-primary' id='createjob'>Create Job</button>
         </div>
     </div>
 
 
     <script type="text/javascript">
 
-    function newLiveJob()
-    {
-        var name = $("#name").val();
-        if (name == "") {
-            alert ("Input name please!");
-            return;
-        }
+    var element = document.getElementById ('new_live_job_holder');
+    var conf_editor = new JSONEditor (element, {
+        schema: {
+            $ref: "jobschemas/newlivejob.schema"
+        },
+        ajax: true,
+        disable_collapse: true,
+        disable_edit_json: true,
+        disable_properties: true,
+        disable_array_add: true,
+        disable_array_delete: true,
+        disable_array_reorder: true,
+        theme: 'bootstrap3',
+        iconlib: 'bootstrap3'
+    });
 
-        var source = $("#source:checked").val();
-        if (source == undefined) {
-            alert ("select input type");
-            return;
-        }
+    conf_editor.on ('ready', function () {
 
-        var element = document.getElementById('editor_holder');
-        var editor = new JSONEditor (element, {
-            schema: {
-                $ref: "jobschemas/" + source + ".schema"
-            },
-            ajax: true,
-            hidden: true
-        });
+        $("#createjob").click (function () {
 
-        editor.on('ready', function() {
-
-            /* job name */
-            var jobName = editor.getEditor ('root.name');
-            jobName.setValue (name);
-
-            /* job type */
-            var jobType = editor.getEditor ('root.type');
-            jobType.setValue (source);
-
-            /* count of encoders */
-            var multiBitrate = parseInt($("#multibitrate").val());
-            var encoderElement = document.getElementById('encoder_editor_holder');
-            var encoderEditor = new JSONEditor (encoderElement, {
+            var conf_value = conf_editor.getValue ();
+            var job_element = document.getElementById('job_editor_holder');
+            var job_editor = new JSONEditor (job_element, {
                 schema: {
-                    $ref: "jobschemas/encoder.schema"
+                    $ref: 'jobschemas/' + conf_value.sourcetype + '.schema'
                 },
                 ajax: true,
                 hidden: true
             });
-            encoderEditor.on ('ready', function () {
-
-                var value = editor.getValue ();
-                var encoderValue = encoderEditor.getValue ();
-
-                /* udp output support? */
-                var udp = $("#udp").is(":checked");
-                if (!udp) {
-                    delete encoderValue.udpstreaming;
-                }
-
-                /* m3u8 output support? */
-                var m3u8 = $("#m3u8").is(":checked");
-                if (!m3u8) {
-                    delete value.m3u8streaming;
-                }
-
-                for (i = 0; i < multiBitrate; i++) {
-                    value.encoders[i] = encoderValue;
-                }
-
-                var posting = $.post("putjob/" + name, JSON.stringify (value, null, 4), function (data) {
-                    if (data.result == 'success') {
-                        alert (data.result);
-                    } else {
-                        alert (data.result + '\n' + data.reason);
+    
+            job_editor.on ('ready', function() {
+    
+                /* job name */
+                var job_name = job_editor.getEditor ('root.name');
+                job_name.setValue (conf_value.name);
+    
+                /* job type */
+                var job_type = job_editor.getEditor ('root.type');
+                job_type.setValue (conf_value.sourcetype);
+    
+                /* count of encoders */
+                var encoder_element = document.getElementById('encoder_editor_holder');
+                var encoder_editor = new JSONEditor (encoder_element, {
+                    schema: {
+                        $ref: 'jobschemas/encoder.schema'
+                    },
+                    ajax: true,
+                    hidden: true
+                });
+    
+                encoder_editor.on ('ready', function () {
+    
+                    var job_value = job_editor.getValue ();
+                    var encoder_value = encoder_editor.getValue ();
+    
+                    /* udp output support? */
+                    if (!conf_value.udp) {
+                        delete encoder_value.udpstreaming;
                     }
+    
+                    /* m3u8 output support? */
+                    if (!conf_value.m3u8) {
+                        delete job_value.m3u8streaming;
+                    }
+    
+                    for (i = 0; i < conf_value.encodercount; i++) {
+                        job_value.encoders[i] = encoder_value;
+                    }
+    
+                    $.post("putjob/" + conf_value.name, JSON.stringify (job_value, null, 4), function (data) {
+                        if (data.result == 'success') {
+                            alert (data.result);
+                        } else {
+                            alert (data.result + '\n' + data.reason);
+                        }
+                    });
                 });
             });
         });
-    }
+    });
+
     </script>

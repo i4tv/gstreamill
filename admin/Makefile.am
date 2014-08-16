@@ -39,4 +39,5 @@ adminjobschemas_DATA = \
         jobschemas/testsrc.schema \
         jobschemas/testsrc.conf \
         jobschemas/encoder.schema \
-        jobschemas/encoder.conf
+        jobschemas/encoder.conf \
+        jobschemas/newlivejob.schema

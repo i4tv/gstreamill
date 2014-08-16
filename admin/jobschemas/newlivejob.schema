@@ -1,0 +1,28 @@
+{
+    "type": "object",
+    "title": "New Live Job",
+    "properties": {
+        "name": {
+            "title": "Job Name",
+            "type": "string"
+        },
+        "sourcetype": {
+            "type": "string",
+            "title": "Source Type",
+            "enum": ["v4l2src", "networksrc", "testsrc"]
+        },
+        "encodercount": {
+            "type": "number",
+            "title": "Encoder Count",
+            "enum": [1, 2, 3]
+        },
+        "udpoutput": {
+            "type": "boolean",
+            "title": "UDP Output"
+        },
+        "m3u8output": {
+            "type": "boolean",
+            "title": "M3U8 Output"
+        }
+    }
+}
