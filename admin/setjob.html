@@ -73,8 +73,8 @@
                     var encoders_editor = job_editor.getEditor ('root.encoders');
                     var encoders_value = encoders_editor.getValue ();
                     for (var i = 0; i < encoders_value.length; i++) {
-                        for (var key in encoder_conf_value.video) {
-                            var node_conf = encoder_conf_editor.getEditor ('root.video.' + key);
+                        for (var key in encoder_conf_value) {
+                            var node_conf = encoder_conf_editor.getEditor ('root.' + key);
                             var key_editor = job_editor.getEditor ('root.encoders.' + i + '.' + key);
                             var value = key_editor.getValue ();
                             node_conf.setValue (value);
@@ -95,9 +95,9 @@
 
                         /* set encoders paramerts */
                         for (var i = 0; i < conf_value.encoders.length; i++) {
-                            for (var key in conf_value.encoders[i].video) {
+                            for (var key in conf_value.encoders[i]) {
                                 var key_editor = job_editor.getEditor ('root.encoders.' + i + '.' + key);
-                                key_editor.setValue (conf_value.encoders[i].video[key]);
+                                key_editor.setValue (conf_value.encoders[i][key]);
                             }
                         }
 
