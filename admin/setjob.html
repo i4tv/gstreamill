@@ -44,7 +44,8 @@
                 disable_array_delete: true,
                 disable_array_reorder: true,
                 theme: 'bootstrap3',
-                iconlib: 'bootstrap3'
+                iconlib: 'bootstrap3',
+                template: 'hogan'
             });
 
             conf_editor.on ('ready', function () {
@@ -52,9 +53,11 @@
 
                 /* get source parameters */
                 for (var key in conf_value.source) {
-                    var node_conf = conf_editor.getEditor ('root.source.' + key);
                     var key_editor = job_editor.getEditor ('root.source.' + key);
+                    if (!key_editor)
+                        continue;
                     var value = key_editor.getValue ();
+                    var node_conf = conf_editor.getEditor ('root.source.' + key);
                     node_conf.setValue (value);
                 }
 
@@ -90,6 +93,8 @@
                         /* set source parameters */
                         for (var key in conf_value.source) {
                             var key_editor = job_editor.getEditor ('root.source.' + key);
+                            if (!key_editor)
+                                continue;
                             key_editor.setValue (conf_value.source[key]);
                         }
 

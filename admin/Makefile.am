@@ -21,6 +21,7 @@ adminjs_DATA = \
         js/bootstrap.js \
         js/jquery.js \
         js/jsoneditor.min.js \
+        js/hogan-3.0.1.js \
         js/gstreamill.js
 
 adminfontsdir = $(datadir)/gstreamill/admin/fonts
