@@ -1,126 +1,137 @@
 
     <div class="container-fluid">
         <div class="row setjob">
+            <div class="col-lg-2 btn-group-vertical" id="job_man_menu">
+                <button type="button" class="btn btn-default" id="config">Config</button>
+                <button type="button" class="btn btn-default" id="stat">Stat</button>
+            </div>
+            <div class='col-lg-10'>
             <div id='job_editor_holder' style="display: none;"></div>
             <div id='encoder_conf_editor_holder' style="display: none;"></div>
             <div id='job_conf_editor_holder'></div>
             <button class='btn btn-primary' id='putjob'>Save Job</button>
+            </div>
         </div>
     </div>
 
 
     <script type="text/javascript">
 
-    var posting = $.get("getjob/%s", function (data) {
-
-        if (data.result == "failure") {
-            alert (data.reason);
-            return;
-        }
-
-        var schemaName = data.data.type;
-        var element = document.getElementById ('job_editor_holder');
-        var job_editor = new JSONEditor (element, {
-            schema: {
-                $ref: "schemas/" + schemaName + ".schema"
-            },
-            ajax: true,
-            hidden: true
-        });
-
-        job_editor.on ('ready', function () {
-
-            job_editor.setValue (data.data);
-            var element = document.getElementById ('job_conf_editor_holder');
-            var conf_editor = new JSONEditor (element, {
+    $('#config').click (function () {
+        var posting = $.get("getjob/%s", function (data) {
+    
+            if (data.result == "failure") {
+                alert (data.reason);
+                return;
+            }
+    
+            var schemaName = data.data.type;
+            var element = document.getElementById ('job_editor_holder');
+            var job_editor = new JSONEditor (element, {
                 schema: {
-                    $ref: "schemas/" + schemaName + ".conf"
+                    $ref: "schemas/" + schemaName + ".schema"
                 },
                 ajax: true,
-                disable_collapse: true,
-                disable_edit_json: true,
-                disable_properties: true,
-                disable_array_add: true,
-                disable_array_delete: true,
-                disable_array_reorder: true,
-                theme: 'bootstrap3',
-                iconlib: 'bootstrap3',
-                template: 'hogan'
+                hidden: true
             });
-
-            conf_editor.on ('ready', function () {
-                var conf_value = conf_editor.getValue ();
-
-                /* get source parameters */
-                for (var key in conf_value.source) {
-                    var key_editor = job_editor.getEditor ('root.source.' + key);
-                    if (!key_editor)
-                        continue;
-                    var value = key_editor.getValue ();
-                    var node_conf = conf_editor.getEditor ('root.source.' + key);
-                    node_conf.setValue (value);
-                }
-
-                /* get encoders parameters */
-                var encoder_element = document.getElementById ('encoder_conf_editor_holder');
-                var encoder_conf_editor = new JSONEditor (encoder_element, {
+    
+            job_editor.on ('ready', function () {
+    
+                job_editor.setValue (data.data);
+                var element = document.getElementById ('job_conf_editor_holder');
+                var conf_editor = new JSONEditor (element, {
                     schema: {
-                        $ref: 'schemas/encoder.conf'
+                        $ref: "schemas/" + schemaName + ".conf"
                     },
                     ajax: true,
-                    hidden: true
+                    disable_collapse: true,
+                    disable_edit_json: true,
+                    disable_properties: true,
+                    disable_array_add: true,
+                    disable_array_delete: true,
+                    disable_array_reorder: true,
+                    theme: 'bootstrap3',
+                    iconlib: 'bootstrap3',
+                    template: 'hogan'
                 });
-                encoder_conf_editor.on ('ready', function () {
-                    conf_value = conf_editor.getValue ();
-                    encoder_conf_value = encoder_conf_editor.getValue ();
-                    var encoders_editor = job_editor.getEditor ('root.encoders');
-                    var encoders_value = encoders_editor.getValue ();
-                    for (var i = 0; i < encoders_value.length; i++) {
-                        for (var key in encoder_conf_value) {
-                            var node_conf = encoder_conf_editor.getEditor ('root.' + key);
-                            var key_editor = job_editor.getEditor ('root.encoders.' + i + '.' + key);
-                            var value = key_editor.getValue ();
-                            node_conf.setValue (value);
-                        }
-                        conf_value.encoders[i] = encoder_conf_editor.getValue ();
+    
+                conf_editor.on ('ready', function () {
+                    var conf_value = conf_editor.getValue ();
+    
+                    /* get source parameters */
+                    for (var key in conf_value.source) {
+                        var key_editor = job_editor.getEditor ('root.source.' + key);
+                        if (!key_editor)
+                            continue;
+                        var value = key_editor.getValue ();
+                        var node_conf = conf_editor.getEditor ('root.source.' + key);
+                        node_conf.setValue (value);
                     }
-                    conf_editor.setValue (conf_value);
-
-                    /* set putjob click event after encoder_conf ready */
-                    $("#putjob").click (function () {
+    
+                    /* get encoders parameters */
+                    var encoder_element = document.getElementById ('encoder_conf_editor_holder');
+                    var encoder_conf_editor = new JSONEditor (encoder_element, {
+                        schema: {
+                            $ref: 'schemas/encoder.conf'
+                        },
+                        ajax: true,
+                        hidden: true
+                    });
+                    encoder_conf_editor.on ('ready', function () {
                         conf_value = conf_editor.getValue ();
-
-                        /* set source parameters */
-                        for (var key in conf_value.source) {
-                            var key_editor = job_editor.getEditor ('root.source.' + key);
-                            if (!key_editor)
-                                continue;
-                            key_editor.setValue (conf_value.source[key]);
-                        }
-
-                        /* set encoders paramerts */
-                        for (var i = 0; i < conf_value.encoders.length; i++) {
-                            for (var key in conf_value.encoders[i]) {
+                        encoder_conf_value = encoder_conf_editor.getValue ();
+                        var encoders_editor = job_editor.getEditor ('root.encoders');
+                        var encoders_value = encoders_editor.getValue ();
+                        for (var i = 0; i < encoders_value.length; i++) {
+                            for (var key in encoder_conf_value) {
+                                var node_conf = encoder_conf_editor.getEditor ('root.' + key);
                                 var key_editor = job_editor.getEditor ('root.encoders.' + i + '.' + key);
-                                key_editor.setValue (conf_value.encoders[i][key]);
+                                var value = key_editor.getValue ();
+                                node_conf.setValue (value);
                             }
+                            conf_value.encoders[i] = encoder_conf_editor.getValue ();
                         }
-
-                        /* put job */
-                        var name = data.data.name;
-                        var value = job_editor.getValue ();
-                        var posting = $.post ("putjob/" + name, JSON.stringify (value, null, 4), function (data) {
-                            if (data.result == 'success') {
-                                alert (data.result);
-                            } else {
-                                alert (data.result + '\n' + data.reason);
+                        conf_editor.setValue (conf_value);
+    
+                        /* set putjob click event after encoder_conf ready */
+                        $("#putjob").click (function () {
+                            conf_value = conf_editor.getValue ();
+    
+                            /* set source parameters */
+                            for (var key in conf_value.source) {
+                                var key_editor = job_editor.getEditor ('root.source.' + key);
+                                if (!key_editor)
+                                    continue;
+                                key_editor.setValue (conf_value.source[key]);
                             }
+    
+                            /* set encoders paramerts */
+                            for (var i = 0; i < conf_value.encoders.length; i++) {
+                                for (var key in conf_value.encoders[i]) {
+                                    var key_editor = job_editor.getEditor ('root.encoders.' + i + '.' + key);
+                                    key_editor.setValue (conf_value.encoders[i][key]);
+                                }
+                            }
+    
+                            /* put job */
+                            var name = data.data.name;
+                            var value = job_editor.getValue ();
+                            var posting = $.post ("putjob/" + name, JSON.stringify (value, null, 4), function (data) {
+                                if (data.result == 'success') {
+                                    alert (data.result);
+                                } else {
+                                    alert (data.result + '\n' + data.reason);
+                                }
+                            });
                         });
                     });
                 });
             });
         });
+    });
 
+    $ (document).ready (function () {
+        $("#config").trigger ('click');
     });
 
     </script>
