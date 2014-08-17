@@ -5,7 +5,7 @@ admin_DATA = \
         header.html \
         footer.html \
         newlivejob.html \
-        jobs.html \
+        joblist.html \
         system.html \
         newtranscodejob.html \
         jobmanage.html
