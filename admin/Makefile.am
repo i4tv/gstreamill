@@ -8,7 +8,7 @@ admin_DATA = \
         jobs.html \
         system.html \
         newtranscodejob.html \
-        setjob.html
+        jobmanage.html
 
 admincssdir = $(datadir)/gstreamill/admin/css
 admincss_DATA = \

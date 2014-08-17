@@ -9,7 +9,7 @@
     function showJobStatus (response) {
         var li = '<div class="row">';
         li += '<div class="col-md-10">';
-        li += '<a href="/admin/setjob.html?name=';
+        li += '<a href="/admin/jobmanage.html?name=';
         if (response.result == "success") {
             var job = response.data;
             li += job.name + '"><h3>' + job.name + '</h3></a>';

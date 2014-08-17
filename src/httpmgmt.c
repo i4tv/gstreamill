@@ -402,9 +402,9 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
-        } else if (g_str_has_prefix (request_data->uri, "/admin/setjob.html")) {
+        } else if (g_str_has_prefix (request_data->uri, "/admin/jobmanage.html")) {
                 if (g_str_has_prefix (request_data->parameters, "name=")) {
-                        path = g_strdup_printf ("%s/gstreamill/admin/setjob.html", DATADIR);
+                        path = g_strdup_printf ("%s/gstreamill/admin/jobmanage.html", DATADIR);
 
                 } else {
                         *buf = g_strdup_printf (http_400, PACKAGE_NAME, PACKAGE_VERSION);
@@ -426,8 +426,8 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
                 g_error_free (err);
 
         } else {
-                /* setjob.html? process name parameter */
-                if (g_str_has_suffix (path, "setjob.html")) {
+                /* jobmanage.html? process name parameter */
+                if (g_str_has_suffix (path, "jobmanage.html")) {
                         gchar name[32], *temp_buf;
 
                         sscanf (request_data->parameters, "name=%s", name);
