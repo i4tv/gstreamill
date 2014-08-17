@@ -1,0 +1,26 @@
+{
+    "type": "object",
+    "title": "Gstreamill Status",
+    "properties": {
+        "version": {
+            "type": "string"
+        },
+        "buildtime": {
+            "type": "string"
+        },
+        "builddate": {
+            "type": "string"
+        },
+        "starttime": {
+            "type": "string"
+        },
+        "jobs": {
+            "type": "array",
+            "format": "table",
+            "items": {
+                "type": "string"
+            }
+        }
+    }
+}
+   

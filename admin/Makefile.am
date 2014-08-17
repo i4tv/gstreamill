@@ -32,6 +32,7 @@ adminfonts_DATA = \
 
 adminschemasdir = $(datadir)/gstreamill/admin/schemas
 adminschemas_DATA = \
+        schemas/gstreamill.schema \
         schemas/v4l2src.schema \
         schemas/v4l2src.conf \
         schemas/networksrc.schema \

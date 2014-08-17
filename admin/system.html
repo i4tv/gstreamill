@@ -1,26 +1,42 @@
 
-    <div class="container-fluid joblist">
-        <table class="table" id="system">
-            <tr><td>System Overview</td></tr>
-        </table>
+    <div class="container-fluid">
+        <div class="row setjob">
+            <div class="col-lg-2 btn-group-vertical" id="system_menu">
+                <button type="button" class="btn btn-default" id="system">System</button>
+                <button type="button" class="btn btn-default" id="gstreamill">Gstreamill</button>
+                <button type="button" class="btn btn-default" id="network">Network</button>
+            </div>
+            <div class="col-lg-10" id="system_stat_holder"></div>
+        </div>
     </div>
 
 
     <script type="text/javascript">
-    $(document).ready(function () {
-        var posting = $.get("/stat/gstreamill", function(gstreamill) {
-            var tr = '<tr><td>Verstion: ' + gstreamill.version + '</br>';
-            tr += 'Build date: ' + gstreamill.builddate + '</br>';
-            tr += 'Build time: ' + gstreamill.buildtime + '</br>';
-            tr += 'Start time: ' + gstreamill.starttime + '</br>';
-            $('#system tr:last').after(tr);
-            var jobs = gstreamill.jobs;
-            tr = '<tr><td>'
-            for (var i = 0; i < jobs.length; i++) {
-                tr += ' ' + jobs[i];
-            }
-            tr += '</td></tr>';
-            $('#system tr:last').after(tr);
+
+    $("#gstreamill").click (function () {
+        $.get("/stat/gstreamill", function (data) {
+            $("#system_stat_holder").jsoneditor ({
+                schema: {
+                    $ref: "schemas/gstreamill.schema"
+                },
+                ajax: true,
+                disable_collapse: true,
+                disable_edit_json: true,
+                disable_properties: true,
+                disable_array_add: true,
+                disable_array_delete: true,
+                disable_array_reorder: true,
+                theme: 'bootstrap3',
+                iconlib: 'bootstrap3'
+            })
+            .on ('ready', function () {
+                $(this).jsoneditor ('value', data);
+            });
         });
     });
+
+    $ (document).ready (function () {
+        $("#gstreamill").trigger ('click');
+    });
+
     </script>
