@@ -19,12 +19,12 @@
 
     $('#config').click (function () {
         var posting = $.get("getjob/%s", function (data) {
-    
+
             if (data.result == "failure") {
                 alert (data.reason);
                 return;
             }
-    
+
             var schemaName = data.data.type;
             var element = document.getElementById ('job_editor_holder');
             var job_editor = new JSONEditor (element, {
@@ -34,9 +34,9 @@
                 ajax: true,
                 hidden: true
             });
-    
+
             job_editor.on ('ready', function () {
-    
+
                 job_editor.setValue (data.data);
                 var element = document.getElementById ('job_conf_editor_holder');
                 var conf_editor = new JSONEditor (element, {
@@ -54,10 +54,10 @@
                     iconlib: 'bootstrap3',
                     template: 'hogan'
                 });
-    
+
                 conf_editor.on ('ready', function () {
                     var conf_value = conf_editor.getValue ();
-    
+
                     /* get source parameters */
                     for (var key in conf_value.source) {
                         var subkeys = key.split ('@');
@@ -74,7 +74,20 @@
                             node_conf.setValue (re.exec (value)[1]);
                         }
                     }
-    
+
+                    /* get m3u8 streaming parameters */
+                    if (job_editor.getEditor ('root.m3u8streaming')) {
+                        for (var key in conf_value.m3u8streaming) {
+                            var key_editor = job_editor.getEditor ('root.m3u8streaming.' + key);
+                            var value = key_editor.getValue ();
+                            var node_conf = conf_editor.getEditor ('root.m3u8streaming.' + key);
+                            node_conf.setValue (value);
+                        }
+                    } else {
+                        delete conf_value.m3u8streaming;
+                        conf_editor.setValue (conf_value);
+                    }
+
                     /* get encoders parameters */
                     var encoder_element = document.getElementById ('encoder_conf_editor_holder');
                     var encoder_conf_editor = new JSONEditor (encoder_element, {
@@ -99,11 +112,11 @@
                             conf_value.encoders[i] = encoder_conf_editor.getValue ();
                         }
                         conf_editor.setValue (conf_value);
-    
+
                         /* set putjob click event after encoder_conf ready */
                         $("#putjob").click (function () {
                             conf_value = conf_editor.getValue ();
-    
+
                             /* set source parameters */
                             for (var key in conf_value.source) {
                                 var key_editor = job_editor.getEditor ('root.source.' + key);
@@ -111,7 +124,17 @@
                                     continue;
                                 key_editor.setValue (conf_value.source[key]);
                             }
-    
+
+                            /* set m3u8 parameters */
+                            if (job_editor.getEditor ('root.m3u8streaming')) {
+                                for (var key in conf_value.m3u8streaming) {
+                                    var key_editor = job_editor.getEditor ('root.m3u8streaming.' + key);
+                                    if (!key_editor)
+                                        continue;
+                                    key_editor.setValue (conf_value.m3u8streaming[key]);
+                                }
+                            }
+
                             /* set encoders paramerts */
                             for (var i = 0; i < conf_value.encoders.length; i++) {
                                 for (var key in conf_value.encoders[i]) {
@@ -119,7 +142,7 @@
                                     key_editor.setValue (conf_value.encoders[i][key]);
                                 }
                             }
-    
+
                             /* put job */
                             var name = data.data.name;
                             var value = job_editor.getValue ();
