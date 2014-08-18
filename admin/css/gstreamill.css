@@ -37,19 +37,19 @@
     margin-right: auto;
 }
 
-#system_menu {
+.sidebar-menu {
     margin-top: 30px;
     padding-left: 0px;
     padding-right: 0px;
     border: 1px solid #e3e3e3;
 }
 
-#system_menu > ul > li > a {
+.sidebar-menu > ul > li > a {
     padding: 5px;
     border-top: 1px solid #e3e3e3;
 }
 
-#system_stat_holder {
+.main-content {
     padding-left: 30px;
 }
 
