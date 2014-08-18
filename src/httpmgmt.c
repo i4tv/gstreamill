@@ -352,6 +352,24 @@ static gchar * put_job (RequestData *request_data)
         return result;
 }
 
+static gchar * rm_job (gchar *uri)
+{
+        gchar *job_path, *result;
+
+        job_path = g_strdup_printf ("/etc/gstreamill.d%s.job", &(uri[12]));
+        if (g_unlink (job_path) == -1) {
+                GST_ERROR ("remove job %s failure: %s", job_path, g_strerror (errno));
+                result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"\n}", g_strerror (errno));
+
+        } else {
+                GST_INFO ("write job %s success", job_path);
+                result = g_strdup ("{\n    \"result\": \"success\"\n}");
+        }
+        g_free (job_path);
+
+        return result;
+}
+
 static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_data, gchar **buf)
 {
         gchar *path, *http_header, *p;
@@ -396,6 +414,11 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
                 } else {
                         *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
                 }
+
+        } else if (g_str_has_prefix (request_data->uri, "/admin/rmjob/")) {
+                p = rm_job (request_data->uri);
+                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+                g_free (p);
 
         } else if ((request_data->method == HTTP_POST) && (g_str_has_prefix (request_data->uri, "/admin/putjob/"))) {
                 p = put_job (request_data);
