@@ -60,12 +60,19 @@
     
                     /* get source parameters */
                     for (var key in conf_value.source) {
-                        var key_editor = job_editor.getEditor ('root.source.' + key);
-                        if (!key_editor)
-                            continue;
-                        var value = key_editor.getValue ();
-                        var node_conf = conf_editor.getEditor ('root.source.' + key);
-                        node_conf.setValue (value);
+                        var subkeys = key.split ('@');
+                        if (subkeys.length != 2) {
+                            var key_editor = job_editor.getEditor ('root.source.' + key);
+                            var value = key_editor.getValue ();
+                            var node_conf = conf_editor.getEditor ('root.source.' + key);
+                            node_conf.setValue (value);
+                        } else {
+                            var key_editor = job_editor.getEditor ('root.source.' + subkeys[1]);
+                            var value = key_editor.getValue ();
+                            var re = new RegExp (subkeys[0]);
+                            var node_conf = conf_editor.getEditor ('root.source.' + key);
+                            node_conf.setValue (re.exec (value)[1]);
+                        }
                     }
     
                     /* get encoders parameters */
