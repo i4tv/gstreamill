@@ -1,10 +1,12 @@
 
     <div class="container-fluid">
         <div class="row setjob">
-            <div class="col-lg-2 btn-group-vertical" id="system_menu">
-                <button type="button" class="btn btn-default" id="system">System</button>
-                <button type="button" class="btn btn-default" id="gstreamill">Gstreamill</button>
-                <button type="button" class="btn btn-default" id="network">Network</button>
+            <div class="col-lg-2" id="system_menu">
+                <ul class="nav nav-pills nav-stacked">
+                    <li><a href="javascript:system();"></i><span> System Overview</span></a></li>
+                    <li><a href="javascript:gstreamill();"><span> Gstreamill Overview</span></a></li>
+                    <li><a href="javascript:network();"><span> Network Configure</span></a></li>
+                </ul>
             </div>
             <div class="col-lg-10" id="system_stat_holder"></div>
         </div>
@@ -13,7 +15,7 @@
 
     <script type="text/javascript">
 
-    $("#gstreamill").click (function () {
+    function gstreamill () {
         $.get("/stat/gstreamill", function (data) {
             $("#system_stat_holder").jsoneditor ({
                 schema: {
@@ -33,10 +35,10 @@
                 $(this).jsoneditor ('value', data);
             });
         });
-    });
+    }
 
     $ (document).ready (function () {
-        $("#gstreamill").trigger ('click');
+        gstreamill ();
     });
 
     </script>

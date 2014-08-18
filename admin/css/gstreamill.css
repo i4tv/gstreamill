@@ -32,9 +32,25 @@
 
 #joblist, .setjob, .newlivejob {
     width: 980px;
-    margin-top: 50px;
+    margin-top: 20px;
     margin-left: auto;
     margin-right: auto;
+}
+
+#system_menu {
+    margin-top: 30px;
+    padding-left: 0px;
+    padding-right: 0px;
+    border: 1px solid #e3e3e3;
+}
+
+#system_menu > ul > li > a {
+    padding: 5px;
+    border-top: 1px solid #e3e3e3;
+}
+
+#system_stat_holder {
+    padding-left: 30px;
 }
 
 #joblist li {

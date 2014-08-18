@@ -1,18 +1,22 @@
 {
     "type": "object",
-    "title": "Gstreamill Status",
+    "title": "Gstreamill Overview",
     "properties": {
         "version": {
-            "type": "string"
-        },
-        "buildtime": {
-            "type": "string"
+            "type": "string",
+            "title": "Gstreamill Version"
         },
         "builddate": {
-            "type": "string"
+            "type": "string",
+            "title": "Build Date"
+        },
+        "buildtime": {
+            "type": "string",
+            "title": "Build Time"
         },
         "starttime": {
-            "type": "string"
+            "type": "string",
+            "title": "Start Time"
         },
         "jobs": {
             "type": "array",
