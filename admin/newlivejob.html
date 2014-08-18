@@ -28,9 +28,7 @@
     });
 
     conf_editor.on ('ready', function () {
-
         $("#createjob").click (function () {
-
             var conf_value = conf_editor.getValue ();
             var job_element = document.getElementById('job_editor_holder');
             var job_editor = new JSONEditor (job_element, {
@@ -40,9 +38,8 @@
                 ajax: true,
                 hidden: true
             });
-    
+
             job_editor.on ('ready', function() {
-    
                 /* job name */
                 var job_name = job_editor.getEditor ('root.name');
                 job_name.setValue (conf_value.name);
@@ -60,26 +57,25 @@
                     ajax: true,
                     hidden: true
                 });
-    
+
                 encoder_editor.on ('ready', function () {
-    
                     var job_value = job_editor.getValue ();
                     var encoder_value = encoder_editor.getValue ();
     
                     /* udp output support? */
-                    if (!conf_value.udp) {
+                    if (!conf_value.udpoutput) {
                         delete encoder_value.udpstreaming;
                     }
-    
+
                     /* m3u8 output support? */
-                    if (!conf_value.m3u8) {
+                    if (!conf_value.m3u8output) {
                         delete job_value.m3u8streaming;
                     }
     
                     for (i = 0; i < conf_value.encodercount; i++) {
                         job_value.encoders[i] = encoder_value;
                     }
-    
+
                     $.post("putjob/" + conf_value.name, JSON.stringify (job_value, null, 4), function (data) {
                         if (data.result == 'success') {
                             alert (data.result);
