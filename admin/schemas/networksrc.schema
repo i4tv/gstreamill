@@ -36,6 +36,20 @@
                                 }
                             }
                         },
+                        "tsdemux": {
+                            "type": "object",
+                            "properties": {
+                                "property": {
+                                    "type": "object",
+                                    "properties": {
+                                        "program-number": {
+                                            "type": "number",
+                                            "default": 1
+                                        }
+                                    }
+                                }
+                            }
+                        },
                         "appsink" : {
                             "type": "object",
                             "options": {
