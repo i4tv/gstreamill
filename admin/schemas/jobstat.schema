@@ -43,6 +43,7 @@
                 "streams": {
                     "type": "array",
                     "title": "Source Streams",
+                    "format": "tabs",
                     "items": {
                         "type": "object",
                         "properties": {
@@ -69,6 +70,7 @@
         },
         "encoders": {
             "type": "array",
+            "format": "tabs",
             "items": {
                 "type": "object",
                 "properties": {
@@ -90,6 +92,7 @@
                     },
                     "streams": {
                         "type": "array",
+                        "format": "tabs",
                         "items": {
                             "type": "object",
                             "properties": {
