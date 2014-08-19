@@ -8,7 +8,7 @@
                     <li><a href="javascript:network();"><span> Network Configure</span></a></li>
                 </ul>
             </div>
-            <div class="col-lg-10 main-content" id="system_stat_holder"></div>
+            <div class="col-lg-10 main-content" id="main_content"></div>
         </div>
     </div>
 
@@ -17,7 +17,7 @@
 
     function gstreamill () {
         $.get("/stat/gstreamill", function (data) {
-            $("#system_stat_holder").jsoneditor ({
+            $("#main_content").jsoneditor ({
                 schema: {
                     $ref: "schemas/gstreamill.schema"
                 },

@@ -11,7 +11,7 @@
             <div class='col-lg-10 main-content'>
                 <div id='job_editor_holder' style="display: none;"></div>
                 <div id='encoder_conf_editor_holder' style="display: none;"></div>
-                <div id='job_conf_editor_holder'></div>
+                <div id='main_content'></div>
                 <button class='btn btn-primary' id='putjob'>Save Job</button>
             </div>
         </div>
@@ -42,7 +42,7 @@
             job_editor.on ('ready', function () {
 
                 job_editor.setValue (data.data);
-                var conf_element = document.getElementById ('job_conf_editor_holder');
+                var conf_element = document.getElementById ('main_content');
                 conf_element.innerHTML = "";
                 var conf_editor = new JSONEditor (conf_element, {
                     schema: {
@@ -179,7 +179,7 @@
                 alert (name + "'s stat not found.");
                 return;
             }
-            var conf_element = document.getElementById ('job_conf_editor_holder');
+            var conf_element = document.getElementById ('main_content');
             conf_element.innerHTML = "";
             var conf_editor = new JSONEditor (conf_element, {
                 schema: {
