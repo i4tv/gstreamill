@@ -127,6 +127,7 @@
                         $('#job_status').attr ('href', "javascript:status (\"" + data.data.name + "\")");
 
                         /* set putjob click event after encoder_conf ready */
+                        $('#putjob').show();
                         $("#putjob").click (function () {
                             conf_value = conf_editor.getValue ();
 
@@ -175,6 +176,8 @@
 
     function status (name) {
         $.get("/stat/gstreamill/job/" + name, function (data) {
+            $('#putjob').hide ();
+
             if (data.result === 'failure') {
                 alert (name + "'s stat not found.");
                 return;
