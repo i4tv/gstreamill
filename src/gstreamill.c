@@ -1044,34 +1044,17 @@ gchar * gstreamill_stat (Gstreamill *gstreamill)
                           "    \"builddate\": \"%s\",\n"
                           "    \"buildtime\": \"%s\",\n"
                           "    \"starttime\": \"%s\",\n"
-                          "    \"jobs\": %s]\n}\n";
-        gchar *stat, *jobarray, *p;
-        GSList *list;
-        Job *job;
+                          "    \"jobcount\": %d\n}\n";
+        gchar *stat;
+        guint jobcount;
 
-        jobarray = g_strdup_printf ("[");
-        g_mutex_lock (&(gstreamill->job_list_mutex));
-        list = gstreamill->job_list;
-        while (list != NULL) {
-                job = list->data;
-                p = jobarray;
-                jobarray = g_strdup_printf ("%s\"%s\"", p, job->name);
-                g_free (p);
-                list = list->next;
-                if (list != NULL) {
-                        p = jobarray;
-                        jobarray = g_strdup_printf ("%s,", p);
-                        g_free (p);
-                }
-        }
-        g_mutex_unlock (&(gstreamill->job_list_mutex));
+        jobcount = gstreamill_job_number (gstreamill);
         stat = g_strdup_printf (template,
                                 VERSION,
                                 __DATE__,
                                 __TIME__,
                                 gstreamill->start_time,
-                                jobarray);
-        g_free (jobarray);
+                                jobcount);
 
         return stat;
 }

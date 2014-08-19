@@ -18,12 +18,9 @@
             "type": "string",
             "title": "Start Time"
         },
-        "jobs": {
-            "type": "array",
-            "format": "table",
-            "items": {
-                "type": "string"
-            }
+        "jobcount": {
+            "type": "number",
+            "title": "Job Count"
         }
     }
 }

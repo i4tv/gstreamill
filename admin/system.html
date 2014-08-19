@@ -17,7 +17,9 @@
 
     function gstreamill () {
         $.get("/stat/gstreamill", function (data) {
-            $("#main_content").jsoneditor ({
+            var element = document.getElementById ('main_content');
+            element.innerHTML = "";
+            var editor = new JSONEditor (element, {
                 schema: {
                     $ref: "schemas/gstreamill.schema"
                 },
@@ -30,9 +32,11 @@
                 disable_array_reorder: true,
                 theme: 'bootstrap3',
                 iconlib: 'bootstrap3'
-            })
-            .on ('ready', function () {
-                $(this).jsoneditor ('value', data);
+            });
+
+            editor.on ('ready', function () {
+                editor.setValue (data);
+                editor.disable ();
             });
         });
     }
