@@ -6,50 +6,66 @@
             "type": "string"
         },
         "age": {
-            "type": "number"
+            "type": "number",
+            "title": "Restart Times"
         },
         "last_start_time": {
-            "type": "string"
+            "type": "string",
+            "title": "Last Start Time"
         },
         "current_access": {
-            "type": "number"
+            "type": "number",
+            "title": "Current Concurrent Count"
         },
         "cpu_average": {
-            "type": "number"
+            "type": "number",
+            "title": "Average CPU Usage"
         },
         "cpu_current": {
-            "type": "number"
+            "type": "number",
+            "title": "Current CPU Usage"
         },
         "memory": {
-            "type": "number"
+            "type": "number",
+            "title": "Memory Usage"
         },
         "source": {
             "type": "object",
             "properties": {
                 "sync_error_times": {
-                    "type": "number"
+                    "type": "number",
+                    "title": "Sync Error Times"
                 },
                 "stream_count": {
-                    "type": "number"
+                    "type": "number",
+                    "title": "Streams Count"
                 },
                 "streams": {
                     "type": "array",
+                    "title": "Source Streams",
                     "items": {
                         "type": "object",
                         "properties": {
                             "name": {
-                                "type": "string"
+                                "type": "string",
+                                "title": "Stream Name"
                             },
                             "timestamp": {
-                                "type": "string"
+                                "type": "string",
+                                "title": "Stream Time Stamp"
                             },
                             "heartbeat": {
-                                "type": "string"
+                                "type": "string",
+                                "title": "Last Heartbeat"
                             }
                         }
                     }
                 }
             }
+        },
+        "encoder_count": {
+            "type": "number",
+            "title": "Encoders Count"
         },
         "encoders": {
             "type": "array",
@@ -57,16 +73,20 @@
                 "type": "object",
                 "properties": {
                     "name": {
-                        "type": "string"
+                        "type": "string",
+                        "title": "Encoder Name"
                     },
                     "heartbeat": {
-                        "type": "string"
+                        "type": "string",
+                        "title": "Encoder Heartbeat"
                     },
                     "count": {
-                        "type": "number"
+                        "type": "number",
+                        "title": "Encoder Output Bytes Count"
                     },
                     "streamcount": {
-                        "type": "number"
+                        "type": "number",
+                        "title": "Streams Count"
                     },
                     "streams": {
                         "type": "array",
@@ -74,13 +94,16 @@
                             "type": "object",
                             "properties": {
                                 "name": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "title": "Stream Name"
                                 },
                                 "timestamp": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "title": "Stream Time Stamp"
                                 },
                                 "heartbeat": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "title": "Stream Heartbeat"
                                 }
                             }
                         }
