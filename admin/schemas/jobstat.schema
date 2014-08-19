@@ -1,0 +1,92 @@
+{
+    "type": "object",
+    "headerTemplate": "{{ self.name }} Status",
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "age": {
+            "type": "number"
+        },
+        "last_start_time": {
+            "type": "string"
+        },
+        "current_access": {
+            "type": "number"
+        },
+        "cpu_average": {
+            "type": "number"
+        },
+        "cpu_current": {
+            "type": "number"
+        },
+        "memory": {
+            "type": "number"
+        },
+        "source": {
+            "type": "object",
+            "properties": {
+                "sync_error_times": {
+                    "type": "number"
+                },
+                "stream_count": {
+                    "type": "number"
+                },
+                "streams": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "timestamp": {
+                                "type": "string"
+                            },
+                            "heartbeat": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "encoders": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "heartbeat": {
+                        "type": "string"
+                    },
+                    "count": {
+                        "type": "number"
+                    },
+                    "streamcount": {
+                        "type": "number"
+                    },
+                    "streams": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "timestamp": {
+                                    "type": "string"
+                                },
+                                "heartbeat": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
