@@ -61,6 +61,10 @@
                 });
 
                 conf_editor.on ('ready', function () {
+                    /* get name */
+                    var name_editor = conf_editor.getEditor ('root.name');
+                    name_editor.setValue (data.data.name);
+
                     var conf_value = conf_editor.getValue ();
 
                     /* get source parameters */
