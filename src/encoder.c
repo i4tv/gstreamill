@@ -766,7 +766,6 @@ gboolean is_encoder_output_ready (EncoderOutput *encoder_output)
 {
         gboolean ready;
 
-        
         sem_wait (encoder_output->semaphore);
         if (*(encoder_output->head_addr) == *(encoder_output->tail_addr)) {
                 ready = FALSE;
@@ -840,12 +839,20 @@ guint64 encoder_output_gop_seek (EncoderOutput *encoder_output, GstClockTime tim
         GstClockTime t;
 
         rap_addr = *(encoder_output->head_addr);
+        if (rap_addr > encoder_output->cache_size) {
+                GST_ERROR ("FATAL: %s rap_addr value is %lu", encoder_output->name, rap_addr);
+                return G_MAXUINT64;
+        }
         while (rap_addr != *(encoder_output->last_rap_addr)) {
                 t = encoder_output_rap_timestamp (encoder_output, rap_addr);
                 if (timestamp == t) {
                         break;
                 }
                 rap_addr = encoder_output_rap_next (encoder_output, rap_addr);
+                if (rap_addr > encoder_output->cache_size) {
+                        GST_ERROR ("FATAL: %s rap_addr value is %lu", encoder_output->name, rap_addr);
+                        return G_MAXUINT64;
+                }
         }
 
         if (rap_addr != *(encoder_output->last_rap_addr)) {
