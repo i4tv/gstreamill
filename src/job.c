@@ -443,8 +443,10 @@ gint job_initialize (Job *job, gboolean daemon)
         output->encoder_count = jobdesc_encoders_count (job->description);
         output->encoders = (struct _EncoderOutput *)g_malloc (output->encoder_count * sizeof (struct _EncoderOutput));
         for (i = 0; i < output->encoder_count; i++) {
-                name = g_strdup_printf ("encoder.%d", i);
+                name = g_strdup_printf ("%s.encoder.%d", job->name, i);
                 g_strlcpy (output->encoders[i].name, name, STREAM_NAME_LEN);
+                g_free (name);
+                name = g_strdup_printf ("encoder.%d", i);
                 output->encoders[i].stream_count = jobdesc_streams_count (job->description, name);
                 g_free (name);
                 name = g_strdup_printf ("/%s.%d", job->name, i);

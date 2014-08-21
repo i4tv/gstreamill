@@ -289,8 +289,7 @@ static void source_check (Gstreamill *gstreamill, Job *job)
 
         /* log source timestamp. */
         for (i = 0; i < job->output->source.stream_count; i++) {
-                GST_INFO ("%s.source.%s timestamp %" GST_TIME_FORMAT,
-                                job->name,
+                GST_INFO ("%s timestamp %" GST_TIME_FORMAT,
                                 job->output->source.streams[i].name,
                                 GST_TIME_ARGS (job->output->source.streams[i].current_timestamp));
         }
@@ -311,8 +310,7 @@ static void source_check (Gstreamill *gstreamill, Job *job)
                 now = gst_clock_get_time (gstreamill->system_clock);
                 time_diff = GST_CLOCK_DIFF (job->output->source.streams[i].last_heartbeat, now);
                 if ((time_diff > HEARTBEAT_THRESHHOLD) && gstreamill->daemon) {
-                        GST_ERROR ("%s.source.%s heart beat error %lu, restart job.",
-                                        job->name,
+                        GST_ERROR ("%s heart beat error %lu, restart job.",
                                         job->output->source.streams[i].name,
                                         time_diff);
                         /* restart job. */
@@ -320,8 +318,7 @@ static void source_check (Gstreamill *gstreamill, Job *job)
                         return;
 
                 } else {
-                        GST_INFO ("%s.source.%s heartbeat %" GST_TIME_FORMAT,
-                                        job->name,
+                        GST_INFO ("%s heartbeat %" GST_TIME_FORMAT,
                                         job->output->source.streams[i].name,
                                         GST_TIME_ARGS (job->output->source.streams[i].last_heartbeat));
                 }
@@ -337,8 +334,7 @@ static void encoders_check (Gstreamill *gstreamill, Job *job)
         /* log encoder current timestamp. */
         for (j = 0; j < job->output->encoder_count; j++) {
                 for (k = 0; k < job->output->encoders[j].stream_count; k++) {
-                        GST_INFO ("%s.encoders.%s.%s timestamp %" GST_TIME_FORMAT,
-                                        job->name,
+                        GST_INFO ("%s.%s timestamp %" GST_TIME_FORMAT,
                                         job->output->encoders[j].name,
                                         job->output->encoders[j].streams[k].name,
                                         GST_TIME_ARGS (job->output->encoders[j].streams[k].current_timestamp));
@@ -361,8 +357,7 @@ static void encoders_check (Gstreamill *gstreamill, Job *job)
                         now = gst_clock_get_time (gstreamill->system_clock);
                         time_diff = GST_CLOCK_DIFF (job->output->encoders[j].streams[k].last_heartbeat, now);
                         if ((time_diff > HEARTBEAT_THRESHHOLD) && gstreamill->daemon) {
-                                GST_ERROR ("%s.encoders.%s.%s heartbeat error %lu, restart",
-                                                job->name,
+                                GST_ERROR ("%s.%s heartbeat error %lu, restart",
                                                 job->output->encoders[j].name,
                                                 job->output->encoders[j].streams[k].name,
                                                 time_diff);
@@ -371,8 +366,7 @@ static void encoders_check (Gstreamill *gstreamill, Job *job)
                                 return;
 
                         } else {
-                                GST_INFO ("%s.encoders.%s.%s heartbeat %" GST_TIME_FORMAT,
-                                                job->name,
+                                GST_INFO ("%s.%s heartbeat %" GST_TIME_FORMAT,
                                                 job->output->encoders[j].name,
                                                 job->output->encoders[j].streams[k].name,
                                                 GST_TIME_ARGS (job->output->encoders[j].streams[k].last_heartbeat));
@@ -385,8 +379,7 @@ static void encoders_check (Gstreamill *gstreamill, Job *job)
                 now = gst_clock_get_time (gstreamill->system_clock);
                 time_diff = GST_CLOCK_DIFF (*(job->output->encoders[j].heartbeat), now);
                 if ((time_diff > ENCODER_OUTPUT_HEARTBEAT_THRESHHOLD) && gstreamill->daemon) {
-                        GST_ERROR ("%s.encoders.%s job->output heart beat error %lu, restart",
-                                        job->name,
+                        GST_ERROR ("%s job->output heart beat error %lu, restart",
                                         job->output->encoders[j].name,
                                         time_diff);
                         /* restart job. */
@@ -394,8 +387,7 @@ static void encoders_check (Gstreamill *gstreamill, Job *job)
                         return;
 
                 } else {
-                        GST_INFO ("%s.encoders.%s job->output heartbeat %" GST_TIME_FORMAT,
-                                        job->name,
+                        GST_INFO ("%s job->output heartbeat %" GST_TIME_FORMAT,
                                         job->output->encoders[j].name,
                                         GST_TIME_ARGS (*(job->output->encoders[j].heartbeat)));
                 }
