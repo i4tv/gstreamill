@@ -688,6 +688,7 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
 
                 bins = jobdesc_bins (job, pipeline);
                 if (encoder_extract_streams (encoder, bins) != 0) {
+                        GST_ERROR ("extract encoder %s streams failure", encoder->name);
                         g_free (job_name);
                         g_free (pipeline);
                         g_strfreev (bins);
@@ -722,12 +723,14 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
                 /* parse bins and create pipeline. */
                 encoder->bins = bins_parse (job, pipeline);
                 if (encoder->bins == NULL) {
+                        GST_ERROR ("parse job %s bins error", job_name);
                         g_free (job_name);
                         g_free (pipeline);
                         return 1;
                 }
                 complete_request_element (encoder->bins);
                 if (create_encoder_pipeline (encoder) != 0) {
+                        GST_ERROR ("create encoder %s pipeline failure", encoder->name);
                         g_free (job_name);
                         g_free (pipeline);
                         return 1;

@@ -659,6 +659,7 @@ GSList * bins_parse (gchar *job, gchar *pipeline)
 
                         } else {
                                 /* create element failure */
+                                GST_ERROR ("create element failure: %s", p1);
                                 g_free (bins);
                                 g_strfreev (pp1);
                                 return NULL;
