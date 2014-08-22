@@ -241,6 +241,47 @@ static gchar * add_header_footer (gchar *middle)
         return buf;
 }
 
+static gchar * network_devices ()
+{
+        gchar *p1, p2[128], *result, **devices, **device;
+        GError *err = NULL;
+
+        if (!g_file_get_contents ("/proc/net/dev", &p1, NULL, &err)) {
+                GST_ERROR ("read /proc/net/dev failure: %s", err->message);
+                result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"\n}", err->message);
+                g_error_free (err);
+        }
+        devices = g_strsplit (p1, "\n", 0);
+        g_free (p1);
+        device = devices;
+        result = g_strdup ("[");
+        while (*device != NULL) {
+                if (g_str_has_prefix (*device, "Inter") ||
+                    g_str_has_prefix (*device, " face") ||
+                    g_str_has_prefix (*device, "    lo")) {
+                        device++;
+                        continue;
+                }
+                if (sscanf (*device, "%*[ ]%[^:]:%*[.]", p2) != EOF) {
+                        p1 = result;
+                        result = g_strdup_printf ("%s\"%s\",", p1, p2);
+                        g_free (p1);
+                        GST_ERROR ("p is %s", result);
+                }
+                device++;
+        }
+        g_strfreev (devices);
+        if (strlen (result) > 1) {
+                result[strlen (result) - 1] = ']';
+
+        } else {
+                g_free (result);
+                result = g_strdup ("[]");
+        }
+
+        return result;
+}
+
 static gchar * list_files (gchar *pattern, gchar *format)
 {
         glob_t pglob;
@@ -387,6 +428,11 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
 
         } else if (g_str_has_prefix (request_data->uri, "/admin/stop")) {
                 p = stop_job (httpmgmt, request_data);
+                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+                g_free (p);
+
+        } else if (g_strcmp0 (request_data->uri, "/admin/networkdevices") == 0) {
+                p = network_devices ();
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
