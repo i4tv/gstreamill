@@ -133,12 +133,99 @@ GType httpmgmt_get_type (void)
         return type;
 }
 
+static gchar * system_stat ()
+{
+        gchar *std_out, *p, **pp1, **pp2, model_name[128], *result;
+        gint count;
+        GError *err = NULL;
+
+        /* cpu mode */
+        result = g_strdup ("{\n");
+        if (!g_file_get_contents ("/proc/cpuinfo", &p, NULL, &err)) {
+                GST_ERROR ("read /proc/cpuinfo failure: %s", err->message);
+                g_free (result);
+                result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"\n}", err->message);
+                g_error_free (err);
+                return result;
+        }
+
+        pp1 = pp2 = g_strsplit (p, "\n", 0);
+        g_free (p);
+        while (*pp1 != NULL) {
+                if (!g_str_has_prefix (*pp1, "model name")) {
+                        pp1++;
+                        continue;
+                }
+                sscanf (*pp1, "%*[^:]: %[^\n]$", model_name);
+                break;
+        }
+        g_strfreev (pp2);
+        p = result;
+        result = g_strdup_printf ("%s    \"CPU_Model\": \"%s\"", p, model_name);
+        g_free (p);
+
+        if (!g_spawn_command_line_sync ("lscpu", &std_out, NULL, NULL, &err)) {
+                GST_ERROR ("invoke lscpu failure: %s", err->message);
+                g_free (result);
+                result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"\n}", err->message);
+                g_error_free (err);
+                return result;
+        }
+        pp1 = pp2 = g_strsplit (std_out, "\n", 0);
+        while (*pp1 != NULL) {
+                if (g_str_has_prefix (*pp1, "CPU(s)")) {
+                        sscanf (*pp1, "CPU(s):%*[ ]%d", &count);
+                        p = result;
+                        result = g_strdup_printf ("%s,\n    \"CPU_Count\": %d", p, count);
+                        g_free (p);
+
+                } else if (g_str_has_prefix (*pp1, "Thread(s) per core")) {
+                        sscanf (*pp1, "Thread(s) per core:%*[ ]%d", &count);
+                        p = result;
+                        result = g_strdup_printf ("%s,\n    \"Threads_per_Core\": %d", p, count);
+                        g_free (p);
+
+                } else if (g_str_has_prefix (*pp1, "Core(s) per socket")) {
+                        sscanf (*pp1, "Core(s) per socket:%*[ ]%d", &count);
+                        p = result;
+                        result = g_strdup_printf ("%s,\n    \"Core_per_Socket\": %d", p, count);
+                        g_free (p);
+
+                } else if (g_str_has_prefix (*pp1, "Socket(s)")) {
+                        sscanf (*pp1, "Socket(s):%*[ ]%d", &count);
+                        p = result;
+                        result = g_strdup_printf ("%s,\n    \"Sockets_Count\": %d", p, count);
+                        g_free (p);
+
+                } else if (g_str_has_prefix (*pp1, "CPU MHz")){
+                        sscanf (*pp1, "CPU MHz:%*[ ]%d", &count);
+                        p = result;
+                        result = g_strdup_printf ("%s,\n    \"CPU_MHz\": %d", p, count);
+                        g_free (p);
+                }
+                pp1++;
+        }
+        g_strfreev (pp2);
+        g_free (std_out);
+
+        p = result;
+        result = g_strdup_printf ("%s\n}", p);
+        g_free (p);
+
+        return result;
+}
+
 static gchar * request_gstreamill_stat (HTTPMgmt *httpmgmt, RequestData *request_data)
 {
         gchar *buf, *p;
 
         if (g_strcmp0 (request_data->uri, "/stat/gstreamill") == 0) {
                 p = gstreamill_stat (httpmgmt->gstreamill);
+                buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+                g_free (p);
+
+        } else if (g_strcmp0 (request_data->uri, "/stat/system") == 0) {
+                p = system_stat ();
                 buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
@@ -266,7 +353,6 @@ static gchar * network_devices ()
                         p1 = result;
                         result = g_strdup_printf ("%s\"%s\",", p1, p2);
                         g_free (p1);
-                        GST_ERROR ("p is %s", result);
                 }
                 device++;
         }
@@ -543,12 +629,12 @@ static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
         case HTTP_REQUEST:
                 GST_INFO ("new request arrived, socket is %d, uri is %s", request_data->sock, request_data->uri);
 
-                if (g_str_has_prefix (request_data->uri, "/stat/gstreamill")) {
-                        buf = request_gstreamill_stat (httpmgmt, request_data);
+                if (g_str_has_prefix (request_data->uri, "/stat/gstreamer")) {
+                        buf = request_gstreamer_stat (httpmgmt, request_data);
                         buf_size = strlen (buf);
 
-                } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamer")) {
-                        buf = request_gstreamer_stat (httpmgmt, request_data);
+                } else if (g_str_has_prefix (request_data->uri, "/stat")) {
+                        buf = request_gstreamill_stat (httpmgmt, request_data);
                         buf_size = strlen (buf);
 
                 } else if (g_str_has_prefix (request_data->uri, "/admin")) {
