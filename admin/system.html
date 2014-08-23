@@ -15,6 +15,32 @@
 
     <script type="text/javascript">
 
+    function system () {
+        $.get("/stat/system", function (data) {
+            var element = document.getElementById ('main_content');
+            element.innerHTML = "";
+            var editor = new JSONEditor (element, {
+                schema: {
+                    $ref: "schemas/system.schema"
+                },
+                ajax: true,
+                disable_collapse: true,
+                disable_edit_json: true,
+                disable_properties: true,
+                disable_array_add: true,
+                disable_array_delete: true,
+                disable_array_reorder: true,
+                theme: 'bootstrap3',
+                iconlib: 'bootstrap3'
+            });
+
+            editor.on ('ready', function () {
+                editor.setValue (data);
+                editor.disable ();
+            });
+        });
+    }
+
     function gstreamill () {
         $.get("/stat/gstreamill", function (data) {
             var element = document.getElementById ('main_content');
