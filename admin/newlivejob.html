@@ -42,6 +42,10 @@
             job_editor.on ('ready', function() {
                 /* job name */
                 var job_name = job_editor.getEditor ('root.name');
+                if (conf_value.name == "") {
+                    alert ("Set name please");
+                    return;
+                }
                 job_name.setValue (conf_value.name);
     
                 /* job type */

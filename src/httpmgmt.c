@@ -463,6 +463,10 @@ static gchar * put_job (RequestData *request_data)
         gchar *job_path, *job, *result;
         GError *err = NULL;
 
+        if (g_strcmp0 (&(request_data->uri[13]), "/") == 0) {
+                GST_ERROR ("put job error, name is null");
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"name is null\"\n}");
+        }
         job_path = g_strdup_printf ("/etc/gstreamill.d%s.job", &(request_data->uri[13]));
         job = request_data->raw_request + request_data->header_size;
         if (!g_file_set_contents (job_path, job, strlen (job), &err)) {
