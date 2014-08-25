@@ -332,21 +332,41 @@ static gchar * add_header_footer (gchar *middle)
 static gchar * network_interfaces ()
 {
         augeas *aug;
-        gchar *value = NULL, **match;
-        gint number, i;
+        gchar *value = NULL, **if_match, **option_match, *path, *result, *p, option[128];
+        gint if_number, option_number, i, j;
 
         aug = aug_init (NULL, NULL, AUG_NONE | AUG_NO_ERR_CLOSE);
-        aug_get (aug, "//files/etc/network/interfaces/iface[.='em1']/", (const gchar **)&value);
-        number = aug_match (aug, "//files/etc/network/interfaces/iface[.='em1']/*", &match);
-        for (i = 0; i < number; i++) {
-                aug_get (aug, match[i], (const gchar **)&value);
-                GST_ERROR ("%s: %s", match[i], value);
-                g_free (match[i]);
+        aug_get (aug, "//files/etc/network/interfaces", (const gchar **)&value);
+        if_number = aug_match (aug, "//files/etc/network/interfaces/iface[.!='lo']", &if_match);
+        result = g_strdup ("[");
+        for (i = 0; i < if_number; i++) {
+                aug_get (aug, if_match[i], (const gchar **)&value);
+                p = result;
+                result = g_strdup_printf ("%s{\"name\": \"%s\",", p, value);
+                g_free (p);
+                p = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/*", value);
+                option_number = aug_match (aug, p, &option_match);
+                g_free (p);
+                for (j = 0; j < option_number; j++) {
+                        sscanf (option_match[j], "%*[^]]]/%[^/]", option);
+                        aug_get (aug, option_match[j], (const gchar **)&value);
+                        p = result;
+                        result = g_strdup_printf ("%s\n\"%s\": \"%s\",", p, option, value);
+                        g_free (p);
+                        g_free (option_match[j]);
+                }
+                g_free (option_match);
+                g_free (if_match[i]);
+                result[strlen (result) - 1] = '}';
+                p = result;
+                result = g_strdup_printf ("%s,", p);
+                g_free (p);
         }
-        g_free (match);
+        g_free (if_match);
         aug_close (aug);
+        result[strlen (result) - 1] = ']';
 
-        return g_strdup ("{}");
+        return result;
 }
 
 static gchar * network_devices ()
