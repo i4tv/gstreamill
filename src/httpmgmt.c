@@ -10,6 +10,7 @@
 #include <gst/gst.h>
 #include <string.h>
 #include <stdlib.h>
+#include <augeas.h>
 
 #include "parson.h"
 #include "httpmgmt.h"
@@ -328,6 +329,26 @@ static gchar * add_header_footer (gchar *middle)
         return buf;
 }
 
+static gchar * network_interfaces ()
+{
+        augeas *aug;
+        gchar *value = NULL, **match;
+        gint number, i;
+
+        aug = aug_init (NULL, NULL, AUG_NONE | AUG_NO_ERR_CLOSE);
+        aug_get (aug, "//files/etc/network/interfaces/iface[.='em1']/", (const gchar **)&value);
+        number = aug_match (aug, "//files/etc/network/interfaces/iface[.='em1']/*", &match);
+        for (i = 0; i < number; i++) {
+                aug_get (aug, match[i], (const gchar **)&value);
+                GST_ERROR ("%s: %s", match[i], value);
+                g_free (match[i]);
+        }
+        g_free (match);
+        aug_close (aug);
+
+        return g_strdup ("{}");
+}
+
 static gchar * network_devices ()
 {
         gchar *p1, p2[128], *result, **devices, **device;
@@ -518,6 +539,11 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
 
         } else if (g_str_has_prefix (request_data->uri, "/admin/stop")) {
                 p = stop_job (httpmgmt, request_data);
+                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+                g_free (p);
+
+        } else if (g_strcmp0 (request_data->uri, "/admin/networkinterfaces") == 0) {
+                p = network_interfaces ();
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 

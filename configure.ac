@@ -36,6 +36,8 @@ PKG_CHECK_MODULES([gstreamer], [gstreamer-1.0])
 PKG_CHECK_MODULES([gstreamerapp], [gstreamer-app-1.0])
 PKG_CHECK_MODULES([gstreamerpluginsbase], [gstreamer-plugins-base-1.0])
 
+PKG_CHECK_MODULES([augeas], [augeas])
+
 # Checks for header files.
 
 

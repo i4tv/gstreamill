@@ -1,8 +1,8 @@
-INCLUDES = $(gstreamer_CFLAGS) $(gstreamerapp_CFLAGS) $(gstreamerpluginsbase_CFLAGS)
+INCLUDES = $(gstreamer_CFLAGS) $(gstreamerapp_CFLAGS) $(gstreamerpluginsbase_CFLAGS) $(augeas_CFLAGS)
 
 bin_PROGRAMS = gstreamill
 
-gstreamill_LDADD = $(gstreamer_LIBS) $(gstreamerapp_LIBS) $(gstreamerpluginsbase_LIBS) -lrt -lpthread -lgstvideo-1.0
+gstreamill_LDADD = $(gstreamer_LIBS) $(gstreamerapp_LIBS) $(gstreamerpluginsbase_LIBS) $(augeas_LIBS) -lrt -lpthread -lgstvideo-1.0
 
 gstreamill_CPPFLAGS = -DDATADIR='"$(datadir)"'
 
