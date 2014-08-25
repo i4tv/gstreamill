@@ -44,4 +44,5 @@ adminschemas_DATA = \
         schemas/testsrc.conf \
         schemas/encoder.schema \
         schemas/encoder.conf \
-        schemas/newlivejob.schema
+        schemas/newlivejob.schema \
+        schemas/newtranscodejob.schema

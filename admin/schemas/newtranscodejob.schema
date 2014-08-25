@@ -1,0 +1,20 @@
+{
+    "type": "object",
+    "title": "New Transcode Job",
+    "properties": {
+        "name": {
+            "title": "Job Name",
+            "type": "string"
+        },
+        "sourcetype": {
+            "type": "string",
+            "title": "Source Type",
+            "enum": ["MPEGTS", "MP4"]
+        },
+        "encodercount": {
+            "type": "number",
+            "title": "Encoder Count",
+            "enum": [1, 2, 3, 4, 5]
+        }
+    }
+}
