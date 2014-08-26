@@ -338,7 +338,10 @@ static gchar * set_network_interfaces (RequestData *request_data)
         JSON_Object *obj;
         gint if_count, i, ret;
 
-        aug = aug_init (NULL, NULL, AUG_NONE | AUG_NO_ERR_CLOSE);
+        aug = aug_init (NULL, NULL, AUG_NONE | AUG_NO_ERR_CLOSE | AUG_NO_MODL_AUTOLOAD);
+        aug_set (aug, "/augeas/load/Interfaces/lens", "Interfaces.lns");
+        aug_set (aug, "/augeas/load/Interfaces/incl", "/etc/network/interfaces");
+        aug_load (aug);
         interfaces = request_data->raw_request + request_data->header_size;
         val = json_parse_string (interfaces);
         array = json_value_get_array (val);
@@ -384,7 +387,10 @@ static gchar * network_interfaces ()
         gchar *value = NULL, **if_match, **option_match, *path, *result, *p, option[128];
         gint if_number, option_number, i, j;
 
-        aug = aug_init (NULL, NULL, AUG_NONE | AUG_NO_ERR_CLOSE);
+        aug = aug_init (NULL, NULL, AUG_NONE | AUG_NO_ERR_CLOSE | AUG_NO_MODL_AUTOLOAD);
+        aug_set (aug, "/augeas/load/Interfaces/lens", "Interfaces.lns");
+        aug_set (aug, "/augeas/load/Interfaces/incl", "/etc/network/interfaces");
+        aug_load (aug);
         aug_get (aug, "//files/etc/network/interfaces", (const gchar **)&value);
         if_number = aug_match (aug, "//files/etc/network/interfaces/iface[.!='lo']", &if_match);
         result = g_strdup ("[");
