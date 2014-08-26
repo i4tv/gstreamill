@@ -53,6 +53,8 @@
     position: absolute;
     left: 50%;
     top: 50%;
+    margin-left: -16px;
+    margin-top: -16px;
     z-index: 9999;
     display: none;
 }
