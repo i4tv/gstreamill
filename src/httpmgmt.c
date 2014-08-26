@@ -349,6 +349,9 @@ static gchar * network_interfaces ()
                 g_free (p);
                 for (j = 0; j < option_number; j++) {
                         sscanf (option_match[j], "%*[^]]]/%[^/]", option);
+                        if (g_str_has_prefix (option, "#comment")) {
+                                continue;
+                        }
                         aug_get (aug, option_match[j], (const gchar **)&value);
                         p = result;
                         result = g_strdup_printf ("%s\n\"%s\": \"%s\",", p, option, value);
