@@ -3,6 +3,9 @@
     "headerTemplate": "{{ self.name }} Status",
     "properties": {
         "name": {
+            "options": {
+                "hidden": true
+            },
             "type": "string"
         },
         "age": {

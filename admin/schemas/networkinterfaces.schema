@@ -6,9 +6,15 @@
         "headerTemplate": "{{ self.name }} Configure",
         "properties": {
             "name": {
+                "options": {
+                    "hidden": true
+                },
                 "type": "string"
             },
             "family": {
+                "options": {
+                    "hidden": true
+                },
                 "type": "string"
             },
             "method": {
