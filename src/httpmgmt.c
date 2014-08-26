@@ -329,6 +329,55 @@ static gchar * add_header_footer (gchar *middle)
         return buf;
 }
 
+static gchar * set_network_interfaces (RequestData *request_data)
+{
+        gchar *interfaces, *result, *name, *path, *value;
+        augeas *aug;
+        JSON_Value *val;
+        JSON_Array *array;
+        JSON_Object *obj;
+        gint if_count, i, ret;
+
+        aug = aug_init (NULL, NULL, AUG_NONE | AUG_NO_ERR_CLOSE);
+        interfaces = request_data->raw_request + request_data->header_size;
+        val = json_parse_string (interfaces);
+        array = json_value_get_array (val);
+        if_count = json_array_get_count (array);
+        for (i = 0; i < if_count; i++) {
+                obj = json_array_get_object (array, i);
+                name = (gchar *)json_object_get_string (obj, "name");
+                value = (gchar *)json_object_get_string (obj, "method");
+                path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/method", name);
+                aug_set (aug, path, value);
+                g_free (path);
+                value = (gchar *)json_object_get_string (obj, "address");
+                path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/address", name);
+                ret = aug_set (aug, path, value);
+                g_free (path);
+                value = (gchar *)json_object_get_string (obj, "netmask");
+                path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/netmask", name);
+                aug_set (aug, path, value);
+                g_free (path);
+                value = (gchar *)json_object_get_string (obj, "network");
+                path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/network", name);
+                aug_set (aug, path, value);
+                g_free (path);
+                value = (gchar *)json_object_get_string (obj, "broadcast");
+                path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/broadcast", name);
+                aug_set (aug, path, value);
+                g_free (path);
+                value = (gchar *)json_object_get_string (obj, "gateway");
+                path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/gateway", name);
+                aug_set (aug, path, value);
+                g_free (path);
+        }
+        aug_save (aug);
+        aug_close (aug);
+        json_value_free (val);
+
+        return g_strdup ("{\n    \"result\": \"success\"\n}");
+}
+
 static gchar * network_interfaces ()
 {
         augeas *aug;
@@ -567,6 +616,11 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
 
         } else if (g_strcmp0 (request_data->uri, "/admin/networkinterfaces") == 0) {
                 p = network_interfaces ();
+                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+                g_free (p);
+
+        } else if (g_strcmp0 (request_data->uri, "/admin/setnetworkinterfaces") == 0) {
+                p = set_network_interfaces (request_data);
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 

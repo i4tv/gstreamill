@@ -129,6 +129,7 @@
                         /* set putjob click event after encoder_conf ready */
                         $('#putjob').show();
                         $("#putjob").click (function () {
+                            $("#putjob").unbind ('click');
                             conf_value = conf_editor.getValue ();
 
                             /* set source parameters */

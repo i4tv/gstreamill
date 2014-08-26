@@ -36,6 +36,9 @@
                 "type": "string"
             },
             "dns-nameservers": {
+                "options": {
+                    "hidden": true
+                },
                 "type": "string"
             }
         }

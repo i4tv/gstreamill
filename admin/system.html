@@ -11,7 +11,10 @@
                     <li><a href="javascript:network();"><span> Network Configure</span></a></li>
                 </ul>
             </div>
-            <div class="col-lg-10 main-content" id="main_content"></div>
+            <div class="col-lg-10 main-content">
+                <div id='main_content'></div>
+                <button class='btn btn-primary' id='setnetworkinterfaces'>Save Job</button>
+            </div>
         </div>
     </div>
 
@@ -30,6 +33,7 @@
 
     function system () {
         show_query_hint ("query_hint");
+        $('#setnetworkinterfaces').hide ();
         $.get("/stat/system", function (data) {
             var element = document.getElementById ('main_content');
             element.innerHTML = "";
@@ -58,6 +62,7 @@
 
     function gstreamill () {
         show_query_hint ("query_hint");
+        $('#setnetworkinterfaces').hide ();
         $.get("/stat/gstreamill", function (data) {
             var element = document.getElementById ('main_content');
             element.innerHTML = "";
@@ -107,6 +112,21 @@
             editor.on ('ready', function () {
                 editor.setValue (data);
                 hidden_query_hint ("query_hint");
+                $('#setnetworkinterfaces').show ();
+                $('#setnetworkinterfaces').click (function () {
+                    show_query_hint ("query_hint");
+                    $('#setnetworkinterfaces').unbind ('click');
+                    var value = editor.getValue ();
+                    alert (JSON.stringify (value, null, 4));
+                    $.post ("setnetworkinterfaces", JSON.stringify (value, null, 4), function (data) {
+                        if (data.result == 'success') {
+                            alert (data.result);
+                        } else {
+                            alert (data.result + '\n' + data.reason);
+                        }
+                        hidden_query_hint ("query_hint");
+                    });
+                });
             });
         });
     }
