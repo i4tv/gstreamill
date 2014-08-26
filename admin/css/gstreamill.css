@@ -49,6 +49,10 @@
     border-top: 1px solid #e3e3e3;
 }
 
+.query_hint {
+    display: none;
+}
+
 .main-content {
     padding-left: 30px;
 }

@@ -1,4 +1,7 @@
 
+    <div id="query_hint" class="query_hint">
+        <img src="img/waiting.gif" />
+    </div>
     <div class="container-fluid">
         <div class="row setjob">
             <div class="col-lg-2 sidebar-menu" id="system_menu">
@@ -15,7 +18,18 @@
 
     <script type="text/javascript">
 
+    function show_query_hint (query_hint){
+        var query_hint = document.getElementById (query_hint);
+        query_hint.style.display="block";
+    }
+
+    function hidden_query_hint (query_hint){
+        var query_hint = document.getElementById (query_hint);
+        query_hint.style.display = "none";
+    }
+
     function system () {
+        show_query_hint ("query_hint");
         $.get("/stat/system", function (data) {
             var element = document.getElementById ('main_content');
             element.innerHTML = "";
@@ -37,11 +51,13 @@
             editor.on ('ready', function () {
                 editor.setValue (data);
                 editor.disable ();
+                hidden_query_hint ("query_hint");
             });
         });
     }
 
     function gstreamill () {
+        show_query_hint ("query_hint");
         $.get("/stat/gstreamill", function (data) {
             var element = document.getElementById ('main_content');
             element.innerHTML = "";
@@ -63,11 +79,13 @@
             editor.on ('ready', function () {
                 editor.setValue (data);
                 editor.disable ();
+                hidden_query_hint ("query_hint");
             });
         });
     }
 
     function network () {
+        show_query_hint ("query_hint");
         $.get("/admin/networkinterfaces", function (data) {
             var element = document.getElementById ('main_content');
             element.innerHTML = "";
@@ -88,6 +106,7 @@
 
             editor.on ('ready', function () {
                 editor.setValue (data);
+                hidden_query_hint ("query_hint");
             });
         });
     }

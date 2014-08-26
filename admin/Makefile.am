@@ -31,6 +31,10 @@ adminfonts_DATA = \
         fonts/glyphicons-halflings-regular.ttf \
         fonts/glyphicons-halflings-regular.woff
 
+adminimgdir = $(datadir)/gstreamill/admin/img
+adminimg_DATA = \
+        img/waiting.gif
+
 adminschemasdir = $(datadir)/gstreamill/admin/schemas
 adminschemas_DATA = \
         schemas/gstreamill.schema \
