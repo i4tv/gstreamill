@@ -1,0 +1,37 @@
+{
+    "type": "array",
+    "title": "Network Configure",
+    "items": {
+        "type": "object",
+        "headerTemplate": "{{ self.name }} Configure",
+        "properties": {
+            "name": {
+                "type": "string"
+            },
+            "family": {
+                "type": "string"
+            },
+            "method": {
+                "type": "string"
+            },
+            "address": {
+                "type": "string"
+            },
+            "netmask": {
+                "type": "string"
+            },
+            "network": {
+                "type": "string"
+            },
+            "broadcast": {
+                "type": "string"
+            },
+            "gateway": {
+                "type": "string"
+            },
+            "dns-nameservers": {
+                "type": "string"
+            }
+        }
+    }
+}
