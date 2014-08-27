@@ -37,7 +37,7 @@ adminimg_DATA = \
 
 adminschemasdir = $(datadir)/gstreamill/admin/schemas
 adminschemas_DATA = \
-        schemas/gstreamill.schema \
+        schemas/gstreamilloverview.schema \
         schemas/system.schema \
         schemas/networkinterfaces.schema \
         schemas/jobstat.schema \
