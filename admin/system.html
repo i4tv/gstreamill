@@ -13,6 +13,14 @@
             </div>
             <div class="col-lg-10 main-content">
                 <div id='main_content'></div>
+                <div id='system_danger_zone' class="panel panel-danger">
+                    <div class="panel-heading">Danger Zone</div>
+                    <div class="panel-body">
+                        <h4>Restart Device</h4></br>
+                        Restart OS, all jobs would stoped.
+                        <button class='btn btn-danger pull-right' id='restartdevice'>Restart device</button>
+                    </div>
+                </div>
                 <button class='btn btn-primary' id='setnetworkinterfaces'>Set Network Interfaces</button>
             </div>
         </div>
@@ -33,6 +41,7 @@
 
     function system () {
         show_query_hint ("query_hint");
+        $('#system_danger_zone').show ();
         $('#setnetworkinterfaces').hide ();
         $.get("/stat/system", function (data) {
             var element = document.getElementById ('main_content');
@@ -62,6 +71,7 @@
 
     function gstreamill () {
         show_query_hint ("query_hint");
+        $('#system_danger_zone').hide ();
         $('#setnetworkinterfaces').hide ();
         $.get("/stat/gstreamill", function (data) {
             var element = document.getElementById ('main_content');
@@ -91,6 +101,7 @@
 
     function network () {
         show_query_hint ("query_hint");
+        $('#system_danger_zone').hide ();
         $.get("/admin/networkinterfaces", function (data) {
             var element = document.getElementById ('main_content');
             element.innerHTML = "";
@@ -130,7 +141,7 @@
     }
 
     $ (document).ready (function () {
-        gstreamill ();
+        system ();
     });
 
     </script>
