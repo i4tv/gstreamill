@@ -557,6 +557,24 @@ static gchar * stop_job (HTTPMgmt *httpmgmt, RequestData *request_data)
         return buf;
 }
 
+static gchar * get_conf ()
+{
+        gchar *p, *result;
+        GError *err = NULL;
+
+        if (!g_file_get_contents ("/etc/gstreamill.conf", &p, NULL, &err)) {
+                GST_ERROR ("read gstreamill conf file failure: %s", err->message);
+                result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"\n}", err->message);
+                g_error_free (err);
+
+        } else {
+                result = g_strdup_printf ("{\n    \"result\": \"success\",\n    \"data\": %s\n}", p);
+                g_free (p);
+        }
+
+        return result;
+}
+
 static gchar * get_job (gchar *uri)
 {
         gchar *job_path, *job, *p;
@@ -567,11 +585,13 @@ static gchar * get_job (gchar *uri)
                 GST_ERROR ("read job %s failure: %s", job_path, err->message);
                 job = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"\n}", err->message);
                 g_error_free (err);
+
+        } else {
+                job = g_strdup_printf ("{\n    \"result\": \"success\",\n    \"data\": %s\n}", p);
+                g_free (p);
         }
         g_free (job_path);
 
-        job = g_strdup_printf ("{\n    \"result\": \"success\",\n    \"data\": %s\n}", p);
-        g_free (p);
         
         return job;
 }
@@ -661,6 +681,11 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
 
         } else if (g_strcmp0 (request_data->uri, "/admin/videodevices") == 0) {
                 p = list_files ("/dev/video*", NULL);
+                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+                g_free (p);
+
+        } else if (g_strcmp0 (request_data->uri, "/admin/getconf") == 0) {
+                p = get_conf ();
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 

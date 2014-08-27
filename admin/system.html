@@ -13,17 +13,8 @@
             </div>
             <div class="col-lg-9 main-content">
                 <div id='main_content'></div>
-                <div id='set_gstreamill' class="panel panel-primary">
-                    <div class="panel-heading">Set Gstreamill</div>
-                    <div class="panel-body">
-                        <h4>Select your Language</h4></br>
-                        <select class="form-control" id="language">
-                            <option value="en">English</option>
-                            <option value="zh_CN">中文</option>
-                        </select>
-                        <button class='btn btn-primary pull-right' id='languageselect'>Use Selected Language</button>
-                    </div>
-                </div>
+                <div id='set_gstreamill'></div>
+                <button class='btn btn-primary' id='set_gstreamill_btn'>Set Gstreamill</button>
                 <div id='system_danger_zone' class="panel panel-danger">
                     <div class="panel-heading">Danger Zone</div>
                     <div class="panel-body">
@@ -54,6 +45,7 @@
         show_query_hint ("query_hint");
         $('#system_danger_zone').show ();
         $('#set_gstreamill').hide ();
+        $('#set_gstreamill_btn').hide ();
         $('#setnetworkinterfaces').hide ();
         $.get("/stat/system", function (data) {
             var element = document.getElementById ('main_content');
@@ -85,6 +77,7 @@
         show_query_hint ("query_hint");
         $('#system_danger_zone').hide ();
         $('#set_gstreamill').show ();
+        $('#set_gstreamill_btn').show ();
         $('#setnetworkinterfaces').hide ();
         $.get("/stat/gstreamill", function (data) {
             var element = document.getElementById ('main_content');
@@ -110,12 +103,36 @@
                 hidden_query_hint ("query_hint");
             });
         });
+        $.get("/admin/getconf", function (data) {
+            var element = document.getElementById ('set_gstreamill');
+            element.innerHTML = "";
+            var editor = new JSONEditor (element, {
+                schema: {
+                    $ref: "schemas/gstreamillconf.schema"
+                },
+                ajax: true,
+                disable_collapse: true,
+                disable_edit_json: true,
+                disable_properties: true,
+                disable_array_add: true,
+                disable_array_delete: true,
+                disable_array_reorder: true,
+                theme: 'bootstrap3',
+                iconlib: 'bootstrap3'
+            });
+
+            editor.on ('ready', function () {
+                editor.setValue (data.data);
+                hidden_query_hint ("query_hint");
+            });
+        });
     }
 
     function network () {
         show_query_hint ("query_hint");
         $('#system_danger_zone').hide ();
         $('#set_gstreamill').hide ();
+        $('#set_gstreamill_btn').hide ();
         $.get("/admin/networkinterfaces", function (data) {
             var element = document.getElementById ('main_content');
             element.innerHTML = "";

@@ -1,0 +1,14 @@
+{
+    "type": "object",
+    "title": "Set Gstreamill",
+    "properties": {
+        "debuglevel": {
+            "type": "string",
+            "title": "Debug Level"
+        },
+        "language": {
+            "type": "string",
+            "title": "Language"
+        }
+    }
+}
