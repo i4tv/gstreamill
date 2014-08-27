@@ -49,7 +49,11 @@
 
 .sidebar-menu > ul > li > a {
     padding: 5px;
-    border: 1px solid #e3e3e3;
+    background-color: #f3f3f3;
+    border-top: 1px solid #f3f3f3;
+    border-left: 1px solid #e3e3e3;
+    border-right: 1px solid #e3e3e3;
+    border-bottom: 1px solid #e3e3e3;
 }
 
 .query_hint {
