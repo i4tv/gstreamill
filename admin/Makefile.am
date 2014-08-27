@@ -50,4 +50,5 @@ adminschemas_DATA = \
         schemas/encoder.schema \
         schemas/encoder.conf \
         schemas/newlivejob.schema \
-        schemas/newtranscodejob.schema
+        schemas/newtranscodejob.schema \
+        schemas/newtranscodejob_zh_CN.schema
