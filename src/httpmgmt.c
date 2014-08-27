@@ -350,35 +350,54 @@ static gchar * set_network_interfaces (RequestData *request_data)
                 obj = json_array_get_object (array, i);
                 name = (gchar *)json_object_get_string (obj, "name");
                 value = (gchar *)json_object_get_string (obj, "method");
-                path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/method", name);
-                aug_set (aug, path, value);
-                g_free (path);
+                if (value != NULL) {
+                        path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/method", name);
+                        aug_set (aug, path, value);
+                        g_free (path);
+                }
                 value = (gchar *)json_object_get_string (obj, "address");
-                path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/address", name);
-                ret = aug_set (aug, path, value);
-                g_free (path);
+                if (value != NULL) {
+                        path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/address", name);
+                        ret = aug_set (aug, path, value);
+                        g_free (path);
+                }
                 value = (gchar *)json_object_get_string (obj, "netmask");
-                path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/netmask", name);
-                aug_set (aug, path, value);
-                g_free (path);
+                if (value != NULL) {
+                        path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/netmask", name);
+                        aug_set (aug, path, value);
+                        g_free (path);
+                }
                 value = (gchar *)json_object_get_string (obj, "network");
-                path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/network", name);
-                aug_set (aug, path, value);
-                g_free (path);
+                if (value != NULL) {
+                        path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/network", name);
+                        aug_set (aug, path, value);
+                        g_free (path);
+                }
                 value = (gchar *)json_object_get_string (obj, "broadcast");
-                path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/broadcast", name);
-                aug_set (aug, path, value);
-                g_free (path);
+                if (value != NULL) {
+                        path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/broadcast", name);
+                        aug_set (aug, path, value);
+                        g_free (path);
+                }
                 value = (gchar *)json_object_get_string (obj, "gateway");
-                path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/gateway", name);
-                aug_set (aug, path, value);
-                g_free (path);
+                if (value != NULL) {
+                        path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/gateway", name);
+                        aug_set (aug, path, value);
+                        g_free (path);
+                }
         }
-        aug_save (aug);
+        if (aug_save (aug) == -1) {
+                aug_get (aug, "/augeas//error", (const gchar **)&value);
+                GST_ERROR ("set /etc/network/interface failure: %s", value);
+                result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"\n}", value);
+
+        } else {
+                result = g_strdup ("{\n    \"result\": \"success\"\n}");
+        }
         aug_close (aug);
         json_value_free (val);
 
-        return g_strdup ("{\n    \"result\": \"success\"\n}");
+        return result;
 }
 
 static gchar * network_interfaces ()
