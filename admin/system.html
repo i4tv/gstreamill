@@ -112,12 +112,10 @@
             editor.on ('ready', function () {
                 editor.setValue (data);
                 hidden_query_hint ("query_hint");
-                $('#setnetworkinterfaces').show ();
+                $('#setnetworkinterfaces').show ().unbind ('click');
                 $('#setnetworkinterfaces').click (function () {
                     show_query_hint ("query_hint");
-                    $('#setnetworkinterfaces').unbind ('click');
                     var value = editor.getValue ();
-                    alert (JSON.stringify (value, null, 4));
                     $.post ("setnetworkinterfaces", JSON.stringify (value, null, 4), function (data) {
                         if (data.result == 'success') {
                             alert (data.result);

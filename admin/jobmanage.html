@@ -127,9 +127,8 @@
                         $('#job_status').attr ('href', "javascript:status (\"" + data.data.name + "\")");
 
                         /* set putjob click event after encoder_conf ready */
-                        $('#putjob').show();
+                        $('#putjob').show().unbind ('click');
                         $("#putjob").click (function () {
-                            $("#putjob").unbind ('click');
                             conf_value = conf_editor.getValue ();
 
                             /* set source parameters */
