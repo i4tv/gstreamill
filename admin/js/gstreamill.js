@@ -1,3 +1,11 @@
+JSONEditor.defaults.resolvers.unshift (function (schema) {
+    if (schema.type === "object" && schema.format === "location") {
+        return "location";
+    }
+
+  // If no valid editor is returned, the next resolver function will be used
+});
+/*
 //jQuery time
 var current_fs, next_fs, previous_fs; //fieldsets
 var left, opacity, scale; //fieldset properties which we will animate
@@ -72,4 +80,4 @@ $(".previous").click(function(){
 $(".submit").click(function(){
     return false;
 })
-
+*/
