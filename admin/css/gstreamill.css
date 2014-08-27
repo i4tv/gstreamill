@@ -40,13 +40,16 @@
 .sidebar-menu {
     margin-top: 30px;
     padding-left: 0px;
-    padding-right: 0px;
-    border: 1px solid #e3e3e3;
+    padding-right: 40px;
+}
+
+.sidebar-menu > ul > li {
+    margin: 0px;
 }
 
 .sidebar-menu > ul > li > a {
     padding: 5px;
-    border-top: 1px solid #e3e3e3;
+    border: 1px solid #e3e3e3;
 }
 
 .query_hint {
@@ -60,7 +63,7 @@
 }
 
 .main-content {
-    padding-left: 30px;
+    padding-left: 0px;
 }
 
 #joblist li {
