@@ -1,0 +1,18 @@
+{
+    "type": "object",
+    "title": "设置Gstreamill",
+    "properties": {
+        "debuglevel": {
+            "type": "string",
+            "options": {
+                "hidden": true
+            },
+            "title": "Debug Level"
+        },
+        "language": {
+            "type": "string",
+            "title": "选择语言",
+            "enum": ["English", "中文"]
+        }
+    }
+}
