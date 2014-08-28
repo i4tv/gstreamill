@@ -45,7 +45,8 @@ adminschemas_DATA = \
         schemas/system_zh_CN.schema \
         schemas/networkinterfaces_en.schema \
         schemas/networkinterfaces_zh_CN.schema \
-        schemas/jobstat.schema \
+        schemas/jobstat_en.schema \
+        schemas/jobstat_zh_CN.schema \
         schemas/v4l2src.schema \
         schemas/v4l2src.conf \
         schemas/networksrc.schema \

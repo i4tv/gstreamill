@@ -186,7 +186,7 @@
             conf_element.innerHTML = "";
             var conf_editor = new JSONEditor (conf_element, {
                 schema: {
-                    $ref: "schemas/jobstat.schema"
+                    $ref: "schemas/jobstat_" + Document.GstreamillConf.language[Document.GstreamillConf.conf.language] + ".schema"
                 },
                 ajax: true,
                 disable_collapse: true,
@@ -214,7 +214,16 @@
     }
 
     $ (document).ready (function () {
-        setting ();
+        $.get("/admin/getconf", function (data) {
+            if (data.result == "success") {
+                Document.GstreamillConf.conf = data.data;
+            } else {
+                alert ("get configure failure: " + data.reason);
+                return;
+            }
+
+            setting ();
+        });
     });
 
     </script>

@@ -1,0 +1,121 @@
+{
+    "type": "object",
+    "headerTemplate": "{{ self.name }}状态",
+    "properties": {
+        "name": {
+            "options": {
+                "hidden": true
+            },
+            "type": "string"
+        },
+        "age": {
+            "type": "number",
+            "title": "重新启动次数"
+        },
+        "last_start_time": {
+            "type": "string",
+            "title": "最后一次重新启动时间"
+        },
+        "current_access": {
+            "type": "number",
+            "title": "当前并发访问数"
+        },
+        "cpu_average": {
+            "type": "number",
+            "title": "平均CPU利用率"
+        },
+        "cpu_current": {
+            "type": "number",
+            "title": "当前CPU利用率"
+        },
+        "memory": {
+            "type": "number",
+            "title": "内存使用"
+        },
+        "source": {
+            "type": "object",
+            "properties": {
+                "sync_error_times": {
+                    "type": "number",
+                    "title": "同步错误次数"
+                },
+                "stream_count": {
+                    "type": "number",
+                    "title": "流个数"
+                },
+                "streams": {
+                    "type": "array",
+                    "title": "源流",
+                    "format": "tabs",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "title": "流名字"
+                            },
+                            "timestamp": {
+                                "type": "string",
+                                "title": "流时间戳"
+                            },
+                            "heartbeat": {
+                                "type": "string",
+                                "title": "最后一次心跳时间"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "encoder_count": {
+            "type": "number",
+            "title": "编码个数"
+        },
+        "encoders": {
+            "type": "array",
+            "format": "tabs",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "title": "编码名字"
+                    },
+                    "heartbeat": {
+                        "type": "string",
+                        "title": "编码心跳"
+                    },
+                    "count": {
+                        "type": "number",
+                        "title": "编码输出字节数"
+                    },
+                    "streamcount": {
+                        "type": "number",
+                        "title": "流个数"
+                    },
+                    "streams": {
+                        "type": "array",
+                        "format": "tabs",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "title": "流名字"
+                                },
+                                "timestamp": {
+                                    "type": "string",
+                                    "title": "流时间戳"
+                                },
+                                "heartbeat": {
+                                    "type": "string",
+                                    "title": "流心跳"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
