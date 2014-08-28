@@ -4,6 +4,9 @@
     "properties": {
         "debuglevel": {
             "type": "string",
+            "options": {
+                "hidden": true
+            },
             "title": "Debug Level"
         },
         "language": {
