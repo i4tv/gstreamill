@@ -708,7 +708,7 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
-        } else if ((request_data->method == HTTP_POST) && (g_strcmp0 (request_data->uri, "/admin/putconf"))) {
+        } else if ((request_data->method == HTTP_POST) && (g_strcmp0 (request_data->uri, "/admin/putconf") == 0)) {
                 p = put_conf (request_data);
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
