@@ -21,86 +21,86 @@
                 return;
             }
 
-    var element = document.getElementById ('new_live_job_holder');
-    var conf_editor = new JSONEditor (element, {
-        schema: {
-            $ref: "schemas/newlivejob_" + Document.GstreamillConf.language[Document.GstreamillConf.conf.language] + ".schema"
-        },
-        ajax: true,
-        disable_collapse: true,
-        disable_edit_json: true,
-        disable_properties: true,
-        disable_array_add: true,
-        disable_array_delete: true,
-        disable_array_reorder: true,
-        theme: 'bootstrap3',
-        iconlib: 'bootstrap3'
-    });
-
-    conf_editor.on ('ready', function () {
-        $("#createjob").click (function () {
-            var conf_value = conf_editor.getValue ();
-            var job_element = document.getElementById('job_editor_holder');
-            var job_editor = new JSONEditor (job_element, {
+            var element = document.getElementById ('new_live_job_holder');
+            var conf_editor = new JSONEditor (element, {
                 schema: {
-                    $ref: 'schemas/' + conf_value.sourcetype + '.schema'
+                    $ref: "schemas/newlivejob_" + Document.GstreamillConf.language[Document.GstreamillConf.conf.language] + ".schema"
                 },
                 ajax: true,
-                hidden: true
+                disable_collapse: true,
+                disable_edit_json: true,
+                disable_properties: true,
+                disable_array_add: true,
+                disable_array_delete: true,
+                disable_array_reorder: true,
+                theme: 'bootstrap3',
+                iconlib: 'bootstrap3'
             });
-
-            job_editor.on ('ready', function() {
-                /* job name */
-                var job_name = job_editor.getEditor ('root.name');
-                if (conf_value.name == "") {
-                    alert ("Set name please");
-                    return;
-                }
-                job_name.setValue (conf_value.name);
-    
-                /* job type */
-                var job_type = job_editor.getEditor ('root.type');
-                job_type.setValue (conf_value.sourcetype);
-    
-                /* count of encoders */
-                var encoder_element = document.getElementById('encoder_editor_holder');
-                var encoder_editor = new JSONEditor (encoder_element, {
-                    schema: {
-                        $ref: 'schemas/encoder.schema'
-                    },
-                    ajax: true,
-                    hidden: true
-                });
-
-                encoder_editor.on ('ready', function () {
-                    var job_value = job_editor.getValue ();
-                    var encoder_value = encoder_editor.getValue ();
-    
-                    /* udp output support? */
-                    if (!conf_value.udpoutput) {
-                        delete encoder_value.udpstreaming;
-                    }
-
-                    /* m3u8 output support? */
-                    if (!conf_value.m3u8output) {
-                        delete job_value.m3u8streaming;
-                    }
-    
-                    for (i = 0; i < conf_value.encodercount; i++) {
-                        job_value.encoders[i] = encoder_value;
-                    }
-
-                    $.post("putjob/" + conf_value.name, JSON.stringify (job_value, null, 4), function (data) {
-                        if (data.result == 'success') {
-                            alert (data.result);
-                        } else {
-                            alert (data.result + '\n' + data.reason);
+        
+            conf_editor.on ('ready', function () {
+                $("#createjob").click (function () {
+                    var conf_value = conf_editor.getValue ();
+                    var job_element = document.getElementById('job_editor_holder');
+                    var job_editor = new JSONEditor (job_element, {
+                        schema: {
+                            $ref: 'schemas/' + conf_value.sourcetype + '.schema'
+                        },
+                        ajax: true,
+                        hidden: true
+                    });
+        
+                    job_editor.on ('ready', function() {
+                        /* job name */
+                        var job_name = job_editor.getEditor ('root.name');
+                        if (conf_value.name == "") {
+                            alert ("Set name please");
+                            return;
                         }
+                        job_name.setValue (conf_value.name);
+            
+                        /* job type */
+                        var job_type = job_editor.getEditor ('root.type');
+                        job_type.setValue (conf_value.sourcetype);
+            
+                        /* count of encoders */
+                        var encoder_element = document.getElementById('encoder_editor_holder');
+                        var encoder_editor = new JSONEditor (encoder_element, {
+                            schema: {
+                                $ref: 'schemas/encoder.schema'
+                            },
+                            ajax: true,
+                            hidden: true
+                        });
+        
+                        encoder_editor.on ('ready', function () {
+                            var job_value = job_editor.getValue ();
+                            var encoder_value = encoder_editor.getValue ();
+            
+                            /* udp output support? */
+                            if (!conf_value.udpoutput) {
+                                delete encoder_value.udpstreaming;
+                            }
+        
+                            /* m3u8 output support? */
+                            if (!conf_value.m3u8output) {
+                                delete job_value.m3u8streaming;
+                            }
+            
+                            for (i = 0; i < conf_value.encodercount; i++) {
+                                job_value.encoders[i] = encoder_value;
+                            }
+        
+                            $.post("putjob/" + conf_value.name, JSON.stringify (job_value, null, 4), function (data) {
+                                if (data.result == 'success') {
+                                    alert (data.result);
+                                } else {
+                                    alert (data.result + '\n' + data.reason);
+                                }
+                            });
+                        });
                     });
                 });
             });
-        });
-    });
         });
     });
 
