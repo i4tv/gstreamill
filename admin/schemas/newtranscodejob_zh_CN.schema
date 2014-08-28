@@ -2,18 +2,28 @@
     "type": "object",
     "title": "创建转码任务",
     "properties": {
-        "name": {
-            "title": "任务名称",
-            "type": "string"
-        },
-        "sourcetype": {
+        "sourcepath": {
             "type": "string",
             "title": "输入路径"
         },
-        "encodercount": {
-            "type": "number",
-            "title": "编码输出个数",
-            "enum": [1, 2, 3, 4, 5]
+        "encoders": {
+            "type": "array",
+            "title": "编码输出",
+            "items": {
+                "type": "object",
+                "title": "编码器",
+                "headerTemplate": "编码器 - {{ i1 }}",
+                "properties": {
+                    "resolution": {
+                        "type": "string",
+                        "title": "分辨率"
+                    },
+                    "bitrate": {
+                        "type": "number",
+                        "title": "码率"
+                    }
+                }
+            }
         }
     }
 }

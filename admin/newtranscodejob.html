@@ -2,7 +2,7 @@
     <div class="container-fluid">
         <div class="row newlivejob">
             <div id='new_transcode_job_holder'></div>
-            <button class='btn btn-primary' id='createjob'>Create Job</button>
+            <button class='btn btn-primary' id='createjob'>Create Transcode Job</button>
         </div>
     </div>
 
@@ -22,7 +22,7 @@
             var element = document.getElementById ('new_transcode_job_holder');
             var conf_editor = new JSONEditor (element, {
                 schema: {
-                    $ref: "schemas/transcode_mpegts_mpeg2_mp123_" + Document.GstreamillConf.language[Document.GstreamillConf.conf.language] + ".schema"
+                    $ref: "schemas/newtranscodejob_" + Document.GstreamillConf.language[Document.GstreamillConf.conf.language] + ".schema"
                 },
                 ajax: true,
                 disable_collapse: true,
@@ -39,7 +39,7 @@
                 $("#createjob").click (function () {
                     var conf_value = conf_editor.getValue ();
 
-alert(JSON.stringify (conf_value, null, 4));
+                    alert(JSON.stringify (conf_value, null, 4));
                 });
             });
         });

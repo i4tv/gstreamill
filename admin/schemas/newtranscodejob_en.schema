@@ -2,18 +2,28 @@
     "type": "object",
     "title": "New Transcode Job",
     "properties": {
-        "name": {
-            "title": "Job Name",
-            "type": "string"
-        },
         "sourcepath": {
             "type": "string",
             "title": "Source Path"
         },
-        "encodercount": {
-            "type": "number",
-            "title": "Encoder Count",
-            "enum": [1, 2, 3, 4, 5]
+        "encoders": {
+            "type": "array",
+            "title": "Encoders",
+            "items": {
+                "type": "object",
+                "title": "Encoder",
+                "headerTemplate": "Encoder - {{ i1 }}",
+                "properties": {
+                    "resolution": {
+                        "type": "string",
+                        "title": "Resolution"
+                    },
+                    "bitrate": {
+                        "type": "number",
+                        "title": "Bitrate"
+                    }
+                }
+            }
         }
     }
 }
