@@ -1,0 +1,28 @@
+{
+    "type": "object",
+    "title": "创建实时编码任务",
+    "properties": {
+        "name": {
+            "title": "任务名称",
+            "type": "string"
+        },
+        "sourcetype": {
+            "type": "string",
+            "title": "输入源类型",
+            "enum": ["v4l2src", "networksrc", "testsrc"]
+        },
+        "encodercount": {
+            "type": "number",
+            "title": "编码数量",
+            "enum": [1, 2, 3]
+        },
+        "udpoutput": {
+            "type": "boolean",
+            "title": "支持UDP输出"
+        },
+        "m3u8output": {
+            "type": "boolean",
+            "title": "支持M3U8输出"
+        }
+    }
+}

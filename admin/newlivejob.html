@@ -11,10 +11,20 @@
 
     <script type="text/javascript">
 
+    $ (document).ready (function () {
+        /* load configure */
+        $.get("/admin/getconf", function (data) {
+            if (data.result == "success") {
+                Document.GstreamillConf.conf = data.data;
+            } else {
+                alert ("get configure failure: " + data.reason);
+                return;
+            }
+
     var element = document.getElementById ('new_live_job_holder');
     var conf_editor = new JSONEditor (element, {
         schema: {
-            $ref: "schemas/newlivejob.schema"
+            $ref: "schemas/newlivejob_" + Document.GstreamillConf.language[Document.GstreamillConf.conf.language] + ".schema"
         },
         ajax: true,
         disable_collapse: true,
@@ -89,6 +99,8 @@
                     });
                 });
             });
+        });
+    });
         });
     });
 
