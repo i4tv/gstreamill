@@ -6,10 +6,9 @@
             "title": "Job Name",
             "type": "string"
         },
-        "sourcetype": {
+        "sourcepath": {
             "type": "string",
-            "title": "Source Type",
-            "enum": ["MPEGTS", "MP4"]
+            "title": "Source Path"
         },
         "encodercount": {
             "type": "number",

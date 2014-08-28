@@ -34,11 +34,11 @@
                 theme: 'bootstrap3',
                 iconlib: 'bootstrap3'
             });
-        
+
             conf_editor.on ('ready', function () {
                 $("#createjob").click (function () {
                     var conf_value = conf_editor.getValue ();
-            
+
                     $.post("puttranscodejob/" + conf_value.name, JSON.stringify (conf_value, null, 4), function (data) {
                         if (data.result == 'success') {
                             alert (data.result);

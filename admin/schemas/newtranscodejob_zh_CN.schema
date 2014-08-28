@@ -8,8 +8,7 @@
         },
         "sourcetype": {
             "type": "string",
-            "title": "源类型",
-            "enum": ["MPEGTS", "MP4"]
+            "title": "输入路径"
         },
         "encodercount": {
             "type": "number",
