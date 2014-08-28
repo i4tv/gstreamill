@@ -42,6 +42,14 @@
     }
 
     function system () {
+        $.get("/admin/getconf", function (data) {
+            if (data.result == "success") {
+                Document.GstreamillConf.conf = data.data;
+            } else {
+                alert ("get configure failure: " + data.reason);
+                return;
+            }
+
         show_query_hint ("query_hint");
         $('#system_danger_zone').show ();
         $('#set_gstreamill').hide ();
@@ -52,7 +60,7 @@
             element.innerHTML = "";
             var editor = new JSONEditor (element, {
                 schema: {
-                    $ref: "schemas/system.schema"
+                    $ref: "schemas/system_" + Document.GstreamillConf.language[Document.GstreamillConf.conf.language] + ".schema"
                 },
                 ajax: true,
                 disable_collapse: true,
@@ -70,6 +78,7 @@
                 editor.disable ();
                 hidden_query_hint ("query_hint");
             });
+        });
         });
     }
 

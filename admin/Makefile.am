@@ -39,7 +39,8 @@ adminschemasdir = $(datadir)/gstreamill/admin/schemas
 adminschemas_DATA = \
         schemas/gstreamillconf.schema \
         schemas/gstreamilloverview.schema \
-        schemas/system.schema \
+        schemas/system_en.schema \
+        schemas/system_zh_CN.schema \
         schemas/networkinterfaces.schema \
         schemas/jobstat.schema \
         schemas/v4l2src.schema \
