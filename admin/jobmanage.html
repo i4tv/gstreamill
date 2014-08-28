@@ -46,7 +46,7 @@
                 conf_element.innerHTML = "";
                 var conf_editor = new JSONEditor (conf_element, {
                     schema: {
-                        $ref: "schemas/" + schemaName + ".conf"
+                        $ref: "schemas/" + schemaName + "_" + Document.GstreamillConf.language[Document.GstreamillConf.conf.language] + ".conf"
                     },
                     ajax: true,
                     disable_collapse: true,

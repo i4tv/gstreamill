@@ -52,7 +52,8 @@ adminschemas_DATA = \
         schemas/networksrc.schema \
         schemas/networksrc.conf \
         schemas/testsrc.schema \
-        schemas/testsrc.conf \
+        schemas/testsrc_en.conf \
+        schemas/testsrc_zh_CN.conf \
         schemas/encoder.schema \
         schemas/encoder.conf \
         schemas/newlivejob_en.schema \
