@@ -1,9 +1,9 @@
 {
     "type": "array",
-    "title": "Network Configure",
+    "title": "网络配置",
     "items": {
         "type": "object",
-        "headerTemplate": "{{ self.name }} Configure",
+        "headerTemplate": "{{ self.name }} 接口配置",
         "properties": {
             "name": {
                 "options": {
@@ -18,22 +18,28 @@
                 "type": "string"
             },
             "method": {
-                "type": "string"
+                "type": "string",
+                "title": "地址获取方式"
             },
             "address": {
-                "type": "string"
+                "type": "string",
+                "title": "地址"
             },
             "netmask": {
-                "type": "string"
+                "type": "string",
+                "title": "掩码"
             },
             "network": {
-                "type": "string"
+                "type": "string",
+                "title": "网络"
             },
             "broadcast": {
-                "type": "string"
+                "type": "string",
+                "title": "广播域"
             },
             "gateway": {
-                "type": "string"
+                "type": "string",
+                "title": "网关"
             },
             "dns-nameservers": {
                 "options": {

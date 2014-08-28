@@ -42,14 +42,6 @@
     }
 
     function system () {
-        $.get("/admin/getconf", function (data) {
-            if (data.result == "success") {
-                Document.GstreamillConf.conf = data.data;
-            } else {
-                alert ("get configure failure: " + data.reason);
-                return;
-            }
-
         show_query_hint ("query_hint");
         $('#system_danger_zone').show ();
         $('#set_gstreamill').hide ();
@@ -79,7 +71,6 @@
                 hidden_query_hint ("query_hint");
             });
         });
-        });
     }
 
     function gstreamill () {
@@ -91,7 +82,7 @@
             element.innerHTML = "";
             var editor = new JSONEditor (element, {
                 schema: {
-                    $ref: "schemas/gstreamilloverview.schema"
+                    $ref: "schemas/gstreamilloverview_" + Document.GstreamillConf.language[Document.GstreamillConf.conf.language] + ".schema"
                 },
                 ajax: true,
                 disable_collapse: true,
@@ -115,7 +106,7 @@
             element.innerHTML = "";
             var editor = new JSONEditor (element, {
                 schema: {
-                    $ref: "schemas/gstreamillconf.schema"
+                    $ref: "schemas/gstreamillconf_" + Document.GstreamillConf.language[Document.GstreamillConf.conf.language] + ".schema"
                 },
                 ajax: true,
                 disable_collapse: true,
@@ -159,7 +150,7 @@
             element.innerHTML = "";
             var editor = new JSONEditor (element, {
                 schema: {
-                    $ref: "schemas/networkinterfaces.schema"
+                    $ref: "schemas/networkinterfaces_" + Document.GstreamillConf.language[Document.GstreamillConf.conf.language] + ".schema"
                 },
                 ajax: true,
                 disable_collapse: true,
@@ -193,9 +184,15 @@
     }
 
     $ (document).ready (function () {
-        $.get("/admin/gstreamillconf", function (data) {
-            Document.GstreamillConf.conf = data;
+        $.get("/admin/getconf", function (data) {
+            if (data.result == "success") {
+                Document.GstreamillConf.conf = data.data;
+            } else {
+                alert ("get configure failure: " + data.reason);
+                return;
+            }
         });
+
         system ();
     });
 

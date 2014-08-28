@@ -37,11 +37,14 @@ adminimg_DATA = \
 
 adminschemasdir = $(datadir)/gstreamill/admin/schemas
 adminschemas_DATA = \
-        schemas/gstreamillconf.schema \
-        schemas/gstreamilloverview.schema \
+        schemas/gstreamillconf_zh_CN.schema \
+        schemas/gstreamillconf_en.schema \
+        schemas/gstreamilloverview_en.schema \
+        schemas/gstreamilloverview_zh_CN.schema \
         schemas/system_en.schema \
         schemas/system_zh_CN.schema \
-        schemas/networkinterfaces.schema \
+        schemas/networkinterfaces_en.schema \
+        schemas/networkinterfaces_zh_CN.schema \
         schemas/jobstat.schema \
         schemas/v4l2src.schema \
         schemas/v4l2src.conf \
