@@ -58,4 +58,5 @@ adminschemas_DATA = \
         schemas/newlivejob_zh_CN.schema \
         schemas/newtranscodejob_en.schema \
         schemas/newtranscodejob_zh_CN.schema \
-        schemas/transcode_mpegts_mpeg2_mp123_en.schema
+        schemas/transcode_mpegts_mpeg2_mp123_en.schema \
+        schemas/encoder_mp4.schema
