@@ -1,35 +1,3 @@
-/*form styles*/
-#msform {
-    width: 600px;
-    margin: 20px auto;
-    text-align: center;
-    position: relative;
-}
-
-#msform fieldset {
-    width: 600px;
-    text-align: left;
-    position: absolute;
-}
-
-#msform fieldset .agroup {
-    margin-top: 5px;
-    margin-bottom: 5px;
-    padding-top: 10px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid lightgray;
-}
-
-#msform fieldset input, label, select {
-    margin-top: 10px;
-    margin-bottom: 10px;
-}
-
-/*Hide all except first fieldset*/
-#msform fieldset:not(:first-of-type) {
-    display: none;
-}
-
 #joblist, .setjob, .newlivejob {
     width: 980px;
     margin-top: 5px;
