@@ -48,7 +48,8 @@ adminschemas_DATA = \
         schemas/jobstat_en.schema \
         schemas/jobstat_zh_CN.schema \
         schemas/v4l2src.schema \
-        schemas/v4l2src.conf \
+        schemas/v4l2src_en.conf \
+        schemas/v4l2src_zh_CN.conf \
         schemas/networksrc.schema \
         schemas/networksrc.conf \
         schemas/testsrc.schema \
