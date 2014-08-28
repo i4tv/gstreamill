@@ -57,7 +57,8 @@ adminschemas_DATA = \
         schemas/testsrc_en.conf \
         schemas/testsrc_zh_CN.conf \
         schemas/encoder.schema \
-        schemas/encoder.conf \
+        schemas/encoder_en.conf \
+        schemas/encoder_zh_CN.conf \
         schemas/newlivejob_en.schema \
         schemas/newlivejob_zh_CN.schema \
         schemas/newtranscodejob_en.schema \
