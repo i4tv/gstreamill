@@ -89,7 +89,7 @@
                             for (i = 0; i < conf_value.encodercount; i++) {
                                 job_value.encoders[i] = encoder_value;
                             }
-        
+
                             $.post("putjob/" + conf_value.name, JSON.stringify (job_value, null, 4), function (data) {
                                 if (data.result == 'success') {
                                     alert (data.result);

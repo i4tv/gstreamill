@@ -51,7 +51,8 @@ adminschemas_DATA = \
         schemas/v4l2src_en.conf \
         schemas/v4l2src_zh_CN.conf \
         schemas/networksrc.schema \
-        schemas/networksrc.conf \
+        schemas/networksrc_en.conf \
+        schemas/networksrc_zh_CN.conf \
         schemas/testsrc.schema \
         schemas/testsrc_en.conf \
         schemas/testsrc_zh_CN.conf \
