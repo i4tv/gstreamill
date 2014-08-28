@@ -22,13 +22,13 @@
             var element = document.getElementById ('new_transcode_job_holder');
             var conf_editor = new JSONEditor (element, {
                 schema: {
-                    $ref: "schemas/newtranscodejob_" + Document.GstreamillConf.language[Document.GstreamillConf.conf.language] + ".schema"
+                    $ref: "schemas/transcode_mpegts_mpeg2_mp123_" + Document.GstreamillConf.language[Document.GstreamillConf.conf.language] + ".schema"
                 },
                 ajax: true,
                 disable_collapse: true,
                 disable_edit_json: true,
                 disable_properties: true,
-                disable_array_add: true,
+                disable_array_add: false,
                 disable_array_delete: true,
                 disable_array_reorder: true,
                 theme: 'bootstrap3',
@@ -39,13 +39,7 @@
                 $("#createjob").click (function () {
                     var conf_value = conf_editor.getValue ();
 
-                    $.post("puttranscodejob/" + conf_value.name, JSON.stringify (conf_value, null, 4), function (data) {
-                        if (data.result == 'success') {
-                            alert (data.result);
-                        } else {
-                            alert (data.result + '\n' + data.reason);
-                        }
-                    });
+alert(JSON.stringify (conf_value, null, 4));
                 });
             });
         });
