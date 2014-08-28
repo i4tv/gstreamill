@@ -76,8 +76,6 @@
     function gstreamill () {
         show_query_hint ("query_hint");
         $('#system_danger_zone').hide ();
-        $('#set_gstreamill').show ();
-        $('#set_gstreamill_btn').show ();
         $('#setnetworkinterfaces').hide ();
         $.get("/stat/gstreamill", function (data) {
             var element = document.getElementById ('main_content');
@@ -124,6 +122,20 @@
             editor.on ('ready', function () {
                 editor.setValue (data.data);
                 hidden_query_hint ("query_hint");
+                $('#set_gstreamill').show ();
+                $('#set_gstreamill_btn').show ().unbind ('click');
+                $('#set_gstreamill_btn').click (function () {
+                    show_query_hint ("query_hint");
+                    var value = editor.getValue ();
+                    $.post ("setconf", JSON.stringify (value, null, 4), function (data) {
+                        if (data.result == 'success') {
+                            alert (data.result);
+                        } else {
+                            alert (data.result + '\n' + data.reason);
+                        }
+                        hidden_query_hint ("query_hint");
+                    });
+                });
             });
         });
     }
@@ -172,6 +184,9 @@
     }
 
     $ (document).ready (function () {
+        $.get("/admin/gstreamillconf", function (data) {
+            Document.GstreamillConf.conf = data;
+        });
         system ();
     });
 

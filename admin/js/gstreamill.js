@@ -134,3 +134,10 @@ JSONEditor.defaults.languages.zh_CN = {
    */
   error_dependency: "属性 {{0}} 是必有的"
 };
+
+Document.GstreamillConf = {
+    "language": {
+        "中文": "zh_CN",
+        "English": "en"
+    }
+};

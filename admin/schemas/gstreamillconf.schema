@@ -8,7 +8,8 @@
         },
         "language": {
             "type": "string",
-            "title": "Language"
+            "title": "Language",
+            "enum": ["English", "中文"]
         }
     }
 }

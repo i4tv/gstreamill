@@ -9,32 +9,44 @@
 
     <script type="text/javascript">
 
-    var element = document.getElementById ('new_transcode_job_holder');
-    var conf_editor = new JSONEditor (element, {
-        schema: {
-            $ref: "schemas/newtranscodejob.schema"
-        },
-        ajax: true,
-        disable_collapse: true,
-        disable_edit_json: true,
-        disable_properties: true,
-        disable_array_add: true,
-        disable_array_delete: true,
-        disable_array_reorder: true,
-        theme: 'bootstrap3',
-        iconlib: 'bootstrap3'
-    });
+    $ (document).ready (function () {
+        /* load configure */
+        $.get("/admin/getconf", function (data) {
+            if (data.result == "success") {
+                Document.GstreamillConf.conf = data.data;
+            } else {
+                alert ("get configure failure: " + data.reason);
+                return;
+            }
 
-    conf_editor.on ('ready', function () {
-        $("#createjob").click (function () {
-            var conf_value = conf_editor.getValue ();
-    
-            $.post("puttranscodejob/" + conf_value.name, JSON.stringify (conf_value, null, 4), function (data) {
-                if (data.result == 'success') {
-                    alert (data.result);
-                } else {
-                    alert (data.result + '\n' + data.reason);
-                }
+            var element = document.getElementById ('new_transcode_job_holder');
+            var conf_editor = new JSONEditor (element, {
+                schema: {
+                    $ref: "schemas/newtranscodejob_" + Document.GstreamillConf.language[Document.GstreamillConf.conf.language]  + ".schema"
+                },
+                ajax: true,
+                disable_collapse: true,
+                disable_edit_json: true,
+                disable_properties: true,
+                disable_array_add: true,
+                disable_array_delete: true,
+                disable_array_reorder: true,
+                theme: 'bootstrap3',
+                iconlib: 'bootstrap3'
+            });
+        
+            conf_editor.on ('ready', function () {
+                $("#createjob").click (function () {
+                    var conf_value = conf_editor.getValue ();
+            
+                    $.post("puttranscodejob/" + conf_value.name, JSON.stringify (conf_value, null, 4), function (data) {
+                        if (data.result == 'success') {
+                            alert (data.result);
+                        } else {
+                            alert (data.result + '\n' + data.reason);
+                        }
+                    });
+                });
             });
         });
     });

@@ -575,6 +575,25 @@ static gchar * get_conf ()
         return result;
 }
 
+static gchar * put_conf (RequestData *request_data)
+{
+        gchar *conf, *result;
+        GError *err = NULL;
+
+        conf = request_data->raw_request + request_data->header_size;
+        if (!g_file_set_contents ("/etc/gstreamill.conf", conf, strlen (conf), &err)) {
+                GST_ERROR ("write gstreamill.conf failure: %s", err->message);
+                result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"\n}", err->message);
+                g_error_free (err);
+
+        } else {
+                GST_INFO ("write gstreamill.conf success");
+                result = g_strdup ("{\n    \"result\": \"success\"\n}");
+        }
+
+        return result;
+}
+
 static gchar * get_job (gchar *uri)
 {
         gchar *job_path, *job, *p;
@@ -686,6 +705,11 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
 
         } else if (g_strcmp0 (request_data->uri, "/admin/getconf") == 0) {
                 p = get_conf ();
+                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+                g_free (p);
+
+        } else if ((request_data->method == HTTP_POST) && (g_strcmp0 (request_data->uri, "/admin/putconf"))) {
+                p = put_conf (request_data);
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
