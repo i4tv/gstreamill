@@ -61,14 +61,30 @@
                         });
         
                         encoder_editor.on ('ready', function () {
+                            for (var key in conf_value) {
+                                if (key != "encoders") {
+                                    var editor = transcode_editor.getEditor ("root." + key);
+                                    if (!editor)
+                                        continue;
+                                    editor.setValue (conf_value[key]);
+                                }
+                            }
+
                             var transcode_value = transcode_editor.getValue ();
                             var time = new Date().getTime();
                             transcode_value.name = "trancode_" + time.toString ();
-                            transcode_value.source.elements.filesrc.property.location = conf_value.location
-                            var encoder_value = encoder_editor.getValue ();
+
                             var encoder_conf_editor = conf_editor.getEditor ("root.encoders");
                             var encoder_conf_value = encoder_conf_editor.getValue ();
                             for (var i = 0; i < encoder_conf_value.length; i++) {
+                                for (key in encoder_conf_value[i]) {
+                                    var editor = encoder_editor.getEditor ("root." + key);
+                                    if (!editor)
+                                        continue;
+                                    editor.setValue (encoder_conf_value[i][key]);
+                                }
+                                var encoder_value = encoder_editor.getValue ();
+                                alert(JSON.stringify(encoder_value, null, 4));
                                 transcode_value.encoders[i] = encoder_value;
                             }
 
