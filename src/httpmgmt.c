@@ -520,12 +520,12 @@ static gchar * list_files (gchar *pattern, gchar *format)
 
 static gchar * start_job (HTTPMgmt *httpmgmt, RequestData *request_data)
 {
-        gchar *buf, *var;
+        gchar *buf, *job_description;
 
         if (request_data->method == HTTP_POST) {
                 /* start a job. */
-                var = request_data->raw_request + request_data->header_size;
-                buf = gstreamill_job_start (httpmgmt->gstreamill, var);
+                job_description = request_data->raw_request + request_data->header_size;
+                buf = gstreamill_job_start (httpmgmt->gstreamill, job_description);
 
         } else {
                 buf = g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"must be post request\"\n}");
