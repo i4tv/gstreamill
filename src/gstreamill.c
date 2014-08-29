@@ -696,7 +696,7 @@ static gchar * create_job_process (Job *job)
                                 g_free (argv[j]);
                         }
                 }
-                p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"\n}", error->message);
+                p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"g_spawn_async failure\"\n}");
                 g_error_free (error);
                 return p;
         }
