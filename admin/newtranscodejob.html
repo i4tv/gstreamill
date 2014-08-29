@@ -61,9 +61,10 @@
                         });
         
                         encoder_editor.on ('ready', function () {
-                            var location_editor = transcode_editor.getEditor ("root.source.elements.filesrc.property.location");
-                            location_editor.setValue (conf_value.location);
                             var transcode_value = transcode_editor.getValue ();
+                            var time = new Date().getTime();
+                            transcode_value.name = "trancode_" + time.toString ();
+                            transcode_value.source.elements.filesrc.property.location = conf_value.location
                             var encoder_value = encoder_editor.getValue ();
                             var encoder_conf_editor = conf_editor.getEditor ("root.encoders");
                             var encoder_conf_value = encoder_conf_editor.getValue ();
@@ -74,10 +75,6 @@
                             $.post ("/admin/start", JSON.stringify (transcode_value, null, 4), function (response) {
                                 if (response.result == "success") {
                                     alert ('start ' + name + ' ' + response.result);
-                                    var jobStatUrl = '/stat/gstreamill/job/' + response.name;
-                                    var jobStat = $.get(jobStatUrl, function (response) {
-                                        showJobStatus (response);
-                                    });
                 
                                 } else {
                                     alert (response.result + "\n" + response.reason);
