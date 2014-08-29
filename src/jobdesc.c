@@ -6,6 +6,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 
 #include "parson.h"
 #include "jobdesc.h"
@@ -17,6 +18,7 @@ gboolean jobdesc_is_valid (gchar *job)
 {
         JSON_Value *val;
         JSON_Object *obj;
+        gchar *name;
 
         val = json_parse_string_with_comments(job);
         if (val == NULL) {
@@ -30,8 +32,9 @@ gboolean jobdesc_is_valid (gchar *job)
         }
         obj = json_value_get_object (val);
 
-        if (json_object_get_string (obj, "name") == NULL) {
-                GST_ERROR ("invalid job without name property.");
+        name = (gchar *)json_object_get_string (obj, "name");
+        if ((name == NULL) || (strlen (name) < 4)) {
+                GST_ERROR ("invalid job with name property invalid");
                 json_value_free (val);
                 return FALSE;
         }
