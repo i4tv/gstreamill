@@ -2,9 +2,9 @@
     "type": "object",
     "title": "New Transcode Job",
     "properties": {
-        "sourcepath": {
+        "location": {
             "type": "string",
-            "title": "Source Path"
+            "title": "Media Location"
         },
         "encoders": {
             "type": "array",

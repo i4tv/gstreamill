@@ -2,6 +2,8 @@
     <div class="container-fluid">
         <div class="row newlivejob">
             <div id='new_transcode_job_holder'></div>
+            <div id='transcode_job_holder' style="display: none;"></div>
+            <div id='encoder_editor_holder' style="display: none;"></div>
             <button class='btn btn-primary' id='createjob'>Create Transcode Job</button>
         </div>
     </div>
@@ -38,8 +40,51 @@
             conf_editor.on ('ready', function () {
                 $("#createjob").click (function () {
                     var conf_value = conf_editor.getValue ();
+                    var transcode_element = document.getElementById ('transcode_job_holder');
+                    var transcode_editor = new JSONEditor (transcode_element, {
+                        schema: {
+                            $ref: 'schemas/transcode_mpegts_mpeg2_mp123.schema'
+                        },
+                        ajax: true,
+                        hidden: true
+                    });
 
-                    alert(JSON.stringify (conf_value, null, 4));
+                    transcode_editor.on ('ready', function() {
+
+                        var encoder_element = document.getElementById('encoder_editor_holder');
+                        var encoder_editor = new JSONEditor (encoder_element, {
+                            schema: {
+                                $ref: 'schemas/transcode_encoder_mp4.schema'
+                            },
+                            ajax: true,
+                            hidden: true
+                        });
+        
+                        encoder_editor.on ('ready', function () {
+                            var location_editor = transcode_editor.getEditor ("root.source.elements.filesrc.property.location");
+                            location_editor.setValue (conf_value.location);
+                            var transcode_value = transcode_editor.getValue ();
+                            var encoder_value = encoder_editor.getValue ();
+                            var encoder_conf_editor = conf_editor.getEditor ("root.encoders");
+                            var encoder_conf_value = encoder_conf_editor.getValue ();
+                            for (var i = 0; i < encoder_conf_value.length; i++) {
+                                transcode_value.encoders[i] = encoder_value;
+                            }
+
+                            $.post ("/admin/start", JSON.stringify (transcode_value, null, 4), function (response) {
+                                if (response.result == "success") {
+                                    alert ('start ' + name + ' ' + response.result);
+                                    var jobStatUrl = '/stat/gstreamill/job/' + response.name;
+                                    var jobStat = $.get(jobStatUrl, function (response) {
+                                        showJobStatus (response);
+                                    });
+                
+                                } else {
+                                    alert (response.result + "\n" + response.reason);
+                                }
+                            });
+                        });
+                    });
                 });
             });
         });

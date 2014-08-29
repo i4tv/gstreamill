@@ -2,9 +2,9 @@
     "type": "object",
     "title": "创建转码任务",
     "properties": {
-        "sourcepath": {
+        "location": {
             "type": "string",
-            "title": "输入路径"
+            "title": "文件位置"
         },
         "encoders": {
             "type": "array",
