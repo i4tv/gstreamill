@@ -13,6 +13,10 @@
             "type": "string",
             "title": "Select Language",
             "enum": ["English", "中文"]
+        },
+        "transcode-root": {
+            "type": "string",
+            "title": "transcode root directory"
         }
     }
 }

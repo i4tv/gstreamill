@@ -127,7 +127,7 @@
                 $('#set_gstreamill_btn').click (function () {
                     show_query_hint ("query_hint");
                     var value = editor.getValue ();
-                    $.post ("setconf", JSON.stringify (value, null, 4), function (data) {
+                    $.post ("putconf", JSON.stringify (value, null, 4), function (data) {
                         hidden_query_hint ("query_hint");
                         if (data.result == 'success') {
                             alert (data.result);
