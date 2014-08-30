@@ -1,6 +1,10 @@
 
     <div class="container-fluid">
         <div class="row newlivejob">
+            <div>
+                <label>Select media files</label>
+                <input type="file" id="files" name="files[]" multiple />
+            </div>
             <div id='new_transcode_job_holder'></div>
             <div id='transcode_job_holder' style="display: none;"></div>
             <div id='encoder_editor_holder' style="display: none;"></div>
@@ -38,6 +42,14 @@
             });
 
             conf_editor.on ('ready', function () {
+                $("#files").change (function (evt) {
+                    var files = evt.target.files;
+
+                    for (var i = 0, file; file = files[i]; i++) {
+                        alert (file.name);
+                    }
+                });
+
                 $("#createjob").click (function () {
                     var conf_value = conf_editor.getValue ();
                     var transcode_element = document.getElementById ('transcode_job_holder');
