@@ -89,6 +89,7 @@
                                 var transcode_value = transcode_editor.getValue ();
                                 var time = new Date().getTime();
                                 transcode_value.name = "trancode_" + time.toString ();
+                                transcode_value["log-path"] = transcode_root + "/out/" + file + "/";
                                 transcode_value.source.elements.filesrc.property.location = transcode_root + "/in/" + file;
     
                                 var encoder_conf_value = conf_editor.getValue ();
