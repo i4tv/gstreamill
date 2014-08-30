@@ -1,9 +1,12 @@
 
     <div class="container-fluid">
         <div class="row newlivejob">
-            <div>
-                <label>Select media files</label>
-                <input type="file" id="files" name="files[]" multiple />
+            <div class="panel panel-primary">
+                <div class="panel-heading">Select media files</div>
+                <div class="panel-body">
+                    <input type="file" id="files" name="files[]" multiple />
+                    <output id="list"></output>
+                </div>
             </div>
             <div id='new_transcode_job_holder'></div>
             <div id='transcode_job_holder' style="display: none;"></div>
@@ -40,14 +43,23 @@
                 theme: 'bootstrap3',
                 iconlib: 'bootstrap3'
             });
+            var file_list = [];
 
             conf_editor.on ('ready', function () {
+                var transcode_root = Document.GstreamillConf.conf['transcode-root'];
                 $("#files").change (function (evt) {
                     var files = evt.target.files;
+                    var output = [];
 
+                    file_list = [];
                     for (var i = 0, file; file = files[i]; i++) {
-                        alert (file.name);
+                        output.push ('<li><strong>', escape (file.name), '</strong> (', file.type || 'n/a', ') - ',
+                                     file.size, ' bytes, last modified: ',
+                                     file.lastModifiedDate ? file.lastModifiedDate.toLocaleDateString() : 'n/a',
+                                     '</li>');
+                        file_list.push (file.name);
                     }
+                    document.getElementById('list').innerHTML = '<ul>' + output.join('') + '</ul>';
                 });
 
                 $("#createjob").click (function () {
@@ -73,55 +85,48 @@
                         });
         
                         encoder_editor.on ('ready', function () {
-                            for (var key in conf_value) {
-                                if (key != "encoders") {
-                                    var editor = transcode_editor.getEditor ("root." + key);
-                                    if (!editor)
-                                        continue;
-                                    editor.setValue (conf_value[key]);
-                                }
-                            }
-
-                            var transcode_value = transcode_editor.getValue ();
-                            var time = new Date().getTime();
-                            transcode_value.name = "trancode_" + time.toString ();
-
-                            var encoder_conf_editor = conf_editor.getEditor ("root.encoders");
-                            var encoder_conf_value = encoder_conf_editor.getValue ();
-                            for (var i = 0; i < encoder_conf_value.length; i++) {
-                                for (key in encoder_conf_value[i]) {
-                                    var subkeys = key.split ('&');
-                                    if (subkeys.length != 3) {
-                                        var editor = encoder_editor.getEditor ("root." + key);
-                                        if (!editor)
-                                            continue;
-                                        editor.setValue (encoder_conf_value[i][key]);
-
-                                    } else {
-                                        /*
-                                          elements.videoscale.caps&(\\d+)\\*(\\d+)&video/x-raw,width=$1,height=$2
-                                          "&" seperated parameters, means as follow
-                                          "elements.videoscale.caps".replace(/(\d+)\*(\d+)/, "video/x-raw,width=$1,height=$2")
-                                         */
-                                         var re = new RegExp (subkeys[1], 'g');
-                                         var value = encoder_conf_value[i][key].replace (re, subkeys[2]);
-                                         var editor = encoder_editor.getEditor ("root." + subkeys[0]);
-                                         editor.setValue (value);
+                            for (var n = 0, file; file = file_list[n]; n++) {
+                                var transcode_value = transcode_editor.getValue ();
+                                var time = new Date().getTime();
+                                transcode_value.name = "trancode_" + time.toString ();
+                                transcode_value.source.elements.filesrc.property.location = transcode_root + "/in/" + file;
+    
+                                var encoder_conf_value = conf_editor.getValue ();
+                                for (var i = 0; i < encoder_conf_value.length; i++) {
+                                    for (key in encoder_conf_value[i]) {
+                                        var subkeys = key.split ('&');
+                                        if (subkeys.length != 3) {
+                                            var editor = encoder_editor.getEditor ("root." + key);
+                                            if (!editor)
+                                                continue;
+                                            editor.setValue (encoder_conf_value[i][key]);
+    
+                                        } else {
+                                            /*
+                                              elements.videoscale.caps&(\\d+)\\*(\\d+)&video/x-raw,width=$1,height=$2
+                                              "&" seperated parameters, means as follow
+                                              "elements.videoscale.caps".replace(/(\d+)\*(\d+)/, "video/x-raw,width=$1,height=$2")
+                                             */
+                                             var re = new RegExp (subkeys[1], 'g');
+                                             var value = encoder_conf_value[i][key].replace (re, subkeys[2]);
+                                             var editor = encoder_editor.getEditor ("root." + subkeys[0]);
+                                             editor.setValue (value);
+                                        }
                                     }
+                                    var encoder_value = encoder_editor.getValue ();
+                                    encoder_value.elements.filesink.property.location = transcode_root + "/out/" + file + encoder_conf_value[i]['elements.filesink.property.location'];
+                                    transcode_value.encoders[i] = encoder_value;
                                 }
-                                var encoder_value = encoder_editor.getValue ();
-                                alert(JSON.stringify(encoder_value, null, 4));
-                                transcode_value.encoders[i] = encoder_value;
+    
+                                $.post ("/admin/start", JSON.stringify (transcode_value, null, 4), function (response) {
+                                    if (response.result == "success") {
+                                        alert ('start ' + name + ' ' + response.result);
+                    
+                                    } else {
+                                        alert (response.result + "\n" + response.reason);
+                                    }
+                                });
                             }
-
-                            $.post ("/admin/start", JSON.stringify (transcode_value, null, 4), function (response) {
-                                if (response.result == "success") {
-                                    alert ('start ' + name + ' ' + response.result);
-                
-                                } else {
-                                    alert (response.result + "\n" + response.reason);
-                                }
-                            });
                         });
                     });
                 });

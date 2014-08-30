@@ -1,52 +1,31 @@
 {
-    "type": "object",
-    "title": "创建转码任务",
-    "id": "job_attr",
-    "properties": {
-        "source.elements.filesrc.property.location": {
-            "type": "string",
-            "title": "文件位置"
-        },
-        "log-path": {
-            "type": "string",
-            "options": {
-                "hidden": true
+    "type": "array",
+    "title": "编码参数设置",
+    "items": {
+        "type": "object",
+        "title": "编码器",
+        "headerTemplate": "编码器 - {{ i1 }}",
+        "id": "encoder_attr",
+        "properties": {
+            "elements.videoscale.caps&(\\d+)x(\\d+)&video/x-raw,width=$1,height=$2": {
+                "type": "string",
+                "title": "分辨率",
+                "enum": ["1920x1080", "1280x720", "720x576", "720x480", "640x480"]
             },
-            "template": "out{{source_path}}",
-            "watch": {
-                "source_path": "job_attr.source.elements.filesrc.property.location"
-            }
-        },
-        "encoders": {
-            "type": "array",
-            "title": "编码输出",
-            "items": {
-                "type": "object",
-                "title": "编码器",
-                "headerTemplate": "编码器 - {{ i1 }}",
-                "id": "encoder_attr",
-                "properties": {
-                    "elements.videoscale.caps&(\\d+)x(\\d+)&video/x-raw,width=$1,height=$2": {
-                        "type": "string",
-                        "title": "分辨率",
-                        "enum": ["1920x1080", "1280x720", "720x576", "720x480", "640x480"]
-                    },
-                    "elements.x264enc.property.bitrate": {
-                        "type": "number",
-                        "title": "码率"
-                    },
-                    "elements.filesink.property.location": {
-                        "type": "string",
-                        "options": {
-                            "hidden": true
-                        },
-                        "template": "out{{source_path}}/{{resolution}}_{{bitrate}}bps.mp4",
-                        "watch": {
-                            "source_path": "job_attr.source.elements.filesrc.property.location",
-                            "resolution": "encoder_attr.elements.videoscale.caps&(\\d+)x(\\d+)&video/x-raw,width=$1,height=$2",
-                            "bitrate": "encoder_attr.elements.x264enc.property.bitrate"
-                        }
-                    }
+            "elements.x264enc.property.bitrate": {
+                "type": "number",
+                "title": "码率"
+            },
+            "elements.filesink.property.location": {
+                "type": "string",
+                "options": {
+                    "hidden": true
+                },
+                "template": "/{{resolution}}_{{bitrate}}bps.mp4",
+                "watch": {
+                    "source_path": "job_attr.source.elements.filesrc.property.location",
+                    "resolution": "encoder_attr.elements.videoscale.caps&(\\d+)x(\\d+)&video/x-raw,width=$1,height=$2",
+                    "bitrate": "encoder_attr.elements.x264enc.property.bitrate"
                 }
             }
         }
