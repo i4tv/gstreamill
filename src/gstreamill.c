@@ -756,10 +756,10 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
         }
 
         if (jobdesc_is_live (job_desc)) {
-                GST_ERROR ("live job arrived");
+                GST_ERROR ("live job arrived:\n%s", job_desc);
 
         } else {
-                GST_ERROR ("transcode job arrived");
+                GST_ERROR ("transcode job arrived:\n%s", job_desc);
         }
 
         /* create job object */
