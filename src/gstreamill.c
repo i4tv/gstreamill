@@ -1025,7 +1025,7 @@ void gstreamill_unaccess (Gstreamill *gstreamill, gchar *uri)
  *     builddate:
  *     buildtime:
  *     starttime:
- *     job: [job1, job2]
+ *     jobcount:
  * }
  *
  */
@@ -1049,6 +1049,41 @@ gchar * gstreamill_stat (Gstreamill *gstreamill)
                                 jobcount);
 
         return stat;
+}
+
+/**
+ * gstreamill_stat:
+ * @gstreamill: (bin): the gstreamill.
+ *
+ * Returns: ["job1", ... "jobn"]
+ */
+gchar * gstreamill_list_running_job (Gstreamill *gstreamill)
+{
+        gchar *jobarray, *p;
+        GSList *list;
+        Job *job;
+ 
+        jobarray = g_strdup_printf ("[");
+        g_mutex_lock (&(gstreamill->job_list_mutex));
+        list = gstreamill->job_list;
+        while (list != NULL) {
+                job = list->data;
+                p = jobarray;
+                jobarray = g_strdup_printf ("%s\"%s\"", p, job->name);
+                g_free (p);
+                list = list->next;
+                if (list != NULL) {
+                        p = jobarray;
+                        jobarray = g_strdup_printf ("%s,", p);
+                        g_free (p);
+                }
+        }
+        g_mutex_unlock (&(gstreamill->job_list_mutex));
+        p = jobarray;
+        jobarray = g_strdup_printf ("%s]", p);
+        g_free (p);
+
+        return jobarray;
 }
 
 static gchar * source_streams_stat (Job *job)
