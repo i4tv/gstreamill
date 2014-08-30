@@ -14,9 +14,9 @@
                 "title": "Encoder",
                 "headerTemplate": "Encoder - {{ i1 }}",
                 "properties": {
-                    "elements.videoscale.caps": {
+                    "elements.videoscale.caps&(\\d+)\\*(\\d+)&video/x-raw,width=$1,height=$2": {
                         "type": "string",
-                        "title": "Resolution"
+                        "title": "Resolution",
                         "enum": ["1920*1080", "1280*720", "720*576", "720*480", "640*480"]
                     },
                     "elements.x264enc.property.bitrate": {

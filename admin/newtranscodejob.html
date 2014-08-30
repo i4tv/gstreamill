@@ -78,10 +78,24 @@
                             var encoder_conf_value = encoder_conf_editor.getValue ();
                             for (var i = 0; i < encoder_conf_value.length; i++) {
                                 for (key in encoder_conf_value[i]) {
-                                    var editor = encoder_editor.getEditor ("root." + key);
-                                    if (!editor)
-                                        continue;
-                                    editor.setValue (encoder_conf_value[i][key]);
+                                    var subkeys = key.split ('&');
+                                    if (subkeys.length != 3) {
+                                        var editor = encoder_editor.getEditor ("root." + key);
+                                        if (!editor)
+                                            continue;
+                                        editor.setValue (encoder_conf_value[i][key]);
+
+                                    } else {
+                                        /*
+                                          elements.videoscale.caps&(\\d+)\\*(\\d+)&video/x-raw,width=$1,height=$2
+                                          "&" seperated parameters, means as follow
+                                          "elements.videoscale.caps".replace(/(\d+)\*(\d+)/, "video/x-raw,width=$1,height=$2")
+                                         */
+                                         var re = new RegExp (subkeys[1], 'g');
+                                         var value = encoder_conf_value[i][key].replace (re, subkeys[2]);
+                                         var editor = encoder_editor.getEditor ("root." + subkeys[0]);
+                                         editor.setValue (value);
+                                    }
                                 }
                                 var encoder_value = encoder_editor.getValue ();
                                 alert(JSON.stringify(encoder_value, null, 4));
