@@ -67,7 +67,7 @@
                     },
                     "default": [
                         "filesrc ! queue ! tsdemux name=demuxer",
-                        "demuxer.video ! queue ! h264parse ! avdec_h264 ! queue ! videoscale ! queue ! appsink name = video",
+                        "demuxer.video ! queue ! mpeg2dec ! queue ! appsink name = video",
                         "demuxer.audio ! mpegaudioparse ! queue ! mad ! queue ! appsink name = audio"
                     ]
                 }
