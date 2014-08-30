@@ -14,10 +14,10 @@
                 "title": "编码器",
                 "headerTemplate": "编码器 - {{ i1 }}",
                 "properties": {
-                    "elements.videoscale.caps&(\\d+)\\*(\\d+)&video/x-raw,width=$1,height=$2": {
+                    "elements.videoscale.caps&(\\d+)x(\\d+)&video/x-raw,width=$1,height=$2": {
                         "type": "string",
                         "title": "分辨率",
-                        "enum": ["1920*1080", "1280*720", "720*576", "720*480", "640*480"]
+                        "enum": ["1920x1080", "1280x720", "720x576", "720x480", "640x480"]
                     },
                     "elements.x264enc.property.bitrate": {
                         "type": "number",
