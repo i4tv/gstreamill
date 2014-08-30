@@ -9,6 +9,14 @@
                 </ul>
             </div>
             <div class='col-lg-9 main-content'>
+                <div id='manage_danger_zone' class="panel panel-danger">
+                    <div class="panel-heading">Danger Zone</div>
+                    <div class="panel-body">
+                        <h4>Remove this Job</h4></br>
+                        Realy remove this Job? can't be restore!
+                        <button class='btn btn-danger pull-right' id='removejob'>Remove Job</button>
+                    </div>
+                </div>
                 <div id='main_content'></div>
                 <button class='btn btn-primary' id='putjob'>Save Job</button>
             </div>
@@ -28,6 +36,8 @@
                 return;
             }
 
+            $('#manage_danger_zone').hide ();
+            $('#main_content').show ();
             var schemaName = data.data.type;
             var job_element = document.getElementById ('job_editor_holder');
             job_element.innerHTML = "";
@@ -128,7 +138,7 @@
 
                         /* set putjob click event after encoder_conf ready */
                         $('#putjob').show().unbind ('click');
-                        $("#putjob").click (function () {
+                        $('#putjob').click (function () {
                             conf_value = conf_editor.getValue ();
 
                             /* set source parameters */
@@ -177,6 +187,8 @@
     function status (name) {
         $.get("/stat/gstreamill/job/" + name, function (data) {
             $('#putjob').hide ();
+            $('#manage_danger_zone').hide ();
+            $('#main_content').show ();
 
             if (data.result === 'failure') {
                 alert (name + "'s stat not found.");
@@ -208,8 +220,14 @@
     }
 
     function rm_job (name) {
-        $.get("rmjob/" + name, function (data) {
-            alert (data.result);
+        $('#main_content').hide ();
+        $('#putjob').hide ();
+        $('#manage_danger_zone').show ();
+        $('#removejob').unbind ('click');
+        $('#removejob').click (function () {
+            $.get("rmjob/" + name, function (data) {
+                alert (data.result);
+            });
         });
     }
 
