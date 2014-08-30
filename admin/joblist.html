@@ -86,7 +86,7 @@
 
     $(document).ready(function () {
 
-        $.get("/admin/listjob", function (jobs) {
+        $.get("/admin/listlivejob", function (jobs) {
             for (var i = 0; i < jobs.length; i++) {
                 var li = '<li class="list-group-item" id="li_' + jobs[i] + '"></li>';
                 $('#joblist').append(li);

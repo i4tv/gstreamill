@@ -713,7 +713,7 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
-        } else if (g_str_has_prefix (request_data->uri, "/admin/listjob")) {
+        } else if (g_strcmp0 (request_data->uri, "/admin/listlivejob") == 0) {
                 p = list_files ("/etc/gstreamill.d/*.job", "/etc/gstreamill.d/%[^.].job");
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
