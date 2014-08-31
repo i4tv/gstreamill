@@ -22,6 +22,7 @@ adminjs_DATA = \
         js/jquery.js \
         js/jsoneditor.min.js \
         js/hogan-3.0.1.js \
+        js/i18next.js \
         js/gstreamill.js
 
 adminfontsdir = $(datadir)/gstreamill/admin/fonts
@@ -65,3 +66,11 @@ adminschemas_DATA = \
         schemas/newtranscodejob_zh_CN.schema \
         schemas/transcode_mpegts_mpeg2_mp123.schema \
         schemas/transcode_encoder_mp4.schema
+
+localesdir = $(datadir)/gstreamill/admin/locales/en
+locales_DATA = \
+        locales/en/translation.json
+
+localesdir = $(datadir)/gstreamill/admin/locales/zh
+locales_DATA = \
+        locales/zh/translation.json

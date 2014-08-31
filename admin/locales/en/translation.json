@@ -1,0 +1,10 @@
+{
+  "app": {
+    "name": "i18next"
+  },
+  "nav": {
+    "gstreamill": "Gstreamill Manage",
+    "system": "System Manage",
+    "network": "Network Configure"
+  }
+}
