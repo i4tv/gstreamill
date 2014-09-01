@@ -102,12 +102,13 @@
                 });
             });
 
-        $.i18n.init({
-            lng: 'zh'
-        }, function(t) {
-            $(".nav").i18n();
-            var appName = t("app.name");
-        });
+            $.i18n.init({
+                lng: Document.GstreamillConf.language[Document.GstreamillConf.conf.language]
+            }, function(t) {
+                $(".nav").i18n();
+                var appName = t("app.name");
+            });
+
         });
     });
 

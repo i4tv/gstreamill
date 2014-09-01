@@ -134,7 +134,7 @@
             });
 
         $.i18n.init({
-            lng: 'zh'
+            lng: Document.GstreamillConf.language[Document.GstreamillConf.conf.language]
         }, function(t) {
             $(".nav").i18n();
             var appName = t("app.name");

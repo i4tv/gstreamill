@@ -71,6 +71,6 @@ localesdir = $(datadir)/gstreamill/admin/locales/en
 locales_DATA = \
         locales/en/translation.json
 
-localesdir = $(datadir)/gstreamill/admin/locales/zh
-locales_DATA = \
-        locales/zh/translation.json
+localeszh_CNdir = $(datadir)/gstreamill/admin/locales/zh_CN
+localeszh_CN_DATA = \
+        locales/zh_CN/translation.json

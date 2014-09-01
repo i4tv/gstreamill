@@ -7,11 +7,22 @@
 
     <script type="text/javascript">
     $ (document).ready (function () {
-        $.i18n.init({
-            lng: 'zh'
-        }, function(t) {
-            $(".nav").i18n();
-            var appName = t("app.name");
+
+        $.get("/admin/getconf", function (data) {
+            if (data.result == "success") {
+                Document.GstreamillConf.conf = data.data;
+            } else {
+                alert ("get configure failure: " + data.reason);
+                return;
+            }
+
+            $.i18n.init({
+                lng: Document.GstreamillConf.language[Document.GstreamillConf.conf.language]
+            }, function(t) {
+                $(".nav").i18n();
+                var appName = t("app.name");
+            });
         });
+
     });
     </script>

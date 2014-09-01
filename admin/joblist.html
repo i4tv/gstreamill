@@ -86,22 +86,32 @@
 
     $(document).ready(function () {
 
-        $.get("/admin/listlivejob", function (jobs) {
-            for (var i = 0; i < jobs.length; i++) {
-                var li = '<li class="list-group-item" id="li_' + jobs[i] + '"></li>';
-                $('#joblist').append(li);
-                var jobStatUrl = '/stat/gstreamill/job/' + jobs[i];
-                var jobStat = $.get(jobStatUrl, function (response) {
-                    showJobStatus (response);
-                });
+        $.get("/admin/getconf", function (data) {
+            if (data.result == "success") {
+                Document.GstreamillConf.conf = data.data;
+            } else {
+                alert ("get configure failure: " + data.reason);
+                return;
             }
-        });
 
-        $.i18n.init({
-            lng: 'zh'
-        }, function(t) {
-            $(".nav").i18n();
-            var appName = t("app.name");
+            $.i18n.init({
+                lng: Document.GstreamillConf.language[Document.GstreamillConf.conf.language]
+            }, function(t) {
+                $(".nav").i18n();
+                var appName = t("app.name");
+            });
+
+            $.get("/admin/listlivejob", function (jobs) {
+                for (var i = 0; i < jobs.length; i++) {
+                    var li = '<li class="list-group-item" id="li_' + jobs[i] + '"></li>';
+                    $('#joblist').append(li);
+                    var jobStatUrl = '/stat/gstreamill/job/' + jobs[i];
+                    var jobStat = $.get(jobStatUrl, function (response) {
+                        showJobStatus (response);
+                    });
+                }
+            });
+
         });
 
     });
