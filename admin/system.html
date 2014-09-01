@@ -131,6 +131,7 @@
                         hidden_query_hint ("query_hint");
                         if (data.result == 'success') {
                             alert (data.result);
+                            location.reload (true);
                         } else {
                             alert (data.result + '\n' + data.reason);
                         }
