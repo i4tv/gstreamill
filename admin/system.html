@@ -6,15 +6,42 @@
         <div class="row setjob">
             <div class="col-lg-3 sidebar-menu" id="system_menu">
                 <ul class="nav nav-stacked">
-                    <li><a href="javascript:gstreamill();"> <span class="glyphicon glyphicon-film"></span> <span data-i18n="nav.gstreamill"></span></a></li>
-                    <li><a href="javascript:system();"></i> <span class="glyphicon glyphicon-wrench"></span> <span data-i18n="nav.system"></span></a></li>
-                    <li><a href="javascript:network();"> <span class="glyphicon glyphicon-link"></span> <span data-i18n="nav.network"></span></a></li>
+                    <li>
+                        <a href="javascript:gstreamill();">
+                            <span class="glyphicon glyphicon-film"></span> <span data-i18n="nav.gstreamill"></span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="javascript:system();">
+                            <span class="glyphicon glyphicon-wrench"></span> <span data-i18n="nav.system"></span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="javascript:network();">
+                            <span class="glyphicon glyphicon-link"></span> <span data-i18n="nav.network"></span>
+                        </a>
+                    </li>
                 </ul>
             </div>
             <div class="col-lg-9 main-content">
                 <div id='main_content'></div>
-                <div id='set_gstreamill'></div>
-                <button class='btn btn-primary' id='set_gstreamill_btn'>Set Gstreamill</button>
+                <div id='set_gstreamill' class="panel panel-primary">
+	            <div class="panel-heading">Set Gstreamill</div>
+                    <div class="panel-body">
+                       <div class="row form-group col-md-12">
+                           <label>Language: </label> 
+                           <select class="form-control" id="language">
+                               <option>English</option>
+                               <option>中文</option>
+                           </select>
+                       </div>
+                       <div class="row form-group col-md-12">
+                           <label>Transcode root</label>
+                           <input type="text" class="form-control" id="transcoderoot">
+                       </div>
+                       <button class='btn btn-primary pull-right' id='set_gstreamill_btn'>Set Gstreamill</button>
+                    </div>
+                </div>
                 <div id='system_danger_zone' class="panel panel-danger">
                     <div class="panel-heading">Danger Zone</div>
                     <div class="panel-body">
@@ -45,7 +72,6 @@
         show_query_hint ("query_hint");
         $('#system_danger_zone').show ();
         $('#set_gstreamill').hide ();
-        $('#set_gstreamill_btn').hide ();
         $('#setnetworkinterfaces').hide ();
         $.get("/stat/system", function (data) {
             var element = document.getElementById ('main_content');
@@ -101,43 +127,11 @@
                 hidden_query_hint ("query_hint");
             });
         });
-        $.get("/admin/getconf", function (data) {
-            var element = document.getElementById ('set_gstreamill');
-            element.innerHTML = "";
-            var editor = new JSONEditor (element, {
-                schema: {
-                    $ref: "schemas/gstreamillconf_" + Document.GstreamillConf.language[Document.GstreamillConf.conf.language] + ".schema"
-                },
-                ajax: true,
-                disable_collapse: true,
-                disable_edit_json: true,
-                disable_properties: true,
-                disable_array_add: true,
-                disable_array_delete: true,
-                disable_array_reorder: true,
-                theme: 'bootstrap3',
-                iconlib: 'bootstrap3'
-            });
 
-            editor.on ('ready', function () {
-                editor.setValue (data.data);
-                hidden_query_hint ("query_hint");
-                $('#set_gstreamill').show ();
-                $('#set_gstreamill_btn').show ().unbind ('click');
-                $('#set_gstreamill_btn').click (function () {
-                    show_query_hint ("query_hint");
-                    var value = editor.getValue ();
-                    $.post ("putconf", JSON.stringify (value, null, 4), function (data) {
-                        hidden_query_hint ("query_hint");
-                        if (data.result == 'success') {
-                            alert (data.result);
-                            location.reload (true);
-                        } else {
-                            alert (data.result + '\n' + data.reason);
-                        }
-                    });
-                });
-            });
+        $.get("/admin/getconf", function (data) {
+            $("#language").val(data.data.language);
+            $("#transcoderoot").val(data.data.transcoderoot);
+            $('#set_gstreamill').show ();
         });
     }
 
@@ -145,7 +139,6 @@
         show_query_hint ("query_hint");
         $('#system_danger_zone').hide ();
         $('#set_gstreamill').hide ();
-        $('#set_gstreamill_btn').hide ();
         $.get("/admin/networkinterfaces", function (data) {
             var element = document.getElementById ('main_content');
             element.innerHTML = "";
@@ -202,8 +195,24 @@
             });
 
             gstreamill ();
-        });
 
+            $('#set_gstreamill_btn').click (function () {
+                show_query_hint ("query_hint");
+                var conf = {};
+                conf.language = $("#language").val ();
+                conf.transcoderoot = $("#transcoderoot").val ();
+                $.post ("putconf", JSON.stringify (conf, null, 4), function (data) {
+                    hidden_query_hint ("query_hint");
+                    if (data.result == 'success') {
+                        alert (data.result);
+                        location.reload (true);
+                    } else {
+                        alert (data.result + '\n' + data.reason);
+                    }
+                });
+            });
+
+        });
     });
 
     </script>
