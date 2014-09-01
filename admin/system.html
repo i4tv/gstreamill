@@ -26,17 +26,17 @@
             <div class="col-lg-9 main-content">
                 <div id='main_content'></div>
                 <div id='set_gstreamill' class="panel panel-primary">
-	            <div class="panel-heading">Set Gstreamill</div>
+	            <div class="panel-heading" data-i18n="nav.Set Gstreamill"></div>
                     <div class="panel-body">
                        <div class="row form-group col-md-12">
-                           <label>Language: </label> 
+                           <label data-i18n="nav.Language"></label> 
                            <select class="form-control" id="language">
                                <option>English</option>
                                <option>中文</option>
                            </select>
                        </div>
                        <div class="row form-group col-md-12">
-                           <label>Transcode root</label>
+                           <label data-i18n="nav.Transcode Directory"></label>
                            <input type="text" class="form-control" id="transcoderoot">
                        </div>
                        <button class='btn btn-primary pull-right' id='set_gstreamill_btn'>Set Gstreamill</button>
@@ -187,13 +187,6 @@
                 return;
             }
 
-            $.i18n.init({
-                lng: Document.GstreamillConf.language[Document.GstreamillConf.conf.language]
-            }, function(t) {
-                $(".nav").i18n();
-                var appName = t("app.name");
-            });
-
             gstreamill ();
 
             $('#set_gstreamill_btn').click (function () {
@@ -210,6 +203,13 @@
                         alert (data.result + '\n' + data.reason);
                     }
                 });
+            });
+
+            $.i18n.init({
+                lng: Document.GstreamillConf.language[Document.GstreamillConf.conf.language]
+            }, function(t) {
+                $(".nav").i18n();
+                var appName = t("app.name");
             });
 
         });

@@ -12,6 +12,9 @@
     "gstreamill": "Gstreamill管理",
     "system": "系统管理",
     "network": "网络配置",
+    "Set Gstreamill": "设置Gstreamill",
+    "Language": "语言",
+    "Transcode Directory": "转码目录",
 
     "job management": "任务管理",
     "job status": "任务状态",

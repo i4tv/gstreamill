@@ -12,6 +12,9 @@
     "gstreamill": "Gstreamill Manage",
     "system": "System Manage",
     "network": "Network Configure",
+    "Set Gstreamill": "Set Gstreamill",
+    "Language": "Language",
+    "Transcode Directory": "Tanscode Directory",
 
     "job management": "Job Managment",
     "job status": "Job Status",
