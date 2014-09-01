@@ -101,6 +101,13 @@
                     });
                 });
             });
+
+        $.i18n.init({
+            lng: 'zh'
+        }, function(t) {
+            $(".nav").i18n();
+            var appName = t("app.name");
+        });
         });
     });
 

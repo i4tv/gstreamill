@@ -3,8 +3,18 @@
     "name": "i18next"
   },
   "nav": {
+    "main system": "System",
+    "main jobs": "Jobs",
+    "new job": "New Job",
+    "new live job": "New Live Job",
+    "new transcode job": "New Transcode Job",
+
     "gstreamill": "Gstreamill Manage",
     "system": "System Manage",
-    "network": "Network Configure"
+    "network": "Network Configure",
+
+    "job management": "Job Managment",
+    "job status": "Job Status",
+    "job delete": "Job Delete"
   }
 }

@@ -3,9 +3,9 @@
         <div class="row setjob">
             <div class="col-lg-3 sidebar-menu" id="job_man_menu">
                 <ul class="nav nav-stacked">
-                    <li><a href="javascript:setting();"> <span class="glyphicon glyphicon-wrench"></span><span> Job Managment</span></a></li>
-                    <li><a href="#" id="job_status"> <span class="glyphicon glyphicon-stats"></span><span> Job Status</span></a></li>
-                    <li><a href="#" id="rm_job"> <span class="glyphicon glyphicon-trash"></span><span> Job Delete</span></a></li>
+                    <li><a href="javascript:setting();"> <span class="glyphicon glyphicon-wrench"></span> <span data-i18n="nav.job management"></span></a></li>
+                    <li><a href="#" id="job_status"> <span class="glyphicon glyphicon-stats"></span> <span data-i18n="nav.job status"></span></a></li>
+                    <li><a href="#" id="rm_job"> <span class="glyphicon glyphicon-trash"></span> <span data-i18n="nav.job delete"></span></a></li>
                 </ul>
             </div>
             <div class='col-lg-9 main-content'>
@@ -241,6 +241,13 @@
             }
 
             setting ();
+        });
+
+        $.i18n.init({
+            lng: 'zh'
+        }, function(t) {
+            $(".nav").i18n();
+            var appName = t("app.name");
         });
     });
 
