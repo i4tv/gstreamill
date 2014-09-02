@@ -18,13 +18,13 @@
                         </div>
                         <div class="col-lg-7">
                             <label class="radio-inline">
-                                <input type="radio" name="sourcetype" id="sourcetypeRadio1" value="option1"> v4l2src
+                                <input type="radio" id="sourcetype" value="v4l2src"> v4l2src
                             </label>
                             <label class="radio-inline">
-                                <input type="radio" name="sourcetype" id="sourcetypeRadio2" value="option2"> networksrc
+                                <input type="radio" id="sourcetype" value="networksrc"> networksrc
                             </label>
                             <label class="radio-inline">
-                                <input type="radio" name="sourcetype" id="sourcetypeRadio3" value="option3"> testsrc
+                                <input type="radio" id="sourcetype" value="testsrc"> testsrc
                             </label>
                         </div>
                     </div>
@@ -76,6 +76,71 @@
                 alert ("get configure failure: " + data.reason);
                 return;
             }
+
+            $("#newlivejob").click (function () {
+                var job_element = document.getElementById('job_editor_holder');
+
+                sourcetype_value = $("#sourcetype:checked").val ();
+                alert(sourcetype_value);
+                var job_editor = new JSONEditor (job_element, {
+                    schema: {
+                        $ref: 'schemas/' + sourcetype_value + '.schema'
+                    },
+                    ajax: true,
+                    hidden: true
+                });
+    
+                job_editor.on ('ready', function() {
+                    var name_editor = job_editor.getEditor ('root.name');
+                    var name_value = $("#jobname").val ();
+                    if (name_value == "") {
+                        alert ("Set name please");
+                        return;
+                    }
+                    name_editor.setValue (name_value);
+        
+                    var job_type = job_editor.getEditor ('root.type');
+                    job_type.setValue (sourcetype_value);
+        
+                    var encoder_element = document.getElementById('encoder_editor_holder');
+                    var encoder_editor = new JSONEditor (encoder_element, {
+                        schema: {
+                            $ref: 'schemas/encoder.schema'
+                        },
+                        ajax: true,
+                        hidden: true
+                    });
+    
+                    encoder_editor.on ('ready', function () {
+                        var job_value = job_editor.getValue ();
+                        var encoder_value = encoder_editor.getValue ();
+
+                        var udpoutput_value = $("#udpoutput").val ();
+                        if (!udpoutput_value) {
+                            delete encoder_value.udpstreaming;
+                        }
+
+                        var m3u8output_value = $("#m3u8output").val ();
+                        if (!m3u8output_value) {
+                            delete job_value.m3u8streaming;
+                        }
+
+                        encodercount_value = $("#encodercount").val ();
+                        for (i = 0; i < encodercount_value; i++) {
+                            job_value.encoders[i] = encoder_value;
+                        }
+
+                        $.post("putjob/" + name_value, JSON.stringify (job_value, null, 4), function (data) {
+                            if (data.result == 'success') {
+                                alert (data.result);
+                            } else {
+                                alert (data.result + '\n' + data.reason);
+                            }
+                        });
+                    });
+                });
+            });
+
 /*
             var element = document.getElementById ('new_live_job_holder');
             var conf_editor = new JSONEditor (element, {
