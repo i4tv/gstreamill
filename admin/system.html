@@ -8,17 +8,17 @@
                 <ul class="nav nav-stacked">
                     <li>
                         <a href="javascript:gstreamill();">
-                            <span class="glyphicon glyphicon-film"></span> <span data-i18n="nav.gstreamill"></span>
+                            <span class="glyphicon glyphicon-film"></span> <span class="system" data-i18n="system.Gstreamill Manage"></span>
                         </a>
                     </li>
                     <li>
                         <a href="javascript:system();">
-                            <span class="glyphicon glyphicon-wrench"></span> <span data-i18n="nav.system"></span>
+                            <span class="glyphicon glyphicon-wrench"></span> <span class="system" data-i18n="system.System Manage"></span>
                         </a>
                     </li>
                     <li>
                         <a href="javascript:network();">
-                            <span class="glyphicon glyphicon-link"></span> <span data-i18n="nav.network"></span>
+                            <span class="glyphicon glyphicon-link"></span> <span class="system" data-i18n="system.Network Configure"></span>
                         </a>
                     </li>
                 </ul>
@@ -26,17 +26,17 @@
             <div class="col-lg-9 main-content">
                 <div id='main_content'></div>
                 <div id='set_gstreamill' class="panel panel-primary">
-	            <div class="panel-heading" data-i18n="nav.Set Gstreamill"></div>
+	            <div class="panel-heading system" data-i18n="system.Set Gstreamill"></div>
                     <div class="panel-body">
                        <div class="row form-group col-md-12">
-                           <label data-i18n="nav.Language"></label> 
+                           <label class="system" data-i18n="system.Language"></label> 
                            <select class="form-control" id="language">
                                <option>English</option>
                                <option>中文</option>
                            </select>
                        </div>
                        <div class="row form-group col-md-12">
-                           <label data-i18n="nav.Transcode Directory"></label>
+                           <label class="system"  data-i18n="system.Transcode Directory"></label>
                            <input type="text" class="form-control" id="transcoderoot">
                        </div>
                        <button class='btn btn-primary pull-right' id='set_gstreamill_btn'>Set Gstreamill</button>
@@ -209,7 +209,7 @@
                 lng: Document.GstreamillConf.language[Document.GstreamillConf.conf.language]
             }, function(t) {
                 $(".nav").i18n();
-                var appName = t("app.name");
+                $(".system").i18n();
             });
 
         });

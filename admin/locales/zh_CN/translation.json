@@ -1,23 +1,21 @@
 {
-  "app": {
-    "name": "i18next"
-  },
   "nav": {
-    "main system": "系统",
-    "main jobs": "任务",
-    "new job": "创建任务",
-    "new live job": "创建直播任务",
-    "new transcode job": "创建转码任务",
-
-    "gstreamill": "Gstreamill管理",
-    "system": "系统管理",
-    "network": "网络配置",
-    "Set Gstreamill": "设置Gstreamill",
-    "Language": "语言",
-    "Transcode Directory": "转码目录",
+    "System": "系统",
+    "Jobs": "任务",
+    "New Job": "创建任务",
+    "New Live Job": "创建直播任务",
+    "New Transcode Job": "创建转码任务",
 
     "job management": "任务管理",
     "job status": "任务状态",
     "job delete": "任务删除"
+  },
+  "system": {
+    "Gstreamill Manage": "Gstreamill管理",
+    "System Manage": "系统管理",
+    "Network Configure": "网络配置",
+    "Set Gstreamill": "设置Gstreamill",
+    "Language": "语言",
+    "Transcode Directory": "转码目录"
   }
 }

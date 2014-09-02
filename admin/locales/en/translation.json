@@ -1,23 +1,21 @@
 {
-  "app": {
-    "name": "i18next"
-  },
   "nav": {
-    "main system": "System",
-    "main jobs": "Jobs",
-    "new job": "New Job",
-    "new live job": "New Live Job",
-    "new transcode job": "New Transcode Job",
-
-    "gstreamill": "Gstreamill Manage",
-    "system": "System Manage",
-    "network": "Network Configure",
-    "Set Gstreamill": "Set Gstreamill",
-    "Language": "Language",
-    "Transcode Directory": "Tanscode Directory",
+    "System": "System",
+    "Jobs": "Jobs",
+    "New Job": "New Job",
+    "New Live Job": "New Live Job",
+    "New Transcode Job": "New Transcode Job",
 
     "job management": "Job Managment",
     "job status": "Job Status",
     "job delete": "Job Delete"
+  },
+  "system": {
+    "Gstreamill Manage": "Gstreamill Manage",
+    "System Manage": "System Manage",
+    "Network Configure": "Network Configure",
+    "Set Gstreamill": "Set Gstreamill",
+    "Language": "Language",
+    "Transcode Directory": "Tanscode Directory"
   }
 }
