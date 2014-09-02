@@ -197,6 +197,20 @@
         });
     }
 
+    function append_item (body, key, value) {
+        var item_ele = document.createElement ("div"),
+            key_ele = document.createElement ("div"),
+            value_ele = document.createElement ("div");
+        item_ele.setAttribute ("class", "row form-group col-lg-12");
+        key_ele.setAttribute ("class", "col-lg-4");
+        key_ele.innerHTML = "<label class=\"pull-right system jobmanage\" data-i18n=\"jobmanage." + key + "\"></label>";
+        value_ele.setAttribute ("class", "col-lg-7");
+        value_ele.innerHTML = "<input type=\"text\" class=\"form-control\" value=\"" + value + "\">";
+        item_ele.appendChild (key_ele);
+        item_ele.appendChild (value_ele);
+        body.appendChild (item_ele);
+    }
+
     function status (name) {
         $.get("/stat/gstreamill/job/" + name, function (data) {
             $('#putjob').hide ();
@@ -218,21 +232,14 @@
             job_stat_header.setAttribute ("class", "panel-heading jobmanage");
             job_stat_header.setAttribute ("data-i18n", "jobmanage.Job Status");
             job_stat_element.appendChild (job_stat_header);
-
             job_stat_body.setAttribute ("class", "panel-body");
 
-            var item = document.createElement ("div"),
-                key = document.createElement ("div"),
-                value = document.createElement ("div");
-            item.setAttribute ("class", "row form-group col-lg-12");
-            key.setAttribute ("class", "col-lg-4");
-            value.setAttribute ("class", "col-lg-7");
-
-            key.innerHTML = "<label class=\"pull-right system jobmanage\" data-i18n=\"jobmanage.Restart Times\"></label>";
-            value.innerHTML = "<input type=\"text\" class=\"form-control\" value=\"" + data.data.age + "\">";
-            item.appendChild (key);
-            item.appendChild (value);
-            job_stat_body.appendChild (item);
+            append_item (job_stat_body, "Restart Times", data.data.age);
+            append_item (job_stat_body, "Last Restart Time", data.data.last_start_time);
+            append_item (job_stat_body, "Current Concurrent Count", data.data.current_access);
+            append_item (job_stat_body, "Average CPU Usage", data.data.cpu_average);
+            append_item (job_stat_body, "Current CPU Usage", data.data.cpu_current);
+            append_item (job_stat_body, "Memory Usage", data.data.memory);
 
             job_stat_element.appendChild (job_stat_body);
 

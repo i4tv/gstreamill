@@ -52,6 +52,11 @@
     "Realy remove this Job? can't be restore!": "真的要移除任务？ 移除后无法恢复！",
     "Remove Job": "移除任务",
     "Job Status": "Job状态",
-    "Restart Times": "重新启动次数"
+    "Restart Times": "重新启动次数",
+    "Last Restart Time": "最后一次启动时间",
+    "Current Concurrent Count": "当前播放并发数",
+    "Average CPU Usage": "平均CPU使用",
+    "Current CPU Usage": "当前CPU使用",
+    "Memory Usage": "内存使用"
   }
 }
