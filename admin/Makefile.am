@@ -38,8 +38,6 @@ adminimg_DATA = \
 
 adminschemasdir = $(datadir)/gstreamill/admin/schemas
 adminschemas_DATA = \
-        schemas/system_en.schema \
-        schemas/system_zh_CN.schema \
         schemas/networkinterfaces_en.schema \
         schemas/networkinterfaces_zh_CN.schema \
         schemas/jobstat_en.schema \

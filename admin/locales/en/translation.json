@@ -26,6 +26,13 @@
     "Compile Date": "Compile Date",
     "Compile Time": "Compile Time",
     "Start Time": "Start Time",
-    "Jobs Count" : "Jobs Count"
+    "Jobs Count": "Jobs Count",
+    "System Status": "System Status",
+    "CPU Model": "CPU Model",
+    "CPU Count": "CPU Count",
+    "Threads per Core": "Threads per Core",
+    "Core per Socket": "Core per Socket",
+    "Socket Count": "Socket Count",
+    "CPU MHz": "CPU MHz"
   }
 }

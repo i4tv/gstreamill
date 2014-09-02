@@ -25,8 +25,10 @@
             </div>
             <div class="col-lg-9 main-content">
                 <div id='main_content'></div>
+
+                <div id='gstreamill_manage'>
                 <!--      Gstreamill Status     -->
-                <div id='gstreamill_status' class="panel panel-primary">
+                <div class="panel panel-primary">
 	            <div class="panel-heading system" data-i18n="system.Gstreamill Status"></div>
                     <div class="panel-body">
                         <div class="row form-group col-lg-12">
@@ -71,8 +73,9 @@
                         </div>
                     </div>
                 </div>
+
                 <!--      Set Gstreamill     -->
-                <div id='set_gstreamill' class="panel panel-primary">
+                <div class="panel panel-primary">
 	            <div class="panel-heading system" data-i18n="system.Set Gstreamill"></div>
                     <div class="panel-body">
                         <div class="row form-group col-md-12">
@@ -97,14 +100,65 @@
                         <button class='btn btn-primary pull-right system' id='set_gstreamill_btn' data-i18n="system.Set Gstreamill"></button>
                     </div>
                 </div>
-                <div id='system_danger_zone' class="panel panel-danger">
-                    <div class="panel-heading system" data-i18n="system.Danger Zone"></div>
-                    <div class="panel-body">
-                        <h4 class="system" data-i18n="system.Restart Device"></h4></br>
-                        <span class="system" data-i18n="system.Restart OS, all jobs will stoped"></span>
-                        <button class='btn btn-danger pull-right system' id='restartdevice' data-i18n="system.Restart Device"></button>
-                    </div>
                 </div>
+
+                <div id='system_manage'>
+
+                    <div id='gstreamill_status' class="panel panel-primary">
+    	                <div class="panel-heading system" data-i18n="system.System Status"></div>
+                        <div class="panel-body">
+                            <div class="row form-group col-lg-12">
+                                <div class="col-lg-4">
+                                    <label class="pull-right system"  data-i18n="system.CPU Model"></label>
+                                </div>
+                                <div class="col-lg-7">
+                                    <input type="text" class="form-control" id="cpumodel">
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="pull-right system"  data-i18n="system.CPU Count"></label>
+                                </div>
+                                <div class="col-lg-7">
+                                    <input type="text" class="form-control" id="cpucount">
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="pull-right system"  data-i18n="system.Threads per Core"></label>
+                                </div>
+                                <div class="col-lg-7">
+                                    <input type="text" class="form-control" id="threadspercore">
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="pull-right system"  data-i18n="system.Core per Socket"></label>
+                                </div>
+                                <div class="col-lg-7">
+                                    <input type="text" class="form-control" id="corepersocket">
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="pull-right system"  data-i18n="system.Socket Count"></label>
+                                </div>
+                                <div class="col-lg-7">
+                                    <input type="text" class="form-control" id="socketscount">
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="pull-right system"  data-i18n="system.CPU MHz"></label>
+                                </div>
+                                <div class="col-lg-7">
+                                    <input type="text" class="form-control" id="cpumhz">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+    
+                    <div id='system_danger_zone' class="panel panel-danger">
+                        <div class="panel-heading system" data-i18n="system.Danger Zone"></div>
+                        <div class="panel-body">
+                            <h4 class="system" data-i18n="system.Restart Device"></h4></br>
+                            <span class="system" data-i18n="system.Restart OS, all jobs will stoped"></span>
+                            <button class='btn btn-danger pull-right system' id='restartdevice' data-i18n="system.Restart Device"></button>
+                        </div>
+                    </div>
+
+                </div>
+
                 <button class='btn btn-primary system' id='setnetworkinterfaces' data-i18n="system.Set Network Interfaces"></button>
             </div>
         </div>
@@ -125,38 +179,23 @@
 
     function system () {
         show_query_hint ("query_hint");
-        $('#system_danger_zone').show ();
-        $('#set_gstreamill').hide ();
+        $('#gstreamill_manage').hide ();
         $('#setnetworkinterfaces').hide ();
         $.get("/stat/system", function (data) {
-            var element = document.getElementById ('main_content');
-            element.innerHTML = "";
-            var editor = new JSONEditor (element, {
-                schema: {
-                    $ref: "schemas/system_" + Document.GstreamillConf.language[Document.GstreamillConf.conf.language] + ".schema"
-                },
-                ajax: true,
-                disable_collapse: true,
-                disable_edit_json: true,
-                disable_properties: true,
-                disable_array_add: true,
-                disable_array_delete: true,
-                disable_array_reorder: true,
-                theme: 'bootstrap3',
-                iconlib: 'bootstrap3'
-            });
-
-            editor.on ('ready', function () {
-                editor.setValue (data);
-                editor.disable ();
-                hidden_query_hint ("query_hint");
-            });
+            $("#cpumodel").val (data.CPU_Model);
+            $("#cpucount").val (data.CPU_Count);
+            $("#threadspercore").val (data.Threads_per_Core);
+            $("#corepersocket").val (data.Core_per_Socket);
+            $("#socketscount").val (data.Sockets_Count);
+            $("#cpumhz").val (data.CPU_MHz);
+            hidden_query_hint ("query_hint");
+            $('#system_manage').show ();
         });
     }
 
     function gstreamill () {
         show_query_hint ("query_hint");
-        $('#system_danger_zone').hide ();
+        $('#system_manage').hide ();
         $('#setnetworkinterfaces').hide ();
         $.get("/stat/gstreamill", function (data) {
             $("#gstreamillversion").val (data.version);
@@ -164,21 +203,20 @@
             $("#compiletime").val (data.buildtime);
             $("#starttime").val (data.starttime);
             $("#jobscount").val (data.jobcount);
-
             hidden_query_hint ("query_hint");
         });
 
         $.get("/admin/getconf", function (data) {
             $("#language").val(data.data.language);
             $("#transcoderoot").val(data.data.transcoderoot);
-            $('#set_gstreamill').show ();
+            $('#gstreamill_manage').show ();
         });
     }
 
     function network () {
         show_query_hint ("query_hint");
-        $('#system_danger_zone').hide ();
-        $('#set_gstreamill').hide ();
+        $('#system_manage').hide ();
+        $('#gstreamill_manage').hide ();
         $.get("/admin/networkinterfaces", function (data) {
             var element = document.getElementById ('main_content');
             element.innerHTML = "";
