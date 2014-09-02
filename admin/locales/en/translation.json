@@ -45,5 +45,13 @@
     "M3U8 Output": "M3U8 Output",
     "Check for UDP output": "Check for UDP output",
     "Check for M3u8 output": "Check for M3u8 output"
+  },
+  "jobmanage": {
+    "Danger Zone": "Danger Zone",
+    "Remove this Job": "Remove this Job",
+    "Realy remove this Job? can't be restore!": "Realy remove this Job? can't be restore!",
+    "Remove Job": "Remove Job",
+    "Job Status": "Job Status",
+    "Restart Times": "Restart Times"
   }
 }
