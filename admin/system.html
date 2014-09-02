@@ -159,7 +159,23 @@
 
                 </div>
 
-                <button class='btn btn-primary system' id='setnetworkinterfaces' data-i18n="system.Set Network Interfaces"></button>
+                <div id="network_manage">
+                    <div class="panel panel-primary">
+                        <div class="panel-heading system" data-i18n="system.Network Configure"></div>
+                        <div class="panel-body">
+                            <div class="row form-group col-lg-12">
+                                <div class="col-lg-4">
+                                    <label class="pull-right system"  data-i18n="system.CPU Model"></label>
+                                </div>
+                                <div class="col-lg-7">
+                                    <input type="text" class="form-control" id="cpumodel">
+                                </div>
+                            </div>
+                            <button class='btn btn-primary pull-right system' id='savenetwork' data-i18n="system.Save Network Configure"></button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -180,7 +196,7 @@
     function system () {
         show_query_hint ("query_hint");
         $('#gstreamill_manage').hide ();
-        $('#setnetworkinterfaces').hide ();
+        $('#network_manage').hide ();
         $.get("/stat/system", function (data) {
             $("#cpumodel").val (data.CPU_Model);
             $("#cpucount").val (data.CPU_Count);
@@ -196,7 +212,7 @@
     function gstreamill () {
         show_query_hint ("query_hint");
         $('#system_manage').hide ();
-        $('#setnetworkinterfaces').hide ();
+        $('#network_manage').hide ();
         $.get("/stat/gstreamill", function (data) {
             $("#gstreamillversion").val (data.version);
             $("#compiledate").val (data.builddate);
@@ -218,40 +234,8 @@
         $('#system_manage').hide ();
         $('#gstreamill_manage').hide ();
         $.get("/admin/networkinterfaces", function (data) {
-            var element = document.getElementById ('main_content');
-            element.innerHTML = "";
-            var editor = new JSONEditor (element, {
-                schema: {
-                    $ref: "schemas/networkinterfaces_" + Document.GstreamillConf.language[Document.GstreamillConf.conf.language] + ".schema"
-                },
-                ajax: true,
-                disable_collapse: true,
-                disable_edit_json: true,
-                disable_properties: true,
-                disable_array_add: true,
-                disable_array_delete: true,
-                disable_array_reorder: true,
-                theme: 'bootstrap3',
-                iconlib: 'bootstrap3'
-            });
-
-            editor.on ('ready', function () {
-                editor.setValue (data);
-                hidden_query_hint ("query_hint");
-                $('#setnetworkinterfaces').show ().unbind ('click');
-                $('#setnetworkinterfaces').click (function () {
-                    show_query_hint ("query_hint");
-                    var value = editor.getValue ();
-                    $.post ("setnetworkinterfaces", JSON.stringify (value, null, 4), function (data) {
-                        hidden_query_hint ("query_hint");
-                        if (data.result == 'success') {
-                            alert (data.result);
-                        } else {
-                            alert (data.result + '\n' + data.reason);
-                        }
-                    });
-                });
-            });
+            hidden_query_hint ("query_hint");
+            $('#network_manage').show ();
         });
     }
 
@@ -277,6 +261,18 @@
                     if (data.result == 'success') {
                         alert (data.result);
                         location.reload (true);
+                    } else {
+                        alert (data.result + '\n' + data.reason);
+                    }
+                });
+            });
+
+            $('#savenetwork').click (function () {
+                show_query_hint ("query_hint");
+                var value = editor.getValue ();
+                $.post ("setnetworkinterfaces", JSON.stringify (value, null, 4), function (data) {
+                    if (data.result == 'success') {
+                        alert (data.result);
                     } else {
                         alert (data.result + '\n' + data.reason);
                     }

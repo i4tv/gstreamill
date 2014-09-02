@@ -33,6 +33,7 @@
     "Threads per Core": "Threads per Core",
     "Core per Socket": "Core per Socket",
     "Socket Count": "Socket Count",
-    "CPU MHz": "CPU MHz"
+    "CPU MHz": "CPU MHz",
+    "Save Network Configure": "Save Network Configure"
   }
 }
