@@ -35,5 +35,15 @@
     "Socket Count": "Socket Count",
     "CPU MHz": "CPU MHz",
     "Save Network Configure": "Save Network Configure"
+  },
+  "newlivejob": {
+    "New Live Job": "New Live Job",
+    "Job Name": "Job Name",
+    "Source Type": "Source Type",
+    "Encoder Count": "Encoder Count",
+    "UDP Output": "UDP Output",
+    "M3U8 Output": "M3U8 Output",
+    "Check for UDP output": "Check for UDP output",
+    "Check for M3u8 output": "Check for M3u8 output"
   }
 }

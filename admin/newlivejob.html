@@ -1,10 +1,66 @@
 
     <div class="container-fluid">
         <div class="row newlivejob">
-            <div id='new_live_job_holder'></div>
+            <div class="panel panel-primary">
+                <div class="panel-heading system" data-i18n="newlivejob.New Live Job"></div>
+                <div class="panel-body">
+                    <div class="row form-group col-lg-12">
+                        <div class="col-lg-4">
+                            <label class="pull-right system"  data-i18n="newlivejob.Job Name"></label>
+                        </div>
+                        <div class="col-lg-7">
+                            <input type="text" class="form-control" id="jobname">
+                        </div>
+                    </div>
+                    <div class="row form-group col-lg-12">
+                        <div class="col-lg-4">
+                            <label class="pull-right system"  data-i18n="newlivejob.Source Type"></label>
+                        </div>
+                        <div class="col-lg-7">
+                            <label class="radio-inline">
+                                <input type="radio" name="sourcetype" id="sourcetypeRadio1" value="option1"> v4l2src
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" name="sourcetype" id="sourcetypeRadio2" value="option2"> networksrc
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" name="sourcetype" id="sourcetypeRadio3" value="option3"> testsrc
+                            </label>
+                        </div>
+                    </div>
+                    <div class="row form-group col-lg-12">
+                        <div class="col-lg-4">
+                            <label class="pull-right system"  data-i18n="newlivejob.Encoder Count"></label>
+                        </div>
+                        <div class="col-lg-7">
+                            <input type="text" class="form-control" id="encodercount">
+                        </div>
+                    </div>
+                    <div class="row form-group col-lg-12">
+                        <div class="col-lg-4">
+                            <label class="pull-right system"  data-i18n="newlivejob.UDP Output"></label>
+                        </div>
+                        <div class="col-lg-7">
+                            <label class="checkbox-inline">
+                                <input type="checkbox" id="udpoutput" value="option3"> <span data-i18n="newlivejob.Check for UDP output"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="row form-group col-lg-12">
+                        <div class="col-lg-4">
+                            <label class="pull-right system"  data-i18n="newlivejob.M3U8 Output"></label>
+                        </div>
+                        <div class="col-lg-7">
+                            <label class="checkbox-inline">
+                                <input type="checkbox" id="m3u8output" value="option3"> <span data-i18n="newlivejob.Check for M3u8 output"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <button class='btn btn-primary pull-right' id='newlivejob' data-i18n="newlivejob.New Live Job"></button>
+                </div>
+            </div>
             <div id='job_editor_holder' style="display: none;"></div>
             <div id='encoder_editor_holder' style="display: none;"></div>
-            <button class='btn btn-primary' id='createjob'>Create Job</button>
         </div>
     </div>
 
@@ -20,7 +76,7 @@
                 alert ("get configure failure: " + data.reason);
                 return;
             }
-
+/*
             var element = document.getElementById ('new_live_job_holder');
             var conf_editor = new JSONEditor (element, {
                 schema: {
@@ -50,7 +106,6 @@
                     });
         
                     job_editor.on ('ready', function() {
-                        /* job name */
                         var job_name = job_editor.getEditor ('root.name');
                         if (conf_value.name == "") {
                             alert ("Set name please");
@@ -58,11 +113,9 @@
                         }
                         job_name.setValue (conf_value.name);
             
-                        /* job type */
                         var job_type = job_editor.getEditor ('root.type');
                         job_type.setValue (conf_value.sourcetype);
             
-                        /* count of encoders */
                         var encoder_element = document.getElementById('encoder_editor_holder');
                         var encoder_editor = new JSONEditor (encoder_element, {
                             schema: {
@@ -76,12 +129,10 @@
                             var job_value = job_editor.getValue ();
                             var encoder_value = encoder_editor.getValue ();
             
-                            /* udp output support? */
                             if (!conf_value.udpoutput) {
                                 delete encoder_value.udpstreaming;
                             }
         
-                            /* m3u8 output support? */
                             if (!conf_value.m3u8output) {
                                 delete job_value.m3u8streaming;
                             }
@@ -100,13 +151,13 @@
                         });
                     });
                 });
-            });
+            });*/
 
             $.i18n.init({
                 lng: Document.GstreamillConf.language[Document.GstreamillConf.conf.language]
             }, function(t) {
-                $(".nav").i18n();
-                var appName = t("app.name");
+                $(".nav").i18n ();
+                $(".newlivejob").i18n ();
             });
 
         });
