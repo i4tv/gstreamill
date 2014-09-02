@@ -16,6 +16,10 @@
     "Network Configure": "Network Configure",
     "Set Gstreamill": "Set Gstreamill",
     "Language": "Language",
-    "Transcode Directory": "Tanscode Directory"
+    "Transcode Directory": "Tanscode Directory",
+    "Danger Zone": "Danger Zone",
+    "Restart Device": "Restart Device",
+    "Restart OS, all jobs will stoped": "Restart OS, all jobs will stoped",
+    "Set Network Interfaces": "Set Network Interfaces"
   }
 }

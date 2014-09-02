@@ -16,6 +16,10 @@
     "Network Configure": "网络配置",
     "Set Gstreamill": "设置Gstreamill",
     "Language": "语言",
-    "Transcode Directory": "转码目录"
+    "Transcode Directory": "转码目录",
+    "Danger Zone": "危险区",
+    "Restart Device": "重启设备",
+    "Restart OS, all jobs will stoped": "重启操作系统, 所有任务会停止",
+    "Set Network Interfaces": "设置网络接口"
   }
 }
