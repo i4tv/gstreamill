@@ -26,79 +26,80 @@
             <div class="col-lg-9 main-content">
 
                 <div id='gstreamill_manage'>
-                <!--      Gstreamill Status     -->
-                <div class="panel panel-primary">
-	            <div class="panel-heading system" data-i18n="system.Gstreamill Status"></div>
-                    <div class="panel-body">
-                        <div class="row form-group col-lg-12">
-                            <div class="col-lg-4">
-                                <label class="pull-right system"  data-i18n="system.Gstreamill Version"></label>
+                    <!--      Gstreamill Status     -->
+                    <div class="panel panel-primary">
+    	            <div class="panel-heading system" data-i18n="system.Gstreamill Status"></div>
+                        <div class="panel-body">
+                            <div class="row form-group col-lg-12">
+                                <div class="col-lg-4">
+                                    <label class="pull-right system"  data-i18n="system.Gstreamill Version"></label>
+                                </div>
+                                <div class="col-lg-7">
+                                    <input type="text" class="form-control" id="gstreamillversion">
+                                </div>
                             </div>
-                            <div class="col-lg-7">
-                                <input type="text" class="form-control" id="gstreamillversion">
+                            <div class="row form-group col-md-12">
+                                <div class="col-lg-4">
+                                    <label class="pull-right system"  data-i18n="system.Compile Date"></label>
+                                </div>
+                                <div class="col-lg-7">
+                                    <input type="text" class="form-control" id="compiledate">
+                                </div>
                             </div>
-                        </div>
-                        <div class="row form-group col-md-12">
-                            <div class="col-lg-4">
-                                <label class="pull-right system"  data-i18n="system.Compile Date"></label>
+                            <div class="row form-group col-md-12">
+                                <div class="col-lg-4">
+                                    <label class="pull-right system"  data-i18n="system.Compile Time"></label>
+                                </div>
+                                <div class="col-lg-7">
+                                    <input type="text" class="form-control" id="compiletime">
+                                </div>
                             </div>
-                            <div class="col-lg-7">
-                                <input type="text" class="form-control" id="compiledate">
+                            <div class="row form-group col-md-12">
+                                <div class="col-lg-4">
+                                    <label class="pull-right system"  data-i18n="system.Start Time"></label>
+                                </div>
+                                <div class="col-lg-7">
+                                    <input type="text" class="form-control" id="starttime">
+                                </div>
                             </div>
-                        </div>
-                        <div class="row form-group col-md-12">
-                            <div class="col-lg-4">
-                                <label class="pull-right system"  data-i18n="system.Compile Time"></label>
-                            </div>
-                            <div class="col-lg-7">
-                                <input type="text" class="form-control" id="compiletime">
-                            </div>
-                        </div>
-                        <div class="row form-group col-md-12">
-                            <div class="col-lg-4">
-                                <label class="pull-right system"  data-i18n="system.Start Time"></label>
-                            </div>
-                            <div class="col-lg-7">
-                                <input type="text" class="form-control" id="starttime">
-                            </div>
-                        </div>
-                        <div class="row form-group col-md-12">
-                            <div class="col-lg-4">
-                                <label class="pull-right system"  data-i18n="system.Jobs Count"></label>
-                            </div>
-                            <div class="col-lg-7">
-                                <input type="text" class="form-control" id="jobscount">
+                            <div class="row form-group col-md-12">
+                                <div class="col-lg-4">
+                                    <label class="pull-right system"  data-i18n="system.Jobs Count"></label>
+                                </div>
+                                <div class="col-lg-7">
+                                    <input type="text" class="form-control" id="jobscount">
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+    
+                    <!--      Set Gstreamill     -->
+                    <div class="panel panel-primary">
+    	            <div class="panel-heading system" data-i18n="system.Set Gstreamill"></div>
+                        <div class="panel-body">
+                            <div class="row form-group col-md-12">
+                                <div class="col-lg-4">
+                                    <label class="pull-right system" data-i18n="system.Language"></label> 
+                                </div>
+                                <div class="col-lg-7">
+                                    <select class="form-control" id="language">
+                                        <option>English</option>
+                                        <option>中文</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row form-group col-md-12">
+                                <div class="col-lg-4">
+                                    <label class="pull-right system"  data-i18n="system.Transcode Directory"></label>
+                                </div>
+                                <div class="col-lg-7">
+                                    <input type="text" class="form-control" id="transcoderoot">
+                                </div>
+                            </div>
+                            <button class='btn btn-primary pull-right system' id='set_gstreamill_btn' data-i18n="system.Set Gstreamill"></button>
+                        </div>
+                    </div>
 
-                <!--      Set Gstreamill     -->
-                <div class="panel panel-primary">
-	            <div class="panel-heading system" data-i18n="system.Set Gstreamill"></div>
-                    <div class="panel-body">
-                        <div class="row form-group col-md-12">
-                            <div class="col-lg-4">
-                                <label class="pull-right system" data-i18n="system.Language"></label> 
-                            </div>
-                            <div class="col-lg-7">
-                                <select class="form-control" id="language">
-                                    <option>English</option>
-                                    <option>中文</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="row form-group col-md-12">
-                            <div class="col-lg-4">
-                                <label class="pull-right system"  data-i18n="system.Transcode Directory"></label>
-                            </div>
-                            <div class="col-lg-7">
-                                <input type="text" class="form-control" id="transcoderoot">
-                            </div>
-                        </div>
-                        <button class='btn btn-primary pull-right system' id='set_gstreamill_btn' data-i18n="system.Set Gstreamill"></button>
-                    </div>
-                </div>
                 </div>
 
                 <div id='system_manage'>
