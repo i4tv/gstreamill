@@ -76,15 +76,23 @@
 	            <div class="panel-heading system" data-i18n="system.Set Gstreamill"></div>
                     <div class="panel-body">
                         <div class="row form-group col-md-12">
-                            <label class="system" data-i18n="system.Language"></label> 
-                            <select class="form-control" id="language">
-                                <option>English</option>
-                                <option>中文</option>
-                            </select>
+                            <div class="col-lg-4">
+                                <label class="pull-right system" data-i18n="system.Language"></label> 
+                            </div>
+                            <div class="col-lg-7">
+                                <select class="form-control" id="language">
+                                    <option>English</option>
+                                    <option>中文</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="row form-group col-md-12">
-                            <label class="system"  data-i18n="system.Transcode Directory"></label>
-                            <input type="text" class="form-control" id="transcoderoot">
+                            <div class="col-lg-4">
+                                <label class="pull-right system"  data-i18n="system.Transcode Directory"></label>
+                            </div>
+                            <div class="col-lg-7">
+                                <input type="text" class="form-control" id="transcoderoot">
+                            </div>
                         </div>
                         <button class='btn btn-primary pull-right system' id='set_gstreamill_btn' data-i18n="system.Set Gstreamill"></button>
                     </div>
