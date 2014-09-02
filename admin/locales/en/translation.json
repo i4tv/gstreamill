@@ -20,6 +20,12 @@
     "Danger Zone": "Danger Zone",
     "Restart Device": "Restart Device",
     "Restart OS, all jobs will stoped": "Restart OS, all jobs will stoped",
-    "Set Network Interfaces": "Set Network Interfaces"
+    "Set Network Interfaces": "Set Network Interfaces",
+    "Gstreamill Status": "Gstreamill Status",
+    "Gstreamill Version": "Gstreamill Version",
+    "Compile Date": "Compile Date",
+    "Compile Time": "Compile Time",
+    "Start Time": "Start Time",
+    "Jobs Count" : "Jobs Count"
   }
 }

@@ -20,6 +20,12 @@
     "Danger Zone": "危险区",
     "Restart Device": "重启设备",
     "Restart OS, all jobs will stoped": "重启操作系统, 所有任务会停止",
-    "Set Network Interfaces": "设置网络接口"
+    "Set Network Interfaces": "设置网络接口",
+    "Gstreamill Status": "Gstreamill 状态",
+    "Gstreamill Version": "Gstreamill 版本",
+    "Compile Date": "编译日期",
+    "Compile Time": "编译时间",
+    "Start Time": "启动时间",
+    "Jobs Count" : "任务个数"
   }
 }

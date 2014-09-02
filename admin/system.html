@@ -25,21 +25,68 @@
             </div>
             <div class="col-lg-9 main-content">
                 <div id='main_content'></div>
+                <!--      Gstreamill Status     -->
+                <div id='gstreamill_status' class="panel panel-primary">
+	            <div class="panel-heading system" data-i18n="system.Gstreamill Status"></div>
+                    <div class="panel-body">
+                        <div class="row form-group col-lg-12">
+                            <div class="col-lg-4">
+                                <label class="pull-right system"  data-i18n="system.Gstreamill Version"></label>
+                            </div>
+                            <div class="col-lg-7">
+                                <input type="text" class="form-control" id="gstreamillversion">
+                            </div>
+                        </div>
+                        <div class="row form-group col-md-12">
+                            <div class="col-lg-4">
+                                <label class="pull-right system"  data-i18n="system.Compile Date"></label>
+                            </div>
+                            <div class="col-lg-7">
+                                <input type="text" class="form-control" id="compiledate">
+                            </div>
+                        </div>
+                        <div class="row form-group col-md-12">
+                            <div class="col-lg-4">
+                                <label class="pull-right system"  data-i18n="system.Compile Time"></label>
+                            </div>
+                            <div class="col-lg-7">
+                                <input type="text" class="form-control" id="compiletime">
+                            </div>
+                        </div>
+                        <div class="row form-group col-md-12">
+                            <div class="col-lg-4">
+                                <label class="pull-right system"  data-i18n="system.Start Time"></label>
+                            </div>
+                            <div class="col-lg-7">
+                                <input type="text" class="form-control" id="starttime">
+                            </div>
+                        </div>
+                        <div class="row form-group col-md-12">
+                            <div class="col-lg-4">
+                                <label class="pull-right system"  data-i18n="system.Jobs Count"></label>
+                            </div>
+                            <div class="col-lg-7">
+                                <input type="text" class="form-control" id="jobscount">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--      Set Gstreamill     -->
                 <div id='set_gstreamill' class="panel panel-primary">
 	            <div class="panel-heading system" data-i18n="system.Set Gstreamill"></div>
                     <div class="panel-body">
-                       <div class="row form-group col-md-12">
-                           <label class="system" data-i18n="system.Language"></label> 
-                           <select class="form-control" id="language">
-                               <option>English</option>
-                               <option>中文</option>
-                           </select>
-                       </div>
-                       <div class="row form-group col-md-12">
-                           <label class="system"  data-i18n="system.Transcode Directory"></label>
-                           <input type="text" class="form-control" id="transcoderoot">
-                       </div>
-                       <button class='btn btn-primary pull-right system' id='set_gstreamill_btn' data-i18n="system.Set Gstreamill"></button>
+                        <div class="row form-group col-md-12">
+                            <label class="system" data-i18n="system.Language"></label> 
+                            <select class="form-control" id="language">
+                                <option>English</option>
+                                <option>中文</option>
+                            </select>
+                        </div>
+                        <div class="row form-group col-md-12">
+                            <label class="system"  data-i18n="system.Transcode Directory"></label>
+                            <input type="text" class="form-control" id="transcoderoot">
+                        </div>
+                        <button class='btn btn-primary pull-right system' id='set_gstreamill_btn' data-i18n="system.Set Gstreamill"></button>
                     </div>
                 </div>
                 <div id='system_danger_zone' class="panel panel-danger">
@@ -104,28 +151,13 @@
         $('#system_danger_zone').hide ();
         $('#setnetworkinterfaces').hide ();
         $.get("/stat/gstreamill", function (data) {
-            var element = document.getElementById ('main_content');
-            element.innerHTML = "";
-            var editor = new JSONEditor (element, {
-                schema: {
-                    $ref: "schemas/gstreamilloverview_" + Document.GstreamillConf.language[Document.GstreamillConf.conf.language] + ".schema"
-                },
-                ajax: true,
-                disable_collapse: true,
-                disable_edit_json: true,
-                disable_properties: true,
-                disable_array_add: true,
-                disable_array_delete: true,
-                disable_array_reorder: true,
-                theme: 'bootstrap3',
-                iconlib: 'bootstrap3'
-            });
+            $("#gstreamillversion").val (data.version);
+            $("#compiledate").val (data.builddate);
+            $("#compiletime").val (data.buildtime);
+            $("#starttime").val (data.starttime);
+            $("#jobscount").val (data.jobcount);
 
-            editor.on ('ready', function () {
-                editor.setValue (data);
-                editor.disable ();
-                hidden_query_hint ("query_hint");
-            });
+            hidden_query_hint ("query_hint");
         });
 
         $.get("/admin/getconf", function (data) {
