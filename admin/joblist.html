@@ -13,18 +13,19 @@
         if (response.result == "success") {
             var job = response.data;
             li += job.name + '"><h3>' + job.name + '</h3></a>';
-            li += ' Restart ' + job.age + ' times,';
-            li += ' Last time started at ' + job.last_start_time;
+            li += ' <span class="joblist" data-i18n="joblist.Restart times"></span> ' + job.age;
+            li += ', <span class="joblist" data-i18n="joblist.Last time started"></span> ' + job.last_start_time;
             li += '</div>';
             li += '<div class="col-md-2">';
-            li += '<button class="btn btn-warning" id="job_' + job.name + '" onclick="stopJob(\'' + job.name + '\')">Stop Job</button>';
+            li += '<button class="btn btn-warning joblist" id="job_' + job.name + '" onclick="stopJob(\'' + job.name + '\')" data-i18n="joblist.Stop Job">';
+            li += '</button>';
             li += '</div>';
             li += '</div>';
             li += '<div class="row">';
             li += '<div class="col-md-12">';
-            li += '<h4>encoder counts: </h4>' + job.encoder_count;
-            li += ' <h4>Average CPU usage: </h4>' + job.cpu_average;
-            li += ' <h4>Memory usage: </h4>' + job.memory;
+            li += '<h4 class="joblist" data-i18n="joblist.Encoder counts"></h4>:' + job.encoder_count;
+            li += ' <h4 class="joblist" data-i18n="joblist.Average CPU usage"></h4>:' + job.cpu_average;
+            li += ' <h4 class="joblist" data-i18n="joblist.Memory usage"></h4>:' + job.memory;
             li += '</div></div>';
             $('#li_' + job.name).html(li);
         } else {
@@ -33,7 +34,8 @@
             li += ' The job is not started.';
             li += '</div>';
             li += '<div class="col-md-2">';
-            li += '<button class="btn btn-primary" id="job_' + job.name + '" onclick="startJob(\'' + job.name + '\')">Start Job</button>';
+            li += '<button class="btn btn-primary joblist" id="job_' + job.name + '" onclick="startJob(\'' + job.name + '\')" data-i18n="joblist.Start Job">';
+            li += '</button>';
             li += '</div></div>';
             $('#li_' + job.name).html(li);
         }
@@ -94,22 +96,22 @@
                 return;
             }
 
-            $.i18n.init({
-                lng: Document.GstreamillConf.language[Document.GstreamillConf.conf.language]
-            }, function(t) {
-                $(".nav").i18n();
-                var appName = t("app.name");
-            });
-
             $.get("/admin/listlivejob", function (jobs) {
                 for (var i = 0; i < jobs.length; i++) {
                     var li = '<li class="list-group-item" id="li_' + jobs[i] + '"></li>';
                     $('#joblist').append(li);
                     var jobStatUrl = '/stat/gstreamill/job/' + jobs[i];
-                    var jobStat = $.get(jobStatUrl, function (response) {
+                    $.get(jobStatUrl, function (response) {
                         showJobStatus (response);
+                        $(".joblist").i18n ();
                     });
                 }
+            });
+
+            $.i18n.init({
+                lng: Document.GstreamillConf.language[Document.GstreamillConf.conf.language]
+            }, function(t) {
+                $(".nav").i18n ();
             });
 
         });

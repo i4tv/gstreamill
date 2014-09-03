@@ -5,7 +5,6 @@
     "New Job": "New Job",
     "New Live Job": "New Live Job",
     "New Transcode Job": "New Transcode Job",
-
     "job management": "Job Managment",
     "job status": "Job Status",
     "job delete": "Job Delete"
@@ -71,5 +70,14 @@
     "Last Heartbeat Time": "Last Heartbeat Time",
     "Output Heartbeat": "Output Heartbeat",
     "Total Output Bytes": "Total Output Bytes"
+  },
+  "joblist": {
+    "Restart times": "Restart times",
+    "Last time started": "Last time started",
+    "Stop Job": "Stop Job",
+    "Encoder counts": "Encoder counts",
+    "Average CPU usage": "Average CPU usage",
+    "Memory usage": "Memory usage",
+    "Start Job": "Start Job"
   }
 }
