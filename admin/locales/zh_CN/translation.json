@@ -34,7 +34,13 @@
     "Core per Socket": "每CPU核心数",
     "Socket Count": "CPU个数",
     "CPU MHz": "CPU频率",
-    "Save Network Configure": "存储网络配置"
+    "Save Network Configure": "存储网络配置",
+    "method": "接入方法",
+    "address": "IP地址",
+    "netmask": "子网掩码",
+    "network": "网络",
+    "broadcast": "广播域",
+    "gateway": "网关"
   },
   "newlivejob": {
     "New Live Job": "创建直播编码任务",

@@ -38,7 +38,7 @@
     padding-left: 0px;
 }
 
-.pipeline-stat {
+.pipeline-stat, .network-conf {
     margin-left: 5px;
     margin-right: 5px;
 }

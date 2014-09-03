@@ -97,42 +97,42 @@
                     <div id='gstreamill_status' class="panel panel-primary">
     	                <div class="panel-heading system" data-i18n="system.System Status"></div>
                         <div class="panel-body">
-                                <div class="col-lg-4">
-                                    <label class="pull-right system"  data-i18n="system.CPU Model"></label>
-                                </div>
-                                <div class="col-lg-7">
-                                    <p id="cpumodel"></p>
-                                </div>
-                                <div class="col-lg-4">
-                                    <label class="pull-right system"  data-i18n="system.CPU Count"></label>
-                                </div>
-                                <div class="col-lg-7">
-                                    <p id="cpucount"></p>
-                                </div>
-                                <div class="col-lg-4">
-                                    <label class="pull-right system"  data-i18n="system.Threads per Core"></label>
-                                </div>
-                                <div class="col-lg-7">
-                                    <p id="threadspercore"></p>
-                                </div>
-                                <div class="col-lg-4">
-                                    <label class="pull-right system"  data-i18n="system.Core per Socket"></label>
-                                </div>
-                                <div class="col-lg-7">
-                                    <p id="corepersocket"></p>
-                                </div>
-                                <div class="col-lg-4">
-                                    <label class="pull-right system"  data-i18n="system.Socket Count"></label>
-                                </div>
-                                <div class="col-lg-7">
-                                    <p id="socketscount"></p>
-                                </div>
-                                <div class="col-lg-4">
-                                    <label class="pull-right system"  data-i18n="system.CPU MHz"></label>
-                                </div>
-                                <div class="col-lg-7">
-                                    <p id="cpumhz"></p>
-                                </div>
+                            <div class="col-lg-4">
+                                <label class="pull-right system"  data-i18n="system.CPU Model"></label>
+                            </div>
+                            <div class="col-lg-7">
+                                <p id="cpumodel"></p>
+                            </div>
+                            <div class="col-lg-4">
+                                <label class="pull-right system"  data-i18n="system.CPU Count"></label>
+                            </div>
+                            <div class="col-lg-7">
+                                <p id="cpucount"></p>
+                            </div>
+                            <div class="col-lg-4">
+                                <label class="pull-right system"  data-i18n="system.Threads per Core"></label>
+                            </div>
+                            <div class="col-lg-7">
+                                <p id="threadspercore"></p>
+                            </div>
+                            <div class="col-lg-4">
+                                <label class="pull-right system"  data-i18n="system.Core per Socket"></label>
+                            </div>
+                            <div class="col-lg-7">
+                                <p id="corepersocket"></p>
+                            </div>
+                            <div class="col-lg-4">
+                                <label class="pull-right system"  data-i18n="system.Socket Count"></label>
+                            </div>
+                            <div class="col-lg-7">
+                                <p id="socketscount"></p>
+                            </div>
+                            <div class="col-lg-4">
+                                <label class="pull-right system"  data-i18n="system.CPU MHz"></label>
+                            </div>
+                            <div class="col-lg-7">
+                                <p id="cpumhz"></p>
+                            </div>
                         </div>
                     </div>
     
@@ -150,17 +150,7 @@
                 <div id="network_manage">
                     <div class="panel panel-primary">
                         <div class="panel-heading system" data-i18n="system.Network Configure"></div>
-                        <div class="panel-body">
-                            <div class="row form-group col-lg-12">
-                                <div class="col-lg-4">
-                                    <label class="pull-right system"  data-i18n="system.CPU Model"></label>
-                                </div>
-                                <div class="col-lg-7">
-                                    <input type="text" class="form-control" id="cpumodel">
-                                </div>
-                            </div>
-                            <button class='btn btn-primary pull-right system' id='savenetwork' data-i18n="system.Save Network Configure"></button>
-                        </div>
+                        <div class="panel-body" id="network_manage_content"></div>
                     </div>
                 </div>
 
@@ -217,12 +207,63 @@
         });
     }
 
+    function append_conf_item (body, key, value) {
+        var ele = document.createElement ("div"),
+            key_ele = document.createElement ("div"),
+            value_ele = document.createElement ("div");
+        ele.setAttribute ("class", "row form-group col-lg-12");
+        key_ele.setAttribute ("class", "col-lg-4");
+        key_ele.innerHTML = "<label class=\"pull-right system\" data-i18n=\"system." + key + "\"></label>";
+        value_ele.setAttribute ("class", "col-lg-7");
+        value_ele.innerHTML = "<input type=\"text\" class=\"form-control\" id=\"" + key + "\" value=\"" + value + "\">";
+        ele.appendChild (key_ele);
+        ele.appendChild (value_ele);
+        body.appendChild (ele);
+    }
+
     function network () {
         show_query_hint ("query_hint");
         $('#system_manage').hide ();
         $('#gstreamill_manage').hide ();
         $.get("/admin/networkinterfaces", function (data) {
             hidden_query_hint ("query_hint");
+            for (var i = 0; i < data.length; i++) {
+                var interface = data[i],
+                    interface_title = document.createElement ("h3"),
+                    interface_conf = document.createElement ("div");
+
+                interface_title.innerHTML = interface.name;
+                interface_conf.setAttribute ("class", "well row network-conf");
+
+                for (key in interface) {
+                    if (key === "name" || key === "family" || key === "dns-nameservers")
+                        continue;
+                    append_conf_item (interface_conf, key, interface[key]);
+                }
+
+                $('#network_manage_content').append (interface_title);
+                $('#network_manage_content').append (interface_conf);
+            }
+
+            var save_button = document.createElement ("button");
+            save_button.setAttribute ("class", "btn btn-primary pull-right system");
+            save_button.setAttribute ("id", "savenetwork");
+            save_button.setAttribute ("data-i18n", "system.Save Network Configure");
+            $('#network_manage_content').append (save_button);
+
+            $('#savenetwork').unbind ('click').click (function () {
+                show_query_hint ("query_hint");
+                var value = editor.getValue ();
+                $.post ("setnetworkinterfaces", JSON.stringify (value, null, 4), function (data) {
+                    if (data.result == 'success') {
+                        alert (data.result);
+                    } else {
+                        alert (data.result + '\n' + data.reason);
+                    }
+                });
+            });
+
+            $(".system").i18n ();
             $('#network_manage').show ();
         });
     }
@@ -249,18 +290,6 @@
                     if (data.result == 'success') {
                         alert (data.result);
                         location.reload (true);
-                    } else {
-                        alert (data.result + '\n' + data.reason);
-                    }
-                });
-            });
-
-            $('#savenetwork').click (function () {
-                show_query_hint ("query_hint");
-                var value = editor.getValue ();
-                $.post ("setnetworkinterfaces", JSON.stringify (value, null, 4), function (data) {
-                    if (data.result == 'success') {
-                        alert (data.result);
                     } else {
                         alert (data.result + '\n' + data.reason);
                     }

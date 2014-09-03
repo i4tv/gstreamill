@@ -34,7 +34,13 @@
     "Core per Socket": "Core per Socket",
     "Socket Count": "Socket Count",
     "CPU MHz": "CPU MHz",
-    "Save Network Configure": "Save Network Configure"
+    "Save Network Configure": "Save Network Configure",
+    "method": "Method",
+    "address": "Address",
+    "netmask": "Netmask",
+    "network": "Network",
+    "broadcast": "Broadcast",
+    "gateway": "Gateway"
   },
   "newlivejob": {
     "New Live Job": "New Live Job",
