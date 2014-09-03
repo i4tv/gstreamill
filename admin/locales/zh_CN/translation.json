@@ -41,6 +41,9 @@
     "broadcast": "广播域",
     "gateway": "网关"
   },
+  "newtranscodejob": {
+    "Select media files": "选择媒体文件"
+  },
   "newlivejob": {
     "New Live Job": "创建直播编码任务",
     "Job Name": "任务名称",

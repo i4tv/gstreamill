@@ -51,6 +51,9 @@
     "Check for UDP output": "Check for UDP output",
     "Check for M3u8 output": "Check for M3u8 output"
   },
+  "newtranscodejob": {
+    "Select media files": "Select media files"
+  },
   "jobmanage": {
     "Danger Zone": "Danger Zone",
     "Remove this Job": "Remove this Job",

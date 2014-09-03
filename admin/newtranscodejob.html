@@ -2,7 +2,7 @@
     <div class="container-fluid">
         <div class="row newlivejob">
             <div class="panel panel-primary">
-                <div class="panel-heading">Select media files</div>
+                <div class="panel-heading newtranscodejob" data-i18n="newtranscodejob.Select media files"></div>
                 <div class="panel-body">
                     <input type="file" id="files" name="files[]" multiple />
                     <output id="list"></output>
@@ -133,12 +133,13 @@
                 });
             });
 
-        $.i18n.init({
-            lng: Document.GstreamillConf.language[Document.GstreamillConf.conf.language]
-        }, function(t) {
-            $(".nav").i18n();
-            var appName = t("app.name");
-        });
+            $.i18n.init({
+                lng: Document.GstreamillConf.language[Document.GstreamillConf.conf.language]
+            }, function(t) {
+                $(".nav").i18n ();
+                $(".newtranscodejob").i18n ();
+            });
+
         });
     });
 
