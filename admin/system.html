@@ -207,7 +207,7 @@
         });
     }
 
-    function append_conf_item (body, key, value) {
+    function append_conf_item (body, name, key, value) {
         var ele = document.createElement ("div"),
             key_ele = document.createElement ("div"),
             value_ele = document.createElement ("div");
@@ -215,7 +215,7 @@
         key_ele.setAttribute ("class", "col-lg-4");
         key_ele.innerHTML = "<label class=\"pull-right system\" data-i18n=\"system." + key + "\"></label>";
         value_ele.setAttribute ("class", "col-lg-7");
-        value_ele.innerHTML = "<input type=\"text\" class=\"form-control\" id=\"" + key + "\" value=\"" + value + "\">";
+        value_ele.innerHTML = "<input type=\"text\" class=\"form-control\" id=\"" + name + "-" + key + "\" value=\"" + value + "\">";
         ele.appendChild (key_ele);
         ele.appendChild (value_ele);
         body.appendChild (ele);
@@ -227,6 +227,7 @@
         $('#gstreamill_manage').hide ();
         $.get("/admin/networkinterfaces", function (data) {
             hidden_query_hint ("query_hint");
+            $("#network_manage_content").html ("");
             for (var i = 0; i < data.length; i++) {
                 var interface = data[i],
                     interface_title = document.createElement ("h3"),
@@ -238,7 +239,7 @@
                 for (key in interface) {
                     if (key === "name" || key === "family" || key === "dns-nameservers")
                         continue;
-                    append_conf_item (interface_conf, key, interface[key]);
+                    append_conf_item (interface_conf, interface.name, key, interface[key]);
                 }
 
                 $('#network_manage_content').append (interface_title);
@@ -253,12 +254,34 @@
 
             $('#savenetwork').unbind ('click').click (function () {
                 show_query_hint ("query_hint");
-                var value = editor.getValue ();
-                $.post ("setnetworkinterfaces", JSON.stringify (value, null, 4), function (data) {
-                    if (data.result == 'success') {
-                        alert (data.result);
+
+                /* update data */
+                var dirty = false;
+                for (var i = 0; i < data.length; i++) {
+                    var interface = data[i];
+                    for (key in interface) {
+                        if (key === "name" || key === "family" || key === "dns-nameservers")
+                            continue;
+                        var id = "#" + interface.name + "-" + key;
+                        if ($(id).val () === interface[key])
+                            continue;
+                        dirty = true;
+                        data[i][key] = $(id).val ();
+                    }
+                }
+                /* network changed? */
+                if (!dirty) {
+                    hidden_query_hint ("query_hint");
+                    alert ("no change");
+                    return;
+                }
+
+                $.post ("setnetworkinterfaces", JSON.stringify (data, null, 4), function (response) {
+                    hidden_query_hint ("query_hint");
+                    if (response.result == 'success') {
+                        alert (response.result);
                     } else {
-                        alert (data.result + '\n' + data.reason);
+                        alert (response.result + '\n' + response.reason);
                     }
                 });
             });
