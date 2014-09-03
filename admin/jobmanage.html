@@ -14,7 +14,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#" id="rm_job">
+                        <a href="#" id="remove_job">
                             <span class="glyphicon glyphicon-trash"></span> <span data-i18n="nav.job delete"></span>
                         </a>
                     </li>
@@ -22,7 +22,7 @@
             </div>
             <div class='col-lg-9 main-content'>
                 <div id='jobstatus_content'></div>
-                <div id='manage_danger_zone' class="panel panel-danger">
+                <div id='removejob_content' class="panel panel-danger">
                     <div class="panel-heading jobmanage" data-i18n="jobmanage.Danger Zone"></div>
                     <div class="panel-body">
                         <h4 class="jobmanage" data-i18n="jobmanage.Remove this Job"></h4></br>
@@ -30,7 +30,7 @@
                         <button class='btn btn-danger pull-right jobmanage' id='removejob' data-i18n="jobmanage.Remove Job"></button>
                     </div>
                 </div>
-                <div id='main_content'></div>
+                <div id='jobconf_content'></div>
                 <button class='btn btn-primary' id='putjob'>Save Job</button>
             </div>
             <div id='job_editor_holder' style="display: none;"></div>
@@ -49,9 +49,9 @@
                 return;
             }
 
-            $('#manage_danger_zone').hide ();
+            $('#removejob_content').hide ();
             $("#jobstatus_content").hide ();
-            $('#main_content').show ();
+            $('#jobconf_content').show ();
             var schemaName = data.data.type;
             var job_element = document.getElementById ('job_editor_holder');
             job_element.innerHTML = "";
@@ -66,7 +66,7 @@
             job_editor.on ('ready', function () {
 
                 job_editor.setValue (data.data);
-                var conf_element = document.getElementById ('main_content');
+                var conf_element = document.getElementById ('jobconf_content');
                 conf_element.innerHTML = "";
                 var conf_editor = new JSONEditor (conf_element, {
                     schema: {
@@ -147,7 +147,7 @@
                         }
                         conf_editor.setValue (conf_value);
 
-                        $('#rm_job').attr ('href', "javascript:rm_job (\"" + data.data.name + "\")");
+                        $('#remove_job').attr ('href', "javascript:remove_job (\"" + data.data.name + "\")");
                         $('#job_status').attr ('href', "javascript:status (\"" + data.data.name + "\")");
 
                         /* set putjob click event after encoder_conf ready */
@@ -218,8 +218,8 @@
             }
 
             $('#putjob').hide ();
-            $('#manage_danger_zone').hide ();
-            $('#main_content').hide ();
+            $('#removejob_content').hide ();
+            $('#jobconf_content').hide ();
             $("#jobstatus_content").show ();
 
             var job_stat_element = document.createElement ("div"),
@@ -312,15 +312,19 @@
         });
     }
 
-    function rm_job (name) {
-        $('#main_content').hide ();
+    function remove_job (name) {
+        $('#jobconf_content').hide ();
         $('#putjob').hide ();
         $("#jobstatus_content").hide ();
-        $('#manage_danger_zone').show ();
-        $('#removejob').unbind ('click');
-        $('#removejob').click (function () {
-            $.get("rmjob/" + name, function (data) {
-                alert (data.result);
+        $('#removejob_content').show ();
+        $('#removejob').unbind ('click').click (function () {
+            $.get("rmjob/" + name, function (response) {
+                if (response.result === "success") {
+                    alert (response.result);
+                    window.location.replace("joblist.html");
+                } else {
+                    alert (response.result + "\nreason: " + response.reason);
+                }
             });
         });
     }
