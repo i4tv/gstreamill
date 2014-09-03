@@ -50,6 +50,7 @@
             }
 
             $('#manage_danger_zone').hide ();
+            $("#jobstatus_content").hide ();
             $('#main_content').show ();
             var schemaName = data.data.type;
             var job_element = document.getElementById ('job_editor_holder');
@@ -210,14 +211,16 @@
 
     function status (name) {
         $.get("/stat/gstreamill/job/" + name, function (data) {
-            $('#putjob').hide ();
-            $('#manage_danger_zone').hide ();
-            $('#main_content').show ();
 
             if (data.result === 'failure') {
                 alert (name + "'s stat not found.");
                 return;
             }
+
+            $('#putjob').hide ();
+            $('#manage_danger_zone').hide ();
+            $('#main_content').hide ();
+            $("#jobstatus_content").show ();
 
             var job_stat_element = document.createElement ("div"),
                 job_stat_header = document.createElement ("div"),
@@ -312,6 +315,7 @@
     function rm_job (name) {
         $('#main_content').hide ();
         $('#putjob').hide ();
+        $("#jobstatus_content").hide ();
         $('#manage_danger_zone').show ();
         $('#removejob').unbind ('click');
         $('#removejob').click (function () {
