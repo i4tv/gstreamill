@@ -57,6 +57,8 @@
     "Current Concurrent Count": "当前播放并发数",
     "Average CPU Usage": "平均CPU使用",
     "Current CPU Usage": "当前CPU使用",
-    "Memory Usage": "内存使用"
+    "Memory Usage": "内存使用",
+    "Sync Error Times": "同步错误次数",
+    "Streams Count": "流个数"
   }
 }

@@ -225,12 +225,13 @@
 
             job_stat_element.setAttribute ("class", "panel panel-primary");
             job_stat_element.setAttribute ("id", "jobstatus");
-
             job_stat_header.setAttribute ("class", "panel-heading jobmanage");
             job_stat_header.setAttribute ("data-i18n", "jobmanage.Job Status");
             job_stat_element.appendChild (job_stat_header);
+
             job_stat_body.setAttribute ("class", "panel-body");
 
+            /* job status */
             append_item (job_stat_body, "Restart Times", data.data.age);
             append_item (job_stat_body, "Last Restart Time", data.data.last_start_time);
             append_item (job_stat_body, "Current Concurrent Count", data.data.current_access);
@@ -238,11 +239,19 @@
             append_item (job_stat_body, "Current CPU Usage", data.data.cpu_current);
             append_item (job_stat_body, "Memory Usage", data.data.memory);
 
-            job_stat_element.appendChild (job_stat_body);
+            /* source status */
+            var source_title = document.createElement ("h3"),
+                source_stat = document.createElement ("div");
+            source_title.innerHTML = "Source Status";
+            source_stat.setAttribute ("class", "well row pipeline-stat");
+            append_item (source_stat, "Sync Error Times", data.data.source.sync_error_times);
+            append_item (source_stat, "Streams Count", data.data.source.stream_count);
+            job_stat_body.appendChild (source_title);
+            job_stat_body.appendChild (source_stat);
 
+            job_stat_element.appendChild (job_stat_body);
             $("#jobstatus_content").html (job_stat_element);
             $(".jobmanage").i18n ();
-
 
             var conf_element = document.getElementById ('main_content');
             conf_element.innerHTML = "";

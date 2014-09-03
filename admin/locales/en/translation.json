@@ -57,6 +57,8 @@
     "Current Concurrent Count": "Current Concurrent Count",
     "Average CPU Usage": "Average CPU Usage",
     "Current CPU Usage": "Current CPU Usage",
-    "Memory Usage": "Memory Usage"
+    "Memory Usage": "Memory Usage",
+    "Sync Error Times": "Sync Error Times",
+    "Streams Count": "Streams Count"
   }
 }

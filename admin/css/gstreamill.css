@@ -38,6 +38,11 @@
     padding-left: 0px;
 }
 
+.pipeline-stat {
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
 #joblist li {
     margin: 10px 0px 0px 0px;
     padding: 0px 0px 10px 0px;
