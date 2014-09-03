@@ -198,17 +198,14 @@
     }
 
     function append_item (body, key, value) {
-        var item_ele = document.createElement ("div"),
-            key_ele = document.createElement ("div"),
+        var key_ele = document.createElement ("div"),
             value_ele = document.createElement ("div");
-        item_ele.setAttribute ("class", "row form-group col-lg-12");
         key_ele.setAttribute ("class", "col-lg-4");
         key_ele.innerHTML = "<label class=\"pull-right system jobmanage\" data-i18n=\"jobmanage." + key + "\"></label>";
         value_ele.setAttribute ("class", "col-lg-7");
-        value_ele.innerHTML = "<input type=\"text\" class=\"form-control\" value=\"" + value + "\">";
-        item_ele.appendChild (key_ele);
-        item_ele.appendChild (value_ele);
-        body.appendChild (item_ele);
+        value_ele.innerHTML = "<p>" + value + "</p>";
+        body.appendChild (key_ele);
+        body.appendChild (value_ele);
     }
 
     function status (name) {

@@ -30,46 +30,36 @@
                     <div class="panel panel-primary">
     	                <div class="panel-heading system" data-i18n="system.Gstreamill Status"></div>
                         <div class="panel-body">
-                            <div class="row form-group col-lg-12">
                                 <div class="col-lg-4">
                                     <label class="pull-right system"  data-i18n="system.Gstreamill Version"></label>
                                 </div>
                                 <div class="col-lg-7">
-                                    <input type="text" class="form-control" id="gstreamillversion">
+                                    <p id="gstreamillversion"></p>
                                 </div>
-                            </div>
-                            <div class="row form-group col-md-12">
                                 <div class="col-lg-4">
                                     <label class="pull-right system"  data-i18n="system.Compile Date"></label>
                                 </div>
                                 <div class="col-lg-7">
-                                    <input type="text" class="form-control" id="compiledate">
+                                    <p id="compiledate"></p>
                                 </div>
-                            </div>
-                            <div class="row form-group col-md-12">
                                 <div class="col-lg-4">
                                     <label class="pull-right system"  data-i18n="system.Compile Time"></label>
                                 </div>
                                 <div class="col-lg-7">
-                                    <input type="text" class="form-control" id="compiletime">
+                                    <p id="compiletime"></p>
                                 </div>
-                            </div>
-                            <div class="row form-group col-md-12">
                                 <div class="col-lg-4">
                                     <label class="pull-right system"  data-i18n="system.Start Time"></label>
                                 </div>
                                 <div class="col-lg-7">
-                                    <input type="text" class="form-control" id="starttime">
+                                    <p id="starttime"></p>
                                 </div>
-                            </div>
-                            <div class="row form-group col-md-12">
                                 <div class="col-lg-4">
                                     <label class="pull-right system"  data-i18n="system.Jobs Count"></label>
                                 </div>
                                 <div class="col-lg-7">
-                                    <input type="text" class="form-control" id="jobscount">
+                                    <p id="jobscount"></p>
                                 </div>
-                            </div>
                         </div>
                     </div>
     
@@ -107,54 +97,42 @@
                     <div id='gstreamill_status' class="panel panel-primary">
     	                <div class="panel-heading system" data-i18n="system.System Status"></div>
                         <div class="panel-body">
-                            <div class="row form-group col-lg-12">
                                 <div class="col-lg-4">
                                     <label class="pull-right system"  data-i18n="system.CPU Model"></label>
                                 </div>
                                 <div class="col-lg-7">
-                                    <input type="text" class="form-control" id="cpumodel">
+                                    <p id="cpumodel"></p>
                                 </div>
-                            </div>
-                            <div class="row form-group col-lg-12">
                                 <div class="col-lg-4">
                                     <label class="pull-right system"  data-i18n="system.CPU Count"></label>
                                 </div>
                                 <div class="col-lg-7">
-                                    <input type="text" class="form-control" id="cpucount">
+                                    <p id="cpucount"></p>
                                 </div>
-                            </div>
-                            <div class="row form-group col-lg-12">
                                 <div class="col-lg-4">
                                     <label class="pull-right system"  data-i18n="system.Threads per Core"></label>
                                 </div>
                                 <div class="col-lg-7">
-                                    <input type="text" class="form-control" id="threadspercore">
+                                    <p id="threadspercore"></p>
                                 </div>
-                            </div>
-                            <div class="row form-group col-lg-12">
                                 <div class="col-lg-4">
                                     <label class="pull-right system"  data-i18n="system.Core per Socket"></label>
                                 </div>
                                 <div class="col-lg-7">
-                                    <input type="text" class="form-control" id="corepersocket">
+                                    <p id="corepersocket"></p>
                                 </div>
-                            </div>
-                            <div class="row form-group col-lg-12">
                                 <div class="col-lg-4">
                                     <label class="pull-right system"  data-i18n="system.Socket Count"></label>
                                 </div>
                                 <div class="col-lg-7">
-                                    <input type="text" class="form-control" id="socketscount">
+                                    <p id="socketscount"></p>
                                 </div>
-                            </div>
-                            <div class="row form-group col-lg-12">
                                 <div class="col-lg-4">
                                     <label class="pull-right system"  data-i18n="system.CPU MHz"></label>
                                 </div>
                                 <div class="col-lg-7">
-                                    <input type="text" class="form-control" id="cpumhz">
+                                    <p id="cpumhz"></p>
                                 </div>
-                            </div>
                         </div>
                     </div>
     
@@ -208,12 +186,12 @@
         $('#gstreamill_manage').hide ();
         $('#network_manage').hide ();
         $.get("/stat/system", function (data) {
-            $("#cpumodel").val (data.CPU_Model);
-            $("#cpucount").val (data.CPU_Count);
-            $("#threadspercore").val (data.Threads_per_Core);
-            $("#corepersocket").val (data.Core_per_Socket);
-            $("#socketscount").val (data.Sockets_Count);
-            $("#cpumhz").val (data.CPU_MHz);
+            $("#cpumodel").html (data.CPU_Model);
+            $("#cpucount").html (data.CPU_Count);
+            $("#threadspercore").html (data.Threads_per_Core);
+            $("#corepersocket").html (data.Core_per_Socket);
+            $("#socketscount").html (data.Sockets_Count);
+            $("#cpumhz").html (data.CPU_MHz);
             hidden_query_hint ("query_hint");
             $('#system_manage').show ();
         });
@@ -224,11 +202,11 @@
         $('#system_manage').hide ();
         $('#network_manage').hide ();
         $.get("/stat/gstreamill", function (data) {
-            $("#gstreamillversion").val (data.version);
-            $("#compiledate").val (data.builddate);
-            $("#compiletime").val (data.buildtime);
-            $("#starttime").val (data.starttime);
-            $("#jobscount").val (data.jobcount);
+            $("#gstreamillversion").html (data.version);
+            $("#compiledate").html (data.builddate);
+            $("#compiletime").html (data.buildtime);
+            $("#starttime").html (data.starttime);
+            $("#jobscount").html (data.jobcount);
             hidden_query_hint ("query_hint");
         });
 
