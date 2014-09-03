@@ -240,7 +240,7 @@
             append_item (job_stat_body, "Memory Usage", data.data.memory);
 
             /* source status */
-            var source_title = document.createElement ("h3");
+            var source_title = document.createElement ("h3"),
                 source_stat = document.createElement ("div");
             source_title.innerHTML = "Source";
             source_stat.setAttribute ("class", "well row pipeline-stat");
@@ -269,33 +269,43 @@
             job_stat_body.appendChild (source_title);
             job_stat_body.appendChild (source_stat);
 
+            /* encoders status */
+            for (var i = 0; i < data.data.encoders.length; i++) {
+                var encoder_title = document.createElement ("h3"),
+                    encoder_stat = document.createElement ("div"),
+                    encoder = data.data.encoders[i];
+                encoder_title.innerHTML = encoder.name;
+                encoder_stat.setAttribute ("class", "well row pipeline-stat");
+                var streams_table = "<span class=\"jobmanage\" data-i18n=\"jobmanage.Output Heartbeat\"></span>: " +
+                                    encoder.heartbeat +
+                                    "; <span class=\"jobmanage\" data-i18n=\"jobmanage.Total Output Bytes\"></span>: " +
+                                    encoder.count +
+                                    "; <span class=\"jobmanage\" data-i18n=\"jobmanage.Streams Count\"></span>: " +
+                                    encoder.streamcount +
+                                    "<table class=\"table\">" +
+                                    "<tr>" +
+                                    "<th class=\"jobmanage\" data-i18n=\"jobmanage.Name\"></th>" +
+                                    "<th class=\"jobmanage\" data-i18n=\"jobmanage.Last Time Stamps\"></th>" +
+                                    "<th class=\"jobmanage\" data-i18n=\"jobmanage.Last Heartbeat Time\"></th>" +
+                                    "</tr>";
+                for (var j = 0; j < encoder.streams.length; j++) {
+                    var stream = encoder.streams[j];
+                    var tr = "<tr>" +
+                             "<td>" + stream.name + "</td>" +
+                             "<td>" + stream.timestamp + "</td>" +
+                             "<td>" + stream.heartbeat + "</td>" +
+                             "</tr>";
+                    streams_table += tr;
+                }
+                encoder_stat.innerHTML = streams_table;
+
+                job_stat_body.appendChild (encoder_title);
+                job_stat_body.appendChild (encoder_stat);
+            }
+
             job_stat_element.appendChild (job_stat_body);
             $("#jobstatus_content").html (job_stat_element);
             $(".jobmanage").i18n ();
-
-            var conf_element = document.getElementById ('main_content');
-            conf_element.innerHTML = "";
-            var conf_editor = new JSONEditor (conf_element, {
-                schema: {
-                    $ref: "schemas/jobstat_" + Document.GstreamillConf.language[Document.GstreamillConf.conf.language] + ".schema"
-                },
-                ajax: true,
-                disable_collapse: true,
-                disable_edit_json: true,
-                disable_properties: true,
-                disable_array_add: true,
-                disable_array_delete: true,
-                disable_array_reorder: true,
-                theme: 'bootstrap3',
-                iconlib: 'bootstrap3',
-                template: 'hogan'
-            });
-
-            conf_editor.on ('ready', function () {
-                conf_editor.setValue (data.data);
-                conf_editor.disable ();
-            });
-
         });
     }
 

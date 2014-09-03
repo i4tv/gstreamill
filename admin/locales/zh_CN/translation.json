@@ -62,6 +62,8 @@
     "Streams Count": "流个数",
     "Name": "名字",
     "Last Time Stamps": "时间戳",
-    "Last Heartbeat Time": "心跳时间"
+    "Last Heartbeat Time": "心跳时间",
+    "Output Heartbeat": "输出心跳",
+    "Total Output Bytes": "输出字节数"
   }
 }

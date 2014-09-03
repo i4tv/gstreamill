@@ -62,6 +62,8 @@
     "Streams Count": "Streams Count",
     "Name": "Name",
     "Last Time Stamps": "Last Time Stamps",
-    "Last Heartbeat Time": "Last Heartbeat Time"
+    "Last Heartbeat Time": "Last Heartbeat Time",
+    "Output Heartbeat": "Output Heartbeat",
+    "Total Output Bytes": "Total Output Bytes"
   }
 }
