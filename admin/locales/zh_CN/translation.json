@@ -59,6 +59,9 @@
     "Current CPU Usage": "当前CPU使用",
     "Memory Usage": "内存使用",
     "Sync Error Times": "同步错误次数",
-    "Streams Count": "流个数"
+    "Streams Count": "流个数",
+    "Name": "名字",
+    "Last Time Stamps": "时间戳",
+    "Last Heartbeat Time": "心跳时间"
   }
 }

@@ -59,6 +59,9 @@
     "Current CPU Usage": "Current CPU Usage",
     "Memory Usage": "Memory Usage",
     "Sync Error Times": "Sync Error Times",
-    "Streams Count": "Streams Count"
+    "Streams Count": "Streams Count",
+    "Name": "Name",
+    "Last Time Stamps": "Last Time Stamps",
+    "Last Heartbeat Time": "Last Heartbeat Time"
   }
 }
