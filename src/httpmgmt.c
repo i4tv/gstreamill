@@ -344,7 +344,20 @@ static gchar * set_network_interfaces (RequestData *request_data)
         aug_load (aug);
         interfaces = request_data->raw_request + request_data->header_size;
         val = json_parse_string (interfaces);
+        if (val == NULL) {
+                GST_ERROR ("parse json type interfaces failure");
+                result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid data\"\n}");
+                aug_close (aug);
+                return result;
+        }
         array = json_value_get_array (val);
+        if (array == NULL) {
+                GST_ERROR ("get interfaces array failure");
+                result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"not array type interfaces\"\n}");
+                aug_close (aug);
+                json_value_free (val);
+                return result;
+        }
         if_count = json_array_get_count (array);
         for (i = 0; i < if_count; i++) {
                 obj = json_array_get_object (array, i);
@@ -394,8 +407,8 @@ static gchar * set_network_interfaces (RequestData *request_data)
         } else {
                 result = g_strdup ("{\n    \"result\": \"success\"\n}");
         }
-        aug_close (aug);
         json_value_free (val);
+        aug_close (aug);
 
         return result;
 }
