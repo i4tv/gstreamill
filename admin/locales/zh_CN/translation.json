@@ -81,6 +81,7 @@
     "Encoder counts": "编码数",
     "Average CPU usage": "平均CPU使用",
     "Memory usage": "内存使用",
-    "Start Job": "启动任务"
+    "Start Job": "启动任务",
+    "The job is not started": "任务未启动"
   }
 }
