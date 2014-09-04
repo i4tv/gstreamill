@@ -52,7 +52,16 @@
     "Check for M3u8 output": "Check for M3u8 output"
   },
   "newtranscodejob": {
-    "Select media files": "Select media files"
+    "Add Encoder Output": "Add Encoder Output",
+    "New Transcode Job": "New Transcode Job",
+    "Select Encoder Output": "Select Encoder Output",
+    "Select Encoder Output Type": "Select Encoder Output Type",
+    "Phone": "Phone",
+    "Pad": "Pad",
+    "TV": "TV",
+    "HDTV": "HDTV",
+    "Cancel": "Cancel",
+    "OK": "OK"
   },
   "jobmanage": {
     "Danger Zone": "Danger Zone",

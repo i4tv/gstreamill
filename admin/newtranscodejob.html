@@ -1,32 +1,91 @@
+    <!-- Modal -->
+    <div class="modal fade" id="addencoder" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span aria-hidden="true">&times;</span>
+                        <span class="sr-only">Close</span>
+                    </button>
+                    <h4 class="modal-title newtranscodejob" id="myModalLabel" data-i18n="newtranscodejob.Select Encoder Output"></h4>
+                </div>
+                <div class="modal-body">
+                    <label class="newtranscodejob" data-i18n="newtranscodejob.Select Encoder Output Type"></label></br>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" id="phone" value="phone">
+                            <span class="newtranscodejob" data-i18n="newtranscodejob.Phone"></span>
+                        </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" id="pad" value="pad">
+                            <span class="newtranscodejob" data-i18n="newtranscodejob.Pad"></span>
+                        </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" id="tv" name="tv" value="TV">
+                            <span class="newtranscodejob" data-i18n="newtranscodejob.TV"></span>
+                        </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" id="hdtv" name="hdtv" value="HDTV">
+                            <span class="newtranscodejob" data-i18n="newtranscodejob.HDTV"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default newtranscodejob" data-dismiss="modal" data-i18n="newtranscodejob.Cancel"></button>
+                    <button type="button" class="btn btn-primary newtranscodejob" id="addencoder-ok-btn" data-i18n="newtranscodejob.OK"></button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="container-fluid">
         <div class="row newlivejob">
             <div class="panel panel-primary">
-                <div class="panel-heading newtranscodejob" data-i18n="newtranscodejob.Select media files"></div>
-                <div class="panel-body">
+                <div class="panel-heading newtranscodejob" data-i18n="newtranscodejob.New Transcode Job"></div>
+                <div class="panel-body" id="newtranscodejob_content">
                     <input type="file" id="files" name="files[]" multiple />
-                    <output id="list"></output>
+                    <output id="list"></output></br>
+                    <!-- Button trigger modal -->
+                    <button class="btn btn-default newtranscodejob" data-toggle="modal" data-target="#addencoder" data-i18n="newtranscodejob.Add Encoder Output"></button></br>
+                    <button class='btn btn-primary pull-right newtranscodejob' id='createjob' data-i18n='newtranscodejob.New Transcode Job'></button>
                 </div>
             </div>
             <div id='new_transcode_job_holder'></div>
             <div id='transcode_job_holder' style="display: none;"></div>
             <div id='encoder_editor_holder' style="display: none;"></div>
-            <button class='btn btn-primary' id='createjob'>Create Transcode Job</button>
         </div>
     </div>
-
+<input type='checkbox' id='ididid'> ok
 
     <script type="text/javascript">
 
     $ (document).ready (function () {
         /* load configure */
-        $.get("/admin/getconf", function (data) {
+        $.get ("/admin/getconf", function (data) {
             if (data.result == "success") {
                 Document.GstreamillConf.conf = data.data;
             } else {
                 alert ("get configure failure: " + data.reason);
                 return;
             }
+
+            var encoders = [];
+            $('#addencoder-ok-btn').click (function () {
+                    alert($('#phone'));
+                if ($('#phone').attr ("checked") === true) {
+                    alert ("udp");
+                }
+                if ($('#pad').attr ("checked") === true) {
+                    alert ("pad");
+                }
+                $('#addencoder').modal('hide');
+            });
 
             var element = document.getElementById ('new_transcode_job_holder');
             var conf_editor = new JSONEditor (element, {
@@ -61,7 +120,7 @@
                     }
                     document.getElementById('list').innerHTML = '<ul>' + output.join('') + '</ul>';
                 });
-
+/*
                 $("#createjob").click (function () {
                     var conf_value = conf_editor.getValue ();
                     var transcode_element = document.getElementById ('transcode_job_holder');
@@ -103,11 +162,11 @@
                                             editor.setValue (encoder_conf_value[i][key]);
     
                                         } else {
-                                            /*
+                                            ///
                                               elements.videoscale.caps&(\\d+)\\*(\\d+)&video/x-raw,width=$1,height=$2
                                               "&" seperated parameters, means as follow
                                               "elements.videoscale.caps".replace(/(\d+)\*(\d+)/, "video/x-raw,width=$1,height=$2")
-                                             */
+                                             ///
                                              var re = new RegExp (subkeys[1], 'g');
                                              var value = encoder_conf_value[i][key].replace (re, subkeys[2]);
                                              var editor = encoder_editor.getEditor ("root." + subkeys[0]);
@@ -131,6 +190,7 @@
                         });
                     });
                 });
+                */
             });
 
             $.i18n.init({
