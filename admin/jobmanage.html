@@ -42,7 +42,7 @@
     <script type="text/javascript">
 
     function setting () {
-        var posting = $.get("getjob/%s", function (data) {
+        $.get ("getjob/%s", function (data) {
 
             if (data.result == "failure") {
                 alert (data.reason);
