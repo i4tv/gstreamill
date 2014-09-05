@@ -282,7 +282,7 @@ static gchar * gen_http_header (gchar *path, gsize body_size)
         } else if (g_str_has_suffix (path, ".css")) {
                 header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/css", body_size, NO_CACHE, "");
 
-        } else if (g_str_has_suffix (path, ".js")) {
+        } else if (g_str_has_suffix (path, ".js") || g_str_has_suffix (path, ".json")) {
                 header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/x-javascript", body_size, NO_CACHE, "");
 
         } else if (g_str_has_suffix (path, ".ttf")) {
