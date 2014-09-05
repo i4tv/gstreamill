@@ -38,18 +38,10 @@ adminimg_DATA = \
 
 adminschemasdir = $(datadir)/gstreamill/admin/schemas
 adminschemas_DATA = \
-        schemas/v4l2src.schema \
-        schemas/v4l2src_en.conf \
-        schemas/v4l2src_zh_CN.conf \
-        schemas/networksrc.schema \
-        schemas/networksrc_en.conf \
-        schemas/networksrc_zh_CN.conf \
-        schemas/testsrc.schema \
-        schemas/testsrc_en.conf \
-        schemas/testsrc_zh_CN.conf \
         schemas/encoder.schema \
-        schemas/encoder_en.conf \
-        schemas/encoder_zh_CN.conf \
+        schemas/testsrc.schema \
+        schemas/v4l2src.schema \
+        schemas/networksrc.schema \
         schemas/transcode_src_mpegts_mpeg2_mp123.json \
         schemas/transcode_encoder_phone_mp4.json \
         schemas/transcode_encoder_pad_mp4.json \

@@ -63,10 +63,11 @@
     "Check for M3u8 output": "选中以支持M3U8输出"
   },
   "jobmanage": {
-    "Danger Zone": "危险区",
-    "Remove this Job": "移除这个任务",
-    "Realy remove this Job? can't be restore!": "真的要移除任务？ 移除后无法恢复！",
-    "Remove Job": "移除任务",
+    "Job Setting": "任务设置",
+    "Save Job": "存储任务",
+    "Video Source Resolution": "视频源分辨率",
+    "Video Resolution": "视频分辨率",
+    "Video Bitrate": "视频码率",
     "Job Status": "Job状态",
     "Restart Times": "重新启动次数",
     "Last Restart Time": "最后一次启动时间",
@@ -80,7 +81,11 @@
     "Last Time Stamps": "时间戳",
     "Last Heartbeat Time": "心跳时间",
     "Output Heartbeat": "输出心跳",
-    "Total Output Bytes": "输出字节数"
+    "Total Output Bytes": "输出字节数",
+    "Danger Zone": "危险区",
+    "Remove this Job": "移除这个任务",
+    "Realy remove this Job? can't be restore!": "真的要移除任务？ 移除后无法恢复！",
+    "Remove Job": "移除任务"
   },
   "joblist": {
     "Restart times": "重新启动次数",

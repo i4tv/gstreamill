@@ -63,10 +63,11 @@
     "OK": "OK"
   },
   "jobmanage": {
-    "Danger Zone": "Danger Zone",
-    "Remove this Job": "Remove this Job",
-    "Realy remove this Job? can't be restore!": "Realy remove this Job? can't be restore!",
-    "Remove Job": "Remove Job",
+    "Job Setting": "Job Setting",
+    "Save Job": "Save Job",
+    "Video Source Resolution": "Video Source Resolution",
+    "Video Resolution": "Video Resolution",
+    "Video Bitrate": "Video Bitrate",
     "Job Status": "Job Status",
     "Restart Times": "Restart Times",
     "Last Restart Time": "Last Restart Time",
@@ -80,7 +81,11 @@
     "Last Time Stamps": "Last Time Stamps",
     "Last Heartbeat Time": "Last Heartbeat Time",
     "Output Heartbeat": "Output Heartbeat",
-    "Total Output Bytes": "Total Output Bytes"
+    "Total Output Bytes": "Total Output Bytes",
+    "Danger Zone": "Danger Zone",
+    "Remove this Job": "Remove this Job",
+    "Realy remove this Job? can't be restore!": "Realy remove this Job? can't be restore!",
+    "Remove Job": "Remove Job"
   },
   "joblist": {
     "Restart times": "Restart times",
