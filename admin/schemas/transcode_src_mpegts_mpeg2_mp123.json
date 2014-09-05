@@ -1,0 +1,29 @@
+{
+    "name" : "transcode",
+    "debug" : "4",
+    "is-live" : false,
+    "log-path" : "",
+    "source" : {
+        "elements" : {
+            "filesrc" : {
+                "property" : {
+                    "location" : ""
+                }
+            },
+            "appsink" : {
+                "property" : {
+                   "sync" : false,
+                   "drop" : true
+                }
+            }
+        },
+        "bins" : [
+            "filesrc ! queue ! tsdemux name=demuxer",
+            "demuxer.video ! queue ! mpeg2dec ! queue ! appsink name = video",
+            "demuxer.audio ! mpegaudioparse ! queue ! mad ! queue ! appsink name = audio"
+        ]
+    },
+    "encoders" : [
+    ]
+}
+
