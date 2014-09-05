@@ -50,10 +50,7 @@ adminschemas_DATA = \
         schemas/encoder.schema \
         schemas/encoder_en.conf \
         schemas/encoder_zh_CN.conf \
-        schemas/newtranscodejob_en.schema \
-        schemas/newtranscodejob_zh_CN.schema \
-        schemas/transcode_mpegts_mpeg2_mp123.schema \
-        schemas/transcode_encoder_mp4.schema \
+        schemas/transcode_src_mpegts_mpeg2_mp123.json \
         schemas/transcode_encoder_phone_mp4.json \
         schemas/transcode_encoder_pad_mp4.json \
         schemas/transcode_encoder_tv_mp4.json \
