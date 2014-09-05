@@ -41,6 +41,18 @@
 
     <script type="text/javascript">
 
+    function setting_append_item (body, label, id, value) {
+        var ele = document.createElement ("div");
+        ele.setAttribute ("class", "row form-group col-md-12");
+        ele.innerHTML = "<div class=\"col-lg-4\">" +
+                        "<label class=\"pull-right jobmanage\" data-i18n=\"jobmanage." + label + "\"></label>" +
+                        "</div>" +
+                        "<div class=\"col-lg-7\">" +
+                        "<input type=\"text\" class=\"form-control\" id=\"" + id + "\" placeholder=\"" + value + "\">" +
+                        "</div>";
+        body.appendChild (ele);
+    }
+
     function setting () {
         $.get ("getjob/%s", function (data) {
 
@@ -67,18 +79,15 @@
             job_setting_header.setAttribute ("class", "panel-heading jobmanage");
             job_setting_header.setAttribute ("data-i18n", "jobmanage.Job Setting");
             job_setting_element.appendChild (job_setting_header);
-
             job_setting_body.setAttribute ("class", "panel-body");
 
             /* source */
+            var source_title = document.createElement ("h3"),
+                source_setting = document.createElement ("div");
+            source_title.innerHTML = "Source";
+            source_setting.setAttribute ("class", "well row pipeline-stat");
             if (job.type === "testsrc") {
-                var source_title = document.createElement ("h3"),
-                    source_setting = document.createElement ("div"),
-                    item = document.createElement ("div");
-
-                source_title.innerHTML = "Source";
-                source_setting.setAttribute ("class", "well row pipeline-stat");
-
+                var item = document.createElement ("div");
                 item.setAttribute ("class", "row form-group col-md-12");
                 item.innerHTML = "<div class=\"col-lg-4\">" +
                                  "<label class=\"pull-right jobmanage\" data-i18n=\"jobmanage.Video Resolution\"></label>" +
@@ -89,41 +98,31 @@
                                  "<option>1280x720</option>" +
                                  "</select>" +
                                  "</div>";
-
                 source_setting.appendChild (item);
-                job_setting_body.appendChild (source_title);
-                job_setting_body.appendChild (source_setting);
+
+            } else if (job.type === "networksrc") {
+                setting_append_item (source_setting, "Source Uri", "sourceuri", job.source.elements.udpsrc.property.uri);
+                setting_append_item (source_setting, "Program Number", "programnumber", job.source.elements.tsdemux.property["program-number"]);
+
+            } else if (job.type === "v4l2src") {
+                setting_append_item (source_setting, "Video Capture Device", "videocapturedevice", job.source.elements.v4l2src.property.device);
+                setting_append_item (source_setting, "Video Capture Resolution", "videocaptureresolution", job.source.elements.v4l2src.property.device);
+                setting_append_item (source_setting, "Audio Capture Device", "audiocapturedevice", job.source.elements.alsasrc.property.device);
             }
+            job_setting_body.appendChild (source_title);
+            job_setting_body.appendChild (source_setting);
 
             /* encoders */
             for (var i = 0, encoder; encoder = job.encoders[i]; i++) {
 
                 var encoder_title = document.createElement ("h3"),
-                    encoder_setting = document.createElement ("div"),
-                    item = document.createElement ("div");
+                    encoder_setting = document.createElement ("div");
 
                 encoder_title.innerHTML = "Encoder." + i;
                 encoder_setting.setAttribute ("class", "well row pipeline-stat");
 
-                item.setAttribute ("class", "row form-group col-md-12");
-                item.innerHTML = "<div class=\"col-lg-4\">" +
-                                 "<label class=\"pull-right jobmanage\" data-i18n=\"jobmanage.Video Resolution\"></label>" +
-                                 "</div>" +
-                                 "<div class=\"col-lg-7\">" +
-                                 "<input type=\"text\" class=\"form-control\" id=\"resolution\">" +
-                                 "</div>";
-                encoder_setting.appendChild (item);
-
-                item = document.createElement ("div");
-                item.setAttribute ("class", "row form-group col-md-12");
-                item.innerHTML = "<div class=\"col-lg-4\">" +
-                                 "<label class=\"pull-right jobmanage\" data-i18n=\"jobmanage.Video Bitrate\"></label>" +
-                                 "</div>" +
-                                 "<div class=\"col-lg-7\">" +
-                                 "<input type=\"text\" class=\"form-control\" id=\"bitrate\" placeholder=\"" + encoder.elements.x264enc.property.bitrate + "\">" +
-                                 "</div>";
-
-                encoder_setting.appendChild (item);
+                setting_append_item (encoder_setting, "Video Resolution", "resolution", "videoresolution");
+                setting_append_item (encoder_setting, "Video Bitrate", "videobitrate",  encoder.elements.x264enc.property.bitrate);
                 job_setting_body.appendChild (encoder_title);
                 job_setting_body.appendChild (encoder_setting);
             }
@@ -153,7 +152,7 @@
         });
     }
 
-    function append_item (body, key, value) {
+    function status_append_item (body, key, value) {
         var key_ele = document.createElement ("div"),
             value_ele = document.createElement ("div");
         key_ele.setAttribute ("class", "col-lg-4");
@@ -189,12 +188,12 @@
             job_stat_body.setAttribute ("class", "panel-body");
 
             /* job status */
-            append_item (job_stat_body, "Restart Times", data.data.age);
-            append_item (job_stat_body, "Last Restart Time", data.data.last_start_time);
-            append_item (job_stat_body, "Current Concurrent Count", data.data.current_access);
-            append_item (job_stat_body, "Average CPU Usage", data.data.cpu_average);
-            append_item (job_stat_body, "Current CPU Usage", data.data.cpu_current);
-            append_item (job_stat_body, "Memory Usage", data.data.memory);
+            status_append_item (job_stat_body, "Restart Times", data.data.age);
+            status_append_item (job_stat_body, "Last Restart Time", data.data.last_start_time);
+            status_append_item (job_stat_body, "Current Concurrent Count", data.data.current_access);
+            status_append_item (job_stat_body, "Average CPU Usage", data.data.cpu_average);
+            status_append_item (job_stat_body, "Current CPU Usage", data.data.cpu_current);
+            status_append_item (job_stat_body, "Memory Usage", data.data.memory);
 
             /* source status */
             var source_title = document.createElement ("h3"),
