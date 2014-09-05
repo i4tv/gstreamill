@@ -65,7 +65,7 @@
   "jobmanage": {
     "Job Setting": "任务设置",
     "Save Job": "存储任务",
-    "Video Source Resolution": "视频源分辨率",
+    "Video Resolution": "视频源分辨率",
     "Video Resolution": "视频分辨率",
     "Video Bitrate": "视频码率",
     "Job Status": "Job状态",
