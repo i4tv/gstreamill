@@ -42,7 +42,7 @@
                         </div>
                         <div class="col-lg-7">
                             <label class="checkbox-inline">
-                                <input type="checkbox" id="udpoutput" value="option3"> <span data-i18n="newlivejob.Check for UDP output"></span>
+                                <input type="checkbox" id="encoderoutput" value="udp"> <span data-i18n="newlivejob.Check for UDP output"></span>
                             </label>
                         </div>
                     </div>
@@ -52,7 +52,7 @@
                         </div>
                         <div class="col-lg-7">
                             <label class="checkbox-inline">
-                                <input type="checkbox" id="m3u8output" value="option3"> <span data-i18n="newlivejob.Check for M3u8 output"></span>
+                                <input type="checkbox" id="encoderoutput" value="m3u8"> <span data-i18n="newlivejob.Check for M3u8 output"></span>
                             </label>
                         </div>
                     </div>
@@ -114,13 +114,15 @@
                         var job_value = job_editor.getValue ();
                         var encoder_value = encoder_editor.getValue ();
 
-                        var udpoutput_value = $("#udpoutput").val ();
-                        if (!udpoutput_value) {
+                        var output = {'udp': false, 'm3u8': false};
+                        var encoderoutputs = $('#encoderoutput:checked');
+                        for (var i = 0; i < encoderoutputs.length; i++) {
+                            output [encoderoutputs[i].value] = true;
+                        }
+                        if (!output['udp']) {
                             delete encoder_value.udpstreaming;
                         }
-
-                        var m3u8output_value = $("#m3u8output").val ();
-                        if (!m3u8output_value) {
+                        if (!output['m3u8']) {
                             delete job_value.m3u8streaming;
                         }
 
