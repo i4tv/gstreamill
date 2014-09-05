@@ -1,0 +1,49 @@
+{
+    "elements" : {
+        "appsrc" : {
+            "property" : {
+                "is-live" : true,
+                "format" : 3
+            }
+        },
+        "videoscale" : {
+            "caps" : "video/x-raw,width=640,height=360"
+        },
+        "x264enc" : {
+            "property" : {
+                "name" : "x264enc",
+                "bframes" : 3,
+                "threads" : 16,
+                "qp-min" : 1,
+                "qp-max" : 51,
+                "qp-step" : 10,
+                "vbv-buf-capacity" : 10000,
+                "bitrate" : 300,
+                "byte-stream" : "TRUE",
+                "rc-lookahead" : 250,
+                "pass" : 0,
+                "mb-tree" : true,
+                "dct8x8" : true,
+                "speed-preset" : 0,
+                "option-string" : ":ref=3:me=umh:subme=16:merange=64:nf=1:deblock=1,-2:weightp=1:b-pyramid=2:direct=spatial:nal-hrd=vbr"
+            }
+        },
+        "voaacenc" : {
+            "property" : {
+                "bitrate" : 64000
+            }
+        },
+        "filesink" : {
+            "property" : {
+                "location" : ""
+            }
+        }
+    },
+    "bins" : [
+        "appsrc name=track_2 ! queue ! videoconvert ! queue ! videoscale ! queue ! x264enc ! queue ! muxer.",
+        "appsrc name=track_3 ! queue ! audioconvert ! voaacenc ! queue ! muxer.",
+        "appsrc name=track_4 ! queue ! audioconvert ! voaacenc ! queue ! muxer.",
+        "mp4mux name=muxer ! queue ! filesink"
+    ]
+}
+

@@ -13,25 +13,25 @@
                     <label class="newtranscodejob" data-i18n="newtranscodejob.Select Encoder Output Type"></label></br>
                     <div class="checkbox">
                         <label>
-                            <input type="checkbox" id="phone" value="phone">
+                            <input type="checkbox" id="encoderoutput" value="phone">
                             <span class="newtranscodejob" data-i18n="newtranscodejob.Phone"></span>
                         </label>
                     </div>
                     <div class="checkbox">
                         <label>
-                            <input type="checkbox" id="pad" value="pad">
+                            <input type="checkbox" id="encoderoutput" value="pad">
                             <span class="newtranscodejob" data-i18n="newtranscodejob.Pad"></span>
                         </label>
                     </div>
                     <div class="checkbox">
                         <label>
-                            <input type="checkbox" id="tv" name="tv" value="TV">
+                            <input type="checkbox" id="encoderoutput" value="tv">
                             <span class="newtranscodejob" data-i18n="newtranscodejob.TV"></span>
                         </label>
                     </div>
                     <div class="checkbox">
                         <label>
-                            <input type="checkbox" id="hdtv" name="hdtv" value="HDTV">
+                            <input type="checkbox" id="encoderoutput" value="hdtv"">
                             <span class="newtranscodejob" data-i18n="newtranscodejob.HDTV"></span>
                         </label>
                     </div>
@@ -50,9 +50,10 @@
                 <div class="panel-heading newtranscodejob" data-i18n="newtranscodejob.New Transcode Job"></div>
                 <div class="panel-body" id="newtranscodejob_content">
                     <input type="file" id="files" name="files[]" multiple />
-                    <output id="list"></output></br>
+                    <output id="medialist"></output></br>
                     <!-- Button trigger modal -->
-                    <button class="btn btn-default newtranscodejob" data-toggle="modal" data-target="#addencoder" data-i18n="newtranscodejob.Add Encoder Output"></button></br>
+                    <button class="btn btn-default newtranscodejob" data-toggle="modal" data-target="#addencoder" data-i18n="newtranscodejob.Select Encoder Output"></button></br>
+                    <output id="encoderoutputlist"></output></br>
                     <button class='btn btn-primary pull-right newtranscodejob' id='createjob' data-i18n='newtranscodejob.New Transcode Job'></button>
                 </div>
             </div>
@@ -61,7 +62,6 @@
             <div id='encoder_editor_holder' style="display: none;"></div>
         </div>
     </div>
-<input type='checkbox' id='ididid'> ok
 
     <script type="text/javascript">
 
@@ -75,18 +75,48 @@
                 return;
             }
 
-            var encoders = [];
             $('#addencoder-ok-btn').click (function () {
-                    alert($('#phone'));
-                if ($('#phone').attr ("checked") === true) {
-                    alert ("udp");
+                var output = {'phone': false, 'pad': false, 'tv': false, 'hdtv': false};
+                var encoderoutputs = $('#encoderoutput:checked');
+                for (var i = 0; i < encoderoutputs.length; i++) {
+                    output [encoderoutputs[i].value] = true;
                 }
-                if ($('#pad').attr ("checked") === true) {
-                    alert ("pad");
+                var encoders = [];
+                var encoders_list = [];
+                for (key in output) {
+                    if (output[key]) {
+                        $.ajax ({
+                            type: "get",
+                            url: "schemas/transcode_encoder_" + key + "_mp4.json",
+                            dataType: "json",
+                            async: false,
+                            success: function (phone) {
+                                encoders.push (phone);
+                            }
+                        });
+                        encoders_list.push ('<li><strong>', key, '</strong></li>');
+                    }
                 }
+                document.getElementById ('encoderoutputlist').innerHTML = '<ul>' + encoders_list.join('') + '</ul>';
                 $('#addencoder').modal('hide');
             });
 
+            $("#files").change (function (evt) {
+                var files = evt.target.files;
+                var output = [];
+
+                var file_list = [];
+                for (var i = 0, file; file = files[i]; i++) {
+                    output.push ('<li><strong>', escape (file.name), '</strong> (', file.type || 'n/a', ') - ',
+                                 file.size, ' bytes, last modified: ',
+                                 file.lastModifiedDate ? file.lastModifiedDate.toLocaleDateString() : 'n/a',
+                                 '</li>');
+                    file_list.push (file.name);
+                }
+                document.getElementById ('medialist').innerHTML = '<ul>' + output.join('') + '</ul>';
+            });
+
+/*
             var element = document.getElementById ('new_transcode_job_holder');
             var conf_editor = new JSONEditor (element, {
                 schema: {
@@ -118,9 +148,9 @@
                                      '</li>');
                         file_list.push (file.name);
                     }
-                    document.getElementById('list').innerHTML = '<ul>' + output.join('') + '</ul>';
+                    document.getElementById ('medialist').innerHTML = '<ul>' + output.join('') + '</ul>';
                 });
-/*
+
                 $("#createjob").click (function () {
                     var conf_value = conf_editor.getValue ();
                     var transcode_element = document.getElementById ('transcode_job_holder');
@@ -131,7 +161,6 @@
                         ajax: true,
                         hidden: true
                     });
-
                     transcode_editor.on ('ready', function() {
 
                         var encoder_element = document.getElementById('encoder_editor_holder');
@@ -190,8 +219,8 @@
                         });
                     });
                 });
-                */
             });
+ */
 
             $.i18n.init({
                 lng: Document.GstreamillConf.language[Document.GstreamillConf.conf.language]

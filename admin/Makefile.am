@@ -53,7 +53,11 @@ adminschemas_DATA = \
         schemas/newtranscodejob_en.schema \
         schemas/newtranscodejob_zh_CN.schema \
         schemas/transcode_mpegts_mpeg2_mp123.schema \
-        schemas/transcode_encoder_mp4.schema
+        schemas/transcode_encoder_mp4.schema \
+        schemas/transcode_encoder_phone_mp4.json \
+        schemas/transcode_encoder_pad_mp4.json \
+        schemas/transcode_encoder_tv_mp4.json \
+        schemas/transcode_encoder_hdtv_mp4.json
 
 localesdir = $(datadir)/gstreamill/admin/locales/en
 locales_DATA = \
