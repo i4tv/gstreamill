@@ -79,8 +79,11 @@
 
             $("#newlivejob").click (function () {
                 var job_element = document.getElementById('job_editor_holder');
-
-                sourcetype_value = $("#sourcetype:checked").val ();
+                var sourcetype_value = $("#sourcetype:checked").val ();
+                if (typeof sourcetype_value === "undefined") {
+                    alert ("Select source type");
+                    return;
+                }
                 var job_editor = new JSONEditor (job_element, {
                     schema: {
                         $ref: 'schemas/' + sourcetype_value + '.schema'
