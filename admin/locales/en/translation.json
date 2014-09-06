@@ -42,6 +42,7 @@
     "gateway": "Gateway"
   },
   "newlivejob": {
+    "New Live Job": "New Live Job",
     "Job Name": "Job Name",
     "Source Type": "Source Type",
     "Encoder Count": "Encoder Count",
