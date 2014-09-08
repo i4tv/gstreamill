@@ -78,63 +78,37 @@
             }
 
             $("#newlivejob").click (function () {
-                var job_element = document.getElementById('job_editor_holder');
                 var sourcetype_value = $("#sourcetype:checked").val ();
                 if (typeof sourcetype_value === "undefined") {
                     alert ("Select source type");
                     return;
                 }
-                var job_editor = new JSONEditor (job_element, {
-                    schema: {
-                        $ref: 'schemas/' + sourcetype_value + '.schema'
-                    },
-                    ajax: true,
-                    hidden: true
-                });
-    
-                job_editor.on ('ready', function() {
-                    var name_editor = job_editor.getEditor ('root.name');
+
+                $.getJSON ("/admin/schemas/" + sourcetype_value + ".json", function (job) {
                     var name_value = $("#jobname").val ();
                     if (name_value == "") {
                         alert ("Set name please");
                         return;
                     }
-                    name_editor.setValue (name_value);
-        
-                    var job_type = job_editor.getEditor ('root.type');
-                    job_type.setValue (sourcetype_value);
-        
-                    var encoder_element = document.getElementById('encoder_editor_holder');
-                    var encoder_editor = new JSONEditor (encoder_element, {
-                        schema: {
-                            $ref: 'schemas/encoder.schema'
-                        },
-                        ajax: true,
-                        hidden: true
-                    });
-    
-                    encoder_editor.on ('ready', function () {
-                        var job_value = job_editor.getValue ();
-                        var encoder_value = encoder_editor.getValue ();
+                    job.name = name_value;
 
-                        var output = {'udp': false, 'm3u8': false};
-                        var encoderoutputs = $('#encoderoutput:checked');
-                        for (var i = 0; i < encoderoutputs.length; i++) {
-                            output [encoderoutputs[i].value] = true;
-                        }
+                    var output = {'udp': false, 'm3u8': false};
+                    var encoderoutputs = $('#encoderoutput:checked');
+                    for (var i = 0; i < encoderoutputs.length; i++) {
+                        output [encoderoutputs[i].value] = true;
+                    }
+                    if (!output['m3u8']) {
+                        delete job.m3u8streaming;
+                    }
+                    $.getJSON ("/admin/schemas/encoder.json", function (encoder) {
                         if (!output['udp']) {
-                            delete encoder_value.udpstreaming;
+                            delete encoder.udpstreaming;
                         }
-                        if (!output['m3u8']) {
-                            delete job_value.m3u8streaming;
+                        var encodercount = $("#encodercount").val ();
+                        for (i = 0; i < encodercount; i++) {
+                            job.encoders[i] = encoder;
                         }
-
-                        encodercount_value = $("#encodercount").val ();
-                        for (i = 0; i < encodercount_value; i++) {
-                            job_value.encoders[i] = encoder_value;
-                        }
-
-                        $.post("putjob/" + name_value, JSON.stringify (job_value, null, 4), function (data) {
+                        $.post("putjob/" + name_value, JSON.stringify (job, null, 4), function (data) {
                             if (data.result == 'success') {
                                 alert (data.result);
                                 window.location.replace("joblist.html");

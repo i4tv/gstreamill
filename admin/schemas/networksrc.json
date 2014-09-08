@@ -1,0 +1,36 @@
+{
+    "name": "",
+    "type": "networksrc",
+    "source": {
+        "elements": {
+            "udpsrc": {
+                "property": {
+                    "uri": "udp://127.0.0.1:6003"
+                }
+            },
+            "tsdemux": {
+                "property": {
+                    "program-number": 1
+                }
+            },
+            "appsink": {
+                "property": {
+                    "sync": false,
+                    "drop": true
+                }
+            }
+        },
+        "bins": [
+            "udpsrc ! queue ! tsdemux name=demuxer",
+            "demuxer.video ! queue ! mpeg2dec ! queue ! appsink name = video",
+            "demuxer.audio ! mpegaudioparse ! queue ! mad ! queue ! appsink name = audio"
+        ]
+    },
+    "encoders": [
+    ],
+    "m3u8streaming": {
+        "version": 3,
+        "window-size": 10,
+        "segment-duration": 3
+    }
+}

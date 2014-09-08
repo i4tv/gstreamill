@@ -1,0 +1,34 @@
+
+{
+    "name": "",
+    "type": "v4l2src",
+    "source": {
+        "elements": {
+            "alsasrc": {
+                "property": {
+                    "device": "hw:0,1",
+                    "blocksize": 8192
+                }
+            },
+            "v4l2src": {
+                "property": {
+                    "device": "/dev/video0",
+                    "io-mode": 1,
+                    "do-timestamp": true
+                },
+                "caps": "video/x-raw,width=720,height=576"
+            }
+        },
+        "bins": [
+            "alsasrc ! queue ! appsink name=audio",
+            "v4l2src ! queue ! appsink name=video"
+        ]
+    },
+    "encoders": [
+    ],
+    "m3u8streaming": {
+        "version": 3,
+        "window-size": 10,
+        "segment-duration": 3
+    }
+}
