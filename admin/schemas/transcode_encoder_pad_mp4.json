@@ -7,7 +7,7 @@
             }
         },
         "videoscale" : {
-            "caps" : "video/x-raw,width=640,height=360"
+            "caps" : "video/x-raw,width=720,height=576"
         },
         "x264enc" : {
             "property" : {
@@ -18,7 +18,7 @@
                 "qp-max" : 51,
                 "qp-step" : 10,
                 "vbv-buf-capacity" : 10000,
-                "bitrate" : 300,
+                "bitrate" : 800,
                 "byte-stream" : "TRUE",
                 "rc-lookahead" : 250,
                 "pass" : 0,
