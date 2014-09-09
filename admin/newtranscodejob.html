@@ -129,7 +129,14 @@
         });
 
         $("#createjob").click (function () {
-            $.getJSON ("/admin/schemas/transcode_src_mpegts_mpeg2_mp123.json", function (job) {
+            var container = file_list[0].replace(/([^.]*.)/, ""), source;
+
+            if (container === "ts") {
+                source = "/admin/schemas/transcode_src_mpegts_mpeg2_mp123.json";
+            } else if (container === "mpg") {
+                source = "/admin/schemas/transcode_src_mpegps_mpeg2_mp123.json";
+            }
+            $.getJSON (source, function (job) {
                 var result = "";
                 for (var i = 0, file; file = file_list[i]; i++) {
                     job.name = file;
