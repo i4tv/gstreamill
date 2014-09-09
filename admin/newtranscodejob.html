@@ -130,6 +130,7 @@
 
         $("#createjob").click (function () {
             $.getJSON ("/admin/schemas/transcode_src_mpegts_mpeg2_mp123.json", function (job) {
+                var result = "";
                 for (var i = 0, file; file = file_list[i]; i++) {
                     job.name = file;
                     job["log-path"] = Document.GstreamillConf.conf.transcoderoot + "/out/" + file + "/";
@@ -138,7 +139,7 @@
                         alert ("Set encoder out!");
                         return;
                     }
-                    for (var i = 0, encoder; encoder = encoders[i]; i++) {
+                    for (var j = 0, encoder; encoder = encoders[j]; j++) {
                         var path = Document.GstreamillConf.conf.transcoderoot + "/out/" + file + "/",
                             bitrate = encoder.elements.x264enc.property.bitrate;
                             resolution = encoder.elements.videoscale.caps.replace (/video\/x-raw,width=(\d+),height=(\d+)/g, "$1x$2");
@@ -154,13 +155,14 @@
                         data: JSON.stringify (job, null, 4),
                         success: function (response) {
                             if (response.result == "success") {
-                                alert ('start ' + name + ' ' + response.result);
+                                result += 'start ' + file + ' ' + response.result + '\n';
                             } else {
-                                alert (response.result + "\n" + response.reason);
+                                result += 'start ' + file + ' ' + response.result + ', ' + response.reason + '\n';
                             }
                         }
                     });
                 }
+                alert (result);
             });
         });
 
