@@ -30,10 +30,18 @@
                     </div>
                     <div class="row form-group col-lg-12">
                         <div class="col-lg-4">
-                            <label class="pull-right system"  data-i18n="newlivejob.Encoder Count"></label>
+                            <label class="pull-right system"  data-i18n="newlivejob.Encoder Type"></label>
                         </div>
                         <div class="col-lg-7">
-                            <input type="text" class="form-control" id="encodercount">
+                            <label class="checkbox-inline">
+                                <input type="checkbox" id="encodertype" value="phone"> <span data-i18n="newlivejob.Phone"></span>
+                            </label>
+                            <label class="checkbox-inline">
+                                <input type="checkbox" id="encodertype" value="sdtv"> <span data-i18n="newlivejob.SDTV"></span>
+                            </label>
+                            <label class="checkbox-inline">
+                                <input type="checkbox" id="encodertype" value="hdtv"> <span data-i18n="newlivejob.HDTV"></span>
+                            </label>
                         </div>
                     </div>
                     <div class="row form-group col-lg-12">
@@ -100,22 +108,37 @@
                     if (!output['m3u8']) {
                         delete job.m3u8streaming;
                     }
-                    $.getJSON ("/admin/schemas/encoder.json", function (encoder) {
-                        if (!output['udp']) {
-                            delete encoder.udpstreaming;
+
+                    var encoderschecked = {'phone': false, 'sdtv': false, 'hdtv': false};
+                    var checked = $('#encodertype:checked');
+                    for (var i = 0; i < checked.length; i++) {
+                        encoderschecked [checked[i].value] = true;
+                    }
+                    var encoders = [];
+                    for (var key in encoderschecked) {
+                        if (encoderschecked[key]) {
+                            $.ajax ({
+                                type: "get",
+                                url: "schemas/live_encoder_" + key + ".json",
+                                dataType: "json",
+                                async: false,
+                                success: function (encoder) {
+                                    encoders.push (encoder);
+                                    if (!output['udp']) {
+                                        delete encoder.udpstreaming;
+                                    }
+                                }
+                            });
                         }
-                        var encodercount = $("#encodercount").val ();
-                        for (i = 0; i < encodercount; i++) {
-                            job.encoders[i] = encoder;
+                    }
+                    job.encoders = encoders;
+                    $.post("putjob/" + name_value, JSON.stringify (job, null, 4), function (data) {
+                        if (data.result == 'success') {
+                            alert (data.result);
+                            window.location.replace("joblist.html");
+                        } else {
+                            alert (data.result + '\n' + data.reason);
                         }
-                        $.post("putjob/" + name_value, JSON.stringify (job, null, 4), function (data) {
-                            if (data.result == 'success') {
-                                alert (data.result);
-                                window.location.replace("joblist.html");
-                            } else {
-                                alert (data.result + '\n' + data.reason);
-                            }
-                        });
                     });
                 });
             });

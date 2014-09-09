@@ -39,7 +39,9 @@ adminschemas_DATA = \
         schemas/testsrc.json \
         schemas/v4l2src.json \
         schemas/networksrc.json \
-        schemas/encoder.json \
+        schemas/live_encoder_phone.json \
+        schemas/live_encoder_sdtv.json \
+        schemas/live_encoder_hdtv.json \
         schemas/transcode_src_mpegps_mpeg2_mp123.json \
         schemas/transcode_src_mpegts_mpeg2_mp123.json \
         schemas/transcode_encoder_phone_mp4.json \

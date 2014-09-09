@@ -1,0 +1,32 @@
+{
+    "elements": {
+        "appsrc": {
+            "property": {
+                "is-live": true,
+                "format": 3
+            }
+        },
+        "x264enc": {
+            "property": {
+                "bitrate": 1000,
+                "byte-stream": true
+            }
+        },
+        "voaacenc": {
+            "property": {
+                "bitrate": 64000
+            }
+        },
+        "appsink": {
+            "property": {
+                "sync": false
+            }
+        }
+    },
+    "bins": [
+        "appsrc name=audio ! audioresample ! audioconvert ! voaacenc ! muxer.",
+        "appsrc name=video ! queue ! videoconvert ! queue ! x264enc ! queue ! muxer.",
+        "mpegtsmux name=muxer ! queue ! appsink"
+    ],
+    "udpstreaming": "225.0.0.1:10000"
+}
