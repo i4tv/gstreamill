@@ -131,7 +131,19 @@
         $("#createjob").click (function () {
             $.getJSON ("/admin/schemas/transcode_src_mpegts_mpeg2_mp123.json", function (job) {
                 for (var i = 0, file; file = file_list[i]; i++) {
-                    job.source.elements.filesrc.property.location = file;
+                    job.name = file;
+                    job["log-path"] = Document.GstreamillConf.conf.transcoderoot + "/out/" + file + "/";
+                    job.source.elements.filesrc.property.location = Document.GstreamillConf.conf.transcoderoot + "/in/" + file;
+                    if (encoders.length === 0) {
+                        alert ("Set encoder out!");
+                        return;
+                    }
+                    for (var i = 0, encoder; encoder = encoders[i]; i++) {
+                        var path = Document.GstreamillConf.conf.transcoderoot + "/out/" + file + "/",
+                            bitrate = encoder.elements.x264enc.property.bitrate;
+                            resolution = encoder.elements.videoscale.caps.replace (/video\/x-raw,width=(\d+),height=(\d+)/g, "$1x$2");
+                        encoder.elements.filesink.property.location = path + resolution + "_" + bitrate + "bps.mp4";
+                    }
                     job.encoders = encoders;
                     console.log (JSON.stringify(job, null, 2));
                     $.ajax ({
