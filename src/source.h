@@ -12,7 +12,7 @@
 #include "log.h"
 #include "m3u8playlist.h"
 
-#define SOURCE_RING_SIZE 250
+#define SOURCE_RING_SIZE 500
 #define STREAM_NAME_LEN 32
 
 typedef struct _Source Source;
