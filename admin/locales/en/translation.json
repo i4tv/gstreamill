@@ -49,10 +49,7 @@
     "Phone": "Phone",
     "SDTV": "SDTV",
     "HDTV": "HDTV",
-    "UDP Output": "UDP Output",
-    "M3U8 Output": "M3U8 Output",
-    "Check for UDP output": "Check for UDP output",
-    "Check for M3u8 output": "Check for M3u8 output"
+    "Output Type": "Output Type"
   },
   "newtranscodejob": {
     "Add Encoder Output": "Add Encoder Output",
