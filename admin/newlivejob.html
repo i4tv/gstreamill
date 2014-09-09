@@ -102,14 +102,14 @@
                         delete job.m3u8streaming;
                     }
 
-                    var encoderschecked = {'phone': false, 'sdtv': false, 'hdtv': false};
+                    var ischecked = {'phone': false, 'sdtv': false, 'hdtv': false};
                     var checked = $('#encodertype:checked');
                     for (var i = 0; i < checked.length; i++) {
-                        encoderschecked [checked[i].value] = true;
+                        ischecked [checked[i].value] = true;
                     }
                     var encoders = [];
-                    for (var key in encoderschecked) {
-                        if (encoderschecked[key]) {
+                    for (var key in ischecked) {
+                        if (ischecked[key]) {
                             $.ajax ({
                                 type: "get",
                                 url: "schemas/live_encoder_" + key + ".json",

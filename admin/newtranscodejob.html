@@ -88,22 +88,22 @@
             encoders = [];
 
         $('#addencoder-ok-btn').click (function () {
-            var output = {'phone': false, 'pad': false, 'tv': false, 'hdtv': false};
-            var encoderoutputs = $('#encoderoutput:checked');
-            for (var i = 0; i < encoderoutputs.length; i++) {
-                output [encoderoutputs[i].value] = true;
+            var ischecked = {'phone': false, 'pad': false, 'tv': false, 'hdtv': false};
+            var checked = $('#encoderoutput:checked');
+            for (var i = 0; i < checked.length; i++) {
+                ischecked [checked[i].value] = true;
             }
             encoders = [];
             var encoders_list = [];
-            for (key in output) {
-                if (output[key]) {
+            for (key in ischecked) {
+                if (ischecked[key]) {
                     $.ajax ({
                         type: "get",
                         url: "schemas/transcode_encoder_" + key + "_mp4.json",
                         dataType: "json",
                         async: false,
-                        success: function (phone) {
-                            encoders.push (phone);
+                        success: function (encoder) {
+                            encoders.push (encoder);
                         }
                     });
                     encoders_list.push ('<li><strong>', key, '</strong></li>');
@@ -135,6 +135,9 @@
                 source = "/admin/schemas/transcode_src_mpegts_mpeg2_mp123.json";
             } else if (container === "mpg") {
                 source = "/admin/schemas/transcode_src_mpegps_mpeg2_mp123.json";
+            } else {
+                alert ("Select ts or mpg media");
+                return;
             }
             $.getJSON (source, function (job) {
                 var result = "";
