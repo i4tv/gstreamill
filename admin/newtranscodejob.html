@@ -129,14 +129,7 @@
         });
 
         $("#createjob").click (function () {
-            var container = file_list[0].replace(/([^.]*.)/, ""), source;
-
-            if (container === "ts") {
-                source = "/admin/schemas/transcode_src_mpegts_mpeg2_mp123.json";
-            } else {
-                source = "/admin/schemas/transcode_src_decodebin_mpeg2_mp123.json";
-            }
-            $.getJSON (source, function (job) {
+            $.getJSON ("/admin/schemas/transcode_source_decodebin.json", function (job) {
                 var result = "";
                 for (var i = 0, file; file = file_list[i]; i++) {
                     job.name = file;
