@@ -56,7 +56,7 @@ gchar * gstreamill_get_start_time (Gstreamill *gstreamill);
 gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc);
 gchar * gstreamill_job_stop (Gstreamill *gstreamill, gchar *name);
 gchar * gstreamill_stat (Gstreamill *gstreamill);
-gchar * gstreamill_list_running_job (Gstreamill *gstreamill);
+gchar * gstreamill_list_nonlive_job (Gstreamill *gstreamill);
 gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *name);
 gchar * gstreamill_gstreamer_stat (Gstreamill *gstreamill, gchar *uri);
 void gstreamill_unaccess (Gstreamill *gstreamill, gchar *uri);

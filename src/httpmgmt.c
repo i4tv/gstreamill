@@ -731,8 +731,8 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
-        } else if (g_strcmp0 (request_data->uri, "/admin/listrunningjob") == 0) {
-                p = gstreamill_list_running_job (httpmgmt->gstreamill);
+        } else if (g_strcmp0 (request_data->uri, "/admin/listnonlivejob") == 0) {
+                p = gstreamill_list_nonlive_job (httpmgmt->gstreamill);
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
