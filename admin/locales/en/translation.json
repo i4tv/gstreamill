@@ -101,6 +101,7 @@
     "Average CPU usage": "Average CPU usage",
     "Memory usage": "Memory usage",
     "Start Job": "Start Job",
-    "The job is not started": "The job is not started"
+    "The job is not started": "The job is not started",
+    "Cancel Job": "Cancel Job"
   }
 }

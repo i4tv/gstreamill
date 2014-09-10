@@ -132,7 +132,8 @@
             $.getJSON ("/admin/schemas/transcode_source_decodebin.json", function (job) {
                 var result = "";
                 for (var i = 0, file; file = file_list[i]; i++) {
-                    job.name = file;
+                    var name = file.replace(/(\.[^.]*)/, "");
+                    job.name = name.replace(/( )/g, "");
                     job["log-path"] = Document.GstreamillConf.conf.transcoderoot + "/out/" + file + "/";
                     job.source.elements.filesrc.property.location = Document.GstreamillConf.conf.transcoderoot + "/in/" + file;
                     if (encoders.length === 0) {

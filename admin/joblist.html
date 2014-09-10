@@ -6,7 +6,7 @@
 
     <script type="text/javascript">
 
-    function showJobStatus (response) {
+    function showLiveJobStatus (response) {
         var li = '<div class="row">';
         li += '<div class="col-md-12">';
         li += '<a href="/admin/jobmanage.html?name=';
@@ -29,6 +29,26 @@
             li += '<button class="btn btn-primary pull-right joblist" id="job_' + job.name + '" onclick="startJob(\'' + job.name + '\')" data-i18n="joblist.Start Job">';
             li += '</button>';
             li += '</div>';
+            $('#li_' + job.name).html(li);
+        }
+    }
+
+    function showNonliveJobStatus (response) {
+        var li = '<div class="row">';
+        li += '<div class="col-md-12">';
+        li += '<a href="/admin/jobmanage.html?name=';
+        if (response.result == "success") {
+            var job = response.data;
+            li += job.name + '"><h3>' + job.name + '</h3></a>';
+            li += ', <span class="joblist" data-i18n="joblist.Start Time"></span> ' + job.last_start_time;
+            li += '</br><h4 class="joblist" data-i18n="joblist.Encoder counts"></h4>:' + job.encoder_count;
+            li += ' <h4 class="joblist" data-i18n="joblist.Average CPU usage"></h4>:' + job.cpu_average;
+            li += ' <h4 class="joblist" data-i18n="joblist.Memory usage"></h4>:' + job.memory;
+            li += '<button class="btn btn-warning pull-right joblist" id="job_' + job.name + '" onclick="stopJob(\'' + job.name + '\')" data-i18n="joblist.Cancel Job">';
+            li += '</button>';
+            li += '</div>';
+            console.log (li);
+            console.log (job.name);
             $('#li_' + job.name).html(li);
         }
     }
@@ -94,7 +114,20 @@
                     $('#joblist').append(li);
                     var jobStatUrl = '/stat/gstreamill/job/' + jobs[i];
                     $.get(jobStatUrl, function (response) {
-                        showJobStatus (response);
+                        showLiveJobStatus (response);
+                        $(".joblist").i18n ();
+                    });
+                }
+            });
+
+            $.get("/admin/listnonlivejob", function (jobs) {
+                for (var i = 0; i < jobs.length; i++) {
+                    var li = '<li class="list-group-item" id="li_' + jobs[i] + '"></li>';
+                    $('#joblist').append(li);
+                    var jobStatUrl = '/stat/gstreamill/job/' + jobs[i];
+                    console.log (jobStatUrl);
+                    $.get(jobStatUrl, function (response) {
+                        showNonliveJobStatus (response);
                         $(".joblist").i18n ();
                     });
                 }
