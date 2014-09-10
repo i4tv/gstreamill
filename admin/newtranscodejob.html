@@ -157,6 +157,7 @@
                         success: function (response) {
                             if (response.result == "success") {
                                 result += 'start ' + file + ' ' + response.result + '\n';
+                                window.location.replace("joblist.html");
                             } else {
                                 result += 'start ' + file + ' ' + response.result + ', ' + response.reason + '\n';
                             }

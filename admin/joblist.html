@@ -44,19 +44,15 @@
             li += '</br><h4 class="joblist" data-i18n="joblist.Encoder counts"></h4>:' + job.encoder_count;
             li += ' <h4 class="joblist" data-i18n="joblist.Average CPU usage"></h4>:' + job.cpu_average;
             li += ' <h4 class="joblist" data-i18n="joblist.Memory usage"></h4>:' + job.memory;
-            li += '<button class="btn btn-warning pull-right joblist" id="job_' + job.name + '" onclick="stopJob(\'' + job.name + '\')" data-i18n="joblist.Cancel Job">';
+            li += '<button class="btn btn-warning pull-right joblist" id="job_' + job.name + '" onclick="cancelJob(\'' + job.name + '\')" data-i18n="joblist.Cancel Job">';
             li += '</button>';
             li += '</div>';
-            console.log (li);
-            console.log (job.name);
             $('#li_' + job.name).html(li);
         }
     }
 
     function startJob (name) {
-
         $.get ("/admin/getjob/" + name, function (data) {
-
             if (data.result == "failure") {
                 alert (data.reason);
                 return;
@@ -76,13 +72,10 @@
                     alert (response.result + "\n" + response.reason);
                 }
             });
-
         });
-
     }
 
     function stopJob (name) {
-
         $.get ("/admin/stop/" + name, function (response) {
             if (response.result == "success") {
                 alert ('stop ' + response.name + ' ' + response.result);
@@ -95,11 +88,24 @@
                 alert (response.result + "\n" + response.reason);
             }
         });
+    }
 
+    function cancelJob (name) {
+        $.get ("/admin/stop/" + name, function (response) {
+            if (response.result == "success") {
+                alert ('Cancel ' + response.name + ' ' + response.result);
+                var jobStatUrl = '/stat/gstreamill/job/' + response.name;
+                var jobStat = $.get(jobStatUrl, function (response) {
+                    location.reload ();
+                });
+
+            } else {
+                alert (response.result + "\n" + response.reason);
+            }
+        });
     }
 
     $(document).ready(function () {
-
         $.get("/admin/getconf", function (data) {
             if (data.result == "success") {
                 Document.GstreamillConf.conf = data.data;
@@ -138,9 +144,7 @@
             }, function(t) {
                 $(".nav").i18n ();
             });
-
         });
-
     });
 
     </script>
