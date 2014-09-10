@@ -105,9 +105,7 @@
                 setting_append_item (source_setting, "Program Number", "programnumber", job.source.elements.tsdemux.property["program-number"]);
 
             } else if (job.type === "v4l2src") {
-                setting_append_item (source_setting, "Video Capture Device", "videocapturedevice", job.source.elements.v4l2src.property.device);
                 setting_append_item (source_setting, "Video Capture Resolution", "videocaptureresolution", job.source.elements.v4l2src.property.device);
-                setting_append_item (source_setting, "Audio Capture Device", "audiocapturedevice", job.source.elements.alsasrc.property.device);
             }
             job_setting_body.appendChild (source_title);
             job_setting_body.appendChild (source_setting);

@@ -28,6 +28,24 @@
                             </label>
                         </div>
                     </div>
+                    <div class="row form-group col-lg-12" id="videocapturedevice" style="display: none;">
+                        <div class="col-lg-4">
+                            <label class="pull-right system" data-i18n="newlivejob.Video Capture Device"></label> 
+                        </div>
+                        <div class="col-lg-7">
+                            <select class="form-control" id="videodevicelist">
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row form-group col-lg-12" id="audiocapturedevice" style="display: none;">
+                        <div class="col-lg-4">
+                            <label class="pull-right system" data-i18n="newlivejob.Audio Capture Device"></label> 
+                        </div>
+                        <div class="col-lg-7">
+                            <select class="form-control" id="audiodevicelist">
+                            </select>
+                        </div>
+                    </div>
                     <div class="row form-group col-lg-12">
                         <div class="col-lg-4">
                             <label class="pull-right system"  data-i18n="newlivejob.Encoder Type"></label>
@@ -93,6 +111,12 @@
                     }
                     job.name = name_value;
 
+                    if (job.type === "v4l2src") {
+                        var alsadevice = $("#audiodevicelist").val ().replace(/\/dev\/snd\/pcmC(\d+)D(\d+)c/, "hw:$1,$2");
+                        job.source.elements.alsasrc.property.device = alsadevice;
+                        job.source.elements.v4l2src.property.device = $("#videodevicelist").val ();
+                    }
+
                     var output = {'udp': false, 'm3u8': false};
                     var encoderoutputs = $('#encoderoutput:checked');
                     for (var i = 0; i < encoderoutputs.length; i++) {
@@ -136,13 +160,34 @@
                 });
             });
 
+            $.get ("/admin/videodevices", function (devices) {
+                for (var i = 0, device; device=devices[i]; i++) {
+                    $("#videodevicelist").append ("<option>" + device + "</option>");
+                }
+            });
+
+            $.get ("/admin/audiodevices", function (devices) {
+                for (var i = 0, device; device=devices[i]; i++) {
+                    $("#audiodevicelist").append ("<option>" + device + "</option>");
+                }
+            });
+
             $.i18n.init({
                 lng: Document.GstreamillConf.language[Document.GstreamillConf.conf.language]
             }, function(t) {
                 $(".nav").i18n ();
                 $(".newlivejob").i18n ();
             });
+        });
 
+        $("input[name='sourcetype']:radio").change (function () {
+            if ($("#sourcetype:checked").val () === "v4l2src") {
+                $("#videocapturedevice").show ();
+                $("#audiocapturedevice").show ();
+            } else {
+                $("#videocapturedevice").hide ();
+                $("#audiocapturedevice").hide ();
+            }
         });
     });
 

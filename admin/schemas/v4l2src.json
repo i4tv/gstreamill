@@ -6,13 +6,13 @@
         "elements": {
             "alsasrc": {
                 "property": {
-                    "device": "hw:0,1",
+                    "device": "",
                     "blocksize": 8192
                 }
             },
             "v4l2src": {
                 "property": {
-                    "device": "/dev/video0",
+                    "device": "",
                     "io-mode": 1,
                     "do-timestamp": true
                 },

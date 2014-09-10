@@ -56,6 +56,8 @@
     "New Live Job": "创建直播编码任务",
     "Job Name": "任务名称",
     "Source Type": "源类型",
+    "Video Capture Device": "视频采集设备",
+    "Audio Capture Device": "音频采集设备",
     "Encoder Type": "编码类型",
     "Phone": "手机",
     "SDTV": "表情电视",

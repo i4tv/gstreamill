@@ -45,6 +45,8 @@
     "New Live Job": "New Live Job",
     "Job Name": "Job Name",
     "Source Type": "Source Type",
+    "Video Capture Device": "Video Capture Device",
+    "Audio Capture Device": "Audio Capture Device",
     "Encoder Type": "Encoder Type",
     "Phone": "Phone",
     "SDTV": "SDTV",
