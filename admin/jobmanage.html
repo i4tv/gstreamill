@@ -105,7 +105,10 @@
                 setting_append_item (source_setting, "Program Number", "programnumber", job.source.elements.tsdemux.property["program-number"]);
 
             } else if (job.type === "v4l2src") {
-                setting_append_item (source_setting, "Video Capture Resolution", "videocaptureresolution", job.source.elements.v4l2src.property.device);
+                var width = job.source.elements.v4l2src.caps.replace(/[^\d]*(\d+),height=\d+/, "$1"),
+                    height = job.source.elements.v4l2src.caps.replace(/[^\d]*\d+,height=(\d+)/, "$1");
+                setting_append_item (source_setting, "Video Capture Width", "videocapturewidth", width);
+                setting_append_item (source_setting, "Video Capture Height", "videocaptureheight", height);
             }
             job_setting_body.appendChild (source_title);
             job_setting_body.appendChild (source_setting);
@@ -135,6 +138,12 @@
             $(".jobmanage").i18n ();
 
             $("#savejob").unbind ("click").click (function () {
+                if (job.type === "v4l2src") {
+                    var width = $("#videocapturewidth").val (),
+                        height = $("#videocaptureheight").val ();
+                    job.source.v4l2src.caps = "video/x-raw,width=" + widht + ",height=" + height;
+                }
+
                 for (var i = 0; i < job.encoders.length; i++) {
                     job.encoders[i].elements.x264enc.property.bitrate = $("#bitrate").val ();
                 }
