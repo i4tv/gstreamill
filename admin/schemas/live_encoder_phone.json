@@ -6,10 +6,21 @@
                 "format": 3
             }
         },
+        "videoscale" : {
+            "caps" : "video/x-raw,width=640,height=360"
+        },
         "x264enc": {
             "property": {
-                "bitrate": 1000,
-                "byte-stream": true
+                "bframes" : 3,
+                "threads" : 4,
+                "qp-min" : 1,
+                "qp-max" : 51,
+                "qp-step" : 10,
+                "bitrate" : 300,
+                "byte-stream" : true,
+                "pass" : 0,
+                "mb-tree" : true,
+                "option-string" : ":ref=3:me=umh:subme=16:merange=64:nf=1:deblock=1,-2:weightp=1:b-pyramid=2:direct=spatial:nal-hrd=vbr"
             }
         },
         "voaacenc": {
@@ -24,8 +35,8 @@
         }
     },
     "bins": [
-        "appsrc name=audio ! audioresample ! audioconvert ! voaacenc ! muxer.",
-        "appsrc name=video ! queue ! videoconvert ! queue ! x264enc ! queue ! muxer.",
+        "appsrc name=video ! queue ! videoconvert ! queue ! videoscale ! queue ! x264enc ! queue ! muxer.",
+        "appsrc name=audio ! queue ! audioconvert ! voaacenc ! muxer.",
         "mpegtsmux name=muxer ! queue ! appsink"
     ],
     "udpstreaming": "225.0.0.1:10000"
