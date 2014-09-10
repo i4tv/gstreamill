@@ -18,9 +18,9 @@
             }
         },
         "bins" : [
-            "filesrc ! queue ! mpegpsdemux name=demuxer",
-            "demuxer.video ! queue ! mpeg2dec ! queue ! appsink name = video",
-            "demuxer.audio ! mpegaudioparse ! queue ! mad ! queue ! appsink name = audio"
+            "filesrc ! queue ! decodebin name=decodebin",
+            "decodebin.src ! queue ! appsink name = video",
+            "decodebin.src ! queue ! appsink name = audio"
         ]
     },
     "encoders" : [

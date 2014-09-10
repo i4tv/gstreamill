@@ -42,7 +42,7 @@ adminschemas_DATA = \
         schemas/live_encoder_phone.json \
         schemas/live_encoder_sdtv.json \
         schemas/live_encoder_hdtv.json \
-        schemas/transcode_src_mpegps_mpeg2_mp123.json \
+        schemas/transcode_src_decodebin_mpeg2_mp123.json \
         schemas/transcode_src_mpegts_mpeg2_mp123.json \
         schemas/transcode_encoder_phone_mp4.json \
         schemas/transcode_encoder_pad_mp4.json \

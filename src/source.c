@@ -419,7 +419,7 @@ static GstElement * element_create (gchar *job, gchar *pipeline, gchar *param)
 
 static void pad_added_callback (GstElement *src, GstPad *pad, gpointer data)
 {
-        gchar *src_pad_name;
+        gchar *src_pad_name, *caps_str;
         GSList *bins = data;
         Bin *bin;
         GstCaps *caps;
@@ -428,10 +428,13 @@ static void pad_added_callback (GstElement *src, GstPad *pad, gpointer data)
         Link *link;
 
         src_pad_name = gst_pad_get_name (pad);
+        caps = gst_pad_get_current_caps (pad);
+        caps_str = gst_caps_to_string (caps);
+        gst_caps_unref (caps);
         bin = NULL;
         while (bins != NULL) {
                 bin = bins->data;
-                if (g_str_has_prefix (src_pad_name, bin->name)) {
+                if (g_str_has_prefix (caps_str, bin->name)) {
                         break;
 
                 } else {
@@ -439,6 +442,7 @@ static void pad_added_callback (GstElement *src, GstPad *pad, gpointer data)
                 }
                 bins = bins->next;
         }
+        g_free (caps_str);
         if (bin == NULL) {
                 GST_WARNING ("skip sometimes pad: %s", src_pad_name);
                 return;

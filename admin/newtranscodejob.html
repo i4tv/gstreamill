@@ -133,11 +133,8 @@
 
             if (container === "ts") {
                 source = "/admin/schemas/transcode_src_mpegts_mpeg2_mp123.json";
-            } else if (container === "mpg") {
-                source = "/admin/schemas/transcode_src_mpegps_mpeg2_mp123.json";
             } else {
-                alert ("Select ts or mpg media");
-                return;
+                source = "/admin/schemas/transcode_src_decodebin_mpeg2_mp123.json";
             }
             $.getJSON (source, function (job) {
                 var result = "";
