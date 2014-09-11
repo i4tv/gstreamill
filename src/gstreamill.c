@@ -1260,7 +1260,7 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
                           "    \"current_access\": %d, \n"
                           "    \"cpu_average\": %d,\n"
                           "    \"cpu_current\": %d,\n"
-                          "    \"memory\": %d,\n"
+                          "    \"memory\": %llu,\n"
                           "    \"source\": {\n"
                           "        \"sync_error_times\": %ld,\n"
                           "        \"stream_count\": %ld,\n"
