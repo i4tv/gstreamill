@@ -53,19 +53,19 @@
         body.appendChild (ele);
     }
 
-    function setting_append_video_resolution (body) {
+    function setting_append_video_resolution (body, id) {
                 var item = document.createElement ("div");
                 item.setAttribute ("class", "row form-group col-md-12");
                 item.innerHTML = "<div class=\"col-lg-4\">" +
                                  "<label class=\"pull-right jobmanage\" data-i18n=\"jobmanage.Video Resolution\"></label>" +
                                  "</div>" +
                                  "<div class=\"col-lg-7\">" +
-                                 "<select class=\"form-control\" id=\"sourceresolution\">" +
-                                 "<option>1920x1080</option>" +
-                                 "<option>1280x720</option>" +
-                                 "<option>720x576</option>" +
-                                 "<option>720x480</option>" +
-                                 "<option>640x320</option>" +
+                                 "<select class=\"form-control\" id=\"" + id + "\">" +
+                                 "<option value='1920x1080'>1920x1080</option>" +
+                                 "<option value='1280x720'>1280x720</option>" +
+                                 "<option value='720x576'>720x576</option>" +
+                                 "<option value='720x480'>720x480</option>" +
+                                 "<option value='640x480'>640x320</option>" +
                                  "</select>" +
                                  "</div>";
                 body.appendChild (item);
@@ -105,7 +105,7 @@
             source_title.innerHTML = "Source";
             source_setting.setAttribute ("class", "well row pipeline-stat");
             if (job.type === "testsrc") {
-                setting_append_video_resolution (source_setting);
+                setting_append_video_resolution (source_setting, "sourceresolution");
             } else if (job.type === "networksrc") {
                 setting_append_item (source_setting, "Source Uri", "sourceuri", job.source.elements.udpsrc.property.uri);
                 setting_append_item (source_setting, "Program Number", "programnumber", job.source.elements.tsdemux.property["program-number"]);
@@ -126,8 +126,7 @@
                 encoder_title.innerHTML = "Encoder." + i;
                 encoder_setting.setAttribute ("class", "well row pipeline-stat");
 
-                //setting_append_item (encoder_setting, "Video Resolution", "resolution", "videoresolution");
-                setting_append_video_resolution (encoder_setting);
+                setting_append_video_resolution (encoder_setting, "encoder" + i + "resolution");
                 setting_append_item (encoder_setting, "Video Bitrate", "videobitrate",  encoder.elements.x264enc.property.bitrate);
                 job_setting_body.appendChild (encoder_title);
                 job_setting_body.appendChild (encoder_setting);
@@ -141,6 +140,16 @@
 
             $("#jobsetting_content").html (job_setting_element);
             $(".jobmanage").i18n ();
+
+            // set resolution selected as job setting
+            if (job.type === "testsrc") {
+                var value = job.source.elements.videotestsrc.caps.replace (/[^=]*=(\d+)[^=]*=(\d+).*/, "$1x$2");
+                $("#sourceresolution option[value='" + value + "']").attr ("selected", "selected");
+            }
+            for (var i = 0, encoder; encoder = job.encoders[i]; i++) {
+                var value = encoder.elements.videoscale.caps.replace (/[^=]*=(\d+)[^=]*=(\d+).*/, "$1x$2");
+                $("#encoder" + i + "resolution option[value='" + value + "']").attr ("selected", "selected");
+            }
 
             $("#savejob").unbind ("click").click (function () {
                 if (job.type === "v4l2src") {
