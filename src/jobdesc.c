@@ -18,6 +18,8 @@ gboolean jobdesc_is_valid (gchar *job)
 {
         JSON_Value *val;
         JSON_Object *obj;
+        GRegex *regex;
+        GMatchInfo *match_info;
         gchar *name;
 
         val = json_parse_string_with_comments(job);
@@ -35,6 +37,16 @@ gboolean jobdesc_is_valid (gchar *job)
         name = (gchar *)json_object_get_string (obj, "name");
         if ((name == NULL) || (strlen (name) < 4)) {
                 GST_ERROR ("invalid job with name property invalid");
+                json_value_free (val);
+                return FALSE;
+        }
+
+        regex = g_regex_new ("[`~!@#$%^&*()+=|\\{[\\]}:;\"\'<,>.?/]", G_REGEX_OPTIMIZE, 0, NULL);
+        g_regex_match (regex, name, 0, &match_info);
+        g_regex_unref (regex);
+        if (g_match_info_matches (match_info)) {
+                GST_ERROR ("invalid job name: %s", name);
+                g_match_info_free (match_info);
                 json_value_free (val);
                 return FALSE;
         }
