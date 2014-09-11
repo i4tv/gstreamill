@@ -71,6 +71,7 @@
     "Video Capture Width": "视频采集宽度",
     "Video Capture Height": "视频采集高度",
     "Video Bitrate": "视频码率",
+    "UDP Output": "UDP输出",
     "Source Uri": "源 Uri",
     "Program Number": "节目号",
     "Video Capture Device": "视频采集设备",
