@@ -31,15 +31,15 @@
             li += '</div>';
             $('#li_' + job.name).html(li);
         }
+        $(".joblist").i18n ();
     }
 
     function showNonliveJobStatus (response) {
         var li = '<div class="row">';
         li += '<div class="col-md-12">';
-        li += '<a href="/admin/jobmanage.html?name=';
         if (response.result == "success") {
             var job = response.data;
-            li += job.name + '"><h3>' + job.name + '</h3></a>';
+            li += '<h3>' + job.name + '</h3>';
             li += ', <span class="joblist" data-i18n="joblist.Start Time"></span> ' + job.last_start_time;
             li += '</br><h4 class="joblist" data-i18n="joblist.Encoder counts"></h4>:' + job.encoder_count;
             li += ' <h4 class="joblist" data-i18n="joblist.Average CPU usage"></h4>:' + job.cpu_average;
@@ -49,6 +49,7 @@
             li += '</div>';
             $('#li_' + job.name).html(li);
         }
+        $(".joblist").i18n ();
     }
 
     function startJob (name) {
@@ -64,8 +65,8 @@
                 if (response.result == "success") {
                     alert ('start ' + name + ' ' + response.result);
                     var jobStatUrl = '/stat/gstreamill/job/' + response.name;
-                    var jobStat = $.get(jobStatUrl, function (response) {
-                        showJobStatus (response);
+                    $.get(jobStatUrl, function (response) {
+                        showLiveJobStatus (response);
                     });
 
                 } else {
@@ -80,8 +81,9 @@
             if (response.result == "success") {
                 alert ('stop ' + response.name + ' ' + response.result);
                 var jobStatUrl = '/stat/gstreamill/job/' + response.name;
-                var jobStat = $.get(jobStatUrl, function (response) {
-                    showJobStatus (response);
+                $.get(jobStatUrl, function (response) {
+                        console.log (response);
+                    showLiveJobStatus (response);
                 });
 
             } else {
@@ -95,7 +97,7 @@
             if (response.result == "success") {
                 alert ('Cancel ' + response.name + ' ' + response.result);
                 var jobStatUrl = '/stat/gstreamill/job/' + response.name;
-                var jobStat = $.get(jobStatUrl, function (response) {
+                $.get(jobStatUrl, function (response) {
                     location.reload ();
                 });
 
@@ -121,7 +123,6 @@
                     var jobStatUrl = '/stat/gstreamill/job/' + jobs[i];
                     $.get(jobStatUrl, function (response) {
                         showLiveJobStatus (response);
-                        $(".joblist").i18n ();
                     });
                 }
             });
@@ -134,7 +135,6 @@
                     console.log (jobStatUrl);
                     $.get(jobStatUrl, function (response) {
                         showNonliveJobStatus (response);
-                        $(".joblist").i18n ();
                     });
                 }
             });
