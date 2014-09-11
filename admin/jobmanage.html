@@ -61,11 +61,11 @@
                                  "</div>" +
                                  "<div class=\"col-lg-7\">" +
                                  "<select class=\"form-control\" id=\"" + id + "\">" +
-                                 "<option value='1920x1080'>1920x1080</option>" +
-                                 "<option value='1280x720'>1280x720</option>" +
-                                 "<option value='720x576'>720x576</option>" +
-                                 "<option value='720x480'>720x480</option>" +
-                                 "<option value='640x480'>640x320</option>" +
+                                 "<option>1920x1080</option>" +
+                                 "<option>1280x720</option>" +
+                                 "<option>720x576</option>" +
+                                 "<option>720x480</option>" +
+                                 "<option>640x320</option>" +
                                  "</select>" +
                                  "</div>";
                 body.appendChild (item);
@@ -144,11 +144,11 @@
             // set resolution selected as job setting
             if (job.type === "testsrc") {
                 var value = job.source.elements.videotestsrc.caps.replace (/[^=]*=(\d+)[^=]*=(\d+).*/, "$1x$2");
-                $("#sourceresolution option[value='" + value + "']").attr ("selected", "selected");
+                $("#sourceresolution").val (value);
             }
             for (var i = 0, encoder; encoder = job.encoders[i]; i++) {
                 var value = encoder.elements.videoscale.caps.replace (/[^=]*=(\d+)[^=]*=(\d+).*/, "$1x$2");
-                $("#encoder" + i + "resolution option[value='" + value + "']").attr ("selected", "selected");
+                $("#encoder" + i + "resolution").val (value);
             }
 
             $("#savejob").unbind ("click").click (function () {
