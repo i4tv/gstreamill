@@ -13,7 +13,7 @@
             "property" : {
                 "name" : "x264enc",
                 "bframes" : 3,
-                "threads" : 16,
+                "threads" : 4,
                 "qp-min" : 1,
                 "qp-max" : 51,
                 "qp-step" : 10,
