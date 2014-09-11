@@ -125,15 +125,30 @@
 
                 encoder_title.innerHTML = "Encoder." + i;
                 encoder_setting.setAttribute ("class", "well row pipeline-stat");
-
                 setting_append_video_resolution (encoder_setting, "encoder" + i + "resolution");
                 setting_append_item (encoder_setting, "Video Bitrate", "videobitrate",  encoder.elements.x264enc.property.bitrate);
                 if (encoder.udpstreaming !== undefined) {
-                        setting_append_item (encoder_setting, "UDP Output", "udpoutput", encoder.udpstreaming);
+                    setting_append_item (encoder_setting, "UDP Output", "udpoutput", encoder.udpstreaming);
                 }
                 job_setting_body.appendChild (encoder_title);
                 job_setting_body.appendChild (encoder_setting);
             }
+
+            /* m3u8? */
+            if (job.m3u8streaming !== undefined) {
+                var m3u8_title = document.createElement ("h3"),
+                    m3u8_setting = document.createElement ("div");
+
+                m3u8_title.innerHTML = "M3U8";
+                m3u8_setting.setAttribute ("class", "well row pipeline-stat");
+                setting_append_item (m3u8_setting, "Window Size", "windowsize",  job.m3u8streaming["window-size"]);
+                setting_append_item (m3u8_setting, "Segment Duration", "segmentduration",  job.m3u8streaming["segment-duration"]);
+
+                job_setting_body.appendChild (m3u8_title);
+                job_setting_body.appendChild (m3u8_setting);
+            }
+
+            /* Save button */
             var btn = document.createElement ("button");
             btn.setAttribute ("class", "btn btn-primary pull-right jobmanage");
             btn.setAttribute ("id", "savejob");

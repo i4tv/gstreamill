@@ -73,6 +73,8 @@
     "Video Capture Height": "Video Capture Height",
     "Video Bitrate": "Video Bitrate",
     "UDP Output": "UDP Output",
+    "Window Size": "Window Size",
+    "Segment Duration": "Segment Duration",
     "Source Uri": "Source Uri",
     "Program Number": "Program Number",
     "Video Capture Device": "Video Capture Device",
