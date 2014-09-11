@@ -294,11 +294,6 @@ static void source_check (Gstreamill *gstreamill, Job *job)
                                 GST_TIME_ARGS (job->output->source.streams[i].current_timestamp));
         }
 
-        /* non live job, don't check heartbeat */
-        if (!job->is_live) {
-                return;
-        }
-
         /* source heartbeat check */
         for (i = 0; i < job->output->source.stream_count; i++) {
                 /* check video and audio */
@@ -309,7 +304,8 @@ static void source_check (Gstreamill *gstreamill, Job *job)
 
                 now = gst_clock_get_time (gstreamill->system_clock);
                 time_diff = GST_CLOCK_DIFF (job->output->source.streams[i].last_heartbeat, now);
-                if ((time_diff > HEARTBEAT_THRESHHOLD) && gstreamill->daemon) {
+                if (((time_diff > HEARTBEAT_THRESHHOLD) && gstreamill->daemon && job->is_live) ||
+                    ((time_diff > NONLIVE_HEARTBEAT_THRESHHOLD) && gstreamill->daemon && !job->is_live)) {
                         GST_ERROR ("%s heart beat error %lu, restart job.",
                                         job->output->source.streams[i].name,
                                         time_diff);
