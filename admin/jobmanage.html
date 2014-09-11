@@ -65,7 +65,7 @@
                                  "<option>1280x720</option>" +
                                  "<option>720x576</option>" +
                                  "<option>720x480</option>" +
-                                 "<option>640x320</option>" +
+                                 "<option>640x360</option>" +
                                  "</select>" +
                                  "</div>";
                 body.appendChild (item);
@@ -126,9 +126,9 @@
                 encoder_title.innerHTML = "Encoder." + i;
                 encoder_setting.setAttribute ("class", "well row pipeline-stat");
                 setting_append_video_resolution (encoder_setting, "encoder" + i + "resolution");
-                setting_append_item (encoder_setting, "Video Bitrate", "videobitrate",  encoder.elements.x264enc.property.bitrate);
+                setting_append_item (encoder_setting, "Video Bitrate", "videobitrate" + i,  encoder.elements.x264enc.property.bitrate);
                 if (encoder.udpstreaming !== undefined) {
-                    setting_append_item (encoder_setting, "UDP Output", "udpoutput", encoder.udpstreaming);
+                    setting_append_item (encoder_setting, "UDP Output", "udpoutput" + i, encoder.udpstreaming);
                 }
                 job_setting_body.appendChild (encoder_title);
                 job_setting_body.appendChild (encoder_setting);
@@ -170,14 +170,27 @@
             }
 
             $("#savejob").unbind ("click").click (function () {
-                if (job.type === "v4l2src") {
+                if (job.type === "testsrc") {
+                    var value = $("#sourceresolution").val ().replace (/(\d+)x(\d+)/, "video/x-raw,width=$1,height=$2,framerate=25/1");
+                    job.source.elements.videotestsrc.caps = value;
+                } else if (job.type === "v4l2src") {
                     var width = $("#videocapturewidth").val (),
                         height = $("#videocaptureheight").val ();
                     job.source.v4l2src.caps = "video/x-raw,width=" + widht + ",height=" + height;
                 }
 
                 for (var i = 0; i < job.encoders.length; i++) {
-                    job.encoders[i].elements.x264enc.property.bitrate = $("#bitrate").val ();
+                    var caps = $("#encoder" + i + "resolution").val ().replace (/(\d+)x(\d+)/, "video/x-raw,width=$1,height=$2");
+                    job.encoders[i].elements.videoscale.caps = caps;
+                    job.encoders[i].elements.x264enc.property.bitrate = $("#videobitrate" + i).val ();
+                    if (job.encoders[i].udpstreaming !== undefined) {
+                        job.encoders[i].udpstreaming = $("#udpoutput" + i).val ();
+                    }
+                }
+
+                if (job.m3u8streaming !== undefined) {
+                    job.m3u8streaming["window-size"] = $("#windowsize").val ();
+                    job.m3u8streaming["segment-duration"] = $("#segmentduration").val ();
                 }
 
                 $.post ("putjob/" + job.name, JSON.stringify (job, null, 4), function (data) {
