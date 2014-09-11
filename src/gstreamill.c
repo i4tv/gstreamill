@@ -645,7 +645,13 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
                         return;
                 }
 
-                GST_ERROR ("Job with pid %d exit on an unhandled signal, restart.", pid);
+                if (!job->is_live) {
+                        GST_ERROR ("Nonlive job with pid %d exit on an unhandled signal.", pid);
+                        *(job->output->state) = GST_STATE_NULL;
+                        return;
+                }
+
+                GST_ERROR ("Live job with pid %d exit on an unhandled signal, restart.", pid);
                 job_reset (job);
                 p = create_job_process (job);
                 val = json_parse_string (p);
