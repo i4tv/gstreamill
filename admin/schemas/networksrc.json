@@ -22,7 +22,7 @@
         },
         "bins": [
             "udpsrc ! queue ! tsdemux name=demuxer",
-            "demuxer.video ! queue ! mpeg2dec ! queue ! appsink name = video",
+            "demuxer.video ! queue ! mpegvideoparse ! queue ! mpeg2dec ! queue ! appsink name = video",
             "demuxer.audio ! mpegaudioparse ! queue ! mad ! queue ! appsink name = audio"
         ]
     },
