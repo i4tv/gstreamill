@@ -101,6 +101,7 @@
   "joblist": {
     "Restart times": "重新启动次数",
     "Last time started": "最后一次启动时间",
+    "Current Position / Duration": "当前位置 / 影片时长",
     "Stop Job": "停止任务",
     "Encoder counts": "编码数",
     "Average CPU usage": "平均CPU使用",

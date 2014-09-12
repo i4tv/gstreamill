@@ -40,6 +40,7 @@
         if (response.result == "success") {
             var job = response.data;
             li += '<h3>' + job.name + '</h3>';
+            li += ' <span class="joblist" data-i18n="joblist.Current Position / Duration"></span> ' + job.source.streams[0].timestamp / 1000000000 + ' / ' + job.source.duration / 1000000000;
             li += ', <span class="joblist" data-i18n="joblist.Start Time"></span> ' + job.last_start_time;
             li += '</br><h4 class="joblist" data-i18n="joblist.Encoder counts"></h4>:' + job.encoder_count;
             li += ' <h4 class="joblist" data-i18n="joblist.Average CPU usage"></h4>:' + job.cpu_average;

@@ -102,6 +102,7 @@
   "joblist": {
     "Restart times": "Restart times",
     "Last time started": "Last time started",
+    "Current Position / Duration": "Current Position / Duration",
     "Stop Job": "Stop Job",
     "Encoder counts": "Encoder counts",
     "Average CPU usage": "Average CPU usage",
