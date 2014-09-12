@@ -18,13 +18,13 @@
                         </div>
                         <div class="col-lg-7">
                             <label class="radio-inline">
-                                <input type="radio" id="sourcetype" name= "sourcetype" value="v4l2src"> v4l2src
+                                <input type="radio" id="sourcetype" name= "sourcetype" value="live_source_v4l2"> V4l2
                             </label>
                             <label class="radio-inline">
-                                <input type="radio" id="sourcetype" name= "sourcetype" value="networksrc"> networksrc
+                                <input type="radio" id="sourcetype" name= "sourcetype" value="live_source_network"> Network
                             </label>
                             <label class="radio-inline">
-                                <input type="radio" id="sourcetype" name= "sourcetype" value="testsrc"> testsrc
+                                <input type="radio" id="sourcetype" name= "sourcetype" value="live_source_test"> Test
                             </label>
                         </div>
                     </div>
@@ -200,14 +200,14 @@
         });
 
         $("input[name='sourcetype']:radio").change (function () {
-            if ($("#sourcetype:checked").val () === "v4l2src") {
+            if ($("#sourcetype:checked").val () === "live_source_v4l2") {
                 $("#videocapturedevice").show ();
                 $("#audiocapturedevice").show ();
             } else {
                 $("#videocapturedevice").hide ();
                 $("#audiocapturedevice").hide ();
             }
-            if ($("#sourcetype:checked").val () === "networksrc") {
+            if ($("#sourcetype:checked").val () === "live_source_network") {
                 $("#networksrcuri").show ();
                 $("#networksrcprogramnumber").show ();
             } else {

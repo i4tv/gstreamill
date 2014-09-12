@@ -36,9 +36,9 @@ adminimg_DATA = \
 
 adminschemasdir = $(datadir)/gstreamill/admin/schemas
 adminschemas_DATA = \
-        schemas/testsrc.json \
-        schemas/v4l2src.json \
-        schemas/networksrc.json \
+        schemas/live_source_test.json \
+        schemas/live_source_v4l2.json \
+        schemas/live_source_network.json \
         schemas/live_encoder_phone.json \
         schemas/live_encoder_sdtv.json \
         schemas/live_encoder_hdtv.json \
