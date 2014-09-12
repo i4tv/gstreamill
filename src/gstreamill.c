@@ -1262,6 +1262,7 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
                           "    \"cpu_current\": %d,\n"
                           "    \"memory\": %llu,\n"
                           "    \"source\": {\n"
+                          "        \"duration\": %ld,\n"
                           "        \"sync_error_times\": %ld,\n"
                           "        \"stream_count\": %ld,\n"
                           "        \"streams\": [\n"
@@ -1304,6 +1305,7 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
                                 job->cpu_average,
                                 job->cpu_current,
                                 job->memory,
+                                *(job->output->source.duration),
                                 job->output->source.sync_error_times,
                                 job->output->source.stream_count,
                                 source_streams,

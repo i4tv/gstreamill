@@ -208,6 +208,7 @@ static gsize status_output_size (gchar *job)
 
         size = (strlen (job) / 8 + 1) * 8; /* job description, 64 bit alignment */
         size += sizeof (guint64); /* state */
+        size += sizeof (gint64); /* duration for transcode */
         size += jobdesc_streams_count (job, "source") * sizeof (struct _SourceStreamState);
         for (i = 0; i < jobdesc_encoders_count (job); i++) {
                 size += sizeof (GstClockTime); /* encoder heartbeat */
@@ -433,6 +434,8 @@ gint job_initialize (Job *job, gboolean daemon)
         p += (strlen (job->description) / 8 + 1) * 8;
         output->state = (guint64 *)p;
         p += sizeof (guint64); /* state */
+        output->source.duration = (gint64 *)p;
+        p += sizeof (gint64); /* duration for transcode */
         output->source.sync_error_times = 0;
         output->source.stream_count = jobdesc_streams_count (job->description, "source");
         output->source.streams = (struct _SourceStreamState *)p;
@@ -785,6 +788,7 @@ gint job_start (Job *job)
         Encoder *encoder;
         GstStateChangeReturn ret;
         gint i;
+        gint64 duration;
 
         job->source = source_initialize (job->description, &(job->output->source));
         if (job->source == NULL) {
@@ -799,6 +803,11 @@ gint job_start (Job *job)
 
         /* set pipelines as PLAYING state */
         gst_element_set_state (job->source->pipeline, GST_STATE_PLAYING);
+        gst_element_get_state (job->source->pipeline, NULL, NULL, GST_CLOCK_TIME_NONE);
+        *(job->output->source.duration) = 0;
+        if (!job->is_live && gst_element_query_duration (job->source->pipeline, GST_FORMAT_TIME, &duration)) {
+                *(job->output->source.duration) = duration;
+        }
         job->source->state = GST_STATE_PLAYING;
         for (i = 0; i < job->encoder_array->len; i++) {
                 encoder = g_array_index (job->encoder_array, gpointer, i);

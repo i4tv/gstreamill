@@ -51,6 +51,7 @@ typedef struct _SourceState {
          *  sync normal cause sync_error_times reset to zero,
          *  sync_error_times == 5 cause the livejob restart.
          */
+        gint64 *duration;
         guint64 sync_error_times;
         gint64 stream_count;
         SourceStreamState *streams;
