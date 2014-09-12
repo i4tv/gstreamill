@@ -41,14 +41,14 @@
 
     <script type="text/javascript">
 
-    function setting_append_item (body, label, id, value) {
+    function setting_append_item (body, label, id, type, value) {
         var ele = document.createElement ("div");
         ele.setAttribute ("class", "row form-group col-md-12");
         ele.innerHTML = "<div class=\"col-lg-4\">" +
                         "<label class=\"pull-right jobmanage\" data-i18n=\"jobmanage." + label + "\"></label>" +
                         "</div>" +
                         "<div class=\"col-lg-7\">" +
-                        "<input type=\"text\" class=\"form-control\" id=\"" + id + "\" value=\"" + value + "\">" +
+                        "<input type=\"" + type + "\" class=\"form-control\" id=\"" + id + "\" value=" + value + ">" +
                         "</div>";
         body.appendChild (ele);
     }
@@ -107,13 +107,13 @@
             if (job.type === "testsrc") {
                 setting_append_video_resolution (source_setting, "sourceresolution");
             } else if (job.type === "networksrc") {
-                setting_append_item (source_setting, "Source Uri", "sourceuri", job.source.elements.udpsrc.property.uri);
-                setting_append_item (source_setting, "Program Number", "programnumber", job.source.elements.tsdemux.property["program-number"]);
+                setting_append_item (source_setting, "Source Uri", "sourceuri", "text", job.source.elements.udpsrc.property.uri);
+                setting_append_item (source_setting, "Program Number", "programnumber", "number", job.source.elements.tsdemux.property["program-number"]);
             } else if (job.type === "v4l2src") {
                 var width = job.source.elements.v4l2src.caps.replace(/[^\d]*(\d+),height=\d+/, "$1"),
                     height = job.source.elements.v4l2src.caps.replace(/[^\d]*\d+,height=(\d+)/, "$1");
-                setting_append_item (source_setting, "Video Capture Width", "videocapturewidth", width);
-                setting_append_item (source_setting, "Video Capture Height", "videocaptureheight", height);
+                setting_append_item (source_setting, "Video Capture Width", "videocapturewidth", "number", width);
+                setting_append_item (source_setting, "Video Capture Height", "videocaptureheight", "number", height);
             }
             job_setting_body.appendChild (source_title);
             job_setting_body.appendChild (source_setting);
@@ -126,9 +126,9 @@
                 encoder_title.innerHTML = "Encoder." + i;
                 encoder_setting.setAttribute ("class", "well row pipeline-stat");
                 setting_append_video_resolution (encoder_setting, "encoder" + i + "resolution");
-                setting_append_item (encoder_setting, "Video Bitrate", "videobitrate" + i,  encoder.elements.x264enc.property.bitrate);
+                setting_append_item (encoder_setting, "Video Bitrate", "videobitrate" + i, "number", encoder.elements.x264enc.property.bitrate);
                 if (encoder.udpstreaming !== undefined) {
-                    setting_append_item (encoder_setting, "UDP Output", "udpoutput" + i, encoder.udpstreaming);
+                    setting_append_item (encoder_setting, "UDP Output", "udpoutput" + i, "text", encoder.udpstreaming);
                 }
                 job_setting_body.appendChild (encoder_title);
                 job_setting_body.appendChild (encoder_setting);
@@ -141,8 +141,8 @@
 
                 m3u8_title.innerHTML = "M3U8";
                 m3u8_setting.setAttribute ("class", "well row pipeline-stat");
-                setting_append_item (m3u8_setting, "Window Size", "windowsize",  job.m3u8streaming["window-size"]);
-                setting_append_item (m3u8_setting, "Segment Duration", "segmentduration",  job.m3u8streaming["segment-duration"]);
+                setting_append_item (m3u8_setting, "Window Size", "windowsize",  "number", job.m3u8streaming["window-size"]);
+                setting_append_item (m3u8_setting, "Segment Duration", "segmentduration",  "number", job.m3u8streaming["segment-duration"]);
 
                 job_setting_body.appendChild (m3u8_title);
                 job_setting_body.appendChild (m3u8_setting);
@@ -179,21 +179,21 @@
                     job.source.elements.v4l2src.caps = "video/x-raw,width=" + widht + ",height=" + height;
                 } else if (job.type === "networksrc") {
                     job.source.elements.udpsrc.property.uri = $("#sourceuri").val ();
-                    job.source.elements.tsdemux.property["program-number"] = $("#programnumber").val ();
+                    job.source.elements.tsdemux.property["program-number"] = parseInt ($("#programnumber").val ());
                 }
 
                 for (var i = 0; i < job.encoders.length; i++) {
                     var caps = $("#encoder" + i + "resolution").val ().replace (/(\d+)x(\d+)/, "video/x-raw,width=$1,height=$2");
                     job.encoders[i].elements.videoscale.caps = caps;
-                    job.encoders[i].elements.x264enc.property.bitrate = $("#videobitrate" + i).val ();
+                    job.encoders[i].elements.x264enc.property.bitrate = parseInt ($("#videobitrate" + i).val ());
                     if (job.encoders[i].udpstreaming !== undefined) {
                         job.encoders[i].udpstreaming = $("#udpoutput" + i).val ();
                     }
                 }
 
                 if (job.m3u8streaming !== undefined) {
-                    job.m3u8streaming["window-size"] = $("#windowsize").val ();
-                    job.m3u8streaming["segment-duration"] = $("#segmentduration").val ();
+                    job.m3u8streaming["window-size"] = parseInt ($("#windowsize").val ());
+                    job.m3u8streaming["segment-duration"] = parseInt ($("#segmentduration").val ());
                 }
 
                 $.post ("putjob/" + job.name, JSON.stringify (job, null, 4), function (data) {
