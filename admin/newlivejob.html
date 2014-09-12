@@ -46,6 +46,22 @@
                             </select>
                         </div>
                     </div>
+                    <div class="row form-group col-lg-12" id="networksrcuri" style="display: none;">
+                        <div class="col-lg-4">
+                            <label class="pull-right system" data-i18n="newlivejob.Source Uri"></label> 
+                        </div>
+                        <div class="col-lg-7">
+                            <input type="text" class="form-control" id="sourceuri">
+                        </div>
+                    </div>
+                    <div class="row form-group col-lg-12" id="networksrcprogramnumber" style="display: none;">
+                        <div class="col-lg-4">
+                            <label class="pull-right system" data-i18n="newlivejob.Program Number"></label> 
+                        </div>
+                        <div class="col-lg-7">
+                            <input type="text" class="form-control" id="programnumber">
+                        </div>
+                    </div>
                     <div class="row form-group col-lg-12">
                         <div class="col-lg-4">
                             <label class="pull-right system"  data-i18n="newlivejob.Encoder Type"></label>
@@ -115,6 +131,9 @@
                         var alsadevice = $("#audiodevicelist").val ().replace(/\/dev\/snd\/pcmC(\d+)D(\d+)c/, "hw:$1,$2");
                         job.source.elements.alsasrc.property.device = alsadevice;
                         job.source.elements.v4l2src.property.device = $("#videodevicelist").val ();
+                    } else if (job.type === "networksrc") {
+                        job.source.elements.udpsrc.property.uri = $("#sourceuri").val ();
+                        job.source.elements.tsdemux.property["program-number"] = $("#programnumber").val ();
                     }
 
                     var output = {'udp': false, 'm3u8': false};
@@ -187,6 +206,13 @@
             } else {
                 $("#videocapturedevice").hide ();
                 $("#audiocapturedevice").hide ();
+            }
+            if ($("#sourcetype:checked").val () === "networksrc") {
+                $("#networksrcuri").show ();
+                $("#networksrcprogramnumber").show ();
+            } else {
+                $("#networksrcuri").hide ();
+                $("#networksrcprogramnumber").hide ();
             }
         });
     });

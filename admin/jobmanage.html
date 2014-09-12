@@ -48,7 +48,7 @@
                         "<label class=\"pull-right jobmanage\" data-i18n=\"jobmanage." + label + "\"></label>" +
                         "</div>" +
                         "<div class=\"col-lg-7\">" +
-                        "<input type=\"text\" class=\"form-control\" id=\"" + id + "\" placeholder=\"" + value + "\">" +
+                        "<input type=\"text\" class=\"form-control\" id=\"" + id + "\" value=\"" + value + "\">" +
                         "</div>";
         body.appendChild (ele);
     }
@@ -176,7 +176,10 @@
                 } else if (job.type === "v4l2src") {
                     var width = $("#videocapturewidth").val (),
                         height = $("#videocaptureheight").val ();
-                    job.source.v4l2src.caps = "video/x-raw,width=" + widht + ",height=" + height;
+                    job.source.elements.v4l2src.caps = "video/x-raw,width=" + widht + ",height=" + height;
+                } else if (job.type === "networksrc") {
+                    job.source.elements.udpsrc.property.uri = $("#sourceuri").val ();
+                    job.source.elements.tsdemux.property["program-number"] = $("#programnumber").val ();
                 }
 
                 for (var i = 0; i < job.encoders.length; i++) {

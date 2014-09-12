@@ -5,7 +5,7 @@
         "elements": {
             "udpsrc": {
                 "property": {
-                    "uri": "udp://127.0.0.1:6003"
+                    "uri": ""
                 }
             },
             "tsdemux": {
