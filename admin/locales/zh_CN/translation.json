@@ -98,6 +98,8 @@
     "Danger Zone": "危险区",
     "Remove this Job": "移除这个任务",
     "Realy remove this Job? can't be restore!": "真的要移除任务？ 移除后无法恢复！",
+    "Stop and remove a running Job? can't be restore!": "停止并删除一个运行中的任务？移除后无法恢复!",
+    "Stop and Remove Job": "停止并移除任务",
     "Remove Job": "移除任务"
   },
   "joblist": {

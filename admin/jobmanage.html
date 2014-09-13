@@ -32,6 +32,14 @@
                         <button class='btn btn-danger pull-right jobmanage' id='removejob' data-i18n="jobmanage.Remove Job"></button>
                     </div>
                 </div>
+                <div id='removerunningjob_content' class="panel panel-danger">
+                    <div class="panel-heading jobmanage" data-i18n="jobmanage.Danger Zone"></div>
+                    <div class="panel-body">
+                        <h4 class="jobmanage" data-i18n="jobmanage.Remove this Job"></h4></br>
+                        <span class="jobmanage" data-i18n="jobmanage.Stop and remove a running Job? can't be restore!"></span>
+                        <button class='btn btn-danger pull-right jobmanage' id='removerunningjob' data-i18n="jobmanage.Stop and Remove Job"></button>
+                    </div>
+                </div>
             </div>
             <div id='job_editor_holder' style="display: none;"></div>
             <div id='encoder_conf_editor_holder' style="display: none;"></div>
@@ -85,6 +93,7 @@
             $('#job_status').attr ('href', "javascript:status (\"" + job.name + "\")");
 
             $('#removejob_content').hide ();
+            $('#removerunningjob_content').hide ();
             $("#jobstatus_content").hide ();
             $('#jobsetting_content').show ();
 
@@ -226,6 +235,7 @@
             }
 
             $('#removejob_content').hide ();
+            $('#removerunningjob_content').hide ();
             $('#jobsetting_content').hide ();
             $("#jobstatus_content").show ();
 
@@ -322,16 +332,38 @@
     function remove_job (name) {
         $('#jobsetting_content').hide ();
         $("#jobstatus_content").hide ();
-        $('#removejob_content').show ();
-        $('#removejob').unbind ('click').click (function () {
-            $.get("rmjob/" + name, function (response) {
-                if (response.result === "success") {
-                    alert (response.result);
-                    window.location.replace("joblist.html");
-                } else {
-                    alert (response.result + "\nreason: " + response.reason);
-                }
-            });
+        $.get("/stat/gstreamill/job/" + name, function (data) {
+            if (data.result === "success") {
+                $('#removerunningjob').click (function () {
+                    $.get ("/admin/stop/" + name, function (response) {
+                        if (response.result === "failure") {
+                            alert ("Stop failure");
+                            return;
+                        }
+                        $.get("rmjob/" + name, function (response) {
+                            if (response.result === "success") {
+                                alert (response.result);
+                                window.location.replace("joblist.html");
+                            } else {
+                                alert (response.result + "\nreason: " + response.reason);
+                            }
+                        });
+                    });
+                });
+                $('#removerunningjob_content').show ();
+            } else {
+                $('#removejob').click (function () {
+                    $.get("rmjob/" + name, function (response) {
+                        if (response.result === "success") {
+                            alert (response.result);
+                            window.location.replace("joblist.html");
+                        } else {
+                            alert (response.result + "\nreason: " + response.reason);
+                        }
+                    });
+                });
+                $('#removejob_content').show ();
+            }
         });
     }
 

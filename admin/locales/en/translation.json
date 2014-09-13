@@ -99,6 +99,8 @@
     "Danger Zone": "Danger Zone",
     "Remove this Job": "Remove this Job",
     "Realy remove this Job? can't be restore!": "Realy remove this Job? can't be restore!",
+    "Stop and remove a running Job? can't be restore!": "Stop and remove a running Job? can't be restore!",
+    "Stop and Remove Job": "Stop and Remove Job",
     "Remove Job": "Remove Job"
   },
   "joblist": {
