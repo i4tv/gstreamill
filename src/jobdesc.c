@@ -35,7 +35,7 @@ gboolean jobdesc_is_valid (gchar *job)
         obj = json_value_get_object (val);
 
         name = (gchar *)json_object_get_string (obj, "name");
-        if ((name == NULL) || (strlen (name) < 4)) {
+        if ((name == NULL) || (strlen (name) < 1)) {
                 GST_ERROR ("invalid job with name property invalid");
                 json_value_free (val);
                 return FALSE;

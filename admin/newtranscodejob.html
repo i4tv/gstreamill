@@ -71,7 +71,7 @@
             if (data.result == "success") {
                 Document.GstreamillConf.conf = data.data;
             } else {
-                alert ("get configure failure: " + data.reason);
+                bootbox.alert ("get configure failure: " + data.reason);
                 return;
             }
 
@@ -137,7 +137,7 @@
                     job["log-path"] = Document.GstreamillConf.conf.transcoderoot + "/out/" + file + "/";
                     job.source.elements.filesrc.property.location = Document.GstreamillConf.conf.transcoderoot + "/in/" + file;
                     if (encoders.length === 0) {
-                        alert ("Set encoder out!");
+                        bootbox.alert ($.t("newtranscodejob.Select Encoder Output"));
                         return;
                     }
                     for (var j = 0, encoder; encoder = encoders[j]; j++) {
@@ -157,14 +157,15 @@
                         success: function (response) {
                             if (response.result == "success") {
                                 result += 'start ' + file + ' ' + response.result + '\n';
-                                window.location.replace("joblist.html");
                             } else {
                                 result += 'start ' + file + ' ' + response.result + ', ' + response.reason + '\n';
                             }
                         }
                     });
                 }
-                alert (result);
+                bootbox.alert (result, function () {
+                    window.location.replace("joblist.html");
+                });
             });
         });
 

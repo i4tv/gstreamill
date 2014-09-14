@@ -638,9 +638,15 @@ static gchar * put_job (RequestData *request_data)
                 return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"name is null\"\n}");
         }
         job_path = g_strdup_printf ("/etc/gstreamill.d%s.job", &(request_data->uri[13]));
+        if (g_file_test (job_path, G_FILE_TEST_IS_REGULAR)) {
+                GST_ERROR ("Job exist: %s", job_path);
+                g_free (job_path);
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"Job Exist\"\n}");
+        }
         job = request_data->raw_request + request_data->header_size;
         if (!jobdesc_is_valid (job)) {
                 GST_ERROR ("Invalid job: %s", job);
+                g_free (job_path);
                 return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid job\"\n}");
         }
         if (!g_file_set_contents (job_path, job, strlen (job), &err)) {
