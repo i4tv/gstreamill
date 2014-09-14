@@ -272,16 +272,16 @@
                 /* network changed? */
                 if (!dirty) {
                     hidden_query_hint ("query_hint");
-                    alert ("no change");
+                    bootbox.alert ($.t ("system.No Change"));
                     return;
                 }
 
                 $.post ("setnetworkinterfaces", JSON.stringify (data, null, 4), function (response) {
                     hidden_query_hint ("query_hint");
                     if (response.result == 'success') {
-                        alert (response.result);
+                        alert ($.t ("system.Set Network Success"));
                     } else {
-                        alert (response.result + '\n' + response.reason);
+                        alert ($.t ("system.Set Network Failure") + response.reason);
                     }
                 });
             });

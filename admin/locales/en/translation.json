@@ -39,7 +39,10 @@
     "netmask": "Netmask",
     "network": "Network",
     "broadcast": "Broadcast",
-    "gateway": "Gateway"
+    "gateway": "Gateway",
+    "No Change": "No Change",
+    "Set Network Success": "Set Network Success",
+    "Set Network Failure": "Set Network Failure"
   },
   "newlivejob": {
     "New Live Job": "New Live Job",

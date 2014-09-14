@@ -39,7 +39,10 @@
     "netmask": "子网掩码",
     "network": "网络",
     "broadcast": "广播域",
-    "gateway": "网关"
+    "gateway": "网关",
+    "No Change": "无变化",
+    "Set Network Success": "设置网络成功",
+    "Set Network Failure": "设置网络失败"
   },
   "newtranscodejob": {
     "New Transcode Job": "创建转码任务",
