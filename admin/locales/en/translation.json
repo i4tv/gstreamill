@@ -53,7 +53,8 @@
     "Phone": "Phone",
     "SDTV": "SDTV",
     "HDTV": "HDTV",
-    "Output Type": "Output Type"
+    "Output Type": "Output Type",
+    "New Live Job Success": "New Live Job Success"
   },
   "newtranscodejob": {
     "Add Encoder Output": "Add Encoder Output",
@@ -114,5 +115,10 @@
     "Start Job": "Start Job",
     "The job is not started": "The job is not started",
     "Cancel Job": "Cancel Job"
+  },
+  "bootbox": {
+    "OK": "OK",
+    "CANCEL": "Cancel",
+    "CONFIRM": "OK"
   }
 }

@@ -64,7 +64,8 @@
     "Phone": "手机",
     "SDTV": "表情电视",
     "HDTV": "高清电视",
-    "Output Type": "输出类型"
+    "Output Type": "输出类型",
+    "New Live Job Success": "创建直播任务成功"
   },
   "jobmanage": {
     "Job Setting": "任务设置",
@@ -113,5 +114,10 @@
     "Start Job": "启动任务",
     "The job is not started": "任务未启动",
     "Cancel Job": "取消任务"
+  },
+  "bootbox": {
+    "OK": "OK",
+    "CANCEL": "取消",
+    "CONFIRM": "确定"
   }
 }

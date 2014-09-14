@@ -19,6 +19,7 @@ admincss_DATA = \
 adminjsdir = $(datadir)/gstreamill/admin/js
 adminjs_DATA = \
         js/bootstrap.js \
+        js/bootbox.js \
         js/jquery.js \
         js/i18next.js \
         js/gstreamill.js
