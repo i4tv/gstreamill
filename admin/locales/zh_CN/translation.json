@@ -108,7 +108,14 @@
     "Realy remove this Job? can't be restore!": "真的要移除任务？ 移除后无法恢复！",
     "Stop and remove a running Job? can't be restore!": "停止并删除一个运行中的任务？移除后无法恢复!",
     "Stop and Remove Job": "停止并移除任务",
-    "Remove Job": "移除任务"
+    "Remove Job": "移除任务",
+    "Get Job Failure": "获取任务失败",
+    "Set Job Success": "设置任务成功",
+    "Set Job Failure": "设置任务失败",
+    "Get Job Stat Failure": "获取任务状态失败",
+    "Stop Job Failure": "停止任务失败",
+    "Remove Job Failure": "移除任务失败",
+    "Remove Job Success": "移除任务成功"
   },
   "joblist": {
     "Restart times": "重新启动次数",

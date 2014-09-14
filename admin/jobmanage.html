@@ -24,7 +24,7 @@
                 <div id='jobsetting_content'>
                 </div>
                 <div id='jobstatus_content'></div>
-                <div id='removejob_content' class="panel panel-danger">
+                <div id='removejob_content' class="panel panel-danger" style="display: none;">
                     <div class="panel-heading jobmanage" data-i18n="jobmanage.Danger Zone"></div>
                     <div class="panel-body">
                         <h4 class="jobmanage" data-i18n="jobmanage.Remove this Job"></h4></br>
@@ -32,7 +32,7 @@
                         <button class='btn btn-danger pull-right jobmanage' id='removejob' data-i18n="jobmanage.Remove Job"></button>
                     </div>
                 </div>
-                <div id='removerunningjob_content' class="panel panel-danger">
+                <div id='removerunningjob_content' class="panel panel-danger" style="display: none;">
                     <div class="panel-heading jobmanage" data-i18n="jobmanage.Danger Zone"></div>
                     <div class="panel-body">
                         <h4 class="jobmanage" data-i18n="jobmanage.Remove this Job"></h4></br>
@@ -83,8 +83,9 @@
         $.get ("getjob/%s", function (data) {
 
             if (data.result == "failure") {
-                alert (data.reason);
-                return;
+                bootbox.alert ($.t ("jobmanage.Get Job Failure") + ": " + data.reason, function () {
+                    window.location.replace("joblist.html");
+                });
             }
 
             var job = data.data;
@@ -207,9 +208,11 @@
 
                 $.post ("putjob/" + job.name, JSON.stringify (job, null, 4), function (data) {
                     if (data.result == 'success') {
-                        alert (data.result);
+                        bootbox.alert ($.t ("jobmanage.Set Job Success") + ": " + name, function () {
+                            window.location.replace("joblist.html");
+                        });
                     } else {
-                        alert (data.result + '\n' + data.reason);
+                        bootbox.alert ($.t ("jobmanage.Set Job Failure") + ": " + data.reason);
                     }
                 });
             });
@@ -230,7 +233,7 @@
     function status (name) {
         $.get("/stat/gstreamill/job/" + name, function (data) {
             if (data.result === 'failure') {
-                alert (name + "'s stat not found.");
+                bootbox.alert ($.t ("jobmanage.Get Job Stat Failure"));
                 return;
             }
 
@@ -337,15 +340,16 @@
                 $('#removerunningjob').click (function () {
                     $.get ("/admin/stop/" + name, function (response) {
                         if (response.result === "failure") {
-                            alert ("Stop failure");
+                            bootbox.alert ($.t ("jobmanage.Stop Job Failure"));
                             return;
                         }
                         $.get("rmjob/" + name, function (response) {
                             if (response.result === "success") {
-                                alert (response.result);
-                                window.location.replace("joblist.html");
+                                bootbox.alert ($.t ("jobmanage.Remove Job Success") + ": " + name, function () {
+                                    window.location.replace("joblist.html");
+                                });
                             } else {
-                                alert (response.result + "\nreason: " + response.reason);
+                                bootbox.alert ($.t ("jobmanage.Remove Job Failure") + ": " + name);
                             }
                         });
                     });
@@ -355,10 +359,11 @@
                 $('#removejob').click (function () {
                     $.get("rmjob/" + name, function (response) {
                         if (response.result === "success") {
-                            alert (response.result);
-                            window.location.replace("joblist.html");
+                            bootbox.alert ($.t ("jobmanage.Remove Job Success") + ": " + name, function () {
+                                window.location.replace("joblist.html");
+                            });
                         } else {
-                            alert (response.result + "\nreason: " + response.reason);
+                            bootbox.alert ($.t ("jobmanage.Remove Job Failure") + ": " + name);
                         }
                     });
                 });
@@ -372,7 +377,7 @@
             if (data.result == "success") {
                 Document.GstreamillConf.conf = data.data;
             } else {
-                alert ("get configure failure: " + data.reason);
+                bootbox.alert ("Get Configure Failure: " + data.reason);
                 return;
             }
 

@@ -109,7 +109,14 @@
     "Realy remove this Job? can't be restore!": "Realy remove this Job? can't be restore!",
     "Stop and remove a running Job? can't be restore!": "Stop and remove a running Job? can't be restore!",
     "Stop and Remove Job": "Stop and Remove Job",
-    "Remove Job": "Remove Job"
+    "Remove Job": "Remove Job",
+    "Get Job Failure": "Get Job Failure",
+    "Set Job Success": "Set Job Success",
+    "Set Job Failure": "Set Job Failure",
+    "Get Job Stat Failure": "Get Job Stat Failure",
+    "Stop Job Failure": "Stop Job Failure",
+    "Remove Job Failure": "Remove Job Failure",
+    "Remove Job Success": "Remove Job Success"
   },
   "joblist": {
     "Restart times": "Restart times",
