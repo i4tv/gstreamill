@@ -56,7 +56,7 @@
     function startJob (name) {
         $.get ("/admin/getjob/" + name, function (data) {
             if (data.result == "failure") {
-                alert (data.reason);
+                bootbox.alert ($.t ("joblist.Get Job Failure") + ": " + response.reason);
                 return;
             }
 
@@ -64,14 +64,15 @@
 
             $.post ("/admin/start", job, function (response) {
                 if (response.result == "success") {
-                    alert ('start ' + name + ' ' + response.result);
-                    var jobStatUrl = '/stat/gstreamill/job/' + response.name;
-                    $.get(jobStatUrl, function (response) {
-                        showLiveJobStatus (response);
+                    bootbox.alert ($.t ("joblist.Start Job Success") + ": " + name, function () {
+                        var jobStatUrl = "/stat/gstreamill/job/" + response.name;
+                        $.get(jobStatUrl, function (response) {
+                            showLiveJobStatus (response);
+                        });
                     });
 
                 } else {
-                    alert (response.result + "\n" + response.reason);
+                    bootbox.alert ($.t ("joblist.Start Job Failure") + ": " + response.reason);
                 }
             });
         });
@@ -80,15 +81,15 @@
     function stopJob (name) {
         $.get ("/admin/stop/" + name, function (response) {
             if (response.result == "success") {
-                alert ('stop ' + response.name + ' ' + response.result);
-                var jobStatUrl = '/stat/gstreamill/job/' + response.name;
-                $.get(jobStatUrl, function (response) {
-                        console.log (response);
-                    showLiveJobStatus (response);
+                bootbox.alert ($.t ("joblist.Stop Job Success") + ": " + name, function () {
+                    var jobStatUrl = "/stat/gstreamill/job/" + name;
+                    $.get(jobStatUrl, function (response) {
+                        showLiveJobStatus (response);
+                    });
                 });
 
             } else {
-                alert (response.result + "\n" + response.reason);
+                bootbox.alert ($.t ("joblist.Stop Job Failure") + ": " + response.reason);
             }
         });
     }
@@ -96,14 +97,12 @@
     function cancelJob (name) {
         $.get ("/admin/stop/" + name, function (response) {
             if (response.result == "success") {
-                alert ('Cancel ' + response.name + ' ' + response.result);
-                var jobStatUrl = '/stat/gstreamill/job/' + response.name;
-                $.get(jobStatUrl, function (response) {
+                bootbox.alert ($.t ("joblist.Cancel Job Success") + ": " + name, function () {
                     location.reload ();
                 });
 
             } else {
-                alert (response.result + "\n" + response.reason);
+                bootbox.alert ($.t ("joblist.Cancel Job Failure") + ": " + response.reason);
             }
         });
     }
@@ -113,7 +112,7 @@
             if (data.result == "success") {
                 Document.GstreamillConf.conf = data.data;
             } else {
-                alert ("get configure failure: " + data.reason);
+                bootbox.alert ("Get Configure Failure: " + data.reason);
                 return;
             }
 

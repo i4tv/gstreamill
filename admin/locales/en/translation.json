@@ -121,7 +121,14 @@
     "Memory usage": "Memory usage",
     "Start Job": "Start Job",
     "The job is not started": "The job is not started",
-    "Cancel Job": "Cancel Job"
+    "Cancel Job": "Cancel Job",
+    "Get Job Failure": "Get Job Failure",
+    "Start Job Success": "Start Job Success",
+    "Start Job Failure": "Start Job Failure",
+    "Stop Job Success": "Stop Job Success",
+    "Stop Job Failure": "Stop Job Failure",
+    "Cancel Job Success": "Cancel Job Success",
+    "Cancel Job Failure": "Cancel Job Failure"
   },
   "bootbox": {
     "OK": "OK",

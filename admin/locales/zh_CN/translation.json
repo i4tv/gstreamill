@@ -120,7 +120,14 @@
     "Memory usage": "内存使用",
     "Start Job": "启动任务",
     "The job is not started": "任务未启动",
-    "Cancel Job": "取消任务"
+    "Cancel Job": "取消任务",
+    "Get Job Failure": "获取任务失败",
+    "Start Job Success": "启动任务成功",
+    "Start Job Failure": "启动任务失败",
+    "Stop Job Success": "停止任务成功",
+    "Stop Job Failure": "停止任务失败",
+    "Cancel Job Success": "取消任务成功",
+    "Cancel Job Failure": "取消任务失败"
   },
   "bootbox": {
     "OK": "OK",
