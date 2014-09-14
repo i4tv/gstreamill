@@ -54,7 +54,10 @@
     "SDTV": "SDTV",
     "HDTV": "HDTV",
     "Output Type": "Output Type",
-    "New Live Job Success": "New Live Job Success"
+    "New Live Job Success": "New Live Job Success",
+    "New Live Job Failure": "New Live Job Failure",
+    "Select Source Type": "Select Source Type",
+    "Set Name Please": "Set Name Please"
   },
   "newtranscodejob": {
     "Add Encoder Output": "Add Encoder Output",

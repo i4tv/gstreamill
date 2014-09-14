@@ -99,30 +99,29 @@
         </div>
     </div>
 
-
     <script type="text/javascript">
 
-    $ (document).ready (function () {
+    $(document).ready (function () {
         /* load configure */
         $.get("/admin/getconf", function (data) {
             if (data.result == "success") {
                 Document.GstreamillConf.conf = data.data;
             } else {
-                alert ("get configure failure: " + data.reason);
+                bootbox.alert ("Get Configure Failure: " + data.reason);
                 return;
             }
 
             $("#newlivejob").click (function () {
                 var sourcetype_value = $("#sourcetype:checked").val ();
                 if (typeof sourcetype_value === "undefined") {
-                    alert ("Select source type");
+                    bootbox.alert ($.t ("newlivejob.Select Source Type"));
                     return;
                 }
 
                 $.getJSON ("/admin/schemas/" + sourcetype_value + ".json", function (job) {
                     var name_value = $("#jobname").val ();
                     if (name_value == "") {
-                        alert ("Set name please");
+                        bootbox.alert ($.t ("newlivejob.Set Name Please"));
                         return;
                     }
                     job.name = name_value;
@@ -170,10 +169,13 @@
                     job.encoders = encoders;
                     $.post("putjob/" + name_value, JSON.stringify (job, null, 4), function (data) {
                         if (data.result == 'success') {
-                            alert (data.result);
-                            window.location.replace("joblist.html");
+                            var result = $.t ("newlivejob.New Live Job Success") + ": " + name_value;
+                            bootbox.alert (result, function () {
+                                window.location.replace("joblist.html");
+                            });
                         } else {
-                            alert (data.result + '\n' + data.reason);
+                            var result = $.t ("newlivejob.New Live Job Failure") + ": " + name_value + "\n" + data.reason;
+                            bootbox.alert (result);
                         }
                     });
                 });

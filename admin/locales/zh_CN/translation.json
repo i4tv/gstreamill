@@ -65,7 +65,10 @@
     "SDTV": "表情电视",
     "HDTV": "高清电视",
     "Output Type": "输出类型",
-    "New Live Job Success": "创建直播任务成功"
+    "New Live Job Success": "创建直播任务成功",
+    "New Live Job Failure": "创建直播任务失败",
+    "Select Source Type": "选择源类型",
+    "Set Name Please": "请输入名字"
   },
   "jobmanage": {
     "Job Setting": "任务设置",
