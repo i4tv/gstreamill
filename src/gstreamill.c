@@ -933,6 +933,10 @@ EncoderOutput * gstreamill_get_encoder_output (Gstreamill *gstreamill, gchar *ur
                 GST_ERROR ("Job %s not found.", uri);
                 return NULL;
         }
+        if (*(job->output->state) != GST_STATE_PLAYING) {
+                GST_ERROR ("FATAL: Job state is not playing");
+                return NULL;
+        }
         if (index >= job->output->encoder_count) {
                 GST_ERROR ("Encoder %s not found.", uri);
                 return NULL;
