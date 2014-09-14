@@ -206,9 +206,9 @@
                     job.m3u8streaming["segment-duration"] = parseInt ($("#segmentduration").val ());
                 }
 
-                $.post ("putjob/" + job.name, JSON.stringify (job, null, 4), function (data) {
+                $.post ("setjob/" + job.name, JSON.stringify (job, null, 4), function (data) {
                     if (data.result == 'success') {
-                        bootbox.alert ($.t ("jobmanage.Set Job Success") + ": " + name, function () {
+                        bootbox.alert ($.t ("jobmanage.Set Job Success") + ": " + job.name, function () {
                             window.location.replace("joblist.html");
                         });
                     } else {

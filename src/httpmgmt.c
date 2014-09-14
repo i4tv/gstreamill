@@ -628,7 +628,7 @@ static gchar * get_job (gchar *uri)
         return job;
 }
 
-static gchar * put_job (RequestData *request_data)
+static gchar * put_job (RequestData *request_data, gboolean create)
 {
         gchar *job_path, *job, *result;
         GError *err = NULL;
@@ -638,7 +638,7 @@ static gchar * put_job (RequestData *request_data)
                 return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"name is null\"\n}");
         }
         job_path = g_strdup_printf ("/etc/gstreamill.d%s.job", &(request_data->uri[13]));
-        if (g_file_test (job_path, G_FILE_TEST_IS_REGULAR)) {
+        if (create && g_file_test (job_path, G_FILE_TEST_IS_REGULAR)) {
                 GST_ERROR ("Job exist: %s", job_path);
                 g_free (job_path);
                 return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"Job Exist\"\n}");
@@ -762,7 +762,12 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
                 g_free (p);
 
         } else if ((request_data->method == HTTP_POST) && (g_str_has_prefix (request_data->uri, "/admin/putjob/"))) {
-                p = put_job (request_data);
+                p = put_job (request_data, TRUE);
+                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+                g_free (p);
+
+        } else if ((request_data->method == HTTP_POST) && (g_str_has_prefix (request_data->uri, "/admin/setjob/"))) {
+                p = put_job (request_data, FALSE);
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
