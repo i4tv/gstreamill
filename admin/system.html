@@ -279,9 +279,9 @@
                 $.post ("setnetworkinterfaces", JSON.stringify (data, null, 4), function (response) {
                     hidden_query_hint ("query_hint");
                     if (response.result == 'success') {
-                        alert ($.t ("system.Set Network Success"));
+                        bootbox.alert ($.t ("system.Set Network Success"));
                     } else {
-                        alert ($.t ("system.Set Network Failure") + response.reason);
+                        bootbox.alert ($.t ("system.Set Network Failure") + response.reason);
                     }
                 });
             });
@@ -297,7 +297,7 @@
             if (data.result == "success") {
                 Document.GstreamillConf.conf = data.data;
             } else {
-                alert ("get configure failure: " + data.reason);
+                bootbox.alert ("get configure failure: " + data.reason);
                 return;
             }
 
@@ -308,13 +308,15 @@
                 var conf = {};
                 conf.language = $("#language").val ();
                 conf.transcoderoot = $("#transcoderoot").val ();
-                $.post ("putconf", JSON.stringify (conf, null, 4), function (data) {
+                $.post ("putconf", JSON.stringify (conf, null, 4), function (response) {
                     hidden_query_hint ("query_hint");
-                    if (data.result == 'success') {
-                        alert (data.result);
-                        location.reload (true);
+                    if (response.result == 'success') {
+                        var result = $.t ("system.Set Gstreamill Success");
+                        bootbox.alert (result, function () {
+                            location.reload (true);
+                        });
                     } else {
-                        alert (data.result + '\n' + data.reason);
+                        bootbox.alert ($.t ("system.Set Gstreamill Failure") + ": " + response.reason);
                     }
                 });
             });
