@@ -50,7 +50,8 @@
     "TV": "电视",
     "HDTV": "高清电视",
     "Cancel": "取消",
-    "OK": "确定"
+    "OK": "确定",
+    "Select Media Files Please": "请选择媒体文件"
   },
   "newlivejob": {
     "New Live Job": "创建直播编码任务",

@@ -12,7 +12,7 @@
             if (data.result == "success") {
                 Document.GstreamillConf.conf = data.data;
             } else {
-                alert ("get configure failure: " + data.reason);
+                bootbox.alert ("get configure failure: " + data.reason);
                 return;
             }
 

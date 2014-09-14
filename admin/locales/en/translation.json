@@ -69,7 +69,8 @@
     "TV": "TV",
     "HDTV": "HDTV",
     "Cancel": "Cancel",
-    "OK": "OK"
+    "OK": "OK",
+    "Select Media Files Please": "Select Media Files Please"
   },
   "jobmanage": {
     "Job Setting": "Job Setting",
