@@ -4,13 +4,7 @@
             <div id="network_manage">
                 <div class="panel panel-primary">
                     <div class="panel-heading setnetwork" data-i18n="setnetwork.Network Configure"></div>
-                    <div class="panel-body" id="network_manage_content">
-                        <ul class="nav nav-tabs" id="interfacelist">
-                        </ul>
-                        <div class="tab-content" id="interfacecontent">
-                        </div>
-                        <button class="btn btn-primary pull-right setnetwork" id="savenetwork" data-i18n="setnetwork.Save Network Configure"></button>
-                    </div>
+                    <div class="panel-body" id="network_manage_content"></div>
                 </div>
             </div>
         </div>
@@ -19,39 +13,46 @@
 
     <script type="text/javascript">
 
+    function append_conf_item (body, name, key, value) {
+        var ele = document.createElement ("div"),
+            key_ele = document.createElement ("div"),
+            value_ele = document.createElement ("div");
+
+        ele.setAttribute ("class", "row form-group col-lg-12");
+        key_ele.setAttribute ("class", "col-lg-4");
+        key_ele.innerHTML = "<label class=\"pull-right setnetwork\" data-i18n=\"setnetwork." + key + "\"></label>";
+        value_ele.setAttribute ("class", "col-lg-7");
+        value_ele.innerHTML = "<input type=\"text\" class=\"form-control\" id=\"" + name + "-" + key + "\" value=\"" + value + "\">";
+        ele.appendChild (key_ele);
+        ele.appendChild (value_ele);
+        body.appendChild (ele);
+    }
+
     function setnetwork () {
         $.get("/admin/networkinterfaces", function (data) {
             for (var i = 0; i < data.length; i++) {
-                var interface = data[i];
+                var interface = data[i],
+                    interface_title = document.createElement ("h3"),
+                    interface_conf = document.createElement ("div");
 
-                var li = "<li";
-                if (i === 0) {
-                    li += " class=\"active\"><a href=\"#" + interface.name + "\" data-toggle=\"tab\">" + interface.name + "</a></li>";
-                } else {
-                    li += "><a href=\"#" + interface.name + "\" data-toggle=\"tab\">" + interface.name + "</a></li>";
-                }
-                $("#interfacelist").append (li);
+                interface_title.innerHTML = interface.name;
+                interface_conf.setAttribute ("class", "well row network-conf");
 
-                var content = "<div class=\"tab-pane";
-                if (i === 0) {
-                    content += " active\" id=\"" + interface.name + "\">";
-                } else {
-                    content += "\" id=\"" + interface.name + "\">";
-                }
                 for (key in interface) {
                     if (key === "name" || key === "family" || key === "dns-nameservers")
                         continue;
-                    content += "<div class=\"row form-group\">";
-                    content += "<div class=\"col-lg-4\">";
-                    content += "<label class=\"pull-right setnetwork\" data-i18n=\"setnetwork." + key + "\"></label>";
-                    content += "</div>";
-                    content += "<div class=\"col-lg-7\">";
-                    content += "<input type=\"text\" class=\"form-control\" id=\"" + interface.name + "-" + key + "\" value=\"" + interface[key] + "\">";
-                    content += "</div>";
-                    content += "</div>";
+                    append_conf_item (interface_conf, interface.name, key, interface[key]);
                 }
-                $("#interfacecontent").append (content);
+
+                $('#network_manage_content').append (interface_title);
+                $('#network_manage_content').append (interface_conf);
             }
+
+            var save_button = document.createElement ("button");
+            save_button.setAttribute ("class", "btn btn-primary pull-right setnetwork");
+            save_button.setAttribute ("id", "savenetwork");
+            save_button.setAttribute ("data-i18n", "setnetwork.Save Network Configure");
+            $('#network_manage_content').append (save_button);
 
             $('#savenetwork').unbind ('click').click (function () {
                 /* update data */
