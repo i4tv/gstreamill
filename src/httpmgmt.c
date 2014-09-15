@@ -771,14 +771,6 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
-        } else if (g_str_has_prefix (request_data->uri, "/admin/jobmanage.html")) {
-                if (g_str_has_prefix (request_data->parameters, "name=")) {
-                        path = g_strdup_printf ("%s/gstreamill/admin/jobmanage.html", DATADIR);
-
-                } else {
-                        *buf = g_strdup_printf (http_400, PACKAGE_NAME, PACKAGE_VERSION);
-                }
-
         } else {
                 /* static content, prepare file path */
                 path = g_strdup_printf ("%s/gstreamill%s", DATADIR, request_data->uri);

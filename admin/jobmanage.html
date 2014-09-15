@@ -80,7 +80,8 @@
     }
 
     function setting () {
-        $.get ("getjob/%s", function (data) {
+        var name = location.href.replace (/[^\?]*\?name=(.*)/, "$1");
+        $.get ("getjob/" + name, function (data) {
 
             if (data.result == "failure") {
                 bootbox.alert ($.t ("jobmanage.Get Job Failure") + ": " + data.reason, function () {
