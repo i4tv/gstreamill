@@ -5,7 +5,7 @@
     margin-right: auto;
 }
 
-.setnetwork_container {
+.setnetwork_container, .gstreamill_content, .system_content {
     width: 780px;
     margin-top: 5px;
     margin-left: auto;

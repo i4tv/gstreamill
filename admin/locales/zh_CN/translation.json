@@ -1,6 +1,9 @@
 {
   "nav": {
     "System": "系统",
+    "System Manage": "系统管理",
+    "Gstreamill Manage": "Gstreamill管理",
+    "Set Network": "网络设置",
     "Jobs": "任务",
     "New Job": "创建任务",
     "New Live Job": "创建直播任务",
@@ -9,22 +12,25 @@
     "job status": "任务状态",
     "job delete": "任务删除"
   },
-  "system": {
-    "Gstreamill Manage": "Gstreamill管理",
-    "System Manage": "系统管理",
-    "Set Gstreamill": "设置Gstreamill",
-    "Language": "语言",
-    "Transcode Directory": "转码目录",
-    "Danger Zone": "危险区",
-    "Restart Device": "重启设备",
-    "Restart OS, all jobs will stoped": "重启操作系统, 所有任务会停止",
-    "Set Network Interfaces": "设置网络接口",
+  "gstreamill": {
     "Gstreamill Status": "Gstreamill 状态",
     "Gstreamill Version": "Gstreamill 版本",
     "Compile Date": "编译日期",
     "Compile Time": "编译时间",
     "Start Time": "启动时间",
     "Jobs Count" : "任务个数",
+    "Set Gstreamill": "设置Gstreamill",
+    "Language": "语言",
+    "Transcode Directory": "转码目录",
+    "Set Gstreamill Success": "设置Gstreamill成功",
+    "Set Gstreamill Failure": "设置Gstreamill失败"
+  },
+  "system": {
+    "System Manage": "系统管理",
+    "Danger Zone": "危险区",
+    "Restart Device": "重启设备",
+    "Restart OS, all jobs will stoped": "重启操作系统, 所有任务会停止",
+    "Set Network Interfaces": "设置网络接口",
     "System Status": "System状态",
     "CPU Model": "CPU型号",
     "CPU Count": "CPU个数",

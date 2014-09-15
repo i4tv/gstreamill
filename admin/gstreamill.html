@@ -1,0 +1,128 @@
+
+    <div class="container-fluid">
+        <div class="row gstreamill_content">
+                <div id='gstreamill_manage'>
+                    <!--      Gstreamill Status     -->
+                    <div class="panel panel-primary">
+    	                <div class="panel-heading gstreamill" data-i18n="gstreamill.Gstreamill Status"></div>
+                        <div class="panel-body">
+                                <div class="col-lg-4">
+                                    <label class="pull-right gstreamill"  data-i18n="gstreamill.Gstreamill Version"></label>
+                                </div>
+                                <div class="col-lg-7">
+                                    <p id="gstreamillversion"></p>
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="pull-right gstreamill"  data-i18n="gstreamill.Compile Date"></label>
+                                </div>
+                                <div class="col-lg-7">
+                                    <p id="compiledate"></p>
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="pull-right gstreamill"  data-i18n="gstreamill.Compile Time"></label>
+                                </div>
+                                <div class="col-lg-7">
+                                    <p id="compiletime"></p>
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="pull-right gstreamill"  data-i18n="gstreamill.Start Time"></label>
+                                </div>
+                                <div class="col-lg-7">
+                                    <p id="starttime"></p>
+                                </div>
+                                <div class="col-lg-4">
+                                    <label class="pull-right gstreamill"  data-i18n="gstreamill.Jobs Count"></label>
+                                </div>
+                                <div class="col-lg-7">
+                                    <p id="jobscount"></p>
+                                </div>
+                        </div>
+                    </div>
+    
+                    <!--      Set Gstreamill     -->
+                    <div class="panel panel-primary">
+    	                <div class="panel-heading gstreamill" data-i18n="gstreamill.Set Gstreamill"></div>
+                        <div class="panel-body">
+                            <div class="row form-group col-md-12">
+                                <div class="col-lg-4">
+                                    <label class="pull-right gstreamill" data-i18n="gstreamill.Language"></label> 
+                                </div>
+                                <div class="col-lg-7">
+                                    <select class="form-control" id="language">
+                                        <option>English</option>
+                                        <option>中文</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row form-group col-md-12">
+                                <div class="col-lg-4">
+                                    <label class="pull-right gstreamill"  data-i18n="gstreamill.Transcode Directory"></label>
+                                </div>
+                                <div class="col-lg-7">
+                                    <input type="text" class="form-control" id="transcoderoot">
+                                </div>
+                            </div>
+                            <button class='btn btn-primary pull-right gstreamill' id='set_gstreamill_btn' data-i18n="gstreamill.Set Gstreamill"></button>
+                        </div>
+                    </div>
+                </div>
+        </div>
+    </div>
+
+
+    <script type="text/javascript">
+
+    function gstreamill () {
+        $.get("/stat/gstreamill", function (data) {
+            $("#gstreamillversion").html (data.version);
+            $("#compiledate").html (data.builddate);
+            $("#compiletime").html (data.buildtime);
+            $("#starttime").html (data.starttime);
+            $("#jobscount").html (data.jobcount);
+        });
+
+        $.get("/admin/getconf", function (data) {
+            $("#language").val(data.data.language);
+            $("#transcoderoot").val(data.data.transcoderoot);
+        });
+    }
+
+    $ (document).ready (function () {
+
+        $.get("/admin/getconf", function (data) {
+            if (data.result == "success") {
+                Document.GstreamillConf.conf = data.data;
+            } else {
+                bootbox.alert ("get configure failure: " + data.reason);
+                return;
+            }
+
+            gstreamill ();
+
+            $('#set_gstreamill_btn').click (function () {
+                var conf = {};
+                conf.language = $("#language").val ();
+                conf.transcoderoot = $("#transcoderoot").val ();
+                $.post ("putconf", JSON.stringify (conf, null, 4), function (response) {
+                    if (response.result == 'success') {
+                        var result = $.t ("gstreamill.Set Gstreamill Success");
+                        bootbox.alert (result, function () {
+                            location.reload (true);
+                        });
+                    } else {
+                        bootbox.alert ($.t ("gstreamill.Set Gstreamill Failure") + ": " + response.reason);
+                    }
+                });
+            });
+
+            $.i18n.init({
+                lng: Document.GstreamillConf.language[Document.GstreamillConf.conf.language]
+            }, function(t) {
+                $(".nav").i18n ();
+                $(".gstreamill").i18n ();
+            });
+
+        });
+    });
+
+    </script>

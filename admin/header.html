@@ -48,18 +48,28 @@
             <!-- Collect the nav links, forms, and other content for toggling -->
             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                 <ul class="nav navbar-nav">
-                    <li><a href="/admin/system.html" data-i18n="nav.System"></a></li>
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            <span data-i18n="nav.System"></span><b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/admin/gstreamill.html" data-i18n="nav.Gstreamill Manage"></a></li>
+                            <li><a href="/admin/system.html" data-i18n="nav.System Manage"></a></li>
+                            <li><a href="/admin/setnetwork.html" data-i18n="nav.Set Network"></a></li>
+                        </ul>
+                    </li>
+                    <!--li><a href="/admin/system.html" data-i18n="nav.System"></a></li-->
                     <li><a href="/admin/joblist.html" data-i18n="nav.Jobs"></a></li>
                 </ul>
                 <ul class="nav navbar-nav navbar-right">
                     <li class="dropdown">
-                      <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                        <span class="glyphicon glyphicon-plus"></span> <span data-i18n="nav.New Job"></span><b class="caret"></b>
-                      </a>
-                      <ul class="dropdown-menu">
-                        <li><a href="/admin/newlivejob.html" data-i18n="nav.New Live Job"></a></li>
-                        <li><a href="/admin/newtranscodejob.html" data-i18n="nav.New Transcode Job"></a></li>
-                      </ul>
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            <span class="glyphicon glyphicon-plus"></span> <span data-i18n="nav.New Job"></span><b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/admin/newlivejob.html" data-i18n="nav.New Live Job"></a></li>
+                            <li><a href="/admin/newtranscodejob.html" data-i18n="nav.New Transcode Job"></a></li>
+                        </ul>
                     </li>
                 </ul>
             </div><!-- /.navbar-collapse -->

@@ -1,6 +1,9 @@
 {
   "nav": {
     "System": "System",
+    "Gstreamill Manage": "Gstreamill Manage",
+    "System Manage": "System Manage",
+    "Set Network": "Set Network",
     "Jobs": "Jobs",
     "New Job": "New Job",
     "New Live Job": "New Live Job",
@@ -9,22 +12,24 @@
     "job status": "Job Status",
     "job delete": "Job Delete"
   },
-  "system": {
-    "Gstreamill Manage": "Gstreamill Manage",
-    "System Manage": "System Manage",
-    "Set Gstreamill": "Set Gstreamill",
-    "Language": "Language",
-    "Transcode Directory": "Tanscode Directory",
-    "Danger Zone": "Danger Zone",
-    "Restart Device": "Restart Device",
-    "Restart OS, all jobs will stoped": "Restart OS, all jobs will stoped",
-    "Set Network Interfaces": "Set Network Interfaces",
+  "gstreamill": {
     "Gstreamill Status": "Gstreamill Status",
     "Gstreamill Version": "Gstreamill Version",
     "Compile Date": "Compile Date",
     "Compile Time": "Compile Time",
     "Start Time": "Start Time",
     "Jobs Count": "Jobs Count",
+    "Set Gstreamill": "Set Gstreamill",
+    "Language": "Language",
+    "Transcode Directory": "Tanscode Directory",
+    "Set Gstreamill Success": "Set Gstreamill Success",
+    "Set Gstreamill Failure": "Set Gstreamill Failure"
+  },
+  "system": {
+    "Danger Zone": "Danger Zone",
+    "Restart Device": "Restart Device",
+    "Restart OS, all jobs will stoped": "Restart OS, all jobs will stoped",
+    "Set Network Interfaces": "Set Network Interfaces",
     "System Status": "System Status",
     "CPU Model": "CPU Model",
     "CPU Count": "CPU Count",

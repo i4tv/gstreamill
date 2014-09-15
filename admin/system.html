@@ -1,99 +1,7 @@
 
-    <div id="query_hint" class="query_hint">
-        <img src="img/waiting.gif" />
-    </div>
     <div class="container-fluid">
-        <div class="row setjob">
-            <div class="col-lg-3 sidebar-menu" id="system_menu">
-                <ul class="nav nav-stacked">
-                    <li>
-                        <a href="javascript:gstreamill();">
-                            <span class="glyphicon glyphicon-film"></span> <span class="system" data-i18n="system.Gstreamill Manage"></span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="javascript:system();">
-                            <span class="glyphicon glyphicon-wrench"></span> <span class="system" data-i18n="system.System Manage"></span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="javascript:network();">
-                            <span class="glyphicon glyphicon-link"></span> <span class="system" data-i18n="system.Network Configure"></span>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-            <div class="col-lg-9 main-content">
-
-                <div id='gstreamill_manage'>
-                    <!--      Gstreamill Status     -->
-                    <div class="panel panel-primary">
-    	                <div class="panel-heading system" data-i18n="system.Gstreamill Status"></div>
-                        <div class="panel-body">
-                                <div class="col-lg-4">
-                                    <label class="pull-right system"  data-i18n="system.Gstreamill Version"></label>
-                                </div>
-                                <div class="col-lg-7">
-                                    <p id="gstreamillversion"></p>
-                                </div>
-                                <div class="col-lg-4">
-                                    <label class="pull-right system"  data-i18n="system.Compile Date"></label>
-                                </div>
-                                <div class="col-lg-7">
-                                    <p id="compiledate"></p>
-                                </div>
-                                <div class="col-lg-4">
-                                    <label class="pull-right system"  data-i18n="system.Compile Time"></label>
-                                </div>
-                                <div class="col-lg-7">
-                                    <p id="compiletime"></p>
-                                </div>
-                                <div class="col-lg-4">
-                                    <label class="pull-right system"  data-i18n="system.Start Time"></label>
-                                </div>
-                                <div class="col-lg-7">
-                                    <p id="starttime"></p>
-                                </div>
-                                <div class="col-lg-4">
-                                    <label class="pull-right system"  data-i18n="system.Jobs Count"></label>
-                                </div>
-                                <div class="col-lg-7">
-                                    <p id="jobscount"></p>
-                                </div>
-                        </div>
-                    </div>
-    
-                    <!--      Set Gstreamill     -->
-                    <div class="panel panel-primary">
-    	                <div class="panel-heading system" data-i18n="system.Set Gstreamill"></div>
-                        <div class="panel-body">
-                            <div class="row form-group col-md-12">
-                                <div class="col-lg-4">
-                                    <label class="pull-right system" data-i18n="system.Language"></label> 
-                                </div>
-                                <div class="col-lg-7">
-                                    <select class="form-control" id="language">
-                                        <option>English</option>
-                                        <option>中文</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="row form-group col-md-12">
-                                <div class="col-lg-4">
-                                    <label class="pull-right system"  data-i18n="system.Transcode Directory"></label>
-                                </div>
-                                <div class="col-lg-7">
-                                    <input type="text" class="form-control" id="transcoderoot">
-                                </div>
-                            </div>
-                            <button class='btn btn-primary pull-right system' id='set_gstreamill_btn' data-i18n="system.Set Gstreamill"></button>
-                        </div>
-                    </div>
-
-                </div>
-
+        <div class="row system_content">
                 <div id='system_manage'>
-
                     <div id='gstreamill_status' class="panel panel-primary">
     	                <div class="panel-heading system" data-i18n="system.System Status"></div>
                         <div class="panel-body">
@@ -144,37 +52,14 @@
                             <button class='btn btn-danger pull-right system' id='restartdevice' data-i18n="system.Restart Device"></button>
                         </div>
                     </div>
-
                 </div>
-
-                <div id="network_manage">
-                    <div class="panel panel-primary">
-                        <div class="panel-heading system" data-i18n="system.Network Configure"></div>
-                        <div class="panel-body" id="network_manage_content"></div>
-                    </div>
-                </div>
-
-            </div>
         </div>
     </div>
 
 
     <script type="text/javascript">
 
-    function show_query_hint (query_hint){
-        var query_hint = document.getElementById (query_hint);
-        query_hint.style.display="block";
-    }
-
-    function hidden_query_hint (query_hint){
-        var query_hint = document.getElementById (query_hint);
-        query_hint.style.display = "none";
-    }
-
     function system () {
-        show_query_hint ("query_hint");
-        $('#gstreamill_manage').hide ();
-        $('#network_manage').hide ();
         $.get("/stat/system", function (data) {
             $("#cpumodel").html (data.CPU_Model);
             $("#cpucount").html (data.CPU_Count);
@@ -182,112 +67,6 @@
             $("#corepersocket").html (data.Core_per_Socket);
             $("#socketscount").html (data.Sockets_Count);
             $("#cpumhz").html (data.CPU_MHz);
-            hidden_query_hint ("query_hint");
-            $('#system_manage').show ();
-        });
-    }
-
-    function gstreamill () {
-        show_query_hint ("query_hint");
-        $('#system_manage').hide ();
-        $('#network_manage').hide ();
-        $.get("/stat/gstreamill", function (data) {
-            $("#gstreamillversion").html (data.version);
-            $("#compiledate").html (data.builddate);
-            $("#compiletime").html (data.buildtime);
-            $("#starttime").html (data.starttime);
-            $("#jobscount").html (data.jobcount);
-            hidden_query_hint ("query_hint");
-        });
-
-        $.get("/admin/getconf", function (data) {
-            $("#language").val(data.data.language);
-            $("#transcoderoot").val(data.data.transcoderoot);
-            $('#gstreamill_manage').show ();
-        });
-    }
-
-    function append_conf_item (body, name, key, value) {
-        var ele = document.createElement ("div"),
-            key_ele = document.createElement ("div"),
-            value_ele = document.createElement ("div");
-        ele.setAttribute ("class", "row form-group col-lg-12");
-        key_ele.setAttribute ("class", "col-lg-4");
-        key_ele.innerHTML = "<label class=\"pull-right system\" data-i18n=\"system." + key + "\"></label>";
-        value_ele.setAttribute ("class", "col-lg-7");
-        value_ele.innerHTML = "<input type=\"text\" class=\"form-control\" id=\"" + name + "-" + key + "\" value=\"" + value + "\">";
-        ele.appendChild (key_ele);
-        ele.appendChild (value_ele);
-        body.appendChild (ele);
-    }
-
-    function network () {
-        show_query_hint ("query_hint");
-        $('#system_manage').hide ();
-        $('#gstreamill_manage').hide ();
-        $.get("/admin/networkinterfaces", function (data) {
-            hidden_query_hint ("query_hint");
-            $("#network_manage_content").html ("");
-            for (var i = 0; i < data.length; i++) {
-                var interface = data[i],
-                    interface_title = document.createElement ("h3"),
-                    interface_conf = document.createElement ("div");
-
-                interface_title.innerHTML = interface.name;
-                interface_conf.setAttribute ("class", "well row network-conf");
-
-                for (key in interface) {
-                    if (key === "name" || key === "family" || key === "dns-nameservers")
-                        continue;
-                    append_conf_item (interface_conf, interface.name, key, interface[key]);
-                }
-
-                $('#network_manage_content').append (interface_title);
-                $('#network_manage_content').append (interface_conf);
-            }
-
-            var save_button = document.createElement ("button");
-            save_button.setAttribute ("class", "btn btn-primary pull-right system");
-            save_button.setAttribute ("id", "savenetwork");
-            save_button.setAttribute ("data-i18n", "system.Save Network Configure");
-            $('#network_manage_content').append (save_button);
-
-            $('#savenetwork').unbind ('click').click (function () {
-                show_query_hint ("query_hint");
-
-                /* update data */
-                var dirty = false;
-                for (var i = 0; i < data.length; i++) {
-                    var interface = data[i];
-                    for (key in interface) {
-                        if (key === "name" || key === "family" || key === "dns-nameservers")
-                            continue;
-                        var id = "#" + interface.name + "-" + key;
-                        if ($(id).val () === interface[key])
-                            continue;
-                        dirty = true;
-                        data[i][key] = $(id).val ();
-                    }
-                }
-                /* network changed? */
-                if (!dirty) {
-                    hidden_query_hint ("query_hint");
-                    bootbox.alert ($.t ("system.No Change"));
-                    return;
-                }
-
-                $.post ("setnetworkinterfaces", JSON.stringify (data, null, 4), function (response) {
-                    hidden_query_hint ("query_hint");
-                    if (response.result == 'success') {
-                        bootbox.alert ($.t ("system.Set Network Success"));
-                    } else {
-                        bootbox.alert ($.t ("system.Set Network Failure") + response.reason);
-                    }
-                });
-            });
-
-            $(".system").i18n ();
-            $('#network_manage').show ();
         });
     }
 
@@ -301,15 +80,13 @@
                 return;
             }
 
-            gstreamill ();
+            system ();
 
             $('#set_gstreamill_btn').click (function () {
-                show_query_hint ("query_hint");
                 var conf = {};
                 conf.language = $("#language").val ();
                 conf.transcoderoot = $("#transcoderoot").val ();
                 $.post ("putconf", JSON.stringify (conf, null, 4), function (response) {
-                    hidden_query_hint ("query_hint");
                     if (response.result == 'success') {
                         var result = $.t ("system.Set Gstreamill Success");
                         bootbox.alert (result, function () {

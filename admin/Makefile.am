@@ -6,9 +6,10 @@ admin_DATA = \
         footer.html \
         newlivejob.html \
         joblist.html \
-        system.html \
         newtranscodejob.html \
         jobmanage.html \
+        system.html \
+        gstreamill.html \
         setnetwork.html
 
 admincssdir = $(datadir)/gstreamill/admin/css
