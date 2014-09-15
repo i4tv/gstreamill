@@ -1,11 +1,5 @@
-#joblist, .setjob, .newlivejob_content, .newtranscodejob_content {
-    width: 980px;
-    margin-top: 5px;
-    margin-left: auto;
-    margin-right: auto;
-}
 
-.setnetwork_container, .gstreamill_content, .system_content, .jobstatus_content, .jobmanage_content {
+.body_content {
     width: 780px;
     margin-top: 5px;
     margin-left: auto;
