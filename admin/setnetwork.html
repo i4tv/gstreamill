@@ -1,0 +1,111 @@
+
+    <div class="container-fluid">
+        <div class="row setnetwork_container">
+            <div id="network_manage">
+                <div class="panel panel-primary">
+                    <div class="panel-heading setnetwork" data-i18n="setnetwork.Network Configure"></div>
+                    <div class="panel-body" id="network_manage_content">
+                        <ul class="nav nav-tabs" id="interfacelist">
+                        </ul>
+                        <div class="tab-content" id="interfacecontent">
+                        </div>
+                        <button class="btn btn-primary pull-right setnetwork" id="savenetwork" data-i18n="setnetwork.Save Network Configure"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="text/javascript">
+
+    function setnetwork () {
+        $.get("/admin/networkinterfaces", function (data) {
+            for (var i = 0; i < data.length; i++) {
+                var interface = data[i];
+
+                var li = "<li";
+                if (i === 0) {
+                    li += " class=\"active\"><a href=\"#" + interface.name + "\" data-toggle=\"tab\">" + interface.name + "</a></li>";
+                } else {
+                    li += "><a href=\"#" + interface.name + "\" data-toggle=\"tab\">" + interface.name + "</a></li>";
+                }
+                $("#interfacelist").append (li);
+
+                var content = "<div class=\"tab-pane";
+                if (i === 0) {
+                    content += " active\" id=\"" + interface.name + "\">";
+                } else {
+                    content += "\" id=\"" + interface.name + "\">";
+                }
+                for (key in interface) {
+                    if (key === "name" || key === "family" || key === "dns-nameservers")
+                        continue;
+                    content += "<div class=\"row form-group\">";
+                    content += "<div class=\"col-lg-4\">";
+                    content += "<label class=\"pull-right setnetwork\" data-i18n=\"setnetwork." + key + "\"></label>";
+                    content += "</div>";
+                    content += "<div class=\"col-lg-7\">";
+                    content += "<input type=\"text\" class=\"form-control\" id=\"" + interface.name + "-" + key + "\" value=\"" + interface[key] + "\">";
+                    content += "</div>";
+                    content += "</div>";
+                }
+                $("#interfacecontent").append (content);
+            }
+
+            $('#savenetwork').unbind ('click').click (function () {
+                /* update data */
+                var dirty = false;
+                for (var i = 0; i < data.length; i++) {
+                    var interface = data[i];
+                    for (key in interface) {
+                        if (key === "name" || key === "family" || key === "dns-nameservers")
+                            continue;
+                        var id = "#" + interface.name + "-" + key;
+                        if ($(id).val () === interface[key])
+                            continue;
+                        dirty = true;
+                        data[i][key] = $(id).val ();
+                    }
+                }
+                /* network changed? */
+                if (!dirty) {
+                    bootbox.alert ($.t ("setnetwork.No Change"));
+                    return;
+                }
+
+                $.post ("setnetworkinterfaces", JSON.stringify (data, null, 4), function (response) {
+                    if (response.result == 'success') {
+                        bootbox.alert ($.t ("setnetwork.Set Network Success"));
+                    } else {
+                        bootbox.alert ($.t ("setnetwork.Set Network Failure") + response.reason);
+                    }
+                });
+            });
+
+            $(".setnetwork").i18n ();
+        });
+    }
+
+    $ (document).ready (function () {
+        $.get("/admin/getconf", function (data) {
+            if (data.result == "success") {
+                Document.GstreamillConf.conf = data.data;
+            } else {
+                bootbox.alert ("get configure failure: " + data.reason);
+                return;
+            }
+
+            setnetwork ();
+
+            $.i18n.init({
+                lng: Document.GstreamillConf.language[Document.GstreamillConf.conf.language]
+            }, function(t) {
+                $(".nav").i18n ();
+                $(".setnetwork").i18n ();
+            });
+
+        });
+    });
+
+    </script>
