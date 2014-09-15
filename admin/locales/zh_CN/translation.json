@@ -12,7 +12,6 @@
   "system": {
     "Gstreamill Manage": "Gstreamill管理",
     "System Manage": "系统管理",
-    "Network Configure": "网络配置",
     "Set Gstreamill": "设置Gstreamill",
     "Language": "语言",
     "Transcode Directory": "转码目录",
@@ -32,7 +31,10 @@
     "Threads per Core": "每核心线程数",
     "Core per Socket": "每CPU核心数",
     "Socket Count": "CPU个数",
-    "CPU MHz": "CPU频率",
+    "CPU MHz": "CPU频率"
+  },
+  "setnetwork": {
+    "Network Configure": "网络配置",
     "Save Network Configure": "存储网络配置",
     "method": "接入方法",
     "address": "IP地址",

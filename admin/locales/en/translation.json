@@ -12,7 +12,6 @@
   "system": {
     "Gstreamill Manage": "Gstreamill Manage",
     "System Manage": "System Manage",
-    "Network Configure": "Network Configure",
     "Set Gstreamill": "Set Gstreamill",
     "Language": "Language",
     "Transcode Directory": "Tanscode Directory",
@@ -32,7 +31,10 @@
     "Threads per Core": "Threads per Core",
     "Core per Socket": "Core per Socket",
     "Socket Count": "Socket Count",
-    "CPU MHz": "CPU MHz",
+    "CPU MHz": "CPU MHz"
+  },
+  "setnetwork": {
+    "Network Configure": "Network Configure",
     "Save Network Configure": "Save Network Configure",
     "method": "Method",
     "address": "Address",
