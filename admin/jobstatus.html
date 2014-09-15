@@ -13,7 +13,7 @@
         var key_ele = document.createElement ("div"),
             value_ele = document.createElement ("div");
         key_ele.setAttribute ("class", "col-lg-4");
-        key_ele.innerHTML = "<label class=\"pull-right jobmanage\" data-i18n=\"jobmanage." + key + "\"></label>";
+        key_ele.innerHTML = "<label class=\"pull-right jobstatus\" data-i18n=\"jobstatus." + key + "\"></label>";
         value_ele.setAttribute ("class", "col-lg-7");
         value_ele.innerHTML = "<p>" + value + "</p>";
         body.appendChild (key_ele);
@@ -24,7 +24,7 @@
         var name = location.href.replace (/[^\?]*\?name=(.*)/, "$1");
         $.get("/stat/gstreamill/job/" + name, function (data) {
             if (data.result === 'failure') {
-                bootbox.alert ($.t ("jobmanage.Get Job Stat Failure"));
+                bootbox.alert ($.t ("jobstatus.Get Job Stat Failure"));
                 return;
             }
 
@@ -34,8 +34,8 @@
 
             job_stat_element.setAttribute ("class", "panel panel-primary");
             job_stat_element.setAttribute ("id", "jobstatus");
-            job_stat_header.setAttribute ("class", "panel-heading jobmanage");
-            job_stat_header.setAttribute ("data-i18n", "jobmanage.Job Status");
+            job_stat_header.setAttribute ("class", "panel-heading jobstatus");
+            job_stat_header.setAttribute ("data-i18n", "jobstatus.Job Status");
             job_stat_element.appendChild (job_stat_header);
 
             job_stat_body.setAttribute ("class", "panel-body");
@@ -53,15 +53,15 @@
                 source_stat = document.createElement ("div");
             source_title.innerHTML = "Source";
             source_stat.setAttribute ("class", "well row pipeline-stat");
-            var streams_table = "<span class=\"jobmanage\" data-i18n=\"jobmanage.Sync Error Times\"></span>: " +
+            var streams_table = "<span class=\"jobstatus\" data-i18n=\"jobstatus.Sync Error Times\"></span>: " +
                                     data.data.source.sync_error_times +
-                                    "; <span class=\"jobmanage\" data-i18n=\"jobmanage.Streams Count\"></span>: " +
+                                    "; <span class=\"jobstatus\" data-i18n=\"jobstatus.Streams Count\"></span>: " +
                                     data.data.source.stream_count +
                                     "<table class=\"table\">" +
                                     "<tr>" +
-                                    "<th class=\"jobmanage\" data-i18n=\"jobmanage.Name\"></th>" +
-                                    "<th class=\"jobmanage\" data-i18n=\"jobmanage.Last Time Stamps\"></th>" +
-                                    "<th class=\"jobmanage\" data-i18n=\"jobmanage.Last Heartbeat Time\"></th>" +
+                                    "<th class=\"jobstatus\" data-i18n=\"jobstatus.Name\"></th>" +
+                                    "<th class=\"jobstatus\" data-i18n=\"jobstatus.Last Time Stamps\"></th>" +
+                                    "<th class=\"jobstatus\" data-i18n=\"jobstatus.Last Heartbeat Time\"></th>" +
                                     "</tr>";
             for (var i = 0; i < data.data.source.streams.length; i++) {
                 var stream = data.data.source.streams[i];
@@ -85,17 +85,17 @@
                     encoder = data.data.encoders[i];
                 encoder_title.innerHTML = encoder.name;
                 encoder_stat.setAttribute ("class", "well row pipeline-stat");
-                var streams_table = "<span class=\"jobmanage\" data-i18n=\"jobmanage.Output Heartbeat\"></span>: " +
+                var streams_table = "<span class=\"jobstatus\" data-i18n=\"jobstatus.Output Heartbeat\"></span>: " +
                                     encoder.heartbeat +
-                                    "; <span class=\"jobmanage\" data-i18n=\"jobmanage.Total Output Bytes\"></span>: " +
+                                    "; <span class=\"jobstatus\" data-i18n=\"jobstatus.Total Output Bytes\"></span>: " +
                                     encoder.count +
-                                    "; <span class=\"jobmanage\" data-i18n=\"jobmanage.Streams Count\"></span>: " +
+                                    "; <span class=\"jobstatus\" data-i18n=\"jobstatus.Streams Count\"></span>: " +
                                     encoder.streamcount +
                                     "<table class=\"table\">" +
                                     "<tr>" +
-                                    "<th class=\"jobmanage\" data-i18n=\"jobmanage.Name\"></th>" +
-                                    "<th class=\"jobmanage\" data-i18n=\"jobmanage.Last Time Stamps\"></th>" +
-                                    "<th class=\"jobmanage\" data-i18n=\"jobmanage.Last Heartbeat Time\"></th>" +
+                                    "<th class=\"jobstatus\" data-i18n=\"jobstatus.Name\"></th>" +
+                                    "<th class=\"jobstatus\" data-i18n=\"jobstatus.Last Time Stamps\"></th>" +
+                                    "<th class=\"jobstatus\" data-i18n=\"jobstatus.Last Heartbeat Time\"></th>" +
                                     "</tr>";
                 for (var j = 0; j < encoder.streams.length; j++) {
                     var stream = encoder.streams[j];
@@ -114,7 +114,7 @@
 
             job_stat_element.appendChild (job_stat_body);
             $("#jobstatus_content").html (job_stat_element);
-            $(".jobmanage").i18n ();
+            $(".jobstatus").i18n ();
         });
     }
 
@@ -131,7 +131,7 @@
                 lng: Document.GstreamillConf.language[Document.GstreamillConf.conf.language]
             }, function(t) {
                 $(".nav").i18n ();
-                $(".jobmanage").i18n ();
+                $(".jobstatus").i18n ();
             });
 
             status ();
