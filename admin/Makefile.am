@@ -8,6 +8,7 @@ admin_DATA = \
         joblist.html \
         newtranscodejob.html \
         jobmanage.html \
+        jobstatus.html \
         system.html \
         gstreamill.html \
         setnetwork.html

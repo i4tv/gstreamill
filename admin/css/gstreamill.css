@@ -5,7 +5,7 @@
     margin-right: auto;
 }
 
-.setnetwork_container, .gstreamill_content, .system_content {
+.setnetwork_container, .gstreamill_content, .system_content, .jobstatus_content {
     width: 780px;
     margin-top: 5px;
     margin-left: auto;
@@ -62,6 +62,3 @@
     border: 0;
 }
 
-#joblist h3, h4 {
-    display: inline;
-}

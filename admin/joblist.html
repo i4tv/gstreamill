@@ -9,22 +9,26 @@
     function showLiveJobStatus (response) {
         var li = '<div class="row">';
         li += '<div class="col-md-12">';
-        li += '<a href="/admin/jobmanage.html?name=';
         if (response.result == "success") {
             var job = response.data;
-            li += job.name + '"><h3>' + job.name + '</h3></a>';
-            li += ' <span class="joblist" data-i18n="joblist.Restart times"></span> ' + job.age;
-            li += ', <span class="joblist" data-i18n="joblist.Last time started"></span> ' + job.last_start_time;
-            li += '</br><h4 class="joblist" data-i18n="joblist.Encoder counts"></h4>:' + job.encoder_count;
-            li += ' <h4 class="joblist" data-i18n="joblist.Average CPU usage"></h4>:' + job.cpu_average;
-            li += ' <h4 class="joblist" data-i18n="joblist.Memory usage"></h4>:' + job.memory;
+            li += '<h3>' + job.name;
+            li += ' <a href="/admin/jobmanage.html?name=' + job.name + '"><span class="glyphicon glyphicon-cog"></span></a> ';
+            li += ' <a href="/admin/jobstatus.html?name=' + job.name + '"><span class="glyphicon glyphicon-stats"></span></a> ';
+            li += '</h3>';
+            li += ' <b class="joblist" data-i18n="joblist.Restart times"></b> ' + job.age;
+            li += ', <b class="joblist" data-i18n="joblist.Last time started"></b> ' + job.last_start_time;
+            li += '</br><b class="joblist" data-i18n="joblist.Encoder counts"></b>:' + job.encoder_count;
+            li += ' <b class="joblist" data-i18n="joblist.Average CPU usage"></b>:' + job.cpu_average;
+            li += ' <b class="joblist" data-i18n="joblist.Memory usage"></b>:' + job.memory;
             li += '<button class="btn btn-warning pull-right joblist" id="job_' + job.name + '" onclick="stopJob(\'' + job.name + '\')" data-i18n="joblist.Stop Job">';
             li += '</button>';
             li += '</div>';
             $('#li_' + job.name).html(li);
         } else {
             var job = response;
-            li += job.name + '"><h3>' + job.name + '</h3></a>';
+            li += '<h3>' + job.name;
+            li += ' <a href="/admin/jobmanage.html?name=' + job.name + '"><span class="glyphicon glyphicon-cog"></span></a> ';
+            li += '</h3>';
             li += ' <span class="joblist" data-i18n="joblist.The job is not started"></span>';
             li += '<button class="btn btn-primary pull-right joblist" id="job_' + job.name + '" onclick="startJob(\'' + job.name + '\')" data-i18n="joblist.Start Job">';
             li += '</button>';
