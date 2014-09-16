@@ -17,11 +17,15 @@
             li += ' <a href="/admin/jobmanage.html?name=' + job.name + '"><span class="glyphicon glyphicon-cog"></span></a> ';
             li += ' <a href="/admin/jobstatus.html?name=' + job.name + '"><span class="glyphicon glyphicon-stats"></span></a> ';
             li += '</h3>';
-            li += ' <b class="joblist" data-i18n="joblist.Restart times"></b> ' + job.age;
-            li += ', <b class="joblist" data-i18n="joblist.Last time started"></b> ' + job.last_start_time;
-            li += '</br><b class="joblist" data-i18n="joblist.Encoder counts"></b>:' + job.encoder_count;
-            li += ' <b class="joblist" data-i18n="joblist.Average CPU usage"></b>:' + job.cpu_average;
-            li += ' <b class="joblist" data-i18n="joblist.Memory usage"></b>:' + job.memory;
+            li += '<b><span class="joblist" data-i18n="joblist.Restart times"></span>: </b> ';
+            li += '<span id="' + job.name + '_age">' + job.age + '</span>';
+            li += ', <b><span class="joblist" data-i18n="joblist.Last time started"></span>: </b> ';
+            li += '<span id="' + job.name + '_laststart">' + job.last_start_time + '</span>';
+            li += '</br><b><span class="joblist" data-i18n="joblist.Encoder counts"></span>: </b>' + job.encoder_count;
+            li += ', <b><span class="joblist" data-i18n="joblist.Average CPU usage"></span>: </b>';
+            li += '<span id="' + job.name + '_cpuaverage">' + job.cpu_average + '</span>';
+            li += ', <b><span class="joblist" data-i18n="joblist.Memory usage"></span>: </b>';
+            li += '<span id="' + job.name + '_memory">' + job.memory + '</span>';
             li += '<button class="btn btn-warning pull-right joblist" id="job_' + job.name + '" onclick="stopJob(\'' + job.name + '\')" data-i18n="joblist.Stop Job">';
             li += '</button>';
             li += '</div>';
@@ -165,7 +169,12 @@
                             return;
                         }
                         var status = response.data;
+                        // live job?
                         if (status.source.duration === 0) {
+                            $("#" + name + "_age").text (status.age);
+                            $("#" + name + "_laststart").text (status.last_start_time);
+                            $("#" + name + "_cpuaverage").text (status.cpu_average);
+                            $("#" + name + "_memory").text (status.memory);
                         } else {
                             $("#" + name + "_timestamp").text (status.source.streams[0].timestamp / 1000000000);
                         }
