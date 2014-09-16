@@ -37,7 +37,8 @@
     "Threads per Core": "每核心线程数",
     "Core per Socket": "每CPU核心数",
     "Socket Count": "CPU个数",
-    "CPU MHz": "CPU频率"
+    "CPU MHz": "CPU频率",
+    "Really restart device": "当真要重新启动设备"
   },
   "setnetwork": {
     "Network Configure": "网络配置",

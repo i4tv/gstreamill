@@ -105,6 +105,13 @@
                 $(".system").i18n ();
             });
 
+            $("#restartdevice").click (function () {
+                bootbox.confirm ($.t ("system.Really restart device"), function (confirm) {
+                    if (!confirm) {
+                        return;
+                    }
+                });
+            });
         });
     });
 
