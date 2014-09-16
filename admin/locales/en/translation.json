@@ -129,6 +129,7 @@
   },
   "joblist": {
     "Restart times": "Restart times",
+    "Start Time": "Start Time",
     "Last time started": "Last time started",
     "Current Position / Duration": "Current Position / Duration",
     "Stop Job": "Stop Job",

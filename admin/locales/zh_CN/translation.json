@@ -129,6 +129,7 @@
   },
   "joblist": {
     "Restart times": "重新启动次数",
+    "Start Time": "启动时间",
     "Last time started": "最后一次启动时间",
     "Current Position / Duration": "当前位置 / 影片时长",
     "Stop Job": "停止任务",
