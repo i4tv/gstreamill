@@ -145,7 +145,8 @@
     "Stop Job Success": "停止任务成功",
     "Stop Job Failure": "停止任务失败",
     "Cancel Job Success": "取消任务成功",
-    "Cancel Job Failure": "取消任务失败"
+    "Cancel Job Failure": "取消任务失败",
+    "Realy cancel the job": "真的要取消任务"
   },
   "bootbox": {
     "OK": "OK",

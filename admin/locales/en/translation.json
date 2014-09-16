@@ -145,7 +145,8 @@
     "Stop Job Success": "Stop Job Success",
     "Stop Job Failure": "Stop Job Failure",
     "Cancel Job Success": "Cancel Job Success",
-    "Cancel Job Failure": "Cancel Job Failure"
+    "Cancel Job Failure": "Cancel Job Failure",
+    "Realy cancel the job": "Realy cancel the job"
   },
   "bootbox": {
     "OK": "OK",

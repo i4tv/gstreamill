@@ -101,15 +101,20 @@
     }
 
     function cancelJob (name) {
-        $.get ("/admin/stop/" + name, function (response) {
-            if (response.result == "success") {
-                bootbox.alert ($.t ("joblist.Cancel Job Success") + ": " + name, function () {
-                    location.reload ();
-                });
-
-            } else {
-                bootbox.alert ($.t ("joblist.Cancel Job Failure") + ": " + response.reason);
+        bootbox.confirm ($.t ("joblist.Realy cancel the job") + ": " + name, function (confirm) {
+            if (!confirm) {
+                return;
             }
+            $.get ("/admin/stop/" + name, function (response) {
+                if (response.result == "success") {
+                    bootbox.alert ($.t ("joblist.Cancel Job Success") + ": " + name, function () {
+                        location.reload ();
+                    });
+    
+                } else {
+                    bootbox.alert ($.t ("joblist.Cancel Job Failure") + ": " + response.reason);
+                }
+            });
         });
     }
 
