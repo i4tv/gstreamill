@@ -15,6 +15,7 @@ If you would like to donate to help support gstreamill development use [Gittip](
    * Job is descript in json.
    * Job run in subprocess, and auto restart on error.
    * Base on gstreamer and easy to extend.
+   * B/S Management.
 
 ## Application
 
@@ -56,6 +57,10 @@ gstreamill have been tested in ubuntu 13.10.
    * gstreamer1.0-plugins-bad
    * gstreamer1.0-plugins-good
    * gstreamer1.0-plugins-base
+
+## B/S Management
+
+http://gstreamill.ip:20118/admin/
 
 ## command line
 
