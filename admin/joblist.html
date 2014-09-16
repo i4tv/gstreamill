@@ -46,7 +46,7 @@
         if (response.result == "success") {
             var job = response.data;
             li += '<h3>' + job.name + '</h3>';
-            li += ' <b class="joblist" data-i18n="joblist.Current Position / Duration"></b>: ' + job.source.streams[0].timestamp / 1000000000 + ' / ' + job.source.duration / 1000000000;
+            li += ' <b class="joblist" data-i18n="joblist.Current Position / Duration"></b>: <span id="' + job.name + '_timestamp">' + job.source.streams[0].timestamp / 1000000000 + '</span> / ' + job.source.duration / 1000000000;
             li += ', <b class="joblist" data-i18n="joblist.Start Time"></b>: ' + job.last_start_time;
             li += '</br><b class="joblist" data-i18n="joblist.Encoder counts"></b>:' + job.encoder_count;
             li += ' <b class="joblist" data-i18n="joblist.Average CPU usage"></b>:' + job.cpu_average;
@@ -150,6 +150,23 @@
             }, function(t) {
                 $(".nav").i18n ();
             });
+
+            window.setInterval (function () {
+                var list = $("li[id^=li_]");
+                for (var i = 0, jobstatus; jobstatus = list[i]; i++) {
+                    var name = jobstatus.id.substring(3);
+                    $.get ("/stat/gstreamill/job/" + name, function (response) {
+                        if (response.result === "failure") {
+                            return;
+                        }
+                        var status = response.data;
+                        if (status.source.duration === 0) {
+                        } else {
+                            $("#" + name + "_timestamp").text (status.source.streams[0].timestamp / 1000000000);
+                        }
+                    });
+                }
+            }, 5000);
         });
     });
 
