@@ -164,19 +164,25 @@
                 var list = $("li[id^=li_]");
                 for (var i = 0, jobstatus; jobstatus = list[i]; i++) {
                     var name = jobstatus.id.substring(3);
-                    $.get ("/stat/gstreamill/job/" + name, function (response) {
-                        if (response.result === "failure") {
-                            return;
-                        }
-                        var status = response.data;
-                        // live job?
-                        if (status.source.duration === 0) {
-                            $("#" + name + "_age").text (status.age);
-                            $("#" + name + "_laststart").text (status.last_start_time);
-                            $("#" + name + "_cpuaverage").text (status.cpu_average);
-                            $("#" + name + "_memory").text (status.memory);
-                        } else {
-                            $("#" + name + "_timestamp").text (status.source.streams[0].timestamp / 1000000000);
+                    $.ajax ({
+                        type: "get",
+                        url: "/stat/gstreamill/job/" + name,
+                        dataType: "json",
+                        async: false,
+                        success: function (response) {
+                            if (response.result === "failure") {
+                                return;
+                            }
+                            var status = response.data;
+                            // live job?
+                            if (status.source.duration === 0) {
+                                $("#" + name + "_age").text (status.age);
+                                $("#" + name + "_laststart").text (status.last_start_time);
+                                $("#" + name + "_cpuaverage").text (status.cpu_average);
+                                $("#" + name + "_memory").text (status.memory);
+                            } else {
+                                $("#" + name + "_timestamp").text (status.source.streams[0].timestamp / 1000000000);
+                            }
                         }
                     });
                 }
