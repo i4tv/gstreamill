@@ -6,35 +6,6 @@
     margin-right: auto;
 }
 
-.sidebar-menu {
-    margin-top: 30px;
-    padding-left: 0px;
-    padding-right: 40px;
-}
-
-.sidebar-menu > ul > li {
-    margin: 0px;
-}
-
-.sidebar-menu > ul > li > a {
-    padding: 5px;
-    background-color: #f3f3f3;
-    border-top: 1px solid #f3f3f3;
-    border-left: 1px solid #e3e3e3;
-    border-right: 1px solid #e3e3e3;
-    border-bottom: 1px solid #e3e3e3;
-}
-
-.query_hint {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    margin-left: -16px;
-    margin-top: -16px;
-    z-index: 9999;
-    display: none;
-}
-
 .main-content {
     padding-left: 0px;
 }
@@ -42,6 +13,10 @@
 .pipeline-stat, .network-conf {
     margin-left: 5px;
     margin-right: 5px;
+}
+
+.well > .table {
+    margin-bottom: 0px;
 }
 
 #joblist li {
