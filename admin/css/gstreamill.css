@@ -15,6 +15,10 @@
     margin-right: 5px;
 }
 
+.well {
+    padding-bottom: 0px;
+}
+
 .well > .table {
     margin-bottom: 0px;
 }
