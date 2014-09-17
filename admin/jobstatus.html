@@ -9,13 +9,13 @@
 
     <script type="text/javascript">
 
-    function status_append_item (body, label, value) {
+    function status_append_item (body, label, id, value) {
         var key_ele = document.createElement ("div"),
             value_ele = document.createElement ("div");
         key_ele.setAttribute ("class", "col-lg-4");
         key_ele.innerHTML = "<label class=\"pull-right jobstatus\" data-i18n=\"jobstatus." + label + "\"></label>";
         value_ele.setAttribute ("class", "col-lg-7");
-        value_ele.innerHTML = "<p>" + value + "</p>";
+        value_ele.innerHTML = '<p id="jobstat_' + id + '">' + value + "</p>";
         body.appendChild (key_ele);
         body.appendChild (value_ele);
     }
@@ -42,20 +42,20 @@
             job_stat_body.setAttribute ("class", "panel-body");
 
             /* job status */
-            status_append_item (job_stat_body, "Restart Times", status.age);
-            status_append_item (job_stat_body, "Last Restart Time", status.last_start_time);
-            status_append_item (job_stat_body, "Current Concurrent Count", status.current_access);
-            status_append_item (job_stat_body, "Average CPU Usage", status.cpu_average);
-            status_append_item (job_stat_body, "Current CPU Usage", status.cpu_current);
-            status_append_item (job_stat_body, "Memory Usage", status.memory);
+            status_append_item (job_stat_body, "Restart Times", "age", status.age);
+            status_append_item (job_stat_body, "Last Restart Time", "laststart", status.last_start_time);
+            status_append_item (job_stat_body, "Current Concurrent Count", "currentaccess", status.current_access);
+            status_append_item (job_stat_body, "Average CPU Usage", "cpuaverage", status.cpu_average);
+            status_append_item (job_stat_body, "Current CPU Usage", "cpucurrent", status.cpu_current);
+            status_append_item (job_stat_body, "Memory Usage", "memory", status.memory);
 
             /* source status */
             var source_title = document.createElement ("h3"),
                 source_stat = document.createElement ("div");
             source_title.innerHTML = "Source";
             source_stat.setAttribute ("class", "well row pipeline-stat");
-            var streams_table = "<span class=\"jobstatus\" data-i18n=\"jobstatus.Sync Error Times\"></span>: " +
-                                    status.source.sync_error_times +
+            var streams_table = "<b class=\"jobstatus\" data-i18n=\"jobstatus.Sync Error Times\"></b>: " +
+                                    '<span id="source_syncerr">' + status.source.sync_error_times + '</span>' +
                                     "; <span class=\"jobstatus\" data-i18n=\"jobstatus.Streams Count\"></span>: " +
                                     status.source.stream_count +
                                     "<table class=\"table\">" +
@@ -68,8 +68,8 @@
                 var stream = status.source.streams[i];
                 var tr = "<tr>" +
                          "<td>" + stream.name + "</td>" +
-                         "<td>" + stream.timestamp + "</td>" +
-                         "<td>" + stream.heartbeat + "</td>" +
+                         '<td id="sourcetimestamp_' + stream.name + '">' + stream.timestamp + '</td>' +
+                         '<td id="sourceheartbeat_' + stream.name + '">' + stream.heartbeat + "</td>" +
                          "</tr>";
                 streams_table += tr;
             }
@@ -86,10 +86,10 @@
                     encoder = status.encoders[i];
                 encoder_title.innerHTML = encoder.name;
                 encoder_stat.setAttribute ("class", "well row pipeline-stat");
-                var streams_table = "<span class=\"jobstatus\" data-i18n=\"jobstatus.Output Heartbeat\"></span>: " +
-                                    encoder.heartbeat +
-                                    "; <span class=\"jobstatus\" data-i18n=\"jobstatus.Total Output Bytes\"></span>: " +
-                                    encoder.count +
+                var streams_table = "<b class=\"jobstatus\" data-i18n=\"jobstatus.Output Heartbeat\"></b>: " +
+                                    '<span id="encoder' + i + '_heartbeat">' + encoder.heartbeat + '</span>' +
+                                    "; <b class=\"jobstatus\" data-i18n=\"jobstatus.Total Output Bytes\"></b>: " +
+                                    '<span id="encoder' + i + '_outputcount">' + encoder.count + '</span>' +
                                     "; <span class=\"jobstatus\" data-i18n=\"jobstatus.Streams Count\"></span>: " +
                                     encoder.streamcount +
                                     "<table class=\"table\">" +
@@ -102,8 +102,8 @@
                     var stream = encoder.streams[j];
                     var tr = "<tr>" +
                              "<td>" + stream.name + "</td>" +
-                             "<td>" + stream.timestamp + "</td>" +
-                             "<td>" + stream.heartbeat + "</td>" +
+                             '<td id="encoder' + i + 'stream' + j + '_timestamp">' + stream.timestamp + '</td>' +
+                             '<td id="encoder' + i + 'stream' + j + '_heartbeat">' + stream.heartbeat + '</td>' +
                              "</tr>";
                     streams_table += tr;
                 }
@@ -143,10 +143,37 @@
                     if (response.result === 'failure') {
                         return;
                     }
-                });
-            });
-        });
 
+                    var status = response.data;
+                    $("#jobstat_age").text (status.age);
+                    $("#jobstat_laststart").text (status.last_start_time);
+                    $("#jobstat_currentaccess").text (status.current_access);
+                    $("#jobstat_cpuaverage").text (status.cpu_average);
+                    $("#jobstat_cpucurrent").text (status.cpucurrent);
+                    $("#jobstat_memory").text (status.memory);
+
+                    // source
+                    $("#source_syncerr").text (status.source.sync_error_times);
+                    for (var i = 0; i < status.source.streams.length; i++) {
+                        var stream = status.source.streams[i];
+                        $("#sourcetimestamp_" + stream.name).text (stream.timestamp);
+                        $("#sourceheartbeat_" + stream.name).text (stream.heartbeat);
+                    }
+
+                    // encoders
+                    for (var i = 0; i < status.encoders.length; i++) {
+                        var encoder = status.encoders[i];
+                        $("#encoder" + i + "_heartbeat").text (encoder.heartbeat);
+                        $("#encoder" + i + "_outputcount").text (encoder.count);
+                        for (var j = 0; j < encoder.streams.length; j++) {
+                            var stream = encoder.streams[j];
+                            $("#encoder" + i + "stream" + j + "_timestamp").text (stream.timestamp);
+                            $("#encoder" + i + "stream" + j + "_heartbeat").text (stream.heartbeat);
+                        }
+                    }
+                });
+            }, 5000);
+        });
     });
 
     </script>
