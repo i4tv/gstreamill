@@ -9,11 +9,11 @@
 
     <script type="text/javascript">
 
-    function status_append_item (body, key, value) {
+    function status_append_item (body, label, value) {
         var key_ele = document.createElement ("div"),
             value_ele = document.createElement ("div");
         key_ele.setAttribute ("class", "col-lg-4");
-        key_ele.innerHTML = "<label class=\"pull-right jobstatus\" data-i18n=\"jobstatus." + key + "\"></label>";
+        key_ele.innerHTML = "<label class=\"pull-right jobstatus\" data-i18n=\"jobstatus." + label + "\"></label>";
         value_ele.setAttribute ("class", "col-lg-7");
         value_ele.innerHTML = "<p>" + value + "</p>";
         body.appendChild (key_ele);
@@ -22,13 +22,14 @@
 
     function status (name) {
         var name = location.href.replace (/[^\?]*\?name=(.*)/, "$1");
-        $.get("/stat/gstreamill/job/" + name, function (data) {
-            if (data.result === 'failure') {
+        $.get("/stat/gstreamill/job/" + name, function (response) {
+            if (response.result === 'failure') {
                 bootbox.alert ($.t ("jobstatus.Get Job Stat Failure"));
                 return;
             }
 
-            var job_stat_element = document.createElement ("div"),
+            var status = response.data,
+                job_stat_element = document.createElement ("div"),
                 job_stat_header = document.createElement ("div"),
                 job_stat_body = document.createElement ("div");
 
@@ -41,12 +42,12 @@
             job_stat_body.setAttribute ("class", "panel-body");
 
             /* job status */
-            status_append_item (job_stat_body, "Restart Times", data.data.age);
-            status_append_item (job_stat_body, "Last Restart Time", data.data.last_start_time);
-            status_append_item (job_stat_body, "Current Concurrent Count", data.data.current_access);
-            status_append_item (job_stat_body, "Average CPU Usage", data.data.cpu_average);
-            status_append_item (job_stat_body, "Current CPU Usage", data.data.cpu_current);
-            status_append_item (job_stat_body, "Memory Usage", data.data.memory);
+            status_append_item (job_stat_body, "Restart Times", status.age);
+            status_append_item (job_stat_body, "Last Restart Time", status.last_start_time);
+            status_append_item (job_stat_body, "Current Concurrent Count", status.current_access);
+            status_append_item (job_stat_body, "Average CPU Usage", status.cpu_average);
+            status_append_item (job_stat_body, "Current CPU Usage", status.cpu_current);
+            status_append_item (job_stat_body, "Memory Usage", status.memory);
 
             /* source status */
             var source_title = document.createElement ("h3"),
@@ -54,17 +55,17 @@
             source_title.innerHTML = "Source";
             source_stat.setAttribute ("class", "well row pipeline-stat");
             var streams_table = "<span class=\"jobstatus\" data-i18n=\"jobstatus.Sync Error Times\"></span>: " +
-                                    data.data.source.sync_error_times +
+                                    status.source.sync_error_times +
                                     "; <span class=\"jobstatus\" data-i18n=\"jobstatus.Streams Count\"></span>: " +
-                                    data.data.source.stream_count +
+                                    status.source.stream_count +
                                     "<table class=\"table\">" +
                                     "<tr>" +
                                     "<th class=\"jobstatus\" data-i18n=\"jobstatus.Name\"></th>" +
                                     "<th class=\"jobstatus\" data-i18n=\"jobstatus.Last Time Stamps\"></th>" +
                                     "<th class=\"jobstatus\" data-i18n=\"jobstatus.Last Heartbeat Time\"></th>" +
                                     "</tr>";
-            for (var i = 0; i < data.data.source.streams.length; i++) {
-                var stream = data.data.source.streams[i];
+            for (var i = 0; i < status.source.streams.length; i++) {
+                var stream = status.source.streams[i];
                 var tr = "<tr>" +
                          "<td>" + stream.name + "</td>" +
                          "<td>" + stream.timestamp + "</td>" +
@@ -79,10 +80,10 @@
             job_stat_body.appendChild (source_stat);
 
             /* encoders status */
-            for (var i = 0; i < data.data.encoders.length; i++) {
+            for (var i = 0; i < status.encoders.length; i++) {
                 var encoder_title = document.createElement ("h3"),
                     encoder_stat = document.createElement ("div"),
-                    encoder = data.data.encoders[i];
+                    encoder = status.encoders[i];
                 encoder_title.innerHTML = encoder.name;
                 encoder_stat.setAttribute ("class", "well row pipeline-stat");
                 var streams_table = "<span class=\"jobstatus\" data-i18n=\"jobstatus.Output Heartbeat\"></span>: " +
@@ -119,11 +120,11 @@
     }
 
     $ (document).ready (function () {
-        $.get("/admin/getconf", function (data) {
-            if (data.result == "success") {
-                Document.GstreamillConf.conf = data.data;
+        $.get("/admin/getconf", function (response) {
+            if (response.result == "success") {
+                Document.GstreamillConf.conf = response.data;
             } else {
-                bootbox.alert ("Get Configure Failure: " + data.reason);
+                bootbox.alert ("Get Configure Failure: " + response.reason);
                 return;
             }
 
@@ -135,6 +136,15 @@
             });
 
             status ();
+
+            window.setInterval (function () {
+                var name = location.href.replace (/[^\?]*\?name=(.*)/, "$1");
+                $.get("/stat/gstreamill/job/" + name, function (response) {
+                    if (response.result === 'failure') {
+                        return;
+                    }
+                });
+            });
         });
 
     });
