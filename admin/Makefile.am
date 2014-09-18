@@ -52,8 +52,12 @@ adminschemas_DATA = \
         schemas/transcode_encoder_tv_mp4.json \
         schemas/transcode_encoder_hdtv_mp4.json
 
-localesdir = $(datadir)/gstreamill/admin/locales/en
+localesdir = $(datadir)/gstreamill/admin/locales/dev
 locales_DATA = \
+        locales/dev/translation.json
+
+localesendir = $(datadir)/gstreamill/admin/locales/en
+localesen_DATA = \
         locales/en/translation.json
 
 localeszh_CNdir = $(datadir)/gstreamill/admin/locales/zh_CN

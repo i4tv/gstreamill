@@ -15,7 +15,7 @@
             var job = response.data;
             li += '<h3>' + job.name;
             li += ' <a href="/admin/jobmanage.html?name=' + job.name + '"><span class="glyphicon glyphicon-cog"></span></a> ';
-            li += ' <a href="/admin/jobstatus.html?name=' + job.name + '"><span class="glyphicon glyphicon-stats"></span></a> ';
+            li += ' <a href="/admin/jobstatus.html?name=' + job.name + '"><span class="glyphicon glyphicon-dashboard"></span></a> ';
             li += '</h3>';
             li += '<b><span class="joblist" data-i18n="joblist.Restart times"></span>: </b> ';
             li += '<span id="' + job.name + '_age">' + job.age + '</span>';
