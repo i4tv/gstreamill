@@ -41,6 +41,7 @@ gstreamill have been tested in ubuntu 13.10.
    * libtool
    * libgstreamer1.0-dev
    * libgstreamer-plugins-base1.0-dev
+   * libaugeas-dev
 
 ## Compile and install
 
