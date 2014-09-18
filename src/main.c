@@ -244,6 +244,14 @@ int main (int argc, char *argv[])
                 g_free (job_desc);
 
                 g_main_loop_run (loop);
+
+        } else {
+                /* set parent process maximum of core file */
+                rlim.rlim_cur = RLIM_INFINITY;
+                rlim.rlim_max = RLIM_INFINITY;
+                if (setrlimit (RLIMIT_CORE, &rlim) == -1) {
+                        GST_ERROR ("setrlimit error: %s", g_strerror (errno));
+                }
         }
 
         /* run in background? */
@@ -280,13 +288,6 @@ int main (int argc, char *argv[])
                 if (create_pid_file () != 0) {
                         exit (1);
                 }
-        }
-
-        /* set maximum of core file */
-        rlim.rlim_cur = RLIM_INFINITY;
-        rlim.rlim_max = RLIM_INFINITY;
-        if (setrlimit (RLIMIT_CORE, &rlim) == -1) {
-                GST_ERROR ("setrlimit error: %s", g_strerror (errno));
         }
 
         /* ignore SIGPIPE */
