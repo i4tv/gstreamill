@@ -171,7 +171,7 @@ job name is the value of name of job description.
 ## JOB DESCRIPTION
 
 Job example:
-'''
+```
 /*
  * test job, videotestsrc and audiotestsrc
  */
@@ -236,7 +236,7 @@ Job example:
         "segment-duration" : 3.00
     }
 }
-'''
+```
 
 JOB file structure:
 
