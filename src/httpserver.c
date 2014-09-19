@@ -227,6 +227,37 @@ static gint read_request (RequestData *request_data)
         return read_pos;
 }
 
+static void urldecode (gchar *src)
+{
+        gchar a, b;
+        gchar *dst;
+
+        dst = src;
+        while (*src) {
+                if ((*src == '%') &&
+                    ((a = src[1]) && (b = src[2])) &&
+                    (isxdigit(a) && isxdigit(b))) {
+                        if (a >= 'a')
+                                a -= 'a'-'A';
+                        if (a >= 'A')
+                                a -= ('A' - 10);
+                        else
+                                a -= '0';
+                        if (b >= 'a')
+                                b -= 'a'-'A';
+                        if (b >= 'A')
+                                b -= ('A' - 10);
+                        else
+                                b -= '0';
+                        *dst++ = 16*a+b;
+                        src+=3;
+                } else {
+                        *dst++ = *src++;
+                }
+        }
+        *dst++ = '\0';
+}
+
 static gint parse_request (RequestData *request_data)
 {
         gchar *buf = request_data->raw_request, *p1, *p2, *p3, *header;
@@ -296,6 +327,7 @@ static gint parse_request (RequestData *request_data)
                  /* Bad request, uri too long */
                 return 3;
         }
+        urldecode (request_data->uri);
 
         i = 0;
         if (*buf == '?') {
