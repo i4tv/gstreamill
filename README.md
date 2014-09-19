@@ -59,9 +59,9 @@ gstreamill have been tested in ubuntu 13.10.
    * gstreamer1.0-plugins-good
    * gstreamer1.0-plugins-base
 
-## B/S Management
+## B/S Management URL
 
-http://gstreamill.ip:20118/admin/
+        http://gstreamill.ip:20118/admin/
 
 ## command line
 
@@ -115,24 +115,24 @@ default management port is 20118, you can use curl to invoke test job:
 
 * start a job over http use curl
 
-    curl -H "Content-Type: application/json" --data @examples/test.job http://localhost:20118/admin/start
+        curl -H "Content-Type: application/json" --data @examples/test.job http://localhost:20118/admin/start
 
 test.job is job description in json, can be found in examples directory.
 
 * stop a job
 
-    curl http://host.name.or.ip:20118/admin/stop/job_name
+        curl http://host.name.or.ip:20118/admin/stop/job_name
 
 job_name is value of the "name" field in job description.
 
 * query gstreamill stat:
 
-    curl http://host.name.or.ip:20118/stat/gstreamill
-    curl http://host.name.or.ip:20118/stat/gstreamill/job/test
+        curl http://host.name.or.ip:20118/stat/gstreamill
+        curl http://host.name.or.ip:20118/stat/gstreamill/job/test
 
 * query gstreamer information:
 
-    curl http://host.name.or.ip:20118/stat/gstreamer[/plugin]
+        curl http://host.name.or.ip:20118/stat/gstreamer[/plugin]
 
 ## output
 
@@ -140,17 +140,16 @@ job name is the value of name of job description.
 
 * http progressive streaming
 
-    http://host.name.or.ip:20119/live/job name/encoder/encoder_index
+        http://host.name.or.ip:20119/live/job name/encoder/encoder_index
 
 * hls
 
-    http://host.name.or.ip:20119/live/job name/playlist.m3u8
-
-    http://host.name.or.ip:20119/live/job name/encoder/encoder_index/playlist.m3u8
+        http://host.name.or.ip:20119/live/job name/playlist.m3u8
+        http://host.name.or.ip:20119/live/job name/encoder/encoder_index/playlist.m3u8
 
 * udp
 
-    udp://@ip:port
+        udp://@ip:port
 
 ## JOB DESCRIPTION
 
