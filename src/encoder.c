@@ -720,6 +720,30 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
                         }
                 }
 
+                /* not live and have filesink.location, mkdir */
+                if (!jobdesc_is_live (job)) {
+                        gchar *p, *value;
+
+                        p = g_strdup_printf ("%s.elements.filesink.property.location", pipeline);
+                        value = jobdesc_element_property_value (job, p);
+                        g_free (p);
+                        if (value == NULL) {
+                                return;
+                        }
+                        p = g_path_get_dirname (value);
+                        g_free (value);
+                        if (g_strcmp0 (p, ".") == 0) {
+                                g_free (p);
+                                return;
+                        }
+                        if (g_mkdir_with_parents (p, 0755) != 0) {
+                                GST_ERROR ("Can't open or create directory: %s.", p);
+                                g_free (p);
+                                return 1;
+                        }
+                        g_free (p);
+                }
+
                 /* parse bins and create pipeline. */
                 encoder->bins = bins_parse (job, pipeline);
                 if (encoder->bins == NULL) {
