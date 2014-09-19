@@ -95,7 +95,7 @@ http://gstreamill.ip:20118/admin/
 
 * invoke a job
 
-default management port is 20118, invoke test job: '''curl -H "Content-Type: application/json" --data @examples/test.job http://localhost:20118/admin/start'''
+default management port is 20118, invoke test job: ```curl -H "Content-Type: application/json" --data @examples/test.job http://localhost:20118/admin/start```
 
 * invode a job in foreground:
 
