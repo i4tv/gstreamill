@@ -240,21 +240,23 @@ Job example:
 
 JOB file structure:
 
-    {
-        'name' : 'cctv2',
-        'debug' : '3',
-        'is-live' : false,
-        'log-path' : '/home/zhangping/tmp/cctv2',
-        'source' : {
-            ...
-        },
-        'encoders' : [
-            ...
-        ],
-        'm3u8streaming' : {
-            ...
-        }
+```json
+{
+    'name' : 'cctv2',
+    'debug' : '3',
+    'is-live' : false,
+    'log-path' : '/home/zhangping/tmp/cctv2',
+    'source' : {
+        ...
+    },
+    'encoders' : [
+        ...
+    ],
+    'm3u8streaming' : {
+        ...
     }
+}
+```
 
 name : job name
 
@@ -271,114 +273,122 @@ encoders : encoders.
 m3u8streaming : m3u8 streaming
 
 structure of source:
-
-    "source" : {
-        "elements" : {
-            ...
-        },
-        "bins" : [
-            ...
-        ]
-    }
-
-structure of elements:
-
+```json
+"source" : {
     "elements" : {
-        "element" : {
-            "property" : {
-                ...
-            },
-            "caps" : "..."
-        },
         ...
-    }
-
-structure of bins:
-
+    },
     "bins" : [
-        bin,
-        bin,
         ...
     ]
+}
+```
+structure of elements:
+```json
+"elements" : {
+    "element" : {
+        "property" : {
+            ...
+        },
+        "caps" : "..."
+    },
+    ...
+}
+```
+
+structure of bins:
+```json
+"bins" : [
+    bin,
+    bin,
+    ...
+]
+```
 
 bins is an array of bin, syntax of bin is like gst-launch, for example:
-
+```json
+[
     "udpsrc ! queue ! tsdemux name=demuxer",
     "demuxer.video ! queue ! mpeg2dec ! queue ! appsink name = video",
     "demuxer.audio ! mpegaudioparse ! queue ! mad ! queue ! appsink name = audio" 
-
+]
+```
 in this example, first bin with tsdemux has sometimes pads, second and third bin link with first bin: demuxer.video and demuxer.audio. second bin with appsink named video and third bin with appsink named audio. source bins must have bin with appsink that is corespond endoders' source.
 
 structure of encoders:
-
-    "encoders" : [
-        encoder,
-        ...
-    ]
+```json
+"encoders" : [
+    encoder,
+    ...
+]
+```
 
 encoders is an array of encoder, encoder is an object, every encoder correspneds an encode output, that means gstreamill support mutilty bitrate output.
 
 structure of encoder:
-
-    {
-        "elements" : {
-            ...
-        },
-        "bins" : [
-            ...
-        ],
-        "udpstreaming" : "uri"
-    }
+```json
+{
+    "elements" : {
+        ...
+    },
+    "bins" : [
+        ...
+    ],
+    "udpstreaming" : "uri"
+}
+```
 
 elements and bins is just the same as source structure in syntax, the differnce is encoder bins must have bins with appsrc element, appsrc must have name property, the value of name is the same as appsink name value in source bins. udpstreaming uri is udp streaming output uri, it's optional.
 
 m3u8streaming is hls output, it's optional:
-
-    "m3u8streaming" : {
-        "version" : 3,
-        "window-size" : 10,
-        "segment-duration" : 3.00,
-        "push-server-uri" : "http://192.168.56.3/test"
-    }
+```json
+"m3u8streaming" : {
+    "version" : 3,
+    "window-size" : 10,
+    "segment-duration" : 3.00,
+    "push-server-uri" : "http://192.168.56.3/test"
+}
+```
 
 push-server-uri, push m3u8 to web server use http webdav. If you use nginx, note that the webdav module of nginx is not built by default, it should be enabled with the --with-http_dav_module configuration parameter. nginx conf examples:
+```nginx
+#user  nobody;
+worker_processes  1;
 
-    #user  nobody;
-    worker_processes  1;
-    
-    #error_log  logs/error.log;
-    #error_log  logs/error.log  notice;
-    #error_log  logs/error.log  info;
-    
-    #pid        logs/nginx.pid;
-    
-    
-    events {
-        worker_connections  1024;
-    }
-    
-    
-    http {
-    
-        client_max_body_size 20M;
+#error_log  logs/error.log;
+#error_log  logs/error.log  notice;
+#error_log  logs/error.log  info;
 
-        server {
-            location / {
-                root /home/zhangping/publish;
-                client_body_temp_path /home/zhangping/tmp;
-    
-                dav_methods  PUT DELETE MKCOL COPY MOVE;
-    
-                create_full_put_path   on;
-                dav_access             group:rw  all:r;
-    
-                limit_except  GET {
-                    allow  192.168.0.0/16;
-                    deny   all;
-                }
+#pid        logs/nginx.pid;
+
+
+events {
+    worker_connections  1024;
+}
+
+
+http {
+
+    client_max_body_size 20M;
+
+    server {
+        location / {
+            root /home/zhangping/publish;
+            client_body_temp_path /home/zhangping/tmp;
+
+            dav_methods  PUT DELETE MKCOL COPY MOVE;
+
+            create_full_put_path   on;
+            dav_access             group:rw  all:r;
+
+            limit_except  GET {
+                allow  192.168.0.0/16;
+                deny   all;
             }
         }
     }
+}
+```
 
 There are examples in examples directory of source.
 
