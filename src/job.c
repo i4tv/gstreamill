@@ -110,7 +110,7 @@ static void job_dispose (GObject *obj)
         GObjectClass *parent_class = g_type_class_peek (G_TYPE_OBJECT);
         JobOutput *output;
         gint i;
-        gchar *name;
+        gchar *name, *job_name_base64;
 
         output = job->output;
         for (i = 0; i < output->encoder_count; i++) {
@@ -149,9 +149,11 @@ static void job_dispose (GObject *obj)
                 if (munmap (output->job_description, job->output_size) == -1) {
                         GST_ERROR ("munmap %s error: %s", job->name, g_strerror (errno));
                 }
-                if (shm_unlink (job->name) == -1) {
+                job_name_base64 = g_base64_encode (job->name, strlen (job->name));
+                if (shm_unlink (job_name_base64) == -1) {
                         GST_ERROR ("shm_unlink %s error: %s", job->name, g_strerror (errno));
                 }
+                g_free (job_name_base64);
         }
         g_free (output);
 
@@ -411,12 +413,14 @@ gint job_initialize (Job *job, gboolean daemon)
 {
         gint i, fd;
         JobOutput *output;
-        gchar *name, *p;
+        gchar *name, *p, *job_name_base64;
 
         job->output_size = status_output_size (job->description);
         if (daemon) {
                 /* daemon, use share memory */
-                fd = shm_open (job->name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+                job_name_base64 = g_base64_encode (job->name, strlen (job->name));
+                fd = shm_open (job_name_base64, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+                g_free (job_name_base64);
                 if (ftruncate (fd, job->output_size) == -1) {
                         GST_ERROR ("ftruncate error: %s", g_strerror (errno));
                         return 1;
@@ -481,7 +485,9 @@ gint job_initialize (Job *job, gboolean daemon)
 
                 if (daemon) {
                         /* daemon, use share memory. */
-                        name = g_strdup_printf ("%s.%d", job->name, i);
+                        job_name_base64 = g_base64_encode (job->name, strlen (job->name));
+                        name = g_strdup_printf ("%s.%d", job_name_base64, i);
+                        g_free (job_name_base64);
                         fd = shm_open (name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
                         if (ftruncate (fd, SHM_SIZE) == -1) {
                                 GST_ERROR ("ftruncate error: %s", g_strerror (errno));

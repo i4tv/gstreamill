@@ -188,14 +188,14 @@ int main (int argc, char *argv[])
         if (gst_debug_get_default_threshold () < GST_LEVEL_WARNING) {
                 gst_debug_set_default_threshold (GST_LEVEL_WARNING);
         }
-
         /* subprocess, create_job_process */
         if (job_name != NULL) {
                 gint fd;
                 gchar *job_desc, *p;
                 Job *job;
-                gchar *log_path;
+                gchar *log_path, *name;
                 gint ret;
+                gsize name_len;
 
                 /* read job description from share memory */
                 job_desc = NULL;
@@ -210,6 +210,7 @@ int main (int argc, char *argv[])
                         exit (3);
                 }
 
+                name = g_base64_decode (job_name, &name_len);
                 /* initialize log */
                 if (!jobdesc_is_live (job_desc)) {
                         gchar *p;
@@ -219,7 +220,7 @@ int main (int argc, char *argv[])
                         g_free (p);
 
                 } else {
-                        log_path = g_build_filename (log_dir, job_name, "gstreamill.log", NULL);
+                        log_path = g_build_filename (log_dir, name, "gstreamill.log", NULL);
                 }
                 ret = init_log (log_path);
                 g_free (log_path);
@@ -228,7 +229,7 @@ int main (int argc, char *argv[])
                 }
 
                 /* launch a job. */
-                job = job_new ("name", job_name, "job", job_desc, NULL);
+                job = job_new ("name", name, "job", job_desc, NULL);
                 job->is_live = jobdesc_is_live (job_desc);
                 job->eos = FALSE;
                 signal (SIGPIPE, SIG_IGN);
@@ -243,7 +244,8 @@ int main (int argc, char *argv[])
                         GST_ERROR ("start livejob failure, exit");
                         exit (1);
                 }
-                GST_WARNING ("livejob %s starting ...", job_name);
+                GST_WARNING ("livejob %s starting ...", name);
+                g_free (name);
                 g_free (job_desc);
 
                 g_main_loop_run (loop);
