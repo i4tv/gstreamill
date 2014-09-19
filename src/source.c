@@ -373,6 +373,8 @@ static GstElement * element_create (gchar *job, gchar *pipeline, gchar *param)
                         } else {
                                 if (!set_element_property (element, *pp, value)) {
                                         GST_ERROR ("Set property error %s=%s", *pp, value);
+                                        g_free (p);
+                                        g_free (value);
                                         return NULL;
                                 }
                                 GST_INFO ("Set property: %s = %s.", *pp, value);
