@@ -171,7 +171,7 @@ job name is the value of name of job description.
 ## JOB DESCRIPTION
 
 Job example:
-```
+```json
 /*
  * test job, videotestsrc and audiotestsrc
  */
