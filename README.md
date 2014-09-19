@@ -95,19 +95,19 @@ http://gstreamill.ip:20118/admin/
 
 * invoke a job
 
-default management port is 20118, invoke test job: ```curl -H "Content-Type: application/json" --data @examples/test.job http://localhost:20118/admin/start```
+default management port is 20118, you can use curl to invoke test job:
+
+        curl -H "Content-Type: application/json" --data @examples/test.job http://localhost:20118/admin/start
 
 * invode a job in foreground:
 
-    gstreamill -j job_descript_file
+        gstreamill -j job_descript_file
 
-* access output use vlc
-
-    http progressive download:
+* access output via http progressive download:
     
         http://host.name.or.ip:20119/live/test/encoder/0
 
-    m3u8:
+* access output use via m3u8:
     
         http://host.name.or.ip:20119/live/test/playlist.m3u8
 
