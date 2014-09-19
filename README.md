@@ -1,6 +1,6 @@
 # Table of Contents
 
-* [INTRODUCTION]
+* [INTRODUCTION] (#introduction)
 * [INSTALL]
 
 # INTRODUCTION
