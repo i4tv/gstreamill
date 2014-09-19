@@ -41,7 +41,7 @@ gboolean jobdesc_is_valid (gchar *job)
                 return FALSE;
         }
 
-        regex = g_regex_new ("[`~!@#$%^&*()+=|\\{[\\]}:;\"\'<,>.?/]", G_REGEX_OPTIMIZE, 0, NULL);
+        regex = g_regex_new ("[`~!@#$%^&*()+=|\\{[\\]}:;\"\'<,>.?/ ]", G_REGEX_OPTIMIZE, 0, NULL);
         g_regex_match (regex, name, 0, &match_info);
         g_regex_unref (regex);
         if (g_match_info_matches (match_info)) {

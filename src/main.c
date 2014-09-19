@@ -17,6 +17,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <locale.h>
 
 #include "gstreamill.h"
 #include "httpstreaming.h"
@@ -135,6 +136,8 @@ int main (int argc, char *argv[])
         GError *err = NULL;
         gboolean foreground;
         struct rlimit rlim;
+
+        setlocale (LC_ALL, "");
 
         ctx = g_option_context_new (NULL);
         g_option_context_add_main_entries (ctx, options, NULL);
