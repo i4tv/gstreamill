@@ -1,9 +1,18 @@
 # Table of Contents
 
 * [INTRODUCTION] (#introduction)
+  * [Overview] (#overview)
+  * [Highlight] (#highlight)
+  * [Application] (#application)
 * [INSTALL] (#install)
+  * [Prerequisites] (#prerequisites)
+  * [Compile and install] (#compile_and_install)
 * [USING GSTREAMILL] (#using_gstreamill)
   * [Prerequisites] (#prerequisites)
+  * [B/S Management URL] (#b/s_management_url)
+  * [Command line] (#command_line)
+  * [Management interface] (#management_interface)
+  * [Output] (#output)
 * [JOB DESCRIPTION] (#job_description)
 
 # INTRODUCTION
@@ -71,7 +80,7 @@ gstreamill have been tested in ubuntu 13.10.
 
         http://gstreamill.ip:20118/admin/
 
-## command line
+## Command line
 
 * help
 
@@ -119,7 +128,7 @@ default management port is 20118, you can use curl to invoke test job:
     
         http://host.name.or.ip:20119/live/test/playlist.m3u8
 
-## management interface
+## Management interface
 
 * start a job over http use curl
 
@@ -142,7 +151,7 @@ job_name is value of the "name" field in job description.
 
         curl http://host.name.or.ip:20118/stat/gstreamer[/plugin]
 
-## output
+## Output
 
 job name is the value of name of job description.
 
