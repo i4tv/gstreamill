@@ -6,14 +6,14 @@
   * [Application] (#application)
 * [INSTALL] (#install)
   * [Prerequisites] (#prerequisites)
-  * [Compile and install] (#compile_and_install)
-* [USING GSTREAMILL] (#using_gstreamill)
+  * [Compile and install] (#compile-and-install)
+* [USING GSTREAMILL] (#using-gstreamill)
   * [Prerequisites] (#prerequisites)
-  * [B/S Management URL] (#b/s_management_url)
-  * [Command line] (#command_line)
-  * [Management interface] (#management_interface)
+  * [B/S Management URL] (#b/s-management-url)
+  * [Command line] (#command-line)
+  * [Management interface] (#management-interface)
   * [Output] (#output)
-* [JOB DESCRIPTION] (#job_description)
+* [JOB DESCRIPTION] (#job-description)
 
 # INTRODUCTION
 
