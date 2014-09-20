@@ -21,8 +21,6 @@
 
 gstreamill is an open source, GPL licensed "stream mill" based on gstreamer-1.0. To send query to a gstreamill server to provoke a live encode, transcode or recoder job. query is carried in http post, post body is the job to be provoke, job is descripted in json.
 
-If you would like to donate to help support gstreamill development use [Gittip](https://www.gittip.com/zhangping/)
-
 ## Highlight
 
    * hls, http progressive streaminig, udp output.
@@ -48,7 +46,7 @@ If you would like to donate to help support gstreamill development use [Gittip](
 
 # INSTALL
 
-gstreamill have been tested in ubuntu 13.10.
+gstreamill have been tested in ubuntu 14.04.
 
 ## Prerequisites
 
@@ -104,11 +102,11 @@ gstreamill have been tested in ubuntu 13.10.
 
 * start gstreamill
 
-    gstreamill
+    service gstreamill start
 
 * stop gstreamill
 
-    gstreamill -s
+    service gstreamill stop
 
 * invoke a job
 
