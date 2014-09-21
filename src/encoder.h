@@ -35,7 +35,6 @@ typedef struct _EncoderOutput {
         EncoderStreamState *streams;
 
         /* m3u8 streaming */
-        GMutex m3u8_playlist_mutex;
         GThreadPool *m3u8push_thread_pool;
         mqd_t mqdes;
         guint64 sequence_number;
