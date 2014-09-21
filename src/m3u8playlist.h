@@ -24,6 +24,7 @@ typedef struct _M3U8Entry
 
 typedef struct _M3U8Playlist
 {
+        GRWLock lock;
         guint version;
         gboolean allow_cache;
         gint window_size;

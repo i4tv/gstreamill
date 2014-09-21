@@ -340,9 +340,7 @@ static void m3u8push_thread_func (gpointer data, gpointer user_data)
         }
         g_free (request_uri);
         request_uri = g_strdup_printf ("%s/%s/playlist.m3u8", job->m3u8push_path, encoder_output_path);
-        g_mutex_lock (&(m3u8_push_request->encoder_output->m3u8_playlist_mutex));
         playlist = m3u8playlist_render (m3u8_push_request->encoder_output->m3u8_playlist);
-        g_mutex_unlock (&(m3u8_push_request->encoder_output->m3u8_playlist_mutex));
         header = g_strdup_printf (HTTP_PUT, request_uri, PACKAGE_NAME, PACKAGE_VERSION, job->m3u8push_host, strlen (playlist));
         buf = g_strdup_printf ("%s%s", header, playlist);
         g_free (header);
@@ -648,8 +646,6 @@ static void notify_function (union sigval sv)
         last_timestamp = encoder_output_rap_timestamp (encoder_output, *(encoder_output->last_rap_addr));
         url = g_strdup_printf ("%lu.ts", encoder_output->last_timestamp);
 
-        g_mutex_lock (&(encoder_output->m3u8_playlist_mutex));
-
         /* put segment */
         if (encoder_output->m3u8push_thread_pool != NULL) {
                 m3u8_push_request = g_malloc (sizeof (m3u8PushRequest));
@@ -672,8 +668,6 @@ static void notify_function (union sigval sv)
                         g_free (rm_segment);
                 }
         }
-
-        g_mutex_unlock (&(encoder_output->m3u8_playlist_mutex));
 
         encoder_output->last_timestamp = last_timestamp;
         g_free (url);
@@ -735,12 +729,10 @@ void job_reset (Job *job)
                 if (jobdesc_m3u8streaming (job->description)) {
                         /* reset m3u8 playlist */
                         if (encoder->m3u8_playlist != NULL) {
-                                g_mutex_clear (&(encoder->m3u8_playlist_mutex));
                                 m3u8playlist_free (encoder->m3u8_playlist);
                         }
                         encoder->m3u8push_thread_pool = job->m3u8push_thread_pool;
                         encoder->m3u8_playlist = m3u8playlist_new (version, window_size, FALSE);
-                        g_mutex_init (&(encoder->m3u8_playlist_mutex));
 
                         /* reset message queue */
                         if (encoder->mqdes != -1) {

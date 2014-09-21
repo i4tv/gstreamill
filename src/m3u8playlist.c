@@ -14,6 +14,7 @@ M3U8Playlist * m3u8playlist_new (guint version, guint window_size, gboolean allo
         M3U8Playlist *playlist;
 
         playlist = g_new0 (M3U8Playlist, 1);
+        g_rw_lock_init (&(playlist->lock));
         playlist->version = version;
         playlist->window_size = window_size;
         playlist->allow_cache = allow_cache;
@@ -31,18 +32,15 @@ static void m3u8entry_free (M3U8Entry * entry)
 
 void m3u8playlist_free (M3U8Playlist * playlist)
 {
-        g_return_if_fail (playlist != NULL);
-
         g_queue_foreach (playlist->entries, (GFunc) m3u8entry_free, NULL);
         g_queue_free (playlist->entries);
+        g_rw_lock_clear ((&playlist->lock));
         g_free (playlist);
 }
 
 static M3U8Entry * m3u8entry_new (const gchar * url, gfloat duration)
 {
         M3U8Entry *entry;
-
-        g_return_val_if_fail (url != NULL, NULL);
 
         entry = g_new0 (M3U8Entry, 1);
         entry->url = g_strdup (url);
@@ -54,12 +52,10 @@ static M3U8Entry * m3u8entry_new (const gchar * url, gfloat duration)
 gchar * m3u8playlist_add_entry (M3U8Playlist *playlist, const gchar *url, gfloat duration)
 {
         M3U8Entry *entry;
-        gchar *rm_url;
+        gchar *rm_url = NULL;
 
-        g_return_val_if_fail (playlist != NULL, FALSE);
-        g_return_val_if_fail (url != NULL, FALSE);
+        g_rw_lock_writer_lock (&(playlist->lock));
 
-        rm_url = NULL;
         entry = m3u8entry_new (url, duration);
         /* Delete old entries from the playlist */
         while (playlist->entries->length >= playlist->window_size) {
@@ -69,9 +65,10 @@ gchar * m3u8playlist_add_entry (M3U8Playlist *playlist, const gchar *url, gfloat
                 rm_url = old_entry->url;
                 m3u8entry_free (old_entry);
         }
-
         playlist->sequence_number++;;
         g_queue_push_tail (playlist->entries, entry);
+
+        g_rw_lock_writer_unlock (&(playlist->lock));
 
         return rm_url;
 }
@@ -107,10 +104,9 @@ gchar * m3u8playlist_render (M3U8Playlist * playlist)
 {
         gchar *p;
 
-        g_return_val_if_fail (playlist != NULL, NULL);
+        g_rw_lock_reader_lock (&(playlist->lock));
 
         playlist->playlist_str = g_string_new ("");
-
         /* #EXTM3U */
         g_string_append_printf (playlist->playlist_str, M3U8_HEADER_TAG);
         /* #EXT-X-VERSION */
@@ -122,12 +118,12 @@ gchar * m3u8playlist_render (M3U8Playlist * playlist)
         /* #EXT-X-TARGETDURATION */
         g_string_append_printf (playlist->playlist_str, M3U8_TARGETDURATION_TAG, m3u8playlist_target_duration (playlist));
         g_string_append_printf (playlist->playlist_str, "\n");
-
         /* Entries */
         g_queue_foreach (playlist->entries, (GFunc) render_entry, playlist);
-
         p = playlist->playlist_str->str;
         g_string_free (playlist->playlist_str, FALSE);
+
+        g_rw_lock_reader_unlock (&(playlist->lock));
 
         return p;
 }
