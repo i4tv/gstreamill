@@ -657,16 +657,21 @@ static void notify_function (union sigval sv)
                 m3u8_push_request->sequence_number = encoder_output->sequence_number;
                 m3u8_push_request->encoder_output = encoder_output;
                 m3u8_push_request->timestamp = encoder_output->last_timestamp;
-                m3u8_push_request->rm_segment = m3u8playlist_remove_entry (encoder_output->m3u8_playlist);
+                m3u8_push_request->rm_segment = m3u8playlist_add_entry (encoder_output->m3u8_playlist, url, segment_duration);
                 g_thread_pool_push (encoder_output->m3u8push_thread_pool, m3u8_push_request, &err);
                 if (err != NULL) {
                         GST_FIXME ("m3u8push thread pool push error %s", err->message);
                         g_error_free (err);
                 }
-        }
 
-        /* add new m3u8 playlist entry */
-        m3u8playlist_add_entry (encoder_output->m3u8_playlist, url, segment_duration);
+        } else {
+                gchar *rm_segment;
+
+                rm_segment = m3u8playlist_add_entry (encoder_output->m3u8_playlist, url, segment_duration);
+                if (rm_segment != NULL) {
+                        g_free (rm_segment);
+                }
+        }
 
         g_mutex_unlock (&(encoder_output->m3u8_playlist_mutex));
 
