@@ -30,7 +30,6 @@ typedef struct _M3U8Playlist
         guint64 sequence_number;
 
         /*< Private >*/
-        GQueue *adding_entries;
         GQueue *entries;
         GQueue *removing_entries;
         GString *playlist_str;
