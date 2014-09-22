@@ -9,7 +9,7 @@
 
 #include "m3u8playlist.h"
 
-M3U8Playlist * m3u8playlist_new (guint version, guint window_size, gboolean allow_cache)
+M3U8Playlist * m3u8playlist_new (guint version, guint window_size)
 {
         M3U8Playlist *playlist;
 
@@ -17,7 +17,6 @@ M3U8Playlist * m3u8playlist_new (guint version, guint window_size, gboolean allo
         g_rw_lock_init (&(playlist->lock));
         playlist->version = version;
         playlist->window_size = window_size;
-        playlist->allow_cache = allow_cache;
         playlist->entries = g_queue_new ();
 
         return playlist;
@@ -112,7 +111,7 @@ gchar * m3u8playlist_render (M3U8Playlist * playlist)
         /* #EXT-X-VERSION */
         g_string_append_printf (playlist->playlist_str, M3U8_VERSION_TAG, playlist->version);
         /* #EXT-X-ALLOW_CACHE */
-        g_string_append_printf (playlist->playlist_str, M3U8_ALLOW_CACHE_TAG, playlist->allow_cache ? "YES" : "NO");
+        g_string_append_printf (playlist->playlist_str, M3U8_ALLOW_CACHE_TAG, "NO");
         /* #EXT-X-MEDIA-SEQUENCE */
         g_string_append_printf (playlist->playlist_str, M3U8_MEDIA_SEQUENCE_TAG, playlist->sequence_number - playlist->entries->length);
         /* #EXT-X-TARGETDURATION */
