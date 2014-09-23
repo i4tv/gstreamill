@@ -658,7 +658,7 @@ static gpointer listen_thread (gpointer data)
                         } 
 
                         if (event_list[i].events & (EPOLLOUT | EPOLLIN | EPOLLHUP | EPOLLERR)) {
-                                if (request_data->status == HTTP_BLOCK) {
+                                if ((request_data->status == HTTP_BLOCK) || (request_data->status == HTTP_REQUEST)) {
                                         g_mutex_lock (&(http_server->block_queue_mutex));
                                         g_cond_signal (&(http_server->block_queue_cond));
                                         g_mutex_unlock (&(http_server->block_queue_mutex));
