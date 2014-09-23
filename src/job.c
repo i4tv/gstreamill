@@ -117,14 +117,8 @@ static void job_dispose (GObject *obj)
         }
         output = job->output;
         for (i = 0; i < output->encoder_count; i++) {
-                /* semaphore and message queue release */
+                /* message queue release */
                 name = g_strdup_printf ("/%s.%d", job->name, i);
-                if (sem_close (output->encoders[i].semaphore) == -1) {
-                        GST_ERROR ("sem_close %s error: %s", name, g_strerror (errno));
-                }
-                if (sem_unlink (name) == -1) {
-                        GST_ERROR ("sem_unlink %s error: %s", name, g_strerror (errno));
-                }
                 if ((output->encoders[i].mqdes != -1) && (mq_close (output->encoders[i].mqdes) == -1)) {
                         GST_ERROR ("mq_close %s error: %s", name, g_strerror (errno));
                 }
