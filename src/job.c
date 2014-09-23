@@ -112,6 +112,9 @@ static void job_dispose (GObject *obj)
         gint i;
         gchar *name, *job_name_base64;
 
+        if (job->output == NULL) {
+                return;
+        }
         output = job->output;
         for (i = 0; i < output->encoder_count; i++) {
                 /* semaphore and message queue release */
@@ -415,6 +418,7 @@ gint job_initialize (Job *job, gboolean daemon)
                 g_free (job_name_base64);
                 if (ftruncate (fd, job->output_size) == -1) {
                         GST_ERROR ("ftruncate error: %s", g_strerror (errno));
+                        job->output = NULL;
                         return 1;
                 }
                 p = mmap (NULL, job->output_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
