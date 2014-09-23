@@ -200,7 +200,8 @@ static gsize status_output_size (gchar *job)
         size += sizeof (gint64); /* duration for transcode */
         size += jobdesc_streams_count (job, "source") * sizeof (struct _SourceStreamState);
         for (i = 0; i < jobdesc_encoders_count (job); i++) {
-                size += sizeof (GstClockTime); /* encoder heartbeat */
+                size += sizeof (sem_t); /* encoder output semaphore */
+                size += sizeof (GstClockTime); /* encoder output heartbeat */
                 size += sizeof (gboolean); /* end of stream */
                 pipeline = g_strdup_printf ("encoder.%d", i);
                 size += jobdesc_streams_count (job, pipeline) * sizeof (struct _EncoderStreamState); /* encoder state */
@@ -447,14 +448,9 @@ gint job_initialize (Job *job, gboolean daemon)
                 name = g_strdup_printf ("encoder.%d", i);
                 output->encoders[i].stream_count = jobdesc_streams_count (job->description, name);
                 g_free (name);
-                name = g_strdup_printf ("/%s.%d", job->name, i);
-                output->encoders[i].semaphore = sem_open (name, O_CREAT, 0600, 1);
-                if (output->encoders[i].semaphore == SEM_FAILED) {
-                        GST_ERROR ("sem_open %s error: %s", name, g_strerror (errno));
-                        g_free (name);
-                        return 1;
-                }
-                g_free (name);
+                output->encoders[i].semaphore = (sem_t *)p;
+                sem_init (output->encoders[i].semaphore, 1, 1);
+                p += sizeof (sem_t);
                 output->encoders[i].heartbeat = (GstClockTime *)p;
                 *(output->encoders[i].heartbeat) = gst_clock_get_time (job->system_clock);
                 p += sizeof (GstClockTime); /* encoder heartbeat */
@@ -737,16 +733,7 @@ void job_reset (Job *job)
 
                 /* reset semaphore */
                 if (job->age > 0) {
-                        if (sem_close (encoder->semaphore) == -1) {
-                                GST_ERROR ("sem_close %s error: %s", name, g_strerror (errno));
-                        }
-                        if (sem_unlink (name) == -1) {
-                                GST_ERROR ("sem_unlink %s error: %s", name, g_strerror (errno));
-                        }
-                        encoder->semaphore = sem_open (name, O_CREAT, 0600, 1);
-                        if (encoder->semaphore == SEM_FAILED) {
-                                GST_ERROR ("sem_open %s error: %s", name, g_strerror (errno));
-                        }
+                        sem_init (encoder->semaphore, 1, 1);
                 }
 
                 g_free (name);
