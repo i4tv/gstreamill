@@ -144,8 +144,9 @@ static void log_func (GstDebugCategory *category,
 
         datetime = g_date_time_new_now_local ();
         date = g_date_time_format (datetime, "%b %d %H:%M:%S");
-        fprintf (log_hd, "%s %s" CAT_FMT "%s\n",
+        fprintf (log_hd, "%s.%d %s" CAT_FMT "%s\n",
                  date,
+                 g_date_time_get_microsecond (datetime),
                  gst_debug_level_get_name (level),
                  gst_debug_category_get_name (category), file, line,
                  gst_debug_message_get (message));
