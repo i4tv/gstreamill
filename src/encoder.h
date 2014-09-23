@@ -24,7 +24,6 @@ typedef struct _EncoderOutput {
         sem_t *semaphore; /* access of encoder output should be exclusive */
         GstClockTime *heartbeat;
         gboolean *eos;
-        gint cache_fd;
         gchar *cache_addr;
         guint64 cache_size;
         guint64 *total_count; /* total output packet counts */

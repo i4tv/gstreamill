@@ -114,19 +114,6 @@ static void job_dispose (GObject *obj)
 
         output = job->output;
         for (i = 0; i < output->encoder_count; i++) {
-                /* share memory release */
-                name = g_strdup_printf ("%s.%d", job->name, i);
-                if (output->encoders[i].cache_fd != -1) {
-                        g_close (output->encoders[i].cache_fd, NULL);
-                        if (munmap (output->encoders[i].cache_addr, SHM_SIZE) == -1) {
-                                GST_ERROR ("munmap %s error: %s", name, g_strerror (errno));
-                        }
-                        if (shm_unlink (name) == -1) {
-                                GST_ERROR ("shm_unlink %s error: %s", name, g_strerror (errno));
-                        }
-                }
-                g_free (name);
-
                 /* semaphore and message queue release */
                 name = g_strdup_printf ("/%s.%d", job->name, i);
                 if (sem_close (output->encoders[i].semaphore) == -1) {
@@ -143,7 +130,7 @@ static void job_dispose (GObject *obj)
                 }
                 g_free (name);
         }
-
+        /* share memory release */
         if (job->output_fd != -1) {
                 g_close (job->output_fd, NULL);
                 if (munmap (output->job_description, job->output_size) == -1) {
@@ -222,6 +209,12 @@ static gsize status_output_size (gchar *job)
                 size += sizeof (guint64); /* cache tail */
                 size += sizeof (guint64); /* last rap (random access point) */
                 size += sizeof (guint64); /* total count */
+                /* nonlive job has no output */
+                if (!jobdesc_is_live (job)) {
+                        continue;
+                }
+                /* output share memory */
+                size += SHM_SIZE;
         }
 
         return size;
@@ -477,30 +470,13 @@ gint job_initialize (Job *job, gboolean daemon)
 
                 /* non live job has no output */
                 if (!job->is_live) {
-                        output->encoders[i].cache_fd = -1;
                         continue;
                 }
 
-                if (daemon) {
-                        /* daemon, use share memory. */
-                        job_name_base64 = g_base64_encode (job->name, strlen (job->name));
-                        name = g_strdup_printf ("%s.%d", job_name_base64, i);
-                        g_free (job_name_base64);
-                        fd = shm_open (name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
-                        if (ftruncate (fd, SHM_SIZE) == -1) {
-                                GST_ERROR ("ftruncate error: %s", g_strerror (errno));
-                                return 1;
-                        }
-                        output->encoders[i].cache_addr = mmap (NULL, SHM_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-                        output->encoders[i].cache_fd = fd;
-                        /* initialize gop size = 0. */
-                        *(gint32 *)(output->encoders[i].cache_addr + 8) = 0;
-                        g_free (name);
-
-                } else {
-                        output->encoders[i].cache_fd = -1;
-                        output->encoders[i].cache_addr = g_malloc (SHM_SIZE);
-                }
+                output->encoders[i].cache_addr = p;
+                p += SHM_SIZE;
+                /* initialize gop size = 0. */
+                *(gint32 *)(output->encoders[i].cache_addr + 8) = 0;
                 /* first gop timestamp is 0 */
                 *(GstClockTime *)(output->encoders[i].cache_addr) = 0;
                 output->encoders[i].cache_size = SHM_SIZE;
