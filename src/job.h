@@ -13,27 +13,8 @@
 
 #define SHM_SIZE 64*1024*1024
 
-#define HTTP_PUT "PUT %s HTTP/1.1\r\n" \
-                 "User-Agent: %s-%s\r\n" \
-                 "Host: %s\r\n" \
-                 "Accept: */*\r\n" \
-                 "Content-Type: application/octet-stream\r\n" \
-                 "Content-Length: %lu\r\n\r\n" 
-
-#define HTTP_DELETE "DELETE %s HTTP/1.1\r\n" \
-                    "User-Agent: %s-%s\r\n" \
-                    "Host: %s\r\n" \
-                    "Accept: */*\r\n\r\n"
-
 typedef struct _Job Job;
 typedef struct _JobClass JobClass;
-
-typedef struct _m3u8PushRequest {
-        gchar *rm_segment;
-        EncoderOutput *encoder_output;
-        GstClockTime timestamp;
-        guint64 sequence_number;
-} m3u8PushRequest;
 
 typedef struct _JobOutput {
         gchar *job_description;
@@ -75,12 +56,6 @@ struct _Job {
 
         Source *source; 
         GArray *encoder_array;
-
-        gchar *m3u8push_uri;
-        gchar m3u8push_host[256];
-        gchar m3u8push_path[128];
-        guint16 m3u8push_port;
-        GThreadPool *m3u8push_thread_pool;
 };
 
 struct _JobClass {

@@ -34,10 +34,7 @@ typedef struct _EncoderOutput {
         EncoderStreamState *streams;
 
         /* m3u8 streaming */
-        GThreadPool *m3u8push_thread_pool;
         mqd_t mqdes;
-        guint64 sequence_number;
-        guint64 pushed_sequence_number;
         M3U8Playlist *m3u8_playlist;
         GstClockTime last_timestamp; /* last segment timestamp */
 } EncoderOutput;

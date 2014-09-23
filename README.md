@@ -24,7 +24,6 @@ gstreamill is an open source, GPL licensed "stream mill" based on gstreamer-1.0.
 ## Highlight
 
    * hls, http progressive streaminig, udp output.
-   * hls push mode output via webdav.
    * Multi-Rate with GOP Alignment.
    * RESTful management interface, allowing easy integration into operator environment.
    * Job is descript in json.
@@ -36,9 +35,9 @@ gstreamill is an open source, GPL licensed "stream mill" based on gstreamer-1.0.
 
     IP --------+ 
                |                      +------- UDP
-    CVBS ------+    +------------+    |               +---- http put
-               +----+ gstreamill +----+------ M3U8----+
-    SDI -------+    +------+-----+    |               +---- http get
+    CVBS ------+    +------------+    |
+               +----+ gstreamill +----+------ M3U8(HLS)
+    SDI -------+    +------+-----+    |
                |           |          +------ HTTP
     LIVE ------+           |
                            |
@@ -344,47 +343,6 @@ m3u8streaming is hls output, it's optional:
     "version" : 3,
     "window-size" : 10,
     "segment-duration" : 3.00,
-    "push-server-uri" : "http://192.168.56.3/test"
-}
-```
-
-push-server-uri, push m3u8 to web server use http webdav. If you use nginx, note that the webdav module of nginx is not built by default, it should be enabled with the --with-http_dav_module configuration parameter. nginx conf examples:
-```nginx
-#user  nobody;
-worker_processes  1;
-
-#error_log  logs/error.log;
-#error_log  logs/error.log  notice;
-#error_log  logs/error.log  info;
-
-#pid        logs/nginx.pid;
-
-
-events {
-    worker_connections  1024;
-}
-
-
-http {
-
-    client_max_body_size 20M;
-
-    server {
-        location / {
-            root /home/zhangping/publish;
-            client_body_temp_path /home/zhangping/tmp;
-
-            dav_methods  PUT DELETE MKCOL COPY MOVE;
-
-            create_full_put_path   on;
-            dav_access             group:rw  all:r;
-
-            limit_except  GET {
-                allow  192.168.0.0/16;
-                deny   all;
-            }
-        }
-    }
 }
 ```
 

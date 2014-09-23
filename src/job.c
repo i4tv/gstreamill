@@ -63,7 +63,6 @@ static void job_init (Job *job)
         job->system_clock = gst_system_clock_obtain ();
         g_object_set (job->system_clock, "clock-type", GST_CLOCK_TYPE_REALTIME, NULL);
         job->encoder_array = g_array_new (FALSE, FALSE, sizeof (gpointer));
-        job->m3u8push_thread_pool = NULL;
 }
 
 static void job_set_property (GObject *obj, guint prop_id, const GValue *value, GParamSpec *pspec)
@@ -218,141 +217,6 @@ static gsize status_output_size (gchar *job)
         return size;
 }
 
-static gint http_client_request (Job *job, guint8 *data, gsize count)
-{
-	gint socketfd;
-        struct hostent *hostp;
-        struct sockaddr_in serveraddr;
-        gint ret, len;
-        gsize sent;
-
-        socketfd = socket (AF_INET, SOCK_STREAM, 0);
-        memset (&serveraddr, 0x00, sizeof (struct sockaddr_in));
-        serveraddr.sin_family = AF_INET;
-        serveraddr.sin_port = htons (job->m3u8push_port);
-        serveraddr.sin_addr.s_addr = inet_addr (job->m3u8push_host);
-        if ((serveraddr.sin_addr.s_addr = inet_addr (job->m3u8push_host)) == (unsigned long)INADDR_NONE) {
-                hostp = gethostbyname (job->m3u8push_host);
-                if (hostp == (struct hostent *)NULL) {
-                        GST_ERROR ("put segment, host %s not found", job->m3u8push_host);
-                        g_free (data);
-                        close (socketfd);
-                        return -1;
-                }
-                memcpy (&serveraddr.sin_addr, hostp->h_addr, sizeof (serveraddr.sin_addr));
-        }
-        ret = connect (socketfd, (struct sockaddr *)&serveraddr, sizeof(serveraddr));
-        if (ret < 0) {
-                GST_ERROR ("put segment, connect error: %s", g_strerror (errno));
-                g_free (data);
-                close (socketfd);
-                return  -1;
-        }
-
-        sent = 0;
-        while (sent < count) {
-                len = INT_MAX < count - sent ? INT_MAX : count - sent;
-                ret = write (socketfd, data + sent, len);
-                if (ret == -1) {
-                        if (errno == EAGAIN) {
-                                /* block, wait 50ms */
-                                g_usleep (50000);
-                                continue;
-                        }
-                        GST_INFO ("Write error: %s", g_strerror (errno));
-                        break;
-                }
-                sent += ret;
-        }
-        close (socketfd);
-        g_free (data);
-
-        return sent;
-}
-
-static void m3u8push_thread_func (gpointer data, gpointer user_data)
-{
-        Job *job = (Job *)user_data;
-        m3u8PushRequest *m3u8_push_request = (m3u8PushRequest *)data;
-        gchar *header, *request_uri, *encoder_output_path, *p;
-        guint64 rap_addr;
-        gsize segment_size, count;
-        guint8 *buf, *playlist;
-
-        /* seek gop it's timestamp is m3u8_push_request->timestamp */
-        sem_wait (m3u8_push_request->encoder_output->semaphore);
-        rap_addr = encoder_output_gop_seek (m3u8_push_request->encoder_output, m3u8_push_request->timestamp);
-        sem_post (m3u8_push_request->encoder_output->semaphore);
-
-        /* gop not found? */
-        if (rap_addr == G_MAXUINT64) {
-                GST_ERROR ("Segment not found!");
-                return;
-        }
-
-        /* encoder output path */
-        encoder_output_path = g_strdup (m3u8_push_request->encoder_output->name);
-        p = strchr (encoder_output_path, '.');
-        *p = '/';
-
-        /* header */
-        segment_size = encoder_output_gop_size (m3u8_push_request->encoder_output, rap_addr);
-        request_uri = g_strdup_printf ("%s/%s/%lu.ts", job->m3u8push_path, encoder_output_path, m3u8_push_request->timestamp);
-        header = g_strdup_printf (HTTP_PUT, request_uri, PACKAGE_NAME, PACKAGE_VERSION, job->m3u8push_host, segment_size);
-
-        /* copy header to buffer */
-        count = segment_size + strlen (header);
-        buf = g_malloc (count);
-        memcpy (buf, header, strlen (header));
-
-        /* copy body(segment) to buffer */
-        if (rap_addr + segment_size + 12 < m3u8_push_request->encoder_output->cache_size) {
-                memcpy (buf + strlen (header), m3u8_push_request->encoder_output->cache_addr + rap_addr + 12, segment_size);
-
-        } else {
-                gint n;
-                guint8 *p;
-
-                n = m3u8_push_request->encoder_output->cache_size - rap_addr - 12;
-                p = buf + strlen (header);
-                memcpy (p, m3u8_push_request->encoder_output->cache_addr + rap_addr + 12, n);
-                p += n;
-                memcpy (p, m3u8_push_request->encoder_output->cache_addr, segment_size - n);
-        }
-        g_free (header);
-
-        /* put segment */
-        http_client_request (job, buf, count);
-
-        /* put playlist */
-        while ((m3u8_push_request->encoder_output->pushed_sequence_number + 1) != m3u8_push_request->sequence_number) {
-                /* waiting previous segment pushed */
-                g_usleep (50000);
-        }
-        g_free (request_uri);
-        request_uri = g_strdup_printf ("%s/%s/playlist.m3u8", job->m3u8push_path, encoder_output_path);
-        playlist = m3u8playlist_get_playlist (m3u8_push_request->encoder_output->m3u8_playlist);
-        header = g_strdup_printf (HTTP_PUT, request_uri, PACKAGE_NAME, PACKAGE_VERSION, job->m3u8push_host, strlen (playlist));
-        buf = g_strdup_printf ("%s%s", header, playlist);
-        g_free (header);
-        http_client_request (job, buf, strlen (buf));
-        m3u8_push_request->encoder_output->pushed_sequence_number++;
-
-        /* remove segment */
-        if (m3u8_push_request->rm_segment != NULL) {
-                g_free (request_uri);
-                request_uri = g_strdup_printf ("%s/%s/%s", job->m3u8push_path, encoder_output_path, m3u8_push_request->rm_segment);
-                header = g_strdup_printf (HTTP_DELETE, request_uri,  PACKAGE_NAME, PACKAGE_VERSION, job->m3u8push_host);
-                http_client_request (job, header, strlen (header));
-                g_free (m3u8_push_request->rm_segment);
-        }
-
-        g_free (playlist);
-        g_free (request_uri);
-        g_free (m3u8_push_request);
-        g_free (encoder_output_path);
-}
-
 static gchar * render_master_m3u8_playlist (Job *job)
 {
         GString *master_m3u8_playlist;
@@ -485,9 +349,6 @@ gint job_initialize (Job *job, gboolean daemon)
                 *(output->encoders[i].last_rap_addr) = 0;
                 p += sizeof (guint64); /* last rap addr */
                 output->encoders[i].m3u8_playlist = NULL;
-                output->encoders[i].last_timestamp = 0;
-                output->encoders[i].sequence_number = 0;
-                output->encoders[i].pushed_sequence_number = 0;
         }
         job->output = output;
 
@@ -503,37 +364,6 @@ gint job_initialize (Job *job, gboolean daemon)
                 job->output->master_m3u8_playlist = NULL;
         }
 
-        /* push to web server? */
-        job->m3u8push_uri = jobdesc_m3u8streaming_push_server_uri (job->description);
-        if (job->m3u8push_uri != NULL) {
-                GError *err = NULL;
-                gchar *header, *request_uri, *buf;
-
-                sscanf (job->m3u8push_uri, "http://%[^:/]", job->m3u8push_host);
-                job->m3u8push_port = 80;
-                sscanf (job->m3u8push_uri, "http://%*[^:]:%hu", &(job->m3u8push_port));
-                sscanf (job->m3u8push_uri, "http://%*[^/]%s", job->m3u8push_path);
-                job->m3u8push_thread_pool = g_thread_pool_new (m3u8push_thread_func, job, 10, TRUE, &err);
-                if (err != NULL) {
-                        GST_ERROR ("Create m3u8push thread pool error %s", err->message);
-                        g_error_free (err);
-                        return 1;
-                }
-
-                /* put master playlist */
-                request_uri = g_strdup_printf ("%s/playlist.m3u8", job->m3u8push_path);
-                header = g_strdup_printf (HTTP_PUT,
-                                          request_uri,
-                                          PACKAGE_NAME,
-                                          PACKAGE_VERSION,
-                                          job->m3u8push_host,
-                                          strlen (job->output->master_m3u8_playlist));
-                buf = g_strdup_printf ("%s%s", header, job->output->master_m3u8_playlist);
-                http_client_request (job, buf, strlen (buf));
-                g_free (request_uri);
-                g_free (header);
-        }
- 
         return 0;
 }
 
@@ -591,7 +421,6 @@ static void notify_function (union sigval sv)
         GstClockTime segment_duration;
         gsize size;
         gchar *url, buf[128];
-        m3u8PushRequest *m3u8_push_request;
         GError *err = NULL;
 
         encoder_output = (EncoderOutput *)sv.sival_ptr;
@@ -612,33 +441,9 @@ static void notify_function (union sigval sv)
         }
         buf[size] = '\0';
         sscanf (buf, "%lu", &segment_duration);
-
         last_timestamp = encoder_output_rap_timestamp (encoder_output, *(encoder_output->last_rap_addr));
         url = g_strdup_printf ("%lu.ts", encoder_output->last_timestamp);
-
-        /* put segment */
-        if (encoder_output->m3u8push_thread_pool != NULL) {
-                m3u8_push_request = g_malloc (sizeof (m3u8PushRequest));
-                encoder_output->sequence_number++;
-                m3u8_push_request->sequence_number = encoder_output->sequence_number;
-                m3u8_push_request->encoder_output = encoder_output;
-                m3u8_push_request->timestamp = encoder_output->last_timestamp;
-                m3u8_push_request->rm_segment = m3u8playlist_add_entry (encoder_output->m3u8_playlist, url, segment_duration);
-                g_thread_pool_push (encoder_output->m3u8push_thread_pool, m3u8_push_request, &err);
-                if (err != NULL) {
-                        GST_FIXME ("m3u8push thread pool push error %s", err->message);
-                        g_error_free (err);
-                }
-
-        } else {
-                gchar *rm_segment;
-
-                rm_segment = m3u8playlist_add_entry (encoder_output->m3u8_playlist, url, segment_duration);
-                if (rm_segment != NULL) {
-                        g_free (rm_segment);
-                }
-        }
-
+        m3u8playlist_add_entry (encoder_output->m3u8_playlist, url, segment_duration);
         encoder_output->last_timestamp = last_timestamp;
         g_free (url);
 }
@@ -701,7 +506,6 @@ void job_reset (Job *job)
                         if (encoder->m3u8_playlist != NULL) {
                                 m3u8playlist_free (encoder->m3u8_playlist);
                         }
-                        encoder->m3u8push_thread_pool = job->m3u8push_thread_pool;
                         encoder->m3u8_playlist = m3u8playlist_new (version, window_size);
 
                         /* reset message queue */
