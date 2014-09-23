@@ -24,7 +24,7 @@
                 "mb-tree" : true,
                 "dct8x8" : true,
                 "speed-preset" : 0,
-                "option-string" : ":ref=3:me=umh:subme=16:merange=64:nf=1:deblock=1,-2:weightp=1:b-pyramid=2:direct=spatial:nal-hrd=vbr"
+                "option-string" : ":ref=3:me=hex:subme=8:merange=24:nf=1:deblock=1,-2:weightp=1:b-pyramid=2:direct=spatial:nal-hrd=vbr"
             }
         },
         "voaacenc": {
