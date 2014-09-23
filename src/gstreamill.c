@@ -961,7 +961,7 @@ gchar * gstreamill_get_m3u8playlist (Gstreamill *gstreamill, EncoderOutput *enco
         gchar *m3u8playlist;
 
         if (encoder_output->m3u8_playlist == NULL) {
-                return g_strdup ("not fount");
+                return NULL;
         }
         m3u8playlist = m3u8playlist_get_playlist (encoder_output->m3u8_playlist);
 

@@ -470,14 +470,19 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
                 gchar *m3u8playlist;
 
                 m3u8playlist = gstreamill_get_m3u8playlist (httpstreaming->gstreamill, encoder_output);
-                buf = g_strdup_printf (http_200,
+                if (m3u8playlist == NULL) {
+                        buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+
+                } else {
+                        buf = g_strdup_printf (http_200,
                                        PACKAGE_NAME,
                                        PACKAGE_VERSION,
                                        "application/vnd.apple.mpegurl",
                                        strlen (m3u8playlist),
                                        CACHE_60s,
-                                       m3u8playlist); 
-                g_free (m3u8playlist);
+                                       m3u8playlist);
+                        g_free (m3u8playlist);
+                }
                 buf_size = strlen (buf);
 
         } else if (is_http_progress_play_url (request_data)) {
