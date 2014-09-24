@@ -1296,6 +1296,10 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
                 GST_ERROR ("uri %s not found.", uri);
                 return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"not found\",\n    \"name\": \"%s\"\n}", name);
         }
+        if (*(job->output->state) != GST_STATE_PLAYING) {
+                GST_ERROR ("FATAL: get job stat failure, not playing stat");
+                return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"not playing stat\",\n    \"name\": \"%s\"\n}", name);
+        }
         source_streams = source_streams_stat (job);
         encoders = encoders_stat (job);
         p = g_strdup_printf (template,
