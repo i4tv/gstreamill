@@ -10,6 +10,6 @@
 
 #include <gst/gst.h>
 
-gchar * bin2hexstr (gchar *binary);
+gchar * unicode_file_name_2_shm_name (gchar *filename);
 
 #endif /* __UTILS_H__ */

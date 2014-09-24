@@ -686,7 +686,7 @@ static gchar * create_job_process (Job *job)
         argv[i++] = g_strdup ("-l");
         argv[i++] = g_strdup (job->log_dir);
         argv[i++] = g_strdup ("-n");
-        argv[i++] = bin2hexstr (job->name);
+        argv[i++] = unicode_file_name_2_shm_name (job->name);
         argv[i++] = g_strdup ("-q");
         argv[i++] = g_strdup_printf ("%ld", strlen (job->description));
         p = jobdesc_get_debug (job->description);
@@ -1298,27 +1298,42 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
                 return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"not found\",\n    \"name\": \"%s\"\n}", name);
         }
         if (*(job->output->state) != GST_STATE_PLAYING) {
-                GST_ERROR ("FATAL: get job stat failure, not playing stat");
-                return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"not playing stat\",\n    \"name\": \"%s\"\n}", name);
+                GST_WARNING ("FATAL: get job stat failure, not playing stat");
+                p = g_strdup_printf (template,
+                                        job->name,
+                                        job->age,
+                                        job->last_start_time,
+                                        job->current_access,
+                                        job->cpu_average,
+                                        job->cpu_current,
+                                        job->memory,
+                                        0,
+                                        job->output->source.sync_error_times,
+                                        job->output->source.stream_count,
+                                        "",
+                                        job->output->encoder_count,
+                                        "");
+
+        } else {
+                source_streams = source_streams_stat (job);
+                encoders = encoders_stat (job);
+                p = g_strdup_printf (template,
+                                        job->name,
+                                        job->age,
+                                        job->last_start_time,
+                                        job->current_access,
+                                        job->cpu_average,
+                                        job->cpu_current,
+                                        job->memory,
+                                        *(job->output->source.duration),
+                                        job->output->source.sync_error_times,
+                                        job->output->source.stream_count,
+                                        source_streams,
+                                        job->output->encoder_count,
+                                        encoders);
+                g_free (source_streams);
+                g_free (encoders);
         }
-        source_streams = source_streams_stat (job);
-        encoders = encoders_stat (job);
-        p = g_strdup_printf (template,
-                                job->name,
-                                job->age,
-                                job->last_start_time,
-                                job->current_access,
-                                job->cpu_average,
-                                job->cpu_current,
-                                job->memory,
-                                *(job->output->source.duration),
-                                job->output->source.sync_error_times,
-                                job->output->source.stream_count,
-                                source_streams,
-                                job->output->encoder_count,
-                                encoders);
-        g_free (source_streams);
-        g_free (encoders);
         stat = g_strdup_printf ("{\n    \"result\": \"success\",\n    \"data\": %s}", p);
         g_free (p);
 

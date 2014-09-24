@@ -133,7 +133,7 @@ static void job_dispose (GObject *obj)
                 if (munmap (output->job_description, job->output_size) == -1) {
                         GST_ERROR ("munmap %s error: %s", job->name, g_strerror (errno));
                 }
-                name_hexstr = bin2hexstr (job->name);
+                name_hexstr = unicode_file_name_2_shm_name (job->name);
                 if (shm_unlink (name_hexstr) == -1) {
                         GST_ERROR ("shm_unlink %s error: %s", job->name, g_strerror (errno));
                 }
@@ -272,7 +272,7 @@ gint job_initialize (Job *job, gboolean daemon)
         job->output_size = status_output_size (job->description);
         if (daemon) {
                 /* daemon, use share memory */
-                name_hexstr = bin2hexstr (job->name);
+                name_hexstr = unicode_file_name_2_shm_name (job->name);
                 fd = shm_open (name_hexstr, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
                 if (fd == -1) {
                         GST_ERROR ("shm_open %s failure: %s", name_hexstr, g_strerror (errno));

@@ -9,18 +9,21 @@
 
 #include "utils.h"
 
-gchar * bin2hexstr (gchar *binary)
+gchar * unicode_file_name_2_shm_name (gchar *filename)
 {
+        gchar *shm_name;
         gint i;
-        gchar *hexstr, *p;
 
-        hexstr = g_strdup_printf ("%02x", binary[0]);
-        for (i = 1; i < strlen (binary); i++) {
-                p = hexstr;
-                hexstr = g_strdup_printf ("%s%02x", p, binary[i]);
-                g_free (p);
+        shm_name = g_base64_encode (filename, strlen (filename));
+        for (i = 0; i < strlen (shm_name); i++) {
+                if (shm_name[i] == '+') {
+                        shm_name[i] = '=';
+                }
+                if (shm_name[i] == '/') {
+                        shm_name[i] = '_';
+                }
         }
-GST_ERROR ("hex string: %s", hexstr);
-        return hexstr;
+
+        return shm_name;
 }
 
