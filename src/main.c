@@ -87,14 +87,14 @@ static gchar *job_file = NULL;
 static gchar *log_dir = "/var/log/gstreamill";
 static gchar *http_mgmt = "0.0.0.0:20118";
 static gchar *http_streaming = "0.0.0.0:20119";
-static gchar *job_name = NULL;
+static gchar *shm_name = NULL;
 static gint job_length = -1;
 static GOptionEntry options[] = {
         {"job", 'j', 0, G_OPTION_ARG_FILENAME, &job_file, ("-j /full/path/to/job.file: Specify a job file, full path is must."), NULL},
         {"log", 'l', 0, G_OPTION_ARG_FILENAME, &log_dir, ("-l /full/path/to/log: Specify log path, full path is must."), NULL},
         {"httpmgmt", 'm', 0, G_OPTION_ARG_STRING, &http_mgmt, ("-m http managment address, default is 0.0.0.0:20118."), NULL},
         {"httpstreaming", 'a', 0, G_OPTION_ARG_STRING, &http_streaming, ("-a http streaming address, default is 0.0.0.0:20119."), NULL},
-        {"name", 'n', G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &job_name, NULL, NULL},
+        {"name", 'n', G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &shm_name, NULL, NULL},
         {"joblength", 'q', G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_INT, &job_length, NULL, NULL},
         {"stop", 's', 0, G_OPTION_ARG_NONE, &stop, ("Stop gstreamill."), NULL},
         {"version", 'v', 0, G_OPTION_ARG_NONE, &version, ("display version information and exit."), NULL},
@@ -189,17 +189,16 @@ int main (int argc, char *argv[])
                 gst_debug_set_default_threshold (GST_LEVEL_WARNING);
         }
         /* subprocess, create_job_process */
-        if (job_name != NULL) {
+        if (shm_name != NULL) {
                 gint fd;
                 gchar *job_desc, *p;
                 Job *job;
                 gchar *log_path, *name;
                 gint ret;
-                gsize name_len;
 
                 /* read job description from share memory */
                 job_desc = NULL;
-                fd = shm_open (job_name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+                fd = shm_open (shm_name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
                 if (ftruncate (fd, job_length) == -1) {
                         exit (2);
                 }
@@ -210,7 +209,7 @@ int main (int argc, char *argv[])
                         exit (3);
                 }
 
-                name = g_base64_decode (job_name, &name_len);
+                name = (gchar *)jobdesc_get_name (job_desc);
                 /* initialize log */
                 if (!jobdesc_is_live (job_desc)) {
                         gchar *p;

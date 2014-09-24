@@ -13,6 +13,7 @@
 #include <glib.h>
 #include <glib/gstdio.h>
 
+#include "utils.h"
 #include "gstreamill.h"
 #include "parson.h"
 #include "jobdesc.h"
@@ -685,7 +686,7 @@ static gchar * create_job_process (Job *job)
         argv[i++] = g_strdup ("-l");
         argv[i++] = g_strdup (job->log_dir);
         argv[i++] = g_strdup ("-n");
-        argv[i++] = g_base64_encode (job->name, strlen (job->name));
+        argv[i++] = bin2hexstr (job->name);
         argv[i++] = g_strdup ("-q");
         argv[i++] = g_strdup_printf ("%ld", strlen (job->description));
         p = jobdesc_get_debug (job->description);
