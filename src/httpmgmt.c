@@ -633,6 +633,10 @@ static gchar * put_job (RequestData *request_data, gboolean create)
         gchar *job_path, *job, *result;
         GError *err = NULL;
 
+        if (!g_file_test ("/etc/gstreamill.d", G_FILE_TEST_EXISTS) && (g_mkdir_with_parents ("/etc/gstreamill.d", 0755) != 0)) {
+                GST_ERROR ("Can't open or create /etc/gstreamill.d directory");
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"can't create /etc/gstreamill.d\"\n}");
+        }
         if (g_strcmp0 (&(request_data->uri[13]), "/") == 0) {
                 GST_ERROR ("put job error, name is null");
                 return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"name is null\"\n}");
