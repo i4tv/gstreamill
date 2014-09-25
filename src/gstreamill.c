@@ -1100,47 +1100,52 @@ static gchar * source_streams_stat (Job *job)
         SourceStreamState *stat;
         GstDateTime *time;
         gint i;
-        gchar *source_streams, *p1, *p2;
+        guint64 timestamp;
+        gchar *source_streams, *p1, *p2, *heartbeat;
         gchar *template_source_stream = "            {\n"
                                         "                \"name\": \"%s\",\n"
                                         "                \"timestamp\": %lu,\n"
                                         "                \"heartbeat\": \"%s\"\n"
                                         "            }";
 
-        stat = &(job->output->source.streams[0]);
-        time = gst_date_time_new_from_unix_epoch_local_time (stat->last_heartbeat/GST_SECOND);
-        p1 = gst_date_time_to_iso8601_string (time);
-        gst_date_time_unref (time);
-        source_streams = g_strdup_printf (template_source_stream,
-                                          stat->name,
-                                          stat->current_timestamp,
-                                          p1);
-        g_free (p1);
-        for (i = 1; i < job->output->source.stream_count; i++) {
-                stat = &(job->output->source.streams[i]);
-                time = gst_date_time_new_from_unix_epoch_local_time (stat->last_heartbeat/GST_SECOND);
-                p1 = gst_date_time_to_iso8601_string (time);
-                gst_date_time_unref (time);
+        for (i = 0; i < job->output->source.stream_count; i++) {
+                if (*(job->output->state) == GST_STATE_PLAYING) {
+                        stat = &(job->output->source.streams[i]);
+                        timestamp = stat->current_timestamp;
+                        time = gst_date_time_new_from_unix_epoch_local_time (stat->last_heartbeat/GST_SECOND);
+                        heartbeat = gst_date_time_to_iso8601_string (time);
+                        gst_date_time_unref (time);
+
+                } else {
+                        timestamp = 0;
+                        heartbeat = g_strdup ("0");
+                }
                 p2 = g_strdup_printf (template_source_stream,
                                       stat->name,
-                                      stat->current_timestamp,
-                                      p1);
-                g_free (p1);
-                p1 = source_streams;
-                source_streams = g_strdup_printf ("%s,\n%s", p1, p2);
-                g_free (p1);
+                                      timestamp,
+                                      heartbeat);
+                g_free (heartbeat);
+                if (i == 0) {
+                        source_streams = g_strdup (p2);
+
+                } else {
+                        p1 = source_streams;
+                        source_streams = g_strdup_printf ("%s,\n%s", p1, p2);
+                        g_free (p1);
+                }
                 g_free (p2);
         }
 
         return source_streams;
 }
 
-static gchar * encoder_stat (EncoderOutput *encoder)
+static gchar * encoder_stat (EncoderOutput *encoder, guint64 jobstate)
 {
         EncoderStreamState *stat;
         gint i;
         GstDateTime *time;
-        gchar *encoder_stat, *encoder_streams, *p1, *p2;
+        guint64 timestamp;
+        gchar *encoder_stat, *encoder_streams, *p1, *p2, *heartbeat;
         gchar *template_encoder_stream = "                {\n"
                                          "                    \"name\": \"%s\",\n"
                                          "                    \"timestamp\": %lu,\n"
@@ -1155,29 +1160,32 @@ static gchar * encoder_stat (EncoderOutput *encoder)
                                   "%s\n"
                                   "            ]\n"
                                   "        }";
-       
-        stat = &(encoder->streams[0]);
-        time = gst_date_time_new_from_unix_epoch_local_time (stat->last_heartbeat/GST_SECOND);
-        p1 = gst_date_time_to_iso8601_string (time);
-        gst_date_time_unref (time);
-        encoder_streams = g_strdup_printf (template_encoder_stream,
-                                           stat->name,
-                                           stat->current_timestamp,
-                                           p1);
-        g_free (p1);
-        for (i = 1; i < encoder->stream_count; i++) {
-                stat = &(encoder->streams[i]);
-                time = gst_date_time_new_from_unix_epoch_local_time (stat->last_heartbeat/GST_SECOND);
-                p1 = gst_date_time_to_iso8601_string (time);
-                gst_date_time_unref (time);
+
+        for (i = 0; i < encoder->stream_count; i++) {
+                if (jobstate == GST_STATE_PLAYING) {
+                        stat = &(encoder->streams[i]);
+                        timestamp = stat->current_timestamp;
+                        time = gst_date_time_new_from_unix_epoch_local_time (stat->last_heartbeat/GST_SECOND);
+                        heartbeat = gst_date_time_to_iso8601_string (time);
+                        gst_date_time_unref (time);
+
+                } else {
+                        timestamp = 0;
+                        heartbeat = g_strdup ("0");
+                }
                 p2 = g_strdup_printf (template_encoder_stream,
                                       stat->name,
-                                      stat->current_timestamp,
-                                      p1);
-                g_free (p1);
-                p1 = encoder_streams;
-                encoder_streams = g_strdup_printf ("%s,\n%s", p1, p2);
-                g_free (p1);
+                                      timestamp,
+                                      heartbeat);
+                g_free (heartbeat);
+                if (i == 0) {
+                        encoder_streams = g_strdup (p2);
+
+                } else {
+                        p1 = encoder_streams;
+                        encoder_streams = g_strdup_printf ("%s,\n%s", p1, p2);
+                        g_free (p1);
+                }
                 g_free (p2);
         }
         time = gst_date_time_new_from_unix_epoch_local_time (*(encoder->heartbeat)/GST_SECOND);
@@ -1201,11 +1209,11 @@ static gchar * encoders_stat (Job *job)
         gchar *encoders, *p1, *p2;
 
         encoder = &(job->output->encoders[0]);
-        encoders = encoder_stat (encoder);
+        encoders = encoder_stat (encoder, *(job->output->state));
         for (i = 1; i < job->output->encoder_count; i++) {
                 p1 = encoders;
                 encoder = &(job->output->encoders[i]);
-                p2 = encoder_stat (encoder);
+                p2 = encoder_stat (encoder, *(job->output->state));
                 encoders = g_strdup_printf ("%s,\n%s", p1, p2);
                 g_free (p1);
                 g_free (p2);
@@ -1297,43 +1305,24 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
                 GST_ERROR ("uri %s not found.", uri);
                 return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"not found\",\n    \"name\": \"%s\"\n}", name);
         }
-        if (*(job->output->state) != GST_STATE_PLAYING) {
-                GST_WARNING ("FATAL: get job stat failure, not playing stat");
-                p = g_strdup_printf (template,
-                                        job->name,
-                                        job->age,
-                                        job->last_start_time,
-                                        job->current_access,
-                                        job->cpu_average,
-                                        job->cpu_current,
-                                        job->memory,
-                                        0,
-                                        job->output->source.sync_error_times,
-                                        job->output->source.stream_count,
-                                        "",
-                                        job->output->encoder_count,
-                                        "");
-
-        } else {
-                source_streams = source_streams_stat (job);
-                encoders = encoders_stat (job);
-                p = g_strdup_printf (template,
-                                        job->name,
-                                        job->age,
-                                        job->last_start_time,
-                                        job->current_access,
-                                        job->cpu_average,
-                                        job->cpu_current,
-                                        job->memory,
-                                        *(job->output->source.duration),
-                                        job->output->source.sync_error_times,
-                                        job->output->source.stream_count,
-                                        source_streams,
-                                        job->output->encoder_count,
-                                        encoders);
-                g_free (source_streams);
-                g_free (encoders);
-        }
+        source_streams = source_streams_stat (job);
+        encoders = encoders_stat (job);
+        p = g_strdup_printf (template,
+                                job->name,
+                                job->age,
+                                job->last_start_time,
+                                job->current_access,
+                                job->cpu_average,
+                                job->cpu_current,
+                                job->memory,
+                                *(job->output->source.duration),
+                                job->output->source.sync_error_times,
+                                job->output->source.stream_count,
+                                source_streams,
+                                job->output->encoder_count,
+                                encoders);
+        g_free (encoders);
+        g_free (source_streams);
         stat = g_strdup_printf ("{\n    \"result\": \"success\",\n    \"data\": %s}", p);
         g_free (p);
 
