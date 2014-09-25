@@ -1109,8 +1109,8 @@ static gchar * source_streams_stat (Job *job)
                                         "            }";
 
         for (i = 0; i < job->output->source.stream_count; i++) {
+                stat = &(job->output->source.streams[i]);
                 if (*(job->output->state) == GST_STATE_PLAYING) {
-                        stat = &(job->output->source.streams[i]);
                         timestamp = stat->current_timestamp;
                         time = gst_date_time_new_from_unix_epoch_local_time (stat->last_heartbeat/GST_SECOND);
                         heartbeat = gst_date_time_to_iso8601_string (time);
@@ -1162,8 +1162,8 @@ static gchar * encoder_stat (EncoderOutput *encoder, guint64 jobstate)
                                   "        }";
 
         for (i = 0; i < encoder->stream_count; i++) {
+                stat = &(encoder->streams[i]);
                 if (jobstate == GST_STATE_PLAYING) {
-                        stat = &(encoder->streams[i]);
                         timestamp = stat->current_timestamp;
                         time = gst_date_time_new_from_unix_epoch_local_time (stat->last_heartbeat/GST_SECOND);
                         heartbeat = gst_date_time_to_iso8601_string (time);
