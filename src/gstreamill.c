@@ -33,7 +33,6 @@ static void gstreamill_set_property (GObject *obj, guint prop_id, const GValue *
 static void gstreamill_get_property (GObject *obj, guint prop_id, GValue *value, GParamSpec *pspec);
 static void gstreamill_dispose (GObject *obj);
 static void gstreamill_finalize (GObject *obj);
-static gchar *create_job_process (Job *job);
 
 static void gstreamill_class_init (GstreamillClass *gstreamillclass)
 {
@@ -612,64 +611,9 @@ gchar * gstreamill_get_start_time (Gstreamill *gstreamill)
         return gstreamill->start_time;
 }
 
-static void child_watch_cb (GPid pid, gint status, Job *job)
-{
-        /* Close pid */
-        g_spawn_close_pid (pid);
-        job->age += 1;
-        job->worker_pid = 0;
+static void child_watch_cb (GPid pid, gint status, Job *job);
 
-        if (WIFEXITED (status) && (WEXITSTATUS (status) == 0)) {
-                GST_ERROR ("Job with pid %d normaly exit, status is %d", pid, WEXITSTATUS (status));
-                *(job->output->state) = GST_STATE_NULL;
-                job->eos = TRUE;
-                return;
-        }
-
-        if (WIFEXITED (status) && (WEXITSTATUS (status) != 0)) {
-                GST_ERROR ("Job with pid %d abnormaly exit, status is %d", pid, WEXITSTATUS (status));
-                *(job->output->state) = GST_STATE_NULL;
-                job->eos = TRUE;
-                return;
-        }
-
-        if (WIFSIGNALED (status)) {
-                gchar *p, *result;
-                JSON_Value *val;
-                JSON_Object *obj;
-
-                if (*(job->output->state) == GST_STATE_PAUSED) {
-                        GST_ERROR ("Job with pid %d exit on an unhandled signal and paused, stopping gstreamill...", pid);
-                        *(job->output->state) = GST_STATE_NULL;
-                        return;
-                }
-
-                if (!job->is_live) {
-                        GST_ERROR ("Nonlive job with pid %d exit on an unhandled signal.", pid);
-                        *(job->output->state) = GST_STATE_NULL;
-                        job->eos = TRUE;
-                        return;
-                }
-
-                GST_ERROR ("Live job with pid %d exit on an unhandled signal, restart.", pid);
-                job_reset (job);
-                p = create_job_process (job);
-                val = json_parse_string (p);
-                obj = json_value_get_object (val);
-                result = (gchar *)json_object_get_string (obj, "result");
-                if (g_strcmp0 (result, "failure") == 0) {
-                        /* create process failure, clean from job list */
-                        *(job->output->state) = GST_STATE_NULL;
-                }
-                GST_ERROR ("create job process: %s", result);
-                json_value_free (val);
-                g_free (p);
-        }
-
-        return;
-}
-
-static gchar * create_job_process (Job *job)
+static guint64 create_job_process (Job *job)
 {
         GError *error = NULL;
         gchar *argv[16], path[512], *p;
@@ -679,7 +623,7 @@ static gchar * create_job_process (Job *job)
         memset (path, '\0', sizeof (path));
         if (readlink ("/proc/self/exe", path, sizeof (path)) == -1) {
                 GST_ERROR ("Read /proc/self/exe error.");
-                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"Read /proc/self/exe error\"\n}");
+                return GST_STATE_NULL;
         }
         i = 0;
         argv[i++] = g_strdup (path);
@@ -702,9 +646,8 @@ static gchar * create_job_process (Job *job)
                                 g_free (argv[j]);
                         }
                 }
-                p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"g_spawn_async failure\"\n}");
                 g_error_free (error);
-                return p;
+                return GST_STATE_NULL;
         }
 
         for (j = 0; j < i; j++) {
@@ -715,7 +658,72 @@ static gchar * create_job_process (Job *job)
         job->worker_pid = pid;
         g_child_watch_add (pid, (GChildWatchFunc)child_watch_cb, job);
 
-        return g_strdup_printf ("{\n    \"name\": \"%s\",\n    \"result\": \"success\"\n}", job->name);
+        while (*(job->output->state) == GST_STATE_READY) {
+                GST_INFO ("waiting job process creating ...");
+                g_usleep (50000);
+        }
+
+        return *(job->output->state);
+}
+
+static void child_watch_cb (GPid pid, gint status, Job *job)
+{
+        /* Close pid */
+        g_spawn_close_pid (pid);
+        job->age += 1;
+        job->worker_pid = 0;
+
+        if (WIFEXITED (status) && (WEXITSTATUS (status) == 0)) {
+                GST_ERROR ("Job %s normaly exit, status is %d", job->name, WEXITSTATUS (status));
+                if (*(job->output->state) == GST_STATE_READY) {
+                        *(job->output->state) = GST_STATE_VOID_PENDING;
+
+                } else {
+                        *(job->output->state) = GST_STATE_NULL;
+                        job->eos = TRUE;
+                }
+                return;
+        }
+
+        if (WIFEXITED (status) && (WEXITSTATUS (status) != 0)) {
+                GST_ERROR ("Job %s abnormaly exit, status is %d", job->name, WEXITSTATUS (status));
+                if (*(job->output->state) == GST_STATE_READY) {
+                        *(job->output->state) = GST_STATE_VOID_PENDING;
+
+                } else {
+                        *(job->output->state) = GST_STATE_NULL;
+                        job->eos = TRUE;
+                }
+                return;
+        }
+
+        if (WIFSIGNALED (status)) {
+                if (*(job->output->state) == GST_STATE_PAUSED) {
+                        GST_ERROR ("Job %s exit on signal and paused, stopping gstreamill...", job->name);
+                        *(job->output->state) = GST_STATE_NULL;
+                        return;
+                }
+
+                if (!job->is_live) {
+                        GST_ERROR ("Nonlive job %s exit on an unhandled signal.", job->name);
+                        *(job->output->state) = GST_STATE_NULL;
+                        job->eos = TRUE;
+                        return;
+                }
+
+                GST_ERROR ("Live job %s exit on an unhandled signal, restart.", job->name);
+                job_reset (job);
+                if (create_job_process (job) == GST_STATE_PLAYING) {
+                        GST_ERROR ("Restart job %s success", job->name);
+
+                } else {
+                        /* create process failure, clean from job list */
+                        GST_ERROR ("Restart job %s failure", job->name);
+                        *(job->output->state) = GST_STATE_NULL;
+                }
+        }
+
+        return;
 }
 
 static Job * get_job (Gstreamill *gstreamill, gchar *name)
@@ -796,24 +804,18 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
         /* reset and start job */
         job_reset (job);
         if (gstreamill->daemon) {
-                JSON_Value *val;
-                JSON_Object *obj;
-                gchar *result;
-
-                p = create_job_process (job);
-                val = json_parse_string (p);
-                obj = json_value_get_object (val);
-                result = (gchar *)json_object_get_string (obj, "result");
-                GST_ERROR ("Create process %s: %s", result, job->name);
-                if (g_strcmp0 (result, "success") == 0) {
+                if (create_job_process (job) == GST_STATE_PLAYING) {
+                        GST_ERROR ("Start job %s success", job->name);
                         g_mutex_lock (&(gstreamill->job_list_mutex));
                         gstreamill->job_list = g_slist_append (gstreamill->job_list, job);
                         g_mutex_unlock (&(gstreamill->job_list_mutex));
+                        p = g_strdup ("{\n    \"result\": \"success\"\n}");
 
                 } else {
+                        GST_ERROR ("Start job %s failure", job->name);
                         g_object_unref (job);
+                        p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"create process failure\"\n}");
                 }
-                json_value_free (val);
 
         } else {
                 if (job_start (job) == 0) {

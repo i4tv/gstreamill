@@ -298,7 +298,7 @@ gint job_initialize (Job *job, gboolean daemon)
         g_stpcpy (output->job_description, job->description);
         p += (strlen (job->description) / 8 + 1) * 8;
         output->state = (guint64 *)p;
-        *(output->state) = GST_STATE_VOID_PENDING;
+        *(output->state) = GST_STATE_READY;
         p += sizeof (guint64); /* state */
         output->source.duration = (gint64 *)p;
         p += sizeof (gint64); /* duration for transcode */
