@@ -298,6 +298,7 @@ gint job_initialize (Job *job, gboolean daemon)
         g_stpcpy (output->job_description, job->description);
         p += (strlen (job->description) / 8 + 1) * 8;
         output->state = (guint64 *)p;
+        *(output->state) = GST_STATE_VOID_PENDING;
         p += sizeof (guint64); /* state */
         output->source.duration = (gint64 *)p;
         p += sizeof (gint64); /* duration for transcode */
@@ -418,6 +419,63 @@ void job_stat_update (Job *job)
         job->last_ctime = ctime;
         job->last_utime = utime;
         job->last_stime = stime;
+}
+
+static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime duration)
+{
+        gchar *path, *encoder_path, *p;
+        gint64 realtime;
+        guint64 rap_addr;
+        gsize segment_size;
+        gchar *buf;
+        GError *err = NULL;
+
+        realtime = g_get_real_time ();
+        encoder_path = g_strdup (encoder_output->name);
+        p = strchr (encoder_path, '.');
+        *p = '/';
+        path = g_strdup_printf ("/%s/%ld_%lu.ts", encoder_path, realtime, encoder_output->last_timestamp); 
+        g_free (encoder_path);
+
+        /* seek gop it's timestamp is m3u8_push_request->timestamp */
+        sem_wait (encoder_output->semaphore);
+        rap_addr = encoder_output_gop_seek (encoder_output, encoder_output->last_timestamp);
+        sem_post (encoder_output->semaphore);
+
+        /* gop not found? */
+        if (rap_addr == G_MAXUINT64) {
+                GST_ERROR ("Segment not found!");
+                return;
+        }
+
+        segment_size = encoder_output_gop_size (encoder_output, rap_addr);
+        buf = g_malloc (segment_size);
+
+        /* copy segment to buf */
+        if (rap_addr + segment_size + 12 < encoder_output->cache_size) {
+                memcpy (buf, encoder_output->cache_addr + rap_addr + 12, segment_size);
+
+        } else {
+                gint n;
+                guint8 *p;
+
+                n = encoder_output->cache_size - rap_addr - 12;
+                p = buf;
+                memcpy (p, encoder_output->cache_addr + rap_addr + 12, n);
+                p += n;
+                memcpy (p, encoder_output->cache_addr, segment_size - n);
+        }
+
+        if (!g_file_set_contents (path, buf, segment_size, &err)) {
+                GST_ERROR ("write segment %s failure: %s", path, err->message);
+                g_error_free (err);
+
+        } else {
+                GST_INFO ("write segment %s success", path);
+        }
+
+        g_free (path);
+        g_free (buf);
 }
 
 static void notify_function (union sigval sv)

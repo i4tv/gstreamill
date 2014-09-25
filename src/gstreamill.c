@@ -472,7 +472,7 @@ static void job_check_func (gpointer data, gpointer user_data)
                                 break;
 
                         } else {
-                                /* add #EXT-X-ENDLIST to playlist */
+                                /* add #EXT-X-ENDLIST to playlist if output is m3u8 */
                                 gchar *location, *property, *playlist1, *playlist2;
 
                                 property = g_strdup_printf ("encoder.%d.elements.hlssink.property.playlist-location", i);
@@ -771,7 +771,7 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
         /* create job object */
         name = jobdesc_get_name (job_desc);
         if (get_job (gstreamill, name) != NULL) {
-                GST_ERROR ("start live job failure, duplicated name %s.", name);
+                GST_ERROR ("start job failure, duplicated name %s.", name);
                 p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"duplicated name\"\n}");
                 g_free (name);
                 return p;

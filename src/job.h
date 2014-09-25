@@ -18,6 +18,12 @@ typedef struct _JobClass JobClass;
 
 typedef struct _JobOutput {
         gchar *job_description;
+        /*
+         * GST_STATE_PLAYLING: playing state, subprocess running.
+         * GST_STATE_PAUSED: stoping state, subprocess is being stop.
+         * GST_STATE_NULL: stoped state, subprocess finished or create job process failure.
+         * GST_STATE_VOID_PENDING: creating job process, subsequent state is GST_STATE_NULL or GST_STATE_PLAYLING
+         */
         guint64 *state;
         SourceState source;
         gint64 encoder_count;
