@@ -36,6 +36,7 @@ adminfonts_DATA = \
 
 adminimgdir = $(datadir)/gstreamill/admin/img
 adminimg_DATA = \
+        img/logo.png \
         img/waiting.gif
 
 adminschemasdir = $(datadir)/gstreamill/admin/schemas
