@@ -18,13 +18,14 @@ gboolean jobdesc_is_live (gchar *job);
 gchar * jobdesc_get_debug (gchar *job);
 gchar * jobdesc_get_log_path (gchar *job);
 gchar ** jobdesc_bins (gchar *job, gchar *pipeline);
-gchar * jobdesc_udpstreaming (gchar *job, gchar *pipeline);
 gchar ** jobdesc_element_properties (gchar *job, gchar *element);
 gchar * jobdesc_element_property_value (gchar *job, gchar *property);
 gchar * jobdesc_element_caps (gchar *job, gchar *element);
+gchar * jobdesc_udpstreaming (gchar *job, gchar *pipeline);
 gboolean jobdesc_m3u8streaming (gchar *job);
 guint jobdesc_m3u8streaming_version (gchar *job);
 guint jobdesc_m3u8streaming_window_size (gchar *job);
 GstClockTime jobdesc_m3u8streaming_segment_duration (gchar *job);
+guint64 jobdesc_dvr_duration (gchar *job);
 
 #endif /* __JOBDESC_H__ */

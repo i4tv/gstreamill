@@ -360,6 +360,11 @@ gint job_initialize (Job *job, gboolean daemon)
                 output->encoders[i].m3u8_playlist = NULL;
 
                 /* timeshift and dvr */
+                output->encoders[i].record_path = NULL;
+                output->encoders[i].dvr_duration = jobdesc_dvr_duration (job->description);
+                if (output->encoders[i].dvr_duration == 0) {
+                        continue;
+                }
                 output->encoders[i].record_path = g_strdup_printf ("/var/gstreamill/dvr/%s/%d", job->name, i);
                 if (!g_file_test (output->encoders[i].record_path, G_FILE_TEST_EXISTS) &&
                     (g_mkdir_with_parents (output->encoders[i].record_path, 0755) != 0)) {
@@ -513,7 +518,9 @@ static void notify_function (union sigval sv)
         last_timestamp = encoder_output_rap_timestamp (encoder_output, *(encoder_output->last_rap_addr));
         url = g_strdup_printf ("%lu.ts", encoder_output->last_timestamp);
         m3u8playlist_add_entry (encoder_output->m3u8_playlist, url, segment_duration);
-        dvr_record_segment (encoder_output, segment_duration);
+        if (encoder_output->dvr_duration != 0) {
+                dvr_record_segment (encoder_output, segment_duration);
+        }
         encoder_output->last_timestamp = last_timestamp;
         g_free (url);
 }

@@ -23,5 +23,6 @@
         "version": 3,
         "window-size": 10,
         "segment-duration": 3
-    }
+    },
+    "dvr_duration": 86400
 }

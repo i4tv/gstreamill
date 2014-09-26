@@ -89,6 +89,9 @@
                             <label class="checkbox-inline">
                                 <input type="checkbox" id="encoderoutput" value="m3u8"> M3U8
                             </label>
+                            <label class="checkbox-inline">
+                                <input type="checkbox" id="encoderoutput" value="dvr"> DVR
+                            </label>
                         </div>
                     </div>
                     <button class='btn btn-primary pull-right newlivejob' id='newlivejob' data-i18n="newlivejob.New Live Job"></button>
@@ -135,13 +138,16 @@
                         job.source.elements.tsdemux.property["program-number"] = $("#programnumber").val ();
                     }
 
-                    var output = {'udp': false, 'm3u8': false};
+                    var output = {'udp': false, 'm3u8': false, 'dvr': false};
                     var encoderoutputs = $('#encoderoutput:checked');
                     for (var i = 0; i < encoderoutputs.length; i++) {
                         output [encoderoutputs[i].value] = true;
                     }
                     if (!output['m3u8']) {
                         delete job.m3u8streaming;
+                    }
+                    if (!output['dvr']) {
+                        delete job.dvr_duration;
                     }
 
                     var ischecked = {'phone': false, 'sdtv': false, 'hdtv': false};

@@ -124,11 +124,24 @@
 
                 m3u8_title.innerHTML = "M3U8";
                 m3u8_setting.setAttribute ("class", "well row pipeline-stat");
-                setting_append_item (m3u8_setting, "Window Size", "windowsize",  "number", job.m3u8streaming["window-size"]);
-                setting_append_item (m3u8_setting, "Segment Duration", "segmentduration",  "number", job.m3u8streaming["segment-duration"]);
+                setting_append_item (m3u8_setting, "Window Size", "windowsize", "number", job.m3u8streaming["window-size"]);
+                setting_append_item (m3u8_setting, "Segment Duration", "segmentduration", "number", job.m3u8streaming["segment-duration"]);
 
                 job_setting_body.appendChild (m3u8_title);
                 job_setting_body.appendChild (m3u8_setting);
+            }
+
+            /* dvr? */
+            if (job.dvr_duration !== undefined) {
+                var dvr_title = document.createElement ("h3"),
+                    dvr_setting = document.createElement ("div");
+
+                dvr_title.innerHTML = "DVR";
+                dvr_setting.setAttribute ("class", "well row pipeline-stat");
+                setting_append_item (dvr_setting, "DVR Duration", "dvrduration", "number", job.dvr_duration);
+
+                job_setting_body.appendChild (dvr_title);
+                job_setting_body.appendChild (dvr_setting);
             }
 
             /* Save button */
@@ -177,6 +190,10 @@
                 if (job.m3u8streaming !== undefined) {
                     job.m3u8streaming["window-size"] = parseInt ($("#windowsize").val ());
                     job.m3u8streaming["segment-duration"] = parseInt ($("#segmentduration").val ());
+                }
+
+                if (job.dvr_duration !== undefined) {
+                    job.dvr_duration = parseInt ($("#dvrduration").val ());
                 }
 
                 $.post ("setjob/" + job.name, JSON.stringify (job, null, 4), function (data) {

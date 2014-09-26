@@ -209,31 +209,6 @@ gchar ** jobdesc_bins (gchar *job, gchar *pipeline)
         return p;
 }
 
-gchar * jobdesc_udpstreaming (gchar *job, gchar *pipeline)
-{
-        JSON_Value *val;
-        JSON_Object *obj;
-        JSON_Array *array;
-        gint index;
-        gchar *p, *udpstreaming;
-
-        val = json_parse_string_with_comments (job);
-        obj = json_value_get_object (val);
-        array = json_object_dotget_array (obj, "encoders");
-        sscanf (pipeline, "encoder.%d", &index);
-        obj = json_array_get_object (array, index);
-        p = (gchar *)json_object_get_string (obj, "udpstreaming");
-        if (p == NULL) {
-                udpstreaming = NULL;
-
-        } else {
-                udpstreaming = g_strdup (p);
-        }
-        json_value_free (val);
-
-        return udpstreaming;
-}
-
 gchar ** jobdesc_element_properties (gchar *job, gchar *element)
 {
         JSON_Value *val;
@@ -370,6 +345,31 @@ gchar * jobdesc_element_caps (gchar *job, gchar *element)
         return p;
 }
 
+gchar * jobdesc_udpstreaming (gchar *job, gchar *pipeline)
+{
+        JSON_Value *val;
+        JSON_Object *obj;
+        JSON_Array *array;
+        gint index;
+        gchar *p, *udpstreaming;
+
+        val = json_parse_string_with_comments (job);
+        obj = json_value_get_object (val);
+        array = json_object_dotget_array (obj, "encoders");
+        sscanf (pipeline, "encoder.%d", &index);
+        obj = json_array_get_object (array, index);
+        p = (gchar *)json_object_get_string (obj, "udpstreaming");
+        if (p == NULL) {
+                udpstreaming = NULL;
+
+        } else {
+                udpstreaming = g_strdup (p);
+        }
+        json_value_free (val);
+
+        return udpstreaming;
+}
+
 gboolean jobdesc_m3u8streaming (gchar *job)
 {
         JSON_Value *val;
@@ -429,5 +429,19 @@ GstClockTime jobdesc_m3u8streaming_segment_duration (gchar *job)
         json_value_free (val);
 
         return segment_duration;
+}
+
+guint64 jobdesc_dvr_duration (gchar *job)
+{
+        JSON_Value *val;
+        JSON_Object *obj;
+        guint64 duration;
+
+        val = json_parse_string_with_comments (job);
+        obj = json_value_get_object (val);
+        duration = json_object_get_number (obj, "dvr_duration");
+        json_value_free (val);
+
+        return duration;
 }
 
