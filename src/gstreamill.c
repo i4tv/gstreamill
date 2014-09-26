@@ -658,7 +658,7 @@ static guint64 create_job_process (Job *job)
         job->worker_pid = pid;
         g_child_watch_add (pid, (GChildWatchFunc)child_watch_cb, job);
 
-        while (*(job->output->state) == GST_STATE_READY) {
+        while (*(job->output->state) == GST_STATE_READY || *(job->output->state) == GST_STATE_VOID_PENDING) {
                 GST_INFO ("waiting job process creating ...");
                 g_usleep (50000);
         }
@@ -804,7 +804,10 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
         /* reset and start job */
         job_reset (job);
         if (gstreamill->daemon) {
-                if (create_job_process (job) == GST_STATE_PLAYING) {
+                GstState stat;
+
+                stat = create_job_process (job);
+                if (stat == GST_STATE_PLAYING) {
                         GST_ERROR ("Start job %s success", job->name);
                         g_mutex_lock (&(gstreamill->job_list_mutex));
                         gstreamill->job_list = g_slist_append (gstreamill->job_list, job);
@@ -812,7 +815,7 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
                         p = g_strdup ("{\n    \"result\": \"success\"\n}");
 
                 } else {
-                        GST_ERROR ("Start job %s failure", job->name);
+                        GST_ERROR ("Start job %s failure, return stat: %s", job->name, gst_element_state_get_name (stat));
                         g_object_unref (job);
                         p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"create process failure\"\n}");
                 }
