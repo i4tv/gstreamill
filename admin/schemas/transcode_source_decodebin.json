@@ -10,6 +10,13 @@
                     "location" : ""
                 }
             },
+            "deinterlace" : {
+                "property" : {
+                    "mode" : 1,
+                    "method" : 2,
+                    "fields" : 1
+                }
+            },
             "appsink" : {
                 "property" : {
                    "sync" : false,
@@ -19,7 +26,7 @@
         },
         "bins" : [
             "filesrc ! queue ! decodebin name=decodebin",
-            "decodebin.src ! queue ! appsink name = video",
+            "decodebin.src ! queue ! deinterlace ! queue ! appsink name = video",
             "decodebin.src ! queue ! appsink name = audio"
         ]
     },
