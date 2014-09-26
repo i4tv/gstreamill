@@ -809,7 +809,7 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
                         g_mutex_lock (&(gstreamill->job_list_mutex));
                         gstreamill->job_list = g_slist_append (gstreamill->job_list, job);
                         g_mutex_unlock (&(gstreamill->job_list_mutex));
-                        p = g_strdup ("{\n    \"result\": \"success\"\n}");
+                        p = g_strdup_printf ("{\n    \"name\": \"%s\",\n\"result\": \"success\"\n}", job->name);
 
                 } else {
                         GST_ERROR ("Start job %s failure, return stat: %s", job->name, gst_element_state_get_name (stat));
