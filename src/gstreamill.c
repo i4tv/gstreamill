@@ -476,10 +476,8 @@ static void job_check_func (gpointer data, gpointer user_data)
 
                                 property = g_strdup_printf ("encoder.%d.elements.hlssink.property.playlist-location", i);
                                 location = jobdesc_element_property_value (job->description, property);
-                                if (location == NULL) {
-                                        GST_ERROR ("job %s's property %s not found.", job->name, property);
-
-                                } else {
+                                g_free (property);
+                                if (location != NULL) {
                                         g_file_get_contents (location, &playlist1, NULL, NULL);
                                         playlist2 = g_strdup_printf ("%s#EXT-X-ENDLIST\n",  playlist1);
                                         g_file_set_contents (location, playlist2, strlen(playlist2), NULL);
@@ -487,7 +485,6 @@ static void job_check_func (gpointer data, gpointer user_data)
                                         g_free (playlist2);
                                         g_free (location);
                                 }
-                                g_free (property);
                         }
                 }
 
@@ -1082,20 +1079,20 @@ gchar * gstreamill_list_nonlive_job (Gstreamill *gstreamill)
                 job = list->data;
                 if (!job->is_live) {
                     p = jobarray;
-                    jobarray = g_strdup_printf ("%s\"%s\"", p, job->name);
+                    jobarray = g_strdup_printf ("%s\"%s\",", p, job->name);
                     g_free (p);
                 }
                 list = list->next;
-                if (list != NULL && !job->is_live) {
-                        p = jobarray;
-                        jobarray = g_strdup_printf ("%s,", p);
-                        g_free (p);
-                }
         }
         g_mutex_unlock (&(gstreamill->job_list_mutex));
-        p = jobarray;
-        jobarray = g_strdup_printf ("%s]", p);
-        g_free (p);
+        if (strlen (jobarray) == 1) {
+                p = jobarray;
+                jobarray = g_strdup_printf ("%s]", p);
+                g_free (p);
+
+        } else {
+                jobarray[strlen (jobarray) - 1] = ']';
+        }
 
         return jobarray;
 }
