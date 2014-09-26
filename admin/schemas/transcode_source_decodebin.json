@@ -12,9 +12,8 @@
             },
             "deinterlace" : {
                 "property" : {
-                    "mode" : 1,
-                    "method" : 2,
-                    "fields" : 1
+                    "method" : 4,
+                    "fields" : 0
                 }
             },
             "appsink" : {
