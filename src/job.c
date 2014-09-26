@@ -125,6 +125,9 @@ static void job_dispose (GObject *obj)
                 if ((output->encoders[i].mqdes != -1) && (mq_unlink (name) == -1)) {
                         GST_ERROR ("mq_unlink %s error: %s", name, g_strerror (errno));
                 }
+                if (output->encoders[i].record_path != NULL) {
+                        g_free (output->encoders[i].record_path);
+                }
                 g_free (name);
         }
         /* share memory release */
@@ -355,6 +358,13 @@ gint job_initialize (Job *job, gboolean daemon)
                 *(output->encoders[i].last_rap_addr) = 0;
                 p += sizeof (guint64); /* last rap addr */
                 output->encoders[i].m3u8_playlist = NULL;
+
+                /* timeshift and dvr */
+                output->encoders[i].record_path = g_strdup_printf ("/var/gstreamill/dvr/%s/%d", job->name, i);
+                if (!g_file_test (output->encoders[i].record_path, G_FILE_TEST_EXISTS) &&
+                    (g_mkdir_with_parents (output->encoders[i].record_path, 0755) != 0)) {
+                        GST_ERROR ("Can't open or create %s directory", output->encoders[i].record_path);
+                }
         }
         job->output = output;
 
@@ -421,19 +431,12 @@ void job_stat_update (Job *job)
 
 static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime duration)
 {
-        gchar *path, *encoder_path, *p;
+        gchar *path;
         gint64 realtime;
         guint64 rap_addr;
         gsize segment_size;
         gchar *buf;
         GError *err = NULL;
-
-        realtime = g_get_real_time ();
-        encoder_path = g_strdup (encoder_output->name);
-        p = strchr (encoder_path, '.');
-        *p = '/';
-        path = g_strdup_printf ("/%s/%ld_%lu.ts", encoder_path, realtime, encoder_output->last_timestamp); 
-        g_free (encoder_path);
 
         /* seek gop it's timestamp is m3u8_push_request->timestamp */
         sem_wait (encoder_output->semaphore);
@@ -463,6 +466,9 @@ static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime dura
                 p += n;
                 memcpy (p, encoder_output->cache_addr, segment_size - n);
         }
+
+        realtime = g_get_real_time ();
+        path = g_strdup_printf ("/%s/%ld_%lu.ts", encoder_output->record_path, realtime, duration); 
 
         if (!g_file_set_contents (path, buf, segment_size, &err)) {
                 GST_ERROR ("write segment %s failure: %s", path, err->message);
@@ -507,6 +513,7 @@ static void notify_function (union sigval sv)
         last_timestamp = encoder_output_rap_timestamp (encoder_output, *(encoder_output->last_rap_addr));
         url = g_strdup_printf ("%lu.ts", encoder_output->last_timestamp);
         m3u8playlist_add_entry (encoder_output->m3u8_playlist, url, segment_duration);
+        dvr_record_segment (encoder_output, segment_duration);
         encoder_output->last_timestamp = last_timestamp;
         g_free (url);
 }
