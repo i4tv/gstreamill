@@ -5,6 +5,7 @@
  *
  */
 
+#include <glob.h>
 #include <gst/gst.h>
 
 #include "m3u8playlist.h"
@@ -131,13 +132,40 @@ gchar * m3u8playlist_add_entry (M3U8Playlist *playlist, const gchar *url, gfloat
         return rm_url;
 }
 
-gchar * m3u8playlist_get_playlist (M3U8Playlist *playlist)
+gchar * m3u8playlist_live_get_playlist (M3U8Playlist *playlist)
 {
         gchar *p;
 
         g_rw_lock_reader_lock (&(playlist->lock));
         p = g_strdup (playlist->playlist_str);
         g_rw_lock_reader_unlock (&(playlist->lock));
+
+        return p;
+}
+
+gchar * m3u8playlist_timeshift_get_playlist (gchar *path, gint64 offset)
+{
+        glob_t pglob;
+        gchar *pattern, *playlist;
+
+        pattern = g_strdup_printf ("%s/%lu*_*_*.ts", path, (g_get_real_time () / GST_MSECOND + offset) / 10);
+        if (glob (pattern, 0, NULL, &pglob) == GLOB_NOMATCH) {
+                playlist = NULL;
+
+        } else {
+                GST_ERROR ("pattern %s", pattern);
+                GST_ERROR ("%s", pglob.gl_pathv[0]);
+
+        }
+        globfree (&pglob);
+        g_free (pattern);
+
+        return playlist;
+}
+
+gchar * m3u8playlist_dvr_get_playlist (gchar *path, gint64 start, gint64 duration)
+{
+        gchar *p;
 
         return p;
 }

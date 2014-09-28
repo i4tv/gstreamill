@@ -439,16 +439,17 @@ static guint64 get_gint64_parameter (gchar *parameters, gchar *parameter)
 
         pp1 = pp2 = g_strsplit (parameters, "&", 0);
         while (*pp1 != NULL) {
-                GST_ERROR ("%s", *pp1);
                 if (g_str_has_prefix (*pp1, parameter)) {
                         format = g_strdup_printf ("%s=%%ld", parameter);
-                        if (sscanf (parameters, format, &value) != 1) {
-                                value = 0;
+                        if (sscanf (*pp1, format, &value) == 1) {
                                 break;
                         }
                         g_free (format);
                 }
                 pp1++;
+        }
+        if (*pp1 == NULL) {
+                value = 0;
         }
         g_strfreev (pp2);
 
@@ -459,22 +460,26 @@ static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encod
 {
         gchar *m3u8playlist;
 
+        /* live */
         if (g_str_has_prefix (request_data->uri, "/live/")) {
-                m3u8playlist = m3u8playlist_get_playlist (encoder_output->m3u8_playlist);
+                return m3u8playlist_live_get_playlist (encoder_output->m3u8_playlist);
 
         } else if (g_str_has_prefix (request_data->uri, "/dvr/")) {
-                gint64 offset, start, duration;
+                /* time shift */
+                if (g_strrstr (request_data->parameters, "offset") != NULL) {
+                        gint64 offset;
 
-                offset = get_gint64_parameter (request_data->parameters, "offset");
-                        GST_ERROR ("offset %ld", offset);
+                        offset = get_gint64_parameter (request_data->parameters, "offset");
+                        return m3u8playlist_timeshift_get_playlist (encoder_output->record_path, offset);
 
-                start = get_gint64_parameter (request_data->uri, "start");
-                duration = get_gint64_parameter (request_data->uri, "duration");
-                        GST_ERROR ("start %ld", start);
-                        GST_ERROR ("duration %ld", duration);
+                /* dvr */
+                } else if (g_strrstr (request_data->parameters, "start") != NULL) {
+                        gint64 start, duration;
 
-                        m3u8playlist = NULL;
-
+                        start = get_gint64_parameter (request_data->parameters, "start");
+                        duration = get_gint64_parameter (request_data->parameters, "duration");
+                        return m3u8playlist_dvr_get_playlist (encoder_output->record_path, start, duration);
+                }
         }
 
         return m3u8playlist;
