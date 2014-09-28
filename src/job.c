@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <glob.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <sys/mman.h>
@@ -254,6 +255,28 @@ static gchar * render_master_m3u8_playlist (Job *job)
         return p;
 }
 
+static guint64 get_dvr_sequence (JobOutput *joboutput, gint index)
+{
+        glob_t pglob;
+        gchar *pattern, *format;
+        guint64 sequence;
+
+        pattern = g_strdup_printf ("%s/*", joboutput->encoders[index].record_path);
+        if (glob (pattern, 0, NULL, &pglob) == GLOB_NOMATCH) {
+                sequence = 0;
+
+        } else {
+                format = g_strdup_printf ("%s/%%*[^_]_%%lu_%%*[^_]$", joboutput->encoders[index].record_path);
+                sscanf (pglob.gl_pathv[pglob.gl_pathc - 1], format, &sequence);
+                sequence += 1;
+                g_free (format);
+        }
+        globfree (&pglob);
+        g_free (pattern);
+
+        return sequence;
+}
+
 /**
  * job_initialize:
  * @job: (in): the job to be initialized.
@@ -370,6 +393,7 @@ gint job_initialize (Job *job, gboolean daemon)
                     (g_mkdir_with_parents (output->encoders[i].record_path, 0755) != 0)) {
                         GST_ERROR ("Can't open or create %s directory", output->encoders[i].record_path);
                 }
+                output->encoders[i].sequence = get_dvr_sequence (output, i);
         }
         job->output = output;
 
@@ -472,8 +496,9 @@ static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime dura
                 memcpy (p, encoder_output->cache_addr, segment_size - n);
         }
 
-        realtime = g_get_real_time ();
-        path = g_strdup_printf ("/%s/%ld_%lu.ts", encoder_output->record_path, realtime, duration); 
+        realtime = GST_TIME_AS_MSECONDS (g_get_real_time ());
+        path = g_strdup_printf ("/%s/%ld_%lu_%.2f.ts", encoder_output->record_path, realtime, encoder_output->sequence, (double)GST_TIME_AS_SECONDS (duration));
+        encoder_output->sequence += 1;
 
         if (!g_file_set_contents (path, buf, segment_size, &err)) {
                 GST_ERROR ("write segment %s failure: %s", path, err->message);
