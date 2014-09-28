@@ -867,7 +867,7 @@ Job *gstreamill_get_job (Gstreamill *gstreamill, gchar *uri)
         GMatchInfo *match_info;
         gchar *name = NULL;
 
-        regex = g_regex_new ("^/live/(?<name>[^/]*)/.*", G_REGEX_OPTIMIZE, 0, NULL);
+        regex = g_regex_new ("^/(live|dvr)/(?<name>[^/]*)/.*", G_REGEX_OPTIMIZE, 0, NULL);
         match_info = NULL;
         g_regex_match (regex, uri, 0, &match_info);
         g_regex_unref (regex);
@@ -914,7 +914,7 @@ EncoderOutput * gstreamill_get_encoder_output (Gstreamill *gstreamill, gchar *ur
         gchar *e;
 
         index = -1;
-        regex = g_regex_new ("^/live/.*/encoder/(?<encoder>[0-9]+).*", G_REGEX_OPTIMIZE, 0, NULL);
+        regex = g_regex_new ("^/(live|dvr)/.*/encoder/(?<encoder>[0-9]+).*", G_REGEX_OPTIMIZE, 0, NULL);
         g_regex_match (regex, uri, 0, &match_info);
         if (g_match_info_matches (match_info)) {
                 e = g_match_info_fetch_named (match_info, "encoder");
@@ -949,26 +949,6 @@ EncoderOutput * gstreamill_get_encoder_output (Gstreamill *gstreamill, gchar *ur
         g_mutex_unlock (&(job->access_mutex));
 
         return &job->output->encoders[index];
-}
-
-/**
- * gstreamill_get_m3u8playlist:
- * @encoder_output: (in): the encoder output to get its m3u8 playlist
- *
- * Get EncoderOutput' m3u8 playlist.
- *
- * Returns: m3u8 playlist
- */
-gchar * gstreamill_get_m3u8playlist (Gstreamill *gstreamill, EncoderOutput *encoder_output)
-{
-        gchar *m3u8playlist;
-
-        if (encoder_output->m3u8_playlist == NULL) {
-                return NULL;
-        }
-        m3u8playlist = m3u8playlist_get_playlist (encoder_output->m3u8_playlist);
-
-        return m3u8playlist;
 }
 
 /**

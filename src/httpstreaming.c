@@ -432,6 +432,54 @@ static gchar * request_master_m3u8_playlist (HTTPStreaming *httpstreaming, Reque
         return buf;
 }
 
+static guint64 get_gint64_parameter (gchar *parameters, gchar *parameter)
+{
+        gchar **pp1, **pp2, *format;
+        gint64 value;
+
+        pp1 = pp2 = g_strsplit (parameters, "&", 0);
+        while (*pp1 != NULL) {
+                GST_ERROR ("%s", *pp1);
+                if (g_str_has_prefix (*pp1, parameter)) {
+                        format = g_strdup_printf ("%s=%%ld", parameter);
+                        if (sscanf (parameters, format, &value) != 1) {
+                                value = 0;
+                                break;
+                        }
+                        g_free (format);
+                }
+                pp1++;
+        }
+        g_strfreev (pp2);
+
+        return value;
+}
+
+static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encoder_output)
+{
+        gchar *m3u8playlist;
+
+        if (g_str_has_prefix (request_data->uri, "/live/")) {
+                m3u8playlist = m3u8playlist_get_playlist (encoder_output->m3u8_playlist);
+
+        } else if (g_str_has_prefix (request_data->uri, "/dvr/")) {
+                gint64 offset, start, duration;
+
+                offset = get_gint64_parameter (request_data->parameters, "offset");
+                        GST_ERROR ("offset %ld", offset);
+
+                start = get_gint64_parameter (request_data->uri, "start");
+                duration = get_gint64_parameter (request_data->uri, "duration");
+                        GST_ERROR ("start %ld", start);
+                        GST_ERROR ("duration %ld", duration);
+
+                        m3u8playlist = NULL;
+
+        }
+
+        return m3u8playlist;
+}
+
 static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestData *request_data)
 {
         EncoderOutput *encoder_output;
@@ -469,7 +517,7 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
                 /* get m3u8 playlist */
                 gchar *m3u8playlist;
 
-                m3u8playlist = gstreamill_get_m3u8playlist (httpstreaming->gstreamill, encoder_output);
+                m3u8playlist = get_m3u8playlist (request_data, encoder_output);
                 if (m3u8playlist == NULL) {
                         buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
 

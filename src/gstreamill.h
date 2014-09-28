@@ -64,7 +64,6 @@ void gstreamill_unaccess (Gstreamill *gstreamill, gchar *uri);
 Job * gstreamill_get_job (Gstreamill *gstreamill, gchar *uri);
 gint gstreamill_job_number (Gstreamill *gstreamill);
 EncoderOutput * gstreamill_get_encoder_output (Gstreamill *gstreamill, gchar *uri);
-gchar * gstreamill_get_m3u8playlist (Gstreamill *gstreamill, EncoderOutput *encoder_output);
 gchar * gstreamill_get_master_m3u8playlist (Gstreamill *gstreamill, gchar *uri);
 
 #endif /* __GSTREAMILL_H__ */
