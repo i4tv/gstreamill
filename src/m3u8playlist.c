@@ -157,33 +157,71 @@ gchar * m3u8playlist_live_get_playlist (M3U8Playlist *playlist)
 
 gchar * m3u8playlist_timeshift_get_playlist (gchar *path, gint64 offset)
 {
-        M3U8Playlist *m3u8playlist;
-        gint i;
+        M3U8Playlist *m3u8playlist = NULL;
+        gint i, j;
         gchar **pp, *p;
         glob_t pglob;
         gchar *pattern, *playlist;
+        guint64 time;
 
-        pattern = g_strdup_printf ("%s/%lu*_*_*.ts", path, (g_get_real_time () / GST_MSECOND + offset) / 10);
-        if (glob (pattern, 0, NULL, &pglob) == GLOB_NOMATCH) {
-                playlist = NULL;
-
-        } else {
-                p = &(pglob.gl_pathv[i][strlen (path)]);
-                pp = g_strsplit (p, "_", 0);
-                m3u8playlist = m3u8playlist_new (3, 3, g_ascii_strtoull (pp[1], NULL, 10));
-                g_strfreev (pp);
-                for (i = 0; i < pglob.gl_pathc; i++) {
-                        p = &(pglob.gl_pathv[i][strlen (path) + 1]);
-                        pp = g_strsplit (p, "_", 0);
-                        /* remove .ts */
-                        pp[2][strlen (pp[2]) - 3] = '\0';
-                        m3u8playlist_add_entry (m3u8playlist, p, g_strtod ((pp[2]), NULL));
+        time = g_get_real_time () + 1000000 * offset;
+        /* loop seek time shift position, step: 10s */
+        for (i = 0; i < 10; i++) {
+                pattern = g_strdup_printf ("%s/%lu*.ts", path, time / 10000000 - i);
+                if (glob (pattern, 0, NULL, &pglob) == 0) {
+                        for (j = pglob.gl_pathc - 1; j >= 0; j--) {
+                                p = &(pglob.gl_pathv[j][strlen (path) + 1]);
+                                pp = g_strsplit (p, "_", 0);
+                                if (g_ascii_strtoull (pp[0], NULL, 10) < time) {
+                                        /* sequence: g_ascii_strtoull (pp[1], NULL, 10) */
+                                        m3u8playlist = m3u8playlist_new (3, 3, g_ascii_strtoull (pp[1], NULL, 10));
+                                        /* remove .ts */
+                                        pp[2][strlen (pp[2]) - 3] = '\0';
+                                        m3u8playlist_add_entry (m3u8playlist, p, g_strtod ((pp[2]), NULL));
+                                        g_strfreev (pp);
+                                        break;
+                                }
+                                g_strfreev (pp);
+                        }
                 }
-                playlist = g_strdup (m3u8playlist->playlist_str);
-                m3u8playlist_free (m3u8playlist);
+                g_free (pattern);
+                globfree (&pglob);
+                if (m3u8playlist != NULL) {
+                        break;
+                }
         }
-        globfree (&pglob);
-        g_free (pattern);
+
+        if (m3u8playlist == NULL) {
+                return NULL;
+        }
+
+        /* add entry */
+        for (i = 0; i < 10; i++) {
+                pattern = g_strdup_printf ("%s/%lu*.ts", path, time / 10000000 + i);
+                if (glob (pattern, 0, NULL, &pglob) == 0) {
+                        for (j = 0; j < pglob.gl_pathc; j++) {
+                                p = &(pglob.gl_pathv[j][strlen (path) + 1]);
+                                pp = g_strsplit (p, "_", 0);
+                                if (g_ascii_strtoull (pp[0], NULL, 10) > time) {
+                                        /* remove .ts */
+                                        pp[2][strlen (pp[2]) - 3] = '\0';
+                                        m3u8playlist_add_entry (m3u8playlist, p, g_strtod ((pp[2]), NULL));
+                                        if (m3u8playlist->entries->length == 3) {
+                                                g_strfreev (pp);
+                                                break;
+                                        }
+                                }
+                                g_strfreev (pp);
+                        }
+                }
+                g_free (pattern);
+                globfree (&pglob);
+                if (m3u8playlist->entries->length == 3) {
+                        break;
+                }
+        }
+        playlist = g_strdup (m3u8playlist->playlist_str);
+        m3u8playlist_free (m3u8playlist);
 
         return playlist;
 }
