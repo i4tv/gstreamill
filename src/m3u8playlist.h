@@ -34,7 +34,7 @@ typedef struct _M3U8Playlist
         gchar *playlist_str;
 } M3U8Playlist;
 
-M3U8Playlist * m3u8playlist_new (guint version, guint window_size);
+M3U8Playlist * m3u8playlist_new (guint version, guint window_size, guint64 sequence);
 void m3u8playlist_free (M3U8Playlist *playlist);
 gchar * m3u8playlist_add_entry (M3U8Playlist *playlist, const gchar *url, gfloat duration);
 gchar * m3u8playlist_live_get_playlist (M3U8Playlist *playlist); 

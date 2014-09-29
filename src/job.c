@@ -608,7 +608,7 @@ void job_reset (Job *job)
                         if (encoder->m3u8_playlist != NULL) {
                                 m3u8playlist_free (encoder->m3u8_playlist);
                         }
-                        encoder->m3u8_playlist = m3u8playlist_new (version, window_size);
+                        encoder->m3u8_playlist = m3u8playlist_new (version, window_size, 0);
 
                         /* reset message queue */
                         if (encoder->mqdes != -1) {

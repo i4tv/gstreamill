@@ -6,11 +6,12 @@
  */
 
 #include <glob.h>
+#include <string.h>
 #include <gst/gst.h>
 
 #include "m3u8playlist.h"
 
-M3U8Playlist * m3u8playlist_new (guint version, guint window_size)
+M3U8Playlist * m3u8playlist_new (guint version, guint window_size, guint64 sequence)
 {
         M3U8Playlist *playlist;
 
@@ -20,6 +21,7 @@ M3U8Playlist * m3u8playlist_new (guint version, guint window_size)
         playlist->window_size = window_size;
         playlist->entries = g_queue_new ();
         playlist->playlist_str = NULL;
+        playlist->sequence_number = sequence;
 
         return playlist;
 }
@@ -36,6 +38,9 @@ void m3u8playlist_free (M3U8Playlist * playlist)
         g_queue_foreach (playlist->entries, (GFunc) m3u8entry_free, NULL);
         g_queue_free (playlist->entries);
         g_rw_lock_clear ((&playlist->lock));
+        if (playlist->playlist_str != NULL) {
+                g_free (playlist->playlist_str);
+        }
         g_free (playlist);
 }
 
@@ -145,6 +150,9 @@ gchar * m3u8playlist_live_get_playlist (M3U8Playlist *playlist)
 
 gchar * m3u8playlist_timeshift_get_playlist (gchar *path, gint64 offset)
 {
+        M3U8Playlist *m3u8playlist;
+        gint i;
+        gchar **pp, *p;
         glob_t pglob;
         gchar *pattern, *playlist;
 
@@ -153,9 +161,18 @@ gchar * m3u8playlist_timeshift_get_playlist (gchar *path, gint64 offset)
                 playlist = NULL;
 
         } else {
-                GST_ERROR ("pattern %s", pattern);
-                GST_ERROR ("%s", pglob.gl_pathv[0]);
-
+                p = &(pglob.gl_pathv[i][strlen (path)]);
+                pp = g_strsplit (p, "_", 0);
+                m3u8playlist = m3u8playlist_new (3, 3, g_ascii_strtoull (pp[1], NULL, 10));
+                g_strfreev (pp);
+                for (i = 0; i < pglob.gl_pathc; i++) {
+                        p = &(pglob.gl_pathv[i][strlen (path)]);
+                        GST_ERROR ("%s", p);
+                        pp = g_strsplit (p, "_", 0);
+                        m3u8playlist_add_entry (m3u8playlist, p, g_strtod ((pp[2]), NULL));
+                }
+                playlist = g_strdup (m3u8playlist->playlist_str);
+                m3u8playlist_free (m3u8playlist);
         }
         globfree (&pglob);
         g_free (pattern);
