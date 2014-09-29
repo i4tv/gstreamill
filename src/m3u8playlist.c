@@ -96,12 +96,18 @@ static gchar * m3u8playlist_render (M3U8Playlist * playlist)
         /* #EXT-X-ALLOW_CACHE */
         g_string_append_printf (gstring, M3U8_ALLOW_CACHE_TAG, "NO");
         /* #EXT-X-MEDIA-SEQUENCE */
-        g_string_append_printf (gstring, M3U8_MEDIA_SEQUENCE_TAG, playlist->sequence_number - playlist->entries->length);
+        if (playlist->window_size != 0) {
+                g_string_append_printf (gstring, M3U8_MEDIA_SEQUENCE_TAG, playlist->sequence_number - playlist->entries->length);
+        }
         /* #EXT-X-TARGETDURATION */
         g_string_append_printf (gstring, M3U8_TARGETDURATION_TAG, m3u8playlist_target_duration (playlist));
         g_string_append_printf (gstring, "\n");
         /* Entries */
         g_queue_foreach (playlist->entries, (GFunc) render_entry, gstring);
+        /* #EXT-X-ENDLIST */
+        if (playlist->window_size == 0) {
+                g_string_append_printf (gstring, M3U8_X_ENDLIST_TAG);
+        }
         p = gstring->str;
         g_string_free (gstring, FALSE);
 
@@ -117,7 +123,7 @@ gchar * m3u8playlist_add_entry (M3U8Playlist *playlist, const gchar *url, gfloat
 
         entry = m3u8entry_new (url, duration);
         /* Delete old entries from the playlist */
-        while (playlist->entries->length >= playlist->window_size) {
+        while ((playlist->window_size != 0) && (playlist->entries->length >= playlist->window_size)) {
                 M3U8Entry *old_entry;
 
                 old_entry = g_queue_pop_head (playlist->entries);
@@ -211,7 +217,7 @@ gchar * m3u8playlist_dvr_get_playlist (gchar *path, gint64 start, gint64 duratio
                 guint64 t;
                 gchar *p, **pp;
 
-                m3u8playlist = m3u8playlist_new (3, pglob.gl_pathc, 0);
+                m3u8playlist = m3u8playlist_new (3, 0, 0);
                 format = g_strdup_printf ("%s/%%lu_", path);
                 for (i = 0; i < pglob.gl_pathc; i++) {
                         sscanf (pglob.gl_pathv[i], format, &t);

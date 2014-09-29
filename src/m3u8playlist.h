@@ -15,6 +15,7 @@
 #define M3U8_MEDIA_SEQUENCE_TAG "#EXT-X-MEDIA-SEQUENCE:%lu\n"
 #define M3U8_INF_TAG "#EXTINF:%.2f,\n%s\n"
 #define M3U8_STREAM_INF_TAG "#EXT-X-STREAM-INF:PROGRAM-ID=%d,BANDWIDTH=%s000\n"
+#define M3U8_X_ENDLIST_TAG "#EXT-X-ENDLIST\n"
 
 typedef struct _M3U8Entry
 {
