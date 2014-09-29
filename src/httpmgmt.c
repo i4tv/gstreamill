@@ -308,8 +308,8 @@ static gchar * add_header_footer (gchar *middle)
 
         path = g_strdup_printf ("%s/gstreamill/admin/header.html", DATADIR);
         if (!g_file_get_contents (path, &top, NULL, &err)) {
-                g_free (path);
                 GST_ERROR ("read %s failure: %s", path, err->message);
+                g_free (path);
                 g_error_free (err);
                 return g_strdup ("Internal error, file header.html not found.");
         }
