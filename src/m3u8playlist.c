@@ -166,9 +166,10 @@ gchar * m3u8playlist_timeshift_get_playlist (gchar *path, gint64 offset)
                 m3u8playlist = m3u8playlist_new (3, 3, g_ascii_strtoull (pp[1], NULL, 10));
                 g_strfreev (pp);
                 for (i = 0; i < pglob.gl_pathc; i++) {
-                        p = &(pglob.gl_pathv[i][strlen (path)]);
-                        GST_ERROR ("%s", p);
+                        p = &(pglob.gl_pathv[i][strlen (path) + 1]);
                         pp = g_strsplit (p, "_", 0);
+                        /* remove .ts */
+                        pp[2][strlen (pp[2]) - 3] = '\0';
                         m3u8playlist_add_entry (m3u8playlist, p, g_strtod ((pp[2]), NULL));
                 }
                 playlist = g_strdup (m3u8playlist->playlist_str);

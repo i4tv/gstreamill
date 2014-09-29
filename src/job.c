@@ -497,7 +497,7 @@ static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime dura
         }
 
         realtime = g_get_real_time ();
-        path = g_strdup_printf ("/%s/%ld_%lu_%.2f.ts", encoder_output->record_path, realtime, encoder_output->sequence, (double)GST_TIME_AS_SECONDS (duration));
+        path = g_strdup_printf ("/%s/%ld_%lu_%lu.ts", encoder_output->record_path, realtime, encoder_output->sequence, duration);
         encoder_output->sequence += 1;
 
         if (!g_file_set_contents (path, buf, segment_size, &err)) {

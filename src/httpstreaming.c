@@ -299,10 +299,32 @@ static GstClockTime send_chunk (EncoderOutput *encoder_output, RequestData *requ
 static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *encoder_output, gchar **buf)
 {
         GstClockTime timestamp;
-        gchar *header;
+        gchar *header, *path, *file;
         guint64 rap_addr;
         gsize buf_size;
+        GError *err = NULL;
 
+        /* dvr segment */
+        if (g_str_has_prefix (request_data->uri, "/dvr/")) {
+                file = g_path_get_basename (request_data->uri);
+                path = g_strdup_printf ("%s/%s", encoder_output->record_path, file);
+                g_free (file);
+                if (!g_file_get_contents (path, &file, &buf_size, &err)) {
+                        GST_ERROR ("read %s failure: %s", path, err->message);
+                        g_free (path);
+                        g_error_free (err);
+                        return 0;
+                }
+                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "video/mpeg", buf_size, CACHE_60s, "");
+                *buf = g_malloc (buf_size + strlen (header));
+                memcpy (*buf, header, strlen (header));
+                memcpy (*buf + strlen (header), file, buf_size);
+                g_free (header);
+                g_free (file); 
+                return buf_size;
+        }
+
+        /* live segment */
         sscanf (request_data->uri, "/live/%*[^/]/encoder/%*[^/]/%lu.ts", &timestamp);
         sem_wait (encoder_output->semaphore);
         /* seek gop */
@@ -312,7 +334,7 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
                 gsize gop_size;
 
                 gop_size = encoder_output_gop_size (encoder_output, rap_addr);
-                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "video/mpeg", gop_size, CACHE_60s, ""); 
+                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "video/mpeg", gop_size, CACHE_60s, "");
                 *buf = g_malloc (strlen (header) + gop_size);
                 memcpy (*buf, header, strlen(header));
                 if (rap_addr + gop_size + 12 < encoder_output->cache_size) {
