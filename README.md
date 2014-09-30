@@ -124,6 +124,8 @@ default management port is 20118, you can use curl to invoke test job:
 * access output use via m3u8:
     
         http://host.name.or.ip:20119/live/test/playlist.m3u8
+        http://host.name.or.ip:20119/dvr/test/playlist.m3u8?offset=-3600
+        http://host.name.or.ip:20119/dvr/test/playlist.m3u8?start=1412069895&duration=3600
 
 ## Management interface
 
