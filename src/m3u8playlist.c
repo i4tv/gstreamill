@@ -172,7 +172,7 @@ gchar * m3u8playlist_timeshift_get_playlist (gchar *path, gint64 offset)
                         for (j = pglob.gl_pathc - 1; j >= 0; j--) {
                                 p = &(pglob.gl_pathv[j][strlen (path) + 1]);
                                 pp = g_strsplit (p, "_", 0);
-                                if (g_ascii_strtoull (pp[0], NULL, 10) < time) {
+                                if (g_ascii_strtoull (pp[0], NULL, 10) <= time) {
                                         /* sequence: g_ascii_strtoull (pp[1], NULL, 10) */
                                         m3u8playlist = m3u8playlist_new (3, 3, g_ascii_strtoull (pp[1], NULL, 10));
                                         /* remove .ts */
