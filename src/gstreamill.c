@@ -521,6 +521,40 @@ static void job_check_func (gpointer data, gpointer user_data)
 
 static void dvr_clean (Gstreamill *gstreamill)
 {
+        guint64 now, time;
+        gint i, j;
+        gchar *pattern;
+        glob_t pglob;
+        GSList *list;
+        Job *job;
+        EncoderOutput encoder_output;
+
+        now = g_get_real_time ();
+        if (now - gstreamill->last_dvr_clean_time < 600000000) {
+                return;
+        }
+
+        list = gstreamill->job_list;
+        while (list != NULL) {
+                job = list->data;
+                for (i = 0; i < job->output->encoder_count; i++) {
+                        encoder_output = job->output->encoders[i];
+                        time = (now / 1000000 - encoder_output.dvr_duration) / 10;
+                        while (time > 11) {
+                                pattern = g_strdup_printf ("%s/%lu*.ts", encoder_output.record_path, time - 1);
+                                GST_ERROR ("%s", pattern);
+                                glob (pattern, 0, NULL, &pglob);
+                                for (j = 0; j < pglob.gl_pathc; j++) {
+                                        g_remove (pglob.gl_pathv[j]);
+                                }
+                                globfree (&pglob);
+                                g_free (pattern);
+                                time = time / 10;
+                        }
+                }
+                list = list->next;
+        }
+        gstreamill->last_dvr_clean_time = now;
 }
 
 static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClockID id, gpointer user_data)
