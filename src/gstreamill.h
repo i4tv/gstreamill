@@ -33,6 +33,7 @@ struct _Gstreamill {
         GstClock *system_clock;
         gchar *start_time;
         gchar *log_dir;
+        gchar *media_dir;
         guint64 last_dvr_clean_time;
 
         GMutex job_list_mutex;

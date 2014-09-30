@@ -79,7 +79,7 @@ struct _JobClass {
 
 GType job_get_type (void);
 
-gint job_initialize (Job *job, gboolean daemon);
+gint job_initialize (Job *job, gboolean daemon, gchar *media_dir);
 void job_reset (Job *job);
 void job_stat_update (Job *job);
 gint job_start (Job *job);

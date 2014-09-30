@@ -287,7 +287,7 @@ static guint64 get_dvr_sequence (JobOutput *joboutput, gint index)
  *
  * Returns: 0 on success.
  */
-gint job_initialize (Job *job, gboolean daemon)
+gint job_initialize (Job *job, gboolean daemon, gchar *media_dir)
 {
         gint i, fd;
         JobOutput *output;
@@ -388,7 +388,7 @@ gint job_initialize (Job *job, gboolean daemon)
                 if (output->encoders[i].dvr_duration == 0) {
                         continue;
                 }
-                output->encoders[i].record_path = g_strdup_printf ("/var/gstreamill/dvr/%s/%d", job->name, i);
+                output->encoders[i].record_path = g_strdup_printf ("%s/dvr/%s/%d", media_dir, job->name, i);
                 if (!g_file_test (output->encoders[i].record_path, G_FILE_TEST_EXISTS) &&
                     (g_mkdir_with_parents (output->encoders[i].record_path, 0755) != 0)) {
                         GST_ERROR ("Can't open or create %s directory", output->encoders[i].record_path);

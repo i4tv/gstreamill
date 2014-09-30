@@ -224,7 +224,7 @@ gboolean bus_callback (GstBus *bus, GstMessage *msg, gpointer user_data)
                 g_free (debug);
                 GST_ERROR ("%s error found: %s, exit", g_value_get_string (&name), error->message);
                 g_error_free (error);
-                exit (4); /* exit 4 for pipeline error */
+                exit (8); /* exit 4 for pipeline error */
                 break;
 
         case GST_MESSAGE_STATE_CHANGED:

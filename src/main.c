@@ -85,6 +85,7 @@ static gboolean stop = FALSE;
 static gboolean version = FALSE;
 static gchar *job_file = NULL;
 static gchar *log_dir = "/var/log/gstreamill";
+static gchar *media_dir = "/var/gstreamill";
 static gchar *http_mgmt = "0.0.0.0:20118";
 static gchar *http_streaming = "0.0.0.0:20119";
 static gchar *shm_name = NULL;
@@ -92,6 +93,7 @@ static gint job_length = -1;
 static GOptionEntry options[] = {
         {"job", 'j', 0, G_OPTION_ARG_FILENAME, &job_file, ("-j /full/path/to/job.file: Specify a job file, full path is must."), NULL},
         {"log", 'l', 0, G_OPTION_ARG_FILENAME, &log_dir, ("-l /full/path/to/log: Specify log path, full path is must."), NULL},
+        {"media", 'd', 0, G_OPTION_ARG_FILENAME, &media_dir, ("-l /full/path/to/media: Specify media path for dvr and transcode, full path is must."), NULL},
         {"httpmgmt", 'm', 0, G_OPTION_ARG_STRING, &http_mgmt, ("-m http managment address, default is 0.0.0.0:20118."), NULL},
         {"httpstreaming", 'a', 0, G_OPTION_ARG_STRING, &http_streaming, ("-a http streaming address, default is 0.0.0.0:20119."), NULL},
         {"name", 'n', G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &shm_name, NULL, NULL},
@@ -156,7 +158,7 @@ int main (int argc, char *argv[])
 
         if (getuid () != 0) {
                 g_print ("must be root user to run gstreamill\n");
-                exit (1);
+                exit (2);
         }
 
         /* stop gstreamill. */
@@ -200,13 +202,13 @@ int main (int argc, char *argv[])
                 job_desc = NULL;
                 fd = shm_open (shm_name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
                 if (ftruncate (fd, job_length) == -1) {
-                        exit (2);
+                        exit (3);
                 }
                 p = mmap (NULL, job_length, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
                 job_desc = g_strdup (p);
 
                 if ((job_desc != NULL) && (!jobdesc_is_valid (job_desc))) {
-                        exit (3);
+                        exit (4);
                 }
 
                 name = (gchar *)jobdesc_get_name (job_desc);
@@ -224,7 +226,7 @@ int main (int argc, char *argv[])
                 ret = init_log (log_path);
                 g_free (log_path);
                 if (ret != 0) {
-                        exit (1);
+                        exit (5);
                 }
 
                 /* launch a job. */
@@ -235,13 +237,13 @@ int main (int argc, char *argv[])
                 signal (SIGUSR1, sighandler);
                 signal (SIGUSR2, stop_job);
                 loop = g_main_loop_new (NULL, FALSE);
-                if (job_initialize (job, TRUE) != 0) {
+                if (job_initialize (job, TRUE, media_dir) != 0) {
                         GST_ERROR ("initialize livejob failure, exit");
-                        exit (1);
+                        exit (6);
                 }
                 if (job_start (job) != 0) {
                         GST_ERROR ("start livejob failure, exit");
-                        exit (1);
+                        exit (7);
                 }
                 GST_WARNING ("livejob %s starting ...", name);
                 g_free (name);
@@ -302,7 +304,7 @@ int main (int argc, char *argv[])
         loop = g_main_loop_new (NULL, FALSE);
 
         /* gstreamill */
-        gstreamill = gstreamill_new ("daemon", !foreground, "log_dir", log_dir, NULL);
+        gstreamill = gstreamill_new ("daemon", !foreground, "log_dir", log_dir, "media_dir", media_dir, NULL);
         if (gstreamill_start (gstreamill) != 0) {
                 GST_ERROR ("start gstreamill error, exit.");
                 remove_pid_file ();
