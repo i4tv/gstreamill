@@ -74,6 +74,7 @@ static void gstreamill_init (Gstreamill *gstreamill)
         start_time = gst_date_time_new_now_local_time ();
         gstreamill->start_time = gst_date_time_to_iso8601_string (start_time);
         gst_date_time_unref (start_time);
+        gstreamill->last_dvr_clean_time = g_get_real_time ();
         g_mutex_init (&(gstreamill->job_list_mutex));
         gstreamill->job_list = NULL;
 }
@@ -495,6 +496,10 @@ static void job_check_func (gpointer data, gpointer user_data)
         }
 }
 
+static void dvr_clean (Gstreamill *gstreamill)
+{
+}
+
 static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClockID id, gpointer user_data)
 {
         GstClockID nextid;
@@ -525,6 +530,7 @@ static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClock
         /* log rotate. */
         if (gstreamill->daemon) {
                 log_rotate (gstreamill);
+                dvr_clean (gstreamill);
         }
 
         g_mutex_unlock (&(gstreamill->job_list_mutex));
