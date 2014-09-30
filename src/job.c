@@ -243,7 +243,7 @@ static gchar * render_master_m3u8_playlist (Job *job)
                 if (value != NULL) {
                         GST_INFO ("job %s with m3u8 output, append end tag", job->name);
                         g_string_append_printf (master_m3u8_playlist, M3U8_STREAM_INF_TAG, 1, value);
-                        g_string_append_printf (master_m3u8_playlist, "encoder/%d/playlist.m3u8\n", i);
+                        g_string_append_printf (master_m3u8_playlist, "encoder/%d/playlist.m3u8<%%parameters%%>\n", i);
                         g_free (value);
                 }
                 g_free (p);

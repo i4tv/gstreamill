@@ -433,10 +433,22 @@ static gchar * request_crossdomain (RequestData *request_data)
 static gchar * request_master_m3u8_playlist (HTTPStreaming *httpstreaming, RequestData *request_data)
 {
         gchar *buf;
-        gchar *master_m3u8_playlist;
+        gchar *master_m3u8_playlist, *p, *replace;
+        GRegex *regex;
 
         /* master m3u8 request? */
-        master_m3u8_playlist = gstreamill_get_master_m3u8playlist (httpstreaming->gstreamill, request_data->uri);
+        p = gstreamill_get_master_m3u8playlist (httpstreaming->gstreamill, request_data->uri);
+        regex = g_regex_new ("(<%parameters%>)", 0, 0, NULL);
+        if (g_strcmp0 (request_data->parameters, "") == 0) {
+                master_m3u8_playlist = g_regex_replace (regex, p, -1, 0, "", 0, NULL);
+
+        } else {
+                replace = g_strdup_printf ("?%s", request_data->parameters);
+                master_m3u8_playlist = g_regex_replace (regex, p, -1, 0, replace, 0, NULL);
+                g_free (replace);
+        }
+        g_free (p);
+        g_regex_unref (regex);
         if (master_m3u8_playlist != NULL) {
                 buf = g_strdup_printf (http_200,
                                PACKAGE_NAME,
