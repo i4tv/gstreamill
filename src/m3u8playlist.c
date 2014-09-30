@@ -247,7 +247,6 @@ gchar * m3u8playlist_dvr_get_playlist (gchar *path, gint64 start, gint64 duratio
         g_free (from);
         g_free (end);
         pattern = g_strdup_printf ("%s/%s*_*_*.ts", path, time);
-        GST_ERROR ("pattern %s", pattern);
         if (glob (pattern, 0, NULL, &pglob) == GLOB_NOMATCH) {
                 playlist = NULL;
 
