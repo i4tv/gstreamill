@@ -30,6 +30,7 @@ gstreamill is an open source, GPL licensed "stream mill" based on gstreamer-1.0.
    * Job run in subprocess, and auto restart on error.
    * Base on gstreamer and easy to extend.
    * B/S Management.
+   * Time Shift and DVR support.
 
 ## Application
 
@@ -132,9 +133,9 @@ default management port is 20118, you can use curl to invoke test job:
 
 * access output use via m3u8:
     
-        http://host.name.or.ip:20119/live/test/playlist.m3u8
-        http://host.name.or.ip:20119/dvr/test/playlist.m3u8?offset=-3600
-        http://host.name.or.ip:20119/dvr/test/playlist.m3u8?start=1412069895&duration=3600
+        http://host.name.or.ip:20119/live/test/playlist.m3u8 (live)
+        http://host.name.or.ip:20119/dvr/test/playlist.m3u8?offset=-3600 (time shift)
+        http://host.name.or.ip:20119/dvr/test/playlist.m3u8?start=1412069895&duration=3600 (dvr)
 
 ## Management interface
 

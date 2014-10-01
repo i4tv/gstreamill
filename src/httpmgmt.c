@@ -834,7 +834,7 @@ static gsize request_gstreamill_media (HTTPMgmt *httpmgmt, RequestData *request_
 
         if ((request_data->method == HTTP_POST) && (g_str_has_prefix (request_data->uri, "/media/upload/"))) {
                 sscanf (request_data->uri, "/media/upload/%s", media);
-                path = g_strdup_printf ("%s/in/%s", httpmgmt->gstreamill->media_dir, media);
+                path = g_strdup_printf ("%s/transcode/in/%s", httpmgmt->gstreamill->media_dir, media);
                 content = request_data->raw_request + request_data->header_size;
                 content_size = request_data->request_length - request_data->header_size;
                 media_append (path, content, content_size);
