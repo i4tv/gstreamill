@@ -15,6 +15,7 @@
 #include "parson.h"
 #include "httpmgmt.h"
 #include "gstreamill.h"
+#include "mediaman.h"
 
 GST_DEBUG_CATEGORY_EXTERN (GSTREAMILL);
 #define GST_CAT_DEFAULT GSTREAMILL
@@ -826,6 +827,24 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
         return buf_size;
 }
 
+static gsize request_gstreamill_media (HTTPMgmt *httpmgmt, RequestData *request_data, gchar **buf)
+{
+        gchar media[512], *path, *content;
+        gsize buf_size, content_size;
+
+        if ((request_data->method == HTTP_POST) && (g_str_has_prefix (request_data->uri, "/media/upload/"))) {
+                sscanf (request_data->uri, "/media/upload/%s", media);
+                path = g_strdup_printf ("%s/in/%s", httpmgmt->gstreamill->media_dir, media);
+                content = request_data->raw_request + request_data->header_size;
+                content_size = request_data->request_length - request_data->header_size;
+                media_append (path, content, content_size);
+                *buf = g_strdup ("[0]");
+        }
+        buf_size = strlen (*buf);
+
+        return buf_size;
+}
+
 static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
 {
         RequestData *request_data = data;
@@ -849,6 +868,9 @@ static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
 
                 } else if (g_str_has_prefix (request_data->uri, "/admin")) {
                         buf_size = request_gstreamill_admin (httpmgmt, request_data, &buf);
+
+                } else if (g_str_has_prefix (request_data->uri, "/media")) {
+                        buf_size = request_gstreamill_media (httpmgmt, request_data, &buf);
 
                 } else {
                         buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
