@@ -527,7 +527,6 @@ static void dvr_clean (Gstreamill *gstreamill)
         glob_t pglob;
         GSList *list;
         Job *job;
-        EncoderOutput encoder_output;
 
         now = g_get_real_time ();
         if (now - gstreamill->last_dvr_clean_time < 600000000) {
@@ -538,10 +537,12 @@ static void dvr_clean (Gstreamill *gstreamill)
         while (list != NULL) {
                 job = list->data;
                 for (i = 0; i < job->output->encoder_count; i++) {
-                        encoder_output = job->output->encoders[i];
-                        time = (now / 1000000 - encoder_output.dvr_duration) / 10;
+                        if (job->output->encoders[i].record_path == NULL) {
+                                continue;
+                        }
+                        time = (now / 1000000 - job->output->encoders[i].dvr_duration) / 10;
                         while (time > 11) {
-                                pattern = g_strdup_printf ("%s/%lu*.ts", encoder_output.record_path, time - 1);
+                                pattern = g_strdup_printf ("%s/%lu*.ts", job->output->encoders[i].record_path, time - 1);
                                 GST_ERROR ("%s", pattern);
                                 glob (pattern, 0, NULL, &pglob);
                                 for (j = 0; j < pglob.gl_pathc; j++) {
