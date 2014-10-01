@@ -43,6 +43,15 @@ gstreamill is an open source, GPL licensed "stream mill" based on gstreamer-1.0.
                            |
              REST interface (json over http post)
 
+## Third-party Applications
+
+   * Parson
+   * JQuery
+   * BootStrap
+   * BootBox
+   * i18next
+   * Resumable
+
 # INSTALL
 
 gstreamill have been tested in ubuntu 14.04.
