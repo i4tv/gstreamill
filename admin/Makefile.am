@@ -11,7 +11,8 @@ admin_DATA = \
         jobstatus.html \
         system.html \
         gstreamill.html \
-        setnetwork.html
+        setnetwork.html \
+        mediaman.html
 
 admincssdir = $(datadir)/gstreamill/admin/css
 admincss_DATA = \
@@ -25,7 +26,8 @@ adminjs_DATA = \
         js/bootbox.js \
         js/jquery.js \
         js/i18next.js \
-        js/gstreamill.js
+        js/gstreamill.js \
+        js/resumable.js
 
 adminfontsdir = $(datadir)/gstreamill/admin/fonts
 adminfonts_DATA = \
