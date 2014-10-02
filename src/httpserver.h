@@ -41,6 +41,10 @@
                  "Connection: Close\r\n\r\n" \
                  "%s"
 
+#define http_204 "HTTP/1.1 204 No Content\r\n" \
+                 "Server: %s-%s\r\n" \
+                 "Content-Length: 0\r\n" \
+
 #define NO_CACHE "no-cache"
 #define CACHE_60s "max-age=60"
 

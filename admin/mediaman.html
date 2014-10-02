@@ -3,7 +3,8 @@
     <script>
 
     var r = new Resumable({
-      target:'/media/upload'
+      target:'/media/upload',
+      method:'octet'
     });
       
     r.assignBrowse(document.getElementById('browseButton'));
