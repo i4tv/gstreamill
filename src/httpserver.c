@@ -435,10 +435,12 @@ static void close_socket_gracefully (gint sock)
         (void) close (sock);
 }
 
-static void request_data_release (HTTPServer *http_server, RequestData *request_data)
+static void request_data_release (HTTPServer *http_server, RequestData **request_data_pointer)
 {
         gint i;
+        RequestData *request_data;
 
+        request_data = *request_data_pointer;
         for (i = 0; i < request_data->num_headers; i++) {
                 g_free (request_data->headers[i].name);
                 g_free (request_data->headers[i].value);
@@ -448,7 +450,7 @@ static void request_data_release (HTTPServer *http_server, RequestData *request_
         close_socket_gracefully (request_data->sock);
         g_mutex_lock (&(http_server->request_data_queue_mutex));
         request_data->events = 0;
-        g_queue_push_head (http_server->request_data_queue, &request_data);
+        g_queue_push_head (http_server->request_data_queue, request_data_pointer);
         g_mutex_unlock (&(http_server->request_data_queue_mutex));
 }
 
@@ -511,7 +513,7 @@ static gint accept_socket (HTTPServer *http_server)
                 ret = epoll_ctl (http_server->epollfd, EPOLL_CTL_ADD, accepted_sock, &ee);
                 if (ret == -1) {
                         GST_ERROR ("epoll_ctl add error %s sock %d", g_strerror (errno), accepted_sock);
-                        request_data_release (http_server, request_data);
+                        request_data_release (http_server, request_data_pointer);
                         return -1;
 
                 } else {
@@ -816,7 +818,7 @@ static void invoke_user_callback (HTTPServer *http_server, RequestData **request
         } else {
                 /* finish */
                 GST_DEBUG ("callback return 0, request finish, sock %d", request_data->sock);
-                request_data_release (http_server, request_data);
+                request_data_release (http_server, request_data_pointer);
         }
 }
 
@@ -893,7 +895,7 @@ static void thread_pool_func (gpointer data, gpointer user_data)
                 ret = read_request (request_data);
                 if (ret <= 0) {
                         GST_ERROR ("no data, sock is %d", request_data->sock);
-                        request_data_release (http_server, request_data);
+                        request_data_release (http_server, request_data_pointer);
                         return;
                 } 
 
@@ -918,7 +920,7 @@ static void thread_pool_func (gpointer data, gpointer user_data)
                                 GST_ERROR ("write sock %d error.", request_data->sock);
                         }
                         g_free (buf);
-                        request_data_release (http_server, request_data);
+                        request_data_release (http_server, request_data_pointer);
                 }
 
         } else if (request_data->status == HTTP_CONTINUE) {
@@ -931,7 +933,7 @@ static void thread_pool_func (gpointer data, gpointer user_data)
                         g_mutex_lock (&(http_server->idle_queue_mutex));
                         g_tree_remove (http_server->idle_queue, &(request_data->wakeup_time));
                         g_mutex_unlock (&(http_server->idle_queue_mutex));
-                        request_data_release (http_server, request_data);
+                        request_data_release (http_server, request_data_pointer);
                 }
         }
 }
