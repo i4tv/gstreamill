@@ -190,6 +190,7 @@ int main (int argc, char *argv[])
         if (gst_debug_get_default_threshold () < GST_LEVEL_WARNING) {
                 gst_debug_set_default_threshold (GST_LEVEL_WARNING);
         }
+
         /* subprocess, create_job_process */
         if (shm_name != NULL) {
                 gint fd;
@@ -262,7 +263,7 @@ int main (int argc, char *argv[])
 
         /* run in background? */
         if (!foreground) {
-                gchar *log_path;
+                gchar *path;
                 gint ret;
 
                 /* pid file exist? */
@@ -271,18 +272,44 @@ int main (int argc, char *argv[])
                         exit (1);
                 }
 
-                /* daemonize */
-                if (daemon (0, 0) != 0) {
-                        g_print ("Failed to daemonize");
+                /* media directory */
+                path = g_strdup_printf ("%s/dvr", media_dir);
+                if (!g_file_test (path, G_FILE_TEST_EXISTS)) {
+                        g_printf ("Create DVR directory: %s", path);
+                        if (g_mkdir_with_parents (path, 0755) != 0) {
+                                g_printf ("Create DVR directory failure: %s", path);
+                        }
+                }
+                g_free (path);
+                path = g_strdup_printf ("%s/transcode/in", media_dir);
+                if (!g_file_test (path, G_FILE_TEST_EXISTS)) {
+                        g_printf ("Create transcode directory: %s", path);
+                        if (g_mkdir_with_parents (path, 0755) != 0) {
+                                g_printf ("Create transcode directory failure: %s", path);
+                        }
+                }
+                g_free (path);
+                path = g_strdup_printf ("%s/transcode/out", media_dir);
+                if (!g_file_test (path, G_FILE_TEST_EXISTS)) {
+                        g_printf ("Create transcode directory: %s", path);
+                        if (g_mkdir_with_parents (path, 0755) != 0) {
+                                g_printf ("Create transcode directory failure: %s", path);
+                        }
+                }
+                g_free (path);
+
+                /* log to file */
+                path = g_build_filename (log_dir, "gstreamill.log", NULL);
+                ret = init_log (path);
+                g_free (path);
+                if (ret != 0) {
+                        g_print ("Init log error, ret %d.\n", ret);
                         exit (1);
                 }
 
-                /* log to file */
-                log_path = g_build_filename (log_dir, "gstreamill.log", NULL);
-                ret = init_log (log_path);
-                g_free (log_path);
-                if (ret != 0) {
-                        g_print ("Init log error, ret %d.\n", ret);
+                /* daemonize */
+                if (daemon (0, 0) != 0) {
+                        g_print ("Failed to daemonize");
                         exit (1);
                 }
 
