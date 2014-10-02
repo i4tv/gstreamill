@@ -827,30 +827,50 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
         return buf_size;
 }
 
+static gchar * get_filename (gchar *parameters)
+{
+        gchar **pp1, **pp2, *p;
+
+        pp1 = pp2 = g_strsplit (parameters, "&", 0);
+        p = NULL;
+        while (*pp1 != NULL) {
+                if (g_str_has_prefix (*pp1, "resumableFilename")) {
+                        p = g_strdup (&((*pp1)[18]));
+                        break;
+                }
+                pp1++;
+        }
+        g_strfreev (pp2);
+
+        return p;
+}
+
 static gsize request_gstreamill_media (HTTPMgmt *httpmgmt, RequestData *request_data, gchar **buf)
 {
-        gchar media[512], *path, *content;
+        gchar *path, *content, *name;
         gsize buf_size, content_size;
         gint i;
 
-        if ((request_data->method == HTTP_POST) && (g_str_has_prefix (request_data->uri, "/media/upload/"))) {
+        if ((request_data->method == HTTP_POST) && (g_str_has_prefix (request_data->uri, "/media/upload"))) {
                 GST_ERROR ("parameters: %s", request_data->parameters);
-                for (i = 0; i < request_data->num_headers; i++) {
-                        GST_ERROR ("%s: %s", request_data->headers[i].name, request_data->headers[i].value);
-                }
-                sscanf (request_data->uri, "/media/upload/%s", media);
-                path = g_strdup_printf ("%s/transcode/in/%s", httpmgmt->gstreamill->media_dir, media);
+                name = get_filename (request_data->parameters);
+                path = g_strdup_printf ("%s/transcode/in/%s", httpmgmt->gstreamill->media_dir, name);
+                g_free (name);
+                GST_ERROR ("%s", path);
                 content = request_data->raw_request + request_data->header_size;
                 content_size = request_data->request_length - request_data->header_size;
-                media_append (path, content, content_size);
+                //media_append (path, content, content_size);
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", 1, NO_CACHE, "o");
+                g_free (path);
 
-        } else if ((request_data->method == HTTP_GET) && (g_str_has_prefix (request_data->uri, "/media/upload/"))) {
+        } else if ((request_data->method == HTTP_GET) && (g_str_has_prefix (request_data->uri, "/media/upload"))) {
                 GST_ERROR ("parameters: %s", request_data->parameters);
-                for (i = 0; i < request_data->num_headers; i++) {
-                        GST_ERROR ("%s: %s", request_data->headers[i].name, request_data->headers[i].value);
-                }
+                name = get_filename (request_data->parameters);
+                path = g_strdup_printf ("%s/transcode/in/%s", httpmgmt->gstreamill->media_dir, name);
+                g_free (name);
+                GST_ERROR ("%s", path);
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", 1, NO_CACHE, "o");
+                g_free (path);
 
         } else {
                 *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
