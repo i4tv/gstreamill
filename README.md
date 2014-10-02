@@ -119,11 +119,11 @@ gstreamill have been tested in ubuntu 14.04.
 
 * invoke a job
 
-default management port is 20118, you can use curl to invoke test job:
+default management port is 20118, use curl to invoke test job via management interface for example:
 
         curl -H "Content-Type: application/json" --data @examples/test.job http://localhost:20118/admin/start
 
-* invode a job in foreground:
+* invoke a job in foreground, the debug mode:
 
         gstreamill -j job_descript_file
 
