@@ -31,3 +31,18 @@ gboolean media_append (gchar *path, gchar *buf, gssize size)
         g_object_unref (out);
         g_object_unref (gfile);
 }
+
+gssize media_size (gchar *path)
+{
+        GFile *gfile;
+        GFileInfo *ginfo;
+        GError *err = NULL;
+        goffset size;
+
+        gfile = g_file_new_for_path (path);
+        ginfo = g_file_query_info (gfile, "standard::*", G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS, NULL, &err);
+        size = g_file_info_get_size (ginfo);
+        g_object_unref (gfile);
+
+        return size;
+}

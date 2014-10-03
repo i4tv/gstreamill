@@ -827,6 +827,69 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
         return buf_size;
 }
 
+static gsize get_chunknumber (gchar *parameters)
+{
+        gchar **pp1, **pp2, *p;
+        gsize size;
+
+        pp1 = pp2 = g_strsplit (parameters, "&", 0);
+        p = NULL;
+        while (*pp1 != NULL) {
+                if (g_str_has_prefix (*pp1, "resumableChunkNumber")) {
+                        p = g_strdup (&((*pp1)[21]));
+                        break;
+                }
+                pp1++;
+        }
+        g_strfreev (pp2);
+        size = atoi (p);
+        g_free (p);
+
+        return size;
+}
+
+static gsize get_chunksize (gchar *parameters)
+{
+        gchar **pp1, **pp2, *p;
+        gsize size;
+
+        pp1 = pp2 = g_strsplit (parameters, "&", 0);
+        p = NULL;
+        while (*pp1 != NULL) {
+                if (g_str_has_prefix (*pp1, "resumableChunkSize")) {
+                        p = g_strdup (&((*pp1)[19]));
+                        break;
+                }
+                pp1++;
+        }
+        g_strfreev (pp2);
+        size = atoi (p);
+        g_free (p);
+
+        return size;
+}
+
+static gsize get_totalsize (gchar *parameters)
+{
+        gchar **pp1, **pp2, *p;
+        gsize size;
+
+        pp1 = pp2 = g_strsplit (parameters, "&", 0);
+        p = NULL;
+        while (*pp1 != NULL) {
+                if (g_str_has_prefix (*pp1, "resumableTotalSize")) {
+                        p = g_strdup (&((*pp1)[19]));
+                        break;
+                }
+                pp1++;
+        }
+        g_strfreev (pp2);
+        size = atoi (p);
+        g_free (p);
+
+        return size;
+}
+
 static gchar * get_filename (gchar *parameters)
 {
         gchar **pp1, **pp2, *p;
@@ -847,29 +910,38 @@ static gchar * get_filename (gchar *parameters)
 
 static gsize request_gstreamill_media (HTTPMgmt *httpmgmt, RequestData *request_data, gchar **buf)
 {
-        gchar *path, *content, *name;
+        gchar *path, *content, *p;
         gsize buf_size, content_size;
         gint i;
 
         if ((request_data->method == HTTP_POST) && (g_str_has_prefix (request_data->uri, "/media/upload"))) {
-                GST_ERROR ("parameters: %s", request_data->parameters);
-                name = get_filename (request_data->parameters);
-                path = g_strdup_printf ("%s/transcode/in/%s", httpmgmt->gstreamill->media_dir, name);
-                g_free (name);
-                GST_ERROR ("%s", path);
+                p = get_filename (request_data->parameters);
+                path = g_strdup_printf ("%s/transcode/in/%s", httpmgmt->gstreamill->media_dir, p);
+                g_free (p);
                 content = request_data->raw_request + request_data->header_size;
                 content_size = request_data->request_length - request_data->header_size;
-                media_append (path, content, content_size);
-                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", 1, NO_CACHE, "o");
+                if (media_append (path, content, content_size)) {
+                        p = g_strdup_printf ("%ld", content_size);
+                        *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (p), NO_CACHE, p);
+                        g_free (p);
+
+                } else {
+                        *buf = g_strdup_printf (http_500, PACKAGE_NAME, PACKAGE_VERSION);
+                }
                 g_free (path);
 
         } else if ((request_data->method == HTTP_GET) && (g_str_has_prefix (request_data->uri, "/media/upload"))) {
-                GST_ERROR ("parameters: %s", request_data->parameters);
-                name = get_filename (request_data->parameters);
-                path = g_strdup_printf ("%s/transcode/in/%s", httpmgmt->gstreamill->media_dir, name);
-                g_free (name);
-                GST_ERROR ("%s", path);
-                *buf = g_strdup_printf (http_204, PACKAGE_NAME, PACKAGE_VERSION);
+                p = get_filename (request_data->parameters);
+                path = g_strdup_printf ("%s/transcode/in/%s", httpmgmt->gstreamill->media_dir, p);
+                g_free (p);
+                if (get_totalsize (request_data->parameters) == media_size (path)) {
+                        p = g_strdup ("complete");
+                        *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (p), NO_CACHE, p);
+                        g_free (p);
+
+                } else {
+                        *buf = g_strdup_printf (http_204, PACKAGE_NAME, PACKAGE_VERSION);
+                }
                 g_free (path);
 
         } else {
