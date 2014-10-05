@@ -361,3 +361,5 @@ m3u8streaming is hls output, it's optional:
 There are examples in examples directory of source.
 
 Talk about gstreamill on [gstreamill](https://groups.google.com/forum/#!forum/gstreamill) or report a bug on [issues](https://github.com/zhangping/gstreamill/issues) page.
+
+The text of this page, is available for modification and reuse under the terms of the Creative Commons Attribution-Sharealike 3.0 Unported License and the GNU Free Documentation License.
