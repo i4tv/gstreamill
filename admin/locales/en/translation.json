@@ -155,5 +155,8 @@
     "OK": "OK",
     "CANCEL": "Cancel",
     "CONFIRM": "OK"
+  },
+  "mediaupload": {
+    "Media Upload": "Media Upload"
   }
 }

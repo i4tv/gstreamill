@@ -155,5 +155,8 @@
     "OK": "OK",
     "CANCEL": "取消",
     "CONFIRM": "确定"
+  },
+  "mediaupload": {
+    "Media Upload": "媒体上载"
   }
 }
