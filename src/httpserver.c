@@ -311,7 +311,7 @@ static gint parse_request (RequestData *request_data)
         }
 
         while (*buf == ' ') {
-                 /* skip space */
+                /* skip space */
                 buf++;
         }
 
@@ -325,14 +325,14 @@ static gint parse_request (RequestData *request_data)
                 *uri = '\0';
 
         } else {
-                 /* Bad request, uri too long */
+                /* Bad request, uri too long */
                 return 3;
         }
         urldecode (request_data->uri);
 
         i = 0;
         if (*buf == '?') {
-                 /* have parameters */
+                /* have parameters */
                 buf++;
                 while (*buf != ' ' && i++ < 1024) {
                         *parameters = *buf;
@@ -344,17 +344,18 @@ static gint parse_request (RequestData *request_data)
                 *parameters = '\0';
 
         } else {
-                 /* Bad request, parameters too long */
+                /* Bad request, parameters too long */
                 return 3;
         }
+        urldecode (&(request_data->parameters[0]));
 
         while (*buf == ' ') {
-                 /* skip space */
+                /* skip space */
                 buf++;
         }
 
         if (strncmp (buf, "HTTP/1.1", 8) == 0) {
-                 /* http version must be 1.1 */
+                /* http version must be 1.1 */
                 request_data->version = HTTP_1_1; 
 
         } else if (strncmp (buf, "HTTP/1.0", 8) == 0) {
