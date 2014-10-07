@@ -11,7 +11,8 @@
     "New Transcode Job": "创建转码任务",
     "job management": "任务管理",
     "job status": "任务状态",
-    "job delete": "任务删除"
+    "job delete": "任务删除",
+    "Media Upload": "媒体上载"
   },
   "gstreamill": {
     "Gstreamill Status": "Gstreamill 状态",

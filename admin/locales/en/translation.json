@@ -11,7 +11,8 @@
     "New Transcode Job": "New Transcode Job",
     "job management": "Job Managment",
     "job status": "Job Status",
-    "job delete": "Job Delete"
+    "job delete": "Job Delete",
+    "Media Upload": "Media Upload"
   },
   "gstreamill": {
     "Gstreamill Status": "Gstreamill Status",
