@@ -934,7 +934,7 @@ static gsize request_gstreamill_media (HTTPMgmt *httpmgmt, RequestData *request_
                 p = get_filename (request_data->parameters);
                 path = g_strdup_printf ("%s/transcode/in/%s", httpmgmt->gstreamill->media_dir, p);
                 g_free (p);
-                if (get_totalsize (request_data->parameters) == media_size (path)) {
+                if (get_chunksize (request_data->parameters) * get_chunknumber (request_data->parameters) <= media_size (path)) {
                         p = g_strdup ("complete");
                         *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (p), NO_CACHE, p);
                         g_free (p);
