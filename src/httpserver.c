@@ -17,6 +17,7 @@
 #include <errno.h>
 
 #include "httpserver.h"
+#include "utils.h"
 
 GST_DEBUG_CATEGORY_EXTERN (GSTREAMILL);
 #define GST_CAT_DEFAULT GSTREAMILL
@@ -440,8 +441,11 @@ static void request_data_release (HTTPServer *http_server, RequestData **request
 {
         gint i;
         RequestData *request_data;
+        struct sockaddr in_addr;
 
         request_data = *request_data_pointer;
+        in_addr = request_data->client_addr;
+        GST_ERROR ("release request from %s:%d, sock %d", get_address (in_addr), get_port (in_addr), request_data->sock);
         for (i = 0; i < request_data->num_headers; i++) {
                 g_free (request_data->headers[i].name);
                 g_free (request_data->headers[i].value);
@@ -486,7 +490,7 @@ static gint accept_socket (HTTPServer *http_server)
                         close_socket_gracefully (accepted_sock);
                         continue;
                 }
-                GST_DEBUG ("new request arrived, accepted_sock %d", accepted_sock);
+                GST_ERROR ("request from %s:%d, accepted_sock %d", get_address (in_addr), get_port (in_addr), accepted_sock);
                 http_server->total_click += 1;
 
                 int on = 1;
