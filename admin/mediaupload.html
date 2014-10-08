@@ -38,7 +38,8 @@
             var r = new Resumable({
                 target: '/media/upload',
                 forceChunkSize: true,
-                method: 'octet'
+                method: 'octet',
+                simultaneousUploads: 1
             });
      
             r.assignBrowse($('#mediaupload'));
