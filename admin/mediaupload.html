@@ -1,16 +1,19 @@
 
     <div class="container-fluid">
         <div class="row body_content">
-            <div class="resumable-progress">
-              <table>
-                <tr>
-                  <td width="100%"><div class="progress-container"><div class="progress-bar"></div></div></td>
-                  <td class="progress-text" nowrap="nowrap"></td>
-                </tr>
-              </table>
+            <div id='mediaupload' class="panel panel-primary">
+	        <div class="panel-heading mediaupload" data-i18n="mediaupload.Media Upload"></div>
+                <div class="panel-body">
+                    <table>
+                        <tr>
+                            <td width="100%"><div class="progress-container"><div class="progress-bar"></div></div></td>
+                            <td class="progress-text" nowrap="nowrap"></td>
+                        </tr>
+                    </table>
+                    <ul class="resumable-list"></ul>
+                    <button class="btn btn-primary mediaupload" id="mediaupload"><span data-i18n="mediaupload.Media Upload"></span></button>
+                </div>
             </div>
-            <ul class="resumable-list"></ul>
-            <button class="btn btn-primary mediaupload" id="mediaupload"><span data-i18n="mediaupload.Media Upload"></span></button>
         </div>
     </div>
 
@@ -37,7 +40,6 @@
                 method: 'octet'
             });
      
-            // Show a place for dropping/selecting files
             r.assignBrowse($('#mediaupload'));
      
             // Handle file add event
