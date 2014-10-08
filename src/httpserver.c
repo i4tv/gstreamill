@@ -200,24 +200,24 @@ static gint read_request (RequestData *request_data)
                 count = read (request_data->sock, buf + read_pos, kRequestBufferSize - read_pos);
                 if (count == -1) {
                         if (errno != EAGAIN) {
-                                GST_ERROR ("read error %s", g_strerror (errno));
+                                GST_WARNING ("read error %s", g_strerror (errno));
                                 return -1;
 
                         } else {
-                                 /* errno == EAGAIN means read complete */
+                                /* errno == EAGAIN means read complete */
                                 GST_DEBUG ("read complete");
                                 break;
                         }
 
                 } else if (count == 0) {
-                         /* closed by client */
+                        /* closed by client */
                         GST_WARNING ("client closed");
                         return -2;
 
                 } else if (count > 0) {
                         read_pos += count;
                         if (read_pos == kRequestBufferSize) {
-                                GST_ERROR ("rquest size too large");
+                                GST_WARNING ("rquest size too large");
                                 return -3;
                         }
                 }
@@ -871,8 +871,7 @@ static void thread_pool_func (gpointer data, gpointer user_data)
                 if ((request_data->status == HTTP_IDLE) || (request_data->status == HTTP_BLOCK)) {
                         /* in normal play status */
                         ret = read_request (request_data);
-                        if (ret == -2) {
-                                GST_DEBUG ("Clinet close, FIN received.");
+                        if (ret < 0) {
                                 request_data->status = HTTP_FINISH;
 
                         } else {
@@ -894,8 +893,7 @@ static void thread_pool_func (gpointer data, gpointer user_data)
         
         if (request_data->status == HTTP_REQUEST) {
                 ret = read_request (request_data);
-                if (ret <= 0) {
-                        GST_ERROR ("no data, sock is %d", request_data->sock);
+                if (ret < 0) {
                         request_data_release (http_server, request_data_pointer);
                         return;
                 } 
