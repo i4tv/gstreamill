@@ -1,7 +1,7 @@
 
     <div class="container-fluid">
         <div class="row body_content">
-            <div id='mediaupload' class="panel panel-primary">
+            <div class="panel panel-primary">
 	        <div class="panel-heading mediaupload" data-i18n="mediaupload.Media Upload"></div>
                 <div class="panel-body">
                     <table>
@@ -11,7 +11,7 @@
                         </tr>
                     </table>
                     <ul class="resumable-list"></ul>
-                    <button class="btn btn-primary mediaupload" id="mediaupload"><span data-i18n="mediaupload.Media Upload"></span></button>
+                    <button class="btn btn-primary pull-right mediaupload" id="mediaupload"><span data-i18n="mediaupload.Media Upload"></span></button>
                 </div>
             </div>
         </div>
@@ -44,11 +44,6 @@
      
             // Handle file add event
             r.on('fileAdded', function(file){
-                // Show progress pabr
-                $('.resumable-progress, .resumable-list').show();
-                // Show pause, hide resume
-                $('.resumable-progress .progress-resume-link').hide();
-                $('.resumable-progress .progress-pause-link').show();
                 // Add the file to the list
                 $('.resumable-list').append('<li class="resumable-file-'+file.uniqueIdentifier+'">Uploading <span class="resumable-file-name"></span> <span class="resumable-file-progress"></span>');
                 $('.resumable-file-'+file.uniqueIdentifier+' .resumable-file-name').html(file.fileName);
