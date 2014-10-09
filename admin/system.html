@@ -82,22 +82,6 @@
 
             system ();
 
-            $('#set_gstreamill_btn').click (function () {
-                var conf = {};
-                conf.language = $("#language").val ();
-                conf.transcoderoot = $("#transcoderoot").val ();
-                $.post ("putconf", JSON.stringify (conf, null, 4), function (response) {
-                    if (response.result == 'success') {
-                        var result = $.t ("system.Set Gstreamill Success");
-                        bootbox.alert (result, function () {
-                            location.reload (true);
-                        });
-                    } else {
-                        bootbox.alert ($.t ("system.Set Gstreamill Failure") + ": " + response.reason);
-                    }
-                });
-            });
-
             $.i18n.init({
                 lng: Document.GstreamillConf.language[Document.GstreamillConf.conf.language]
             }, function(t) {
