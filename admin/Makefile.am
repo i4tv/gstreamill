@@ -12,8 +12,7 @@ admin_DATA = \
         system.html \
         gstreamill.html \
         setnetwork.html \
-        mediaman.html \
-        mediaupload.html
+        mediaman.html
 
 admincssdir = $(datadir)/gstreamill/admin/css
 admincss_DATA = \

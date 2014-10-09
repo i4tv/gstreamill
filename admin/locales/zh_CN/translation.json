@@ -12,7 +12,7 @@
     "job management": "任务管理",
     "job status": "任务状态",
     "job delete": "任务删除",
-    "Media Upload": "媒体上载"
+    "Media": "媒体"
   },
   "gstreamill": {
     "Gstreamill Status": "Gstreamill 状态",
@@ -157,7 +157,8 @@
     "CANCEL": "取消",
     "CONFIRM": "确定"
   },
-  "mediaupload": {
+  "mediaman": {
+    "Media Managment": "媒体管理",
     "Media Upload": "媒体上载"
   }
 }

@@ -12,7 +12,7 @@
     "job management": "Job Managment",
     "job status": "Job Status",
     "job delete": "Job Delete",
-    "Media Upload": "Media Upload"
+    "Media": "Media"
   },
   "gstreamill": {
     "Gstreamill Status": "Gstreamill Status",
@@ -157,7 +157,8 @@
     "CANCEL": "Cancel",
     "CONFIRM": "OK"
   },
-  "mediaupload": {
+  "mediaman": {
+    "Media Managment": "Media Managment",
     "Media Upload": "Media Upload"
   }
 }
