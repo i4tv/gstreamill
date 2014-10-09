@@ -1,10 +1,16 @@
 
     <div class="container-fluid">
         <div class="row body_content">
-            <ul class="list-group" id="joblist">
+            <div id='joblist_content' class="panel panel-primary">
+                <div class="panel-heading joblist" data-i18n="joblist.Job List"></div>
+                <div class="panel-body">
+                    <ul class="list-group" id="joblist"></ul>
+                    <button class="btn btn-primary joblist" onclick="window.location.replace('newlivejob.html')" data-i18n="joblist.New Live Job"></button>
+                    <button class="btn btn-primary joblist" onclick="window.location.replace('newtranscodejob.html')" data-i18n="joblist.New Transcode Job"></button>
+                </div>
+            </div>
         </div>
     </div>
-
 
     <script type="text/javascript">
 

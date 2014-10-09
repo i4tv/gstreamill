@@ -132,6 +132,9 @@
     "Total Output Bytes": "输出字节数"
   },
   "joblist": {
+    "Job List": "任务列表",
+    "New Live Job": "创建直播任务",
+    "New Transcode Job": "创建转码任务",
     "Restart times": "重新启动次数",
     "Start Time": "启动时间",
     "Last time started": "最后一次启动时间",

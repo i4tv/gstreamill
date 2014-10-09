@@ -132,6 +132,9 @@
     "Total Output Bytes": "Total Output Bytes"
   },
   "joblist": {
+    "Job List": "Job List",
+    "New Live Job": "New Live Job",
+    "New Transcode Job": "New Transcode Job",
     "Restart times": "Restart times",
     "Start Time": "Start Time",
     "Last time started": "Last time started",
