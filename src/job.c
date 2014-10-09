@@ -126,7 +126,7 @@ static void job_dispose (GObject *obj)
                 if ((output->encoders[i].mqdes != -1) && (mq_unlink (name) == -1)) {
                         GST_ERROR ("mq_unlink %s error: %s", name, g_strerror (errno));
                 }
-                if (output->encoders[i].record_path != NULL) {
+                if (job->is_live && (output->encoders[i].record_path != NULL)) {
                         g_free (output->encoders[i].record_path);
                 }
                 g_free (name);
