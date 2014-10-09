@@ -944,6 +944,11 @@ static gsize request_gstreamill_media (HTTPMgmt *httpmgmt, RequestData *request_
                 }
                 g_free (path);
 
+        } else if ((request_data->method == HTTP_GET) && (g_strcmp0 (request_data->uri, "/media/getmediadir") == 0)) {
+                p = g_strdup_printf ("{\n    \"media_dir\": \"%s\"\n}", httpmgmt->gstreamill->media_dir);
+                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+                g_free (p);
+
         } else {
                 *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
         }

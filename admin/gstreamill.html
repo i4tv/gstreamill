@@ -54,14 +54,6 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="row form-group col-md-12">
-                                <div class="col-lg-4">
-                                    <label class="pull-right gstreamill"  data-i18n="gstreamill.Transcode Directory"></label>
-                                </div>
-                                <div class="col-lg-7">
-                                    <input type="text" class="form-control" id="transcoderoot">
-                                </div>
-                            </div>
                             <button class='btn btn-primary pull-right gstreamill' id='set_gstreamill_btn' data-i18n="gstreamill.Set Gstreamill"></button>
                         </div>
                     </div>
@@ -83,7 +75,6 @@
 
         $.get("/admin/getconf", function (data) {
             $("#language").val(data.data.language);
-            $("#transcoderoot").val(data.data.transcoderoot);
         });
     }
 
@@ -102,7 +93,6 @@
             $('#set_gstreamill_btn').click (function () {
                 var conf = {};
                 conf.language = $("#language").val ();
-                conf.transcoderoot = $("#transcoderoot").val ();
                 $.post ("putconf", JSON.stringify (conf, null, 4), function (response) {
                     if (response.result == 'success') {
                         var result = $.t ("gstreamill.Set Gstreamill Success");

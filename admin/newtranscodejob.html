@@ -75,6 +75,10 @@
                 return;
             }
 
+            $.get ("/media/getmediadir", function (data) {
+                Document.GstreamillConf.conf.transcoderoot = data.media_dir + "/transcode";
+            });
+
             $.i18n.init({
                 lng: Document.GstreamillConf.language[Document.GstreamillConf.conf.language]
             }, function(t) {
@@ -151,7 +155,6 @@
                         encoder.elements.filesink.property.location = path + resolution + "_" + bitrate + "bps.mp4";
                     }
                     job.encoders = encoders;
-                    console.log (JSON.stringify(job, null, 2));
                     $.ajax ({
                         type: "post",
                         url: "/admin/start",

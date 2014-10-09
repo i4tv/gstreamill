@@ -153,7 +153,6 @@
                     var li = '<li class="list-group-item" id="li_' + jobs[i] + '"></li>';
                     $('#joblist').append(li);
                     var jobStatUrl = '/stat/gstreamill/job/' + jobs[i];
-                    console.log (jobStatUrl);
                     $.get(jobStatUrl, function (response) {
                         showNonliveJobStatus (response);
                     });
