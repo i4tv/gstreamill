@@ -536,6 +536,11 @@ static void dvr_clean (Gstreamill *gstreamill)
         list = gstreamill->job_list;
         while (list != NULL) {
                 job = list->data;
+                /* non live job need not clean dvr */
+                if (!job->is_live) {
+                        list = list->next;
+                        continue;
+                }
                 for (i = 0; i < job->output->encoder_count; i++) {
                         if (job->output->encoders[i].record_path == NULL) {
                                 continue;
@@ -720,7 +725,7 @@ static guint64 create_job_process (Job *job)
         g_child_watch_add (pid, (GChildWatchFunc)child_watch_cb, job);
 
         while (*(job->output->state) == GST_STATE_READY || *(job->output->state) == GST_STATE_VOID_PENDING) {
-                GST_INFO ("waiting job process creating ...");
+                GST_WARNING ("waiting job process creating ...");
                 g_usleep (50000);
         }
 

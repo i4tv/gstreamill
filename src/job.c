@@ -662,18 +662,30 @@ gint job_start (Job *job)
 
         job->source = source_initialize (job->description, &(job->output->source));
         if (job->source == NULL) {
-                GST_ERROR ("Initialize job source error.");
+                GST_WARNING ("Initialize job source error.");
+                *(job->output->state) = GST_STATE_VOID_PENDING;
                 return 1;
         }
 
         if (encoder_initialize (job->encoder_array, job->description, job->output->encoders, job->source) != 0) {
-                GST_ERROR ("Initialize job encoder error.");
-                return 1;
+                GST_WARNING ("Initialize job encoder error.");
+                *(job->output->state) = GST_STATE_VOID_PENDING;
+                return 2;
         }
 
         /* set pipelines as PLAYING state */
         gst_element_set_state (job->source->pipeline, GST_STATE_PLAYING);
-        gst_element_get_state (job->source->pipeline, NULL, NULL, GST_CLOCK_TIME_NONE);
+        ret = gst_element_get_state (job->source->pipeline, NULL, NULL, 5 * GST_SECOND);
+        if (ret == GST_STATE_CHANGE_FAILURE) {
+                GST_WARNING ("Set %s source pipeline to play error.", job->name);
+                *(job->output->state) = GST_STATE_VOID_PENDING;
+                return 3;
+
+        } else if (ret == GST_STATE_CHANGE_ASYNC) {
+                GST_WARNING ("Set %s source pipeline to play timeout.", job->name);
+                *(job->output->state) = GST_STATE_VOID_PENDING;
+                return 4;
+        }
         *(job->output->source.duration) = 0;
         if (!job->is_live && gst_element_query_duration (job->source->pipeline, GST_FORMAT_TIME, &duration)) {
                 *(job->output->source.duration) = duration;
@@ -682,13 +694,19 @@ gint job_start (Job *job)
         for (i = 0; i < job->encoder_array->len; i++) {
                 encoder = g_array_index (job->encoder_array, gpointer, i);
                 ret = gst_element_set_state (encoder->pipeline, GST_STATE_PLAYING);
-                if (ret == GST_STATE_CHANGE_FAILURE) { //FIXME
-                        GST_ERROR ("Set %s to play error.", encoder->name);
+                if (ret == GST_STATE_CHANGE_FAILURE) {
+                        GST_WARNING ("Set %s to play error.", encoder->name);
+                        *(job->output->state) = GST_STATE_VOID_PENDING;
+                        return 5;
+
                 }
-                if (encoder->udpstreaming != NULL) { //FIXME
+                if (encoder->udpstreaming != NULL) {
                         ret = gst_element_set_state (encoder->udpstreaming, GST_STATE_PLAYING);
                         if (ret == GST_STATE_CHANGE_FAILURE) {
-                                GST_ERROR ("Set %s udpstreaming to play error.", encoder->name);
+                                GST_WARNING ("Set %s udpstreaming to play error.", encoder->name);
+                                *(job->output->state) = GST_STATE_VOID_PENDING;
+                                return 6;
+
                         }
                 }
                 encoder->state = GST_STATE_PLAYING;
