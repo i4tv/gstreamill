@@ -10,7 +10,13 @@
                             <td class="progress-text" nowrap="nowrap"></td>
                         </tr>
                     </table>
+                    <h4>Transcode in</h4>
+                    <hr>
+                    <h4>Transcode out</h4>
+                    <hr>
+                    <ul class="transcodeinlist"></ul>
                     <ul class="resumable-list"></ul>
+                    <hr>
                     <button class="btn btn-primary pull-right mediaman" id="mediaupload"><span data-i18n="mediaman.Media Upload"></span></button>
                 </div>
             </div>
@@ -19,6 +25,14 @@
 
     <script src="js/resumable.js"></script>
     <script>
+    function refresh_transcode_in_list () {
+        $.get ("/media/transcodeinlist", function (list) {
+            for (var i = 0, media; media=list[i]; i++) {
+                $('.transcodeinlist').append('<li class="transcodeinlist-' + media + '">' + media);
+            }
+        });
+    }
+
     $ (document).ready (function () {
         $.get("/admin/getconf", function (data) {
             if (data.result == "success") {
@@ -74,5 +88,7 @@
                 $('.progress-bar').css({width:Math.floor(r.progress()*100) + '%'});
             });
         });
+
+        refresh_transcode_in_list ();
     });
     </script>
