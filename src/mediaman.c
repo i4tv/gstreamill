@@ -5,6 +5,8 @@
  *  Copyright (C) Zhang Ping <zhangping@163.com>
  */
 
+#include <string.h>
+#include <glob.h>
 #include <gio/gio.h>
 #include <gst/gst.h>
 
@@ -45,4 +47,29 @@ gssize media_size (gchar *path)
         g_object_unref (gfile);
 
         return size;
+}
+
+gchar * media_transcode_in_list (gchar *path)
+{
+        gchar *pattern, *list, *p;
+        glob_t pglob;
+        gint i;
+
+        pattern = g_strdup_printf ("%s/*", path);
+        glob (pattern, 0, NULL, &pglob);
+        g_free (pattern);
+        if (pglob.gl_pathc == 0) {
+                globfree (&pglob);
+                return g_strdup ("[]");
+        }
+        list = g_strdup ("[");
+        for (i = 0; i < pglob.gl_pathc; i++) {
+                p = list;
+                list = g_strdup_printf ("%s\"%s\",", p, pglob.gl_pathv[i]);
+                g_free (p);
+        }
+        globfree (&pglob);
+        list[strlen (list) - 1] = ']';
+
+        return list;
 }
