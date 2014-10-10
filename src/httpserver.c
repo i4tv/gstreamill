@@ -317,12 +317,12 @@ static gint parse_request (RequestData *request_data)
         }
 
         i = 0;
-        while (*buf != ' ' && *buf != '?' && i++ < 255) { /* max length of uri is 255 */
+        while (*buf != ' ' && *buf != '?' && i++ < kMaxUriLength) {
                 *uri = *buf;
                 buf++;
                 uri++;
         }
-        if (i <= 255) {
+        if (i <= kMaxUriLength) {
                 *uri = '\0';
 
         } else {
@@ -335,13 +335,13 @@ static gint parse_request (RequestData *request_data)
         if (*buf == '?') {
                 /* have parameters */
                 buf++;
-                while (*buf != ' ' && i++ < 1024) {
+                while (*buf != ' ' && i++ < kMaxParametersLength) {
                         *parameters = *buf;
                         buf++;
                         parameters++;
                 }
         }
-        if (i <= 1024) {
+        if (i <= kMaxParametersLength) {
                 *parameters = '\0';
 
         } else {

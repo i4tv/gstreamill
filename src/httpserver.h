@@ -87,6 +87,8 @@ enum session_status {
 
 #define kRequestBufferSize 1024 * 1050
 #define kMaxRequests 128
+#define kMaxUriLength 2048
+#define kMaxParametersLength 1024
 
 typedef struct _RequestData {
         gint id;
@@ -101,8 +103,8 @@ typedef struct _RequestData {
         gchar raw_request[kRequestBufferSize];
         gint request_length;
         enum request_method method;
-        gchar uri[256];
-        gchar parameters[1025];
+        gchar uri[kMaxUriLength + 1];
+        gchar parameters[kMaxParametersLength + 1];
         enum http_version version;
         gint header_size;
         gint num_headers;
