@@ -13,6 +13,6 @@
 
 gchar * unicode_file_name_2_shm_name (gchar *filename);
 gchar * get_address (struct sockaddr in_addr);
-gshort get_port (struct sockaddr in_addr);
+gushort get_port (struct sockaddr in_addr);
 
 #endif /* __UTILS_H__ */

@@ -38,7 +38,7 @@ gchar * get_address (struct sockaddr in_addr)
         return inet_ntoa (addr->sin_addr);
 }
 
-gshort get_port (struct sockaddr in_addr)
+gushort get_port (struct sockaddr in_addr)
 {
         struct sockaddr_in *addr;
 

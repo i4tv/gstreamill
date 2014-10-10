@@ -445,7 +445,7 @@ static void request_data_release (HTTPServer *http_server, RequestData **request
 
         request_data = *request_data_pointer;
         in_addr = request_data->client_addr;
-        GST_ERROR ("release request from %s:%d, sock %d", get_address (in_addr), get_port (in_addr), request_data->sock);
+        GST_ERROR ("release request from %s:%u, sock %d", get_address (in_addr), get_port (in_addr), request_data->sock);
         for (i = 0; i < request_data->num_headers; i++) {
                 g_free (request_data->headers[i].name);
                 g_free (request_data->headers[i].value);
