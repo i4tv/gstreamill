@@ -12,10 +12,11 @@
                     </table>
                     <h4>Transcode in</h4>
                     <hr>
-                    <h4>Transcode out</h4>
-                    <hr>
                     <ul class="transcodeinlist"></ul>
                     <ul class="resumable-list"></ul>
+                    <h4>Transcode out</h4>
+                    <hr>
+                    <ul class="transcodeoutlist"></ul>
                     <hr>
                     <button class="btn btn-primary pull-right mediaman" id="mediaupload"><span data-i18n="mediaman.Media Upload"></span></button>
                 </div>
@@ -27,8 +28,18 @@
     <script>
     function refresh_transcode_in_list () {
         $.get ("/media/transcodeinlist", function (list) {
-            for (var i = 0, media; media=list[i]; i++) {
+            for (var i = 0, media; media = list[i]; i++) {
                 $('.transcodeinlist').append('<li class="transcodeinlist-' + media + '">' + media);
+            }
+        });
+    }
+
+    function refresh_transcode_out_list () {
+        $.get ("/media/transcodeoutlist", function (obj) {
+            for (name in obj) {
+                for (var i = 0, media; media = obj[name][i]; i++) {
+                    $('.transcodeoutlist').append('<li class="transcodeoutlist-' + name + "_" + media + '">' + name + "_" + media);
+                }
             }
         });
     }
@@ -90,5 +101,6 @@
         });
 
         refresh_transcode_in_list ();
+        refresh_transcode_out_list ();
     });
     </script>

@@ -133,10 +133,8 @@ gchar * media_transcode_out_list (gchar *path)
                 g_free (outdirlist[n]);
         }
         g_free (outdirlist);
-        list[strlen (list) - 1] = '\n';
-        p1 = list;
-        list = g_strdup_printf ("%s}", p1);
-        g_free (p1);
+        list[strlen (list) - 2] = '\n';
+        list[strlen (list) - 1] = '}';
 
         return list;
 }
