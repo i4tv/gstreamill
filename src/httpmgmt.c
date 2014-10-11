@@ -238,6 +238,7 @@ static gchar * request_gstreamill_stat (HTTPMgmt *httpmgmt, RequestData *request
 
         } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamill/job/")) {
                 p = gstreamill_job_stat (httpmgmt->gstreamill, request_data->uri);
+                GST_ERROR ("%s", p);
                 buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
@@ -947,6 +948,13 @@ static gsize request_gstreamill_media (HTTPMgmt *httpmgmt, RequestData *request_
         } else if ((request_data->method == HTTP_GET) && (g_strcmp0 (request_data->uri, "/media/transcodeinlist") == 0)) {
                 path = g_strdup_printf ("%s/transcode/in", httpmgmt->gstreamill->media_dir);
                 p = media_transcode_in_list (path);
+                g_free (path);
+                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+                g_free (p);
+
+        } else if ((request_data->method == HTTP_GET) && (g_strcmp0 (request_data->uri, "/media/transcodeoutlist") == 0)) {
+                path = g_strdup_printf ("%s/transcode/out", httpmgmt->gstreamill->media_dir);
+                p = media_transcode_out_list (path);
                 g_free (path);
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);

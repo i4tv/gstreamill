@@ -7,6 +7,7 @@
 
 #include <string.h>
 #include <glob.h>
+#include <dirent.h>
 #include <gio/gio.h>
 #include <gst/gst.h>
 
@@ -51,7 +52,7 @@ gssize media_size (gchar *path)
 
 gchar * media_transcode_in_list (gchar *path)
 {
-        gchar *pattern, *list, *p;
+        gchar *pattern, *list, *p, *file;
         glob_t pglob;
         gint i;
 
@@ -65,11 +66,77 @@ gchar * media_transcode_in_list (gchar *path)
         list = g_strdup ("[");
         for (i = 0; i < pglob.gl_pathc; i++) {
                 p = list;
-                list = g_strdup_printf ("%s\"%s\",", p, pglob.gl_pathv[i]);
+                file = g_path_get_basename (pglob.gl_pathv[i]);
+                list = g_strdup_printf ("%s\"%s\",", p, file);
+                g_free (file);
                 g_free (p);
         }
         globfree (&pglob);
         list[strlen (list) - 1] = ']';
+
+        return list;
+}
+
+static gchar * transcode_out_list (gchar *path)
+{
+        gchar *pattern, *list, *p, *file;
+        glob_t pglob;
+        gint i, n;
+
+        pattern = g_strdup_printf ("%s/*", path);
+        glob (pattern, 0, NULL, &pglob);
+        g_free (pattern);
+        if (pglob.gl_pathc == 0) {
+                globfree (&pglob);
+                return g_strdup ("[]");
+        }
+        list = g_strdup ("[");
+        for (i = 0; i < pglob.gl_pathc; i++) {
+                if (g_str_has_suffix (pglob.gl_pathv[i], "gstreamill.log")) {
+                        continue;
+                }
+                p = list;
+                file = g_path_get_basename (pglob.gl_pathv[i]);
+                list = g_strdup_printf ("%s\"%s\",", p, file);
+                g_free (file);
+                g_free (p);
+        }
+        globfree (&pglob);
+        list[strlen (list) - 1] = ']';
+
+        return list;
+}
+
+gchar * media_transcode_out_list (gchar *path)
+{
+        struct dirent **outdirlist;
+        gchar *pattern, *list, *p1, *p2;
+        gint n;
+
+        n = scandir (path, &outdirlist, NULL, alphasort);
+        if (n < 0) {
+                GST_ERROR ("scandir error: %s", g_strerror (errno));
+                return g_strdup ("[]");
+
+        }
+        list = g_strdup ("{\n");
+        while (n--) {
+                if ((g_strcmp0 (outdirlist[n]->d_name, ".") != 0) && (g_strcmp0 (outdirlist[n]->d_name, "..") != 0)) {
+                        p1 = g_strdup_printf ("%s/%s", path, outdirlist[n]->d_name);
+                        p2 = transcode_out_list (p1);
+                        g_free (p1);
+                        p1 = list;
+                        list = g_strdup_printf ("%s    \"%s\":%s,\n", p1, outdirlist[n]->d_name, p2);
+                        g_free (p2);
+                        g_free (p1);
+                }
+                g_free (outdirlist[n]);
+        }
+        g_free (outdirlist);
+        list[strlen (list) - 1] = '\n';
+        p1 = list;
+        list = g_strdup_printf ("%s}", p1);
+        g_free (p1);
 
         return list;
 }
