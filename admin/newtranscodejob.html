@@ -38,7 +38,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default newtranscodejob" data-dismiss="modal" data-i18n="newtranscodejob.Cancel"></button>
-                    <button type="button" class="btn btn-primary newtranscodejob" id="addencoder-ok-btn" data-i18n="newtranscodejob.OK"></button>
+                    <button type="button" class="btn btn-primary newtranscodejob" id="createjob" data-i18n="newtranscodejob.OK"></button>
                 </div>
             </div>
         </div>
@@ -49,12 +49,8 @@
             <div class="panel panel-primary">
                 <div class="panel-heading newtranscodejob" data-i18n="newtranscodejob.New Transcode Job"></div>
                 <div class="panel-body" id="newtranscodejob_content">
-                    <input type="file" id="files" name="files[]" multiple />
-                    <output id="medialist"></output></br>
-                    <!-- Button trigger modal -->
-                    <button class="btn btn-default newtranscodejob" data-toggle="modal" data-target="#addencoder" data-i18n="newtranscodejob.Select Encoder Output"></button></br>
-                    <output id="encoderoutputlist"></output></br>
-                    <button class='btn btn-primary pull-right newtranscodejob' id='createjob' data-i18n='newtranscodejob.New Transcode Job'></button>
+                    <ul class="list-group" id="transcodeinlist"></ul>
+                    <button class="btn btn-primary pull-right newtranscodejob" data-toggle="modal" data-target="#addencoder" data-i18n="newtranscodejob.New Transcode Job"></button></br>
                 </div>
             </div>
             <div id='new_transcode_job_holder'></div>
@@ -64,6 +60,15 @@
     </div>
 
     <script type="text/javascript">
+
+    function refresh_transcode_in_list () {
+        $.get ("/media/transcodeinlist", function (list) {
+            for (var i = 0, media; media = list[i]; i++) {
+                var li = '<li class=\"list-group-item\"><input type=\"checkbox\" id=\"mediacheckbox\" value=\"' + media + '\">' + media;
+                $('#transcodeinlist').append(li);
+            }
+        });
+    }
 
     $ (document).ready (function () {
         /* load configure */
@@ -88,60 +93,40 @@
 
         });
 
-        var file_list = [],
-            encoders = [];
-
-        $('#addencoder-ok-btn').click (function () {
-            var ischecked = {'phone': false, 'pad': false, 'tv': false, 'hdtv': false};
-            var checked = $('#encoderoutput:checked');
-            for (var i = 0; i < checked.length; i++) {
-                ischecked [checked[i].value] = true;
-            }
-            encoders = [];
-            var encoders_list = [];
-            for (key in ischecked) {
-                if (ischecked[key]) {
-                    $.ajax ({
-                        type: "get",
-                        url: "schemas/transcode_encoder_" + key + "_mp4.json",
-                        dataType: "json",
-                        async: false,
-                        success: function (encoder) {
-                            encoders.push (encoder);
-                        }
-                    });
-                    encoders_list.push ('<li><strong>', key, '</strong></li>');
-                }
-            }
-            document.getElementById ('encoderoutputlist').innerHTML = '<ul>' + encoders_list.join('') + '</ul>';
-            $('#addencoder').modal('hide');
-        });
-
-        $("#files").change (function (evt) {
-            var files = evt.target.files;
-            var output = [];
-
-            file_list = [];
-            for (var i = 0, file; file = files[i]; i++) {
-                output.push ('<li><strong>', escape (file.name), '</strong> (', file.type || 'n/a', ') - ',
-                             file.size, ' bytes, last modified: ',
-                             file.lastModifiedDate ? file.lastModifiedDate.toLocaleDateString() : 'n/a',
-                             '</li>');
-                file_list.push (file.name);
-            }
-            document.getElementById ('medialist').innerHTML = '<ul>' + output.join('') + '</ul>';
-        });
-
         $("#createjob").click (function () {
             $.getJSON ("/admin/schemas/transcode_source_decodebin.json", function (job) {
+
+                var ischecked = {'phone': false, 'pad': false, 'tv': false, 'hdtv': false};
+                var checked = $('#encoderoutput:checked');
+                for (var i = 0; i < checked.length; i++) {
+                    ischecked [checked[i].value] = true;
+                }
+                var encoders = [];
+                for (key in ischecked) {
+                    if (ischecked[key]) {
+                        $.ajax ({
+                            type: "get",
+                            url: "schemas/transcode_encoder_" + key + "_mp4.json",
+                            dataType: "json",
+                            async: false,
+                            success: function (encoder) {
+                                encoders.push (encoder);
+                            }
+                        });
+                    }
+                }
+
+                var file_list = $("#mediacheckbox:checked");
                 if (file_list.length === 0) {
                     bootbox.alert ($.t ("newtranscodejob.Select Media Files Please"));
                     return;
                 }
+                console.log(file_list);
                 var result = "";
-                for (var i = 0, file; file = file_list[i]; i++) {
-                    var name = file.replace(/(\.[^.]*)/, "");
-                    job.name = name.replace(/( )/g, "");
+                for (var i = 0; i < file_list.length; i++) {
+                    var file = file_list[i].value;
+                    var name = file.replace(/(\.[^.]*)/, ""); // extension name
+                    job.name = name.replace(/( )/g, ""); // space
                     job["log-path"] = Document.GstreamillConf.conf.transcoderoot + "/out/" + file + "/";
                     job.source.elements.filesrc.property.location = Document.GstreamillConf.conf.transcoderoot + "/in/" + file;
                     if (encoders.length === 0) {
@@ -176,6 +161,7 @@
             });
         });
 
+        refresh_transcode_in_list ();
     });
 
     </script>
