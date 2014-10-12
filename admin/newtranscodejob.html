@@ -64,7 +64,7 @@
     function refresh_transcode_in_list () {
         $.get ("/media/transcodeinlist", function (list) {
             for (var i = 0, media; media = list[i]; i++) {
-                var li = '<li class=\"list-group-item\"><input type=\"checkbox\" id=\"mediacheckbox\" value=\"' + media + '\">' + media;
+                var li = '<li class=\"list-group-item\"><input type=\"checkbox\" id=\"mediacheckbox\" value=\"' + media + '\"> ' + media;
                 $('#transcodeinlist').append(li);
             }
         });
@@ -121,7 +121,6 @@
                     bootbox.alert ($.t ("newtranscodejob.Select Media Files Please"));
                     return;
                 }
-                console.log(file_list);
                 var result = "";
                 for (var i = 0; i < file_list.length; i++) {
                     var file = file_list[i].value;

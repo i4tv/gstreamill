@@ -162,6 +162,9 @@
   },
   "mediaman": {
     "Media Managment": "媒体管理",
-    "Media Upload": "媒体上载"
+    "Remove Media": "删除媒体",
+    "Media Download": "媒体下载",
+    "Media Upload": "媒体上载",
+    "Select Media Files Please": "请选择媒体文件"
   }
 }

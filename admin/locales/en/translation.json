@@ -162,6 +162,9 @@
   },
   "mediaman": {
     "Media Managment": "Media Managment",
-    "Media Upload": "Media Upload"
+    "Remove Media": "Remove Media",
+    "Media Download": "Media Download",
+    "Media Upload": "Media Upload",
+    "Select Media Files Please": "Select Media Files Please"
   }
 }

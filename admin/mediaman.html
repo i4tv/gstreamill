@@ -12,13 +12,15 @@
                     </table>
                     <h4>Transcode in</h4>
                     <hr>
-                    <ul class="transcodeinlist"></ul>
+                    <ul class="list-group" id="transcodeinlist"></ul>
                     <ul class="resumable-list"></ul>
                     <h4>Transcode out</h4>
                     <hr>
-                    <ul class="transcodeoutlist"></ul>
+                    <ul class="list-group" id="transcodeoutlist"></ul>
                     <hr>
-                    <button class="btn btn-primary pull-right mediaman" id="mediaupload"><span data-i18n="mediaman.Media Upload"></span></button>
+                    <button class="btn btn-primary mediaman" id="removemedia"><span data-i18n="mediaman.Remove Media"></span></button>
+                    <button class="btn btn-primary mediaman" id="mediadownload"><span data-i18n="mediaman.Media Download"></span></button>
+                    <button class="btn btn-primary mediaman" id="mediaupload"><span data-i18n="mediaman.Media Upload"></span></button>
                 </div>
             </div>
         </div>
@@ -26,10 +28,12 @@
 
     <script src="js/resumable.js"></script>
     <script>
+
     function refresh_transcode_in_list () {
         $.get ("/media/transcodeinlist", function (list) {
             for (var i = 0, media; media = list[i]; i++) {
-                $('.transcodeinlist').append('<li class="transcodeinlist-' + media + '">' + media);
+                var li = '<li class=\"list-group-item\"><input type=\"checkbox\" id=\"mediaincheckbox\" value=\"' + media + '\"> ' + media;
+                $('#transcodeinlist').append(li);
             }
         });
     }
@@ -38,7 +42,8 @@
         $.get ("/media/transcodeoutlist", function (obj) {
             for (name in obj) {
                 for (var i = 0, media; media = obj[name][i]; i++) {
-                    $('.transcodeoutlist').append('<li class="transcodeoutlist-' + name + "_" + media + '">' + name + "_" + media);
+                    var li = '<li class=\"list-group-item\"><input type=\"checkbox\" id=\"mediaoutcheckbox\" value=\"' + media + '\"> ' + media;
+                    $('.transcodeoutlist').append(li);
                 }
             }
         });
@@ -59,45 +64,64 @@
                 $(".nav").i18n ();
                 $(".mediaman").i18n ();
             });
+        });
 
-            var r = new Resumable({
-                target: '/media/upload',
-                forceChunkSize: true,
-                method: 'octet',
-                simultaneousUploads: 1
-            });
-     
-            r.assignBrowse($('#mediaupload'));
-     
-            // Handle file add event
-            r.on('fileAdded', function(file){
-                // Add the file to the list
-                $('.resumable-list').append('<li class="resumable-file-'+file.uniqueIdentifier+'">Uploading <span class="resumable-file-name"></span> <span class="resumable-file-progress"></span>');
-                $('.resumable-file-'+file.uniqueIdentifier+' .resumable-file-name').html(file.fileName);
-                // Actually start the upload
-                r.upload();
-            });
-     
-            r.on('complete', function(){
-                // Hide pause/resume when the upload has completed
-                $('.resumable-progress .progress-resume-link, .resumable-progress .progress-pause-link').hide();
-            });
-     
-            r.on('fileSuccess', function(file,message){
-                // Reflect that the file upload has completed
-                $('.resumable-file-'+file.uniqueIdentifier+' .resumable-file-progress').html('(completed)');
-            });
-     
-            r.on('fileError', function(file, message){
-                // Reflect that the file upload has resulted in error
-                $('.resumable-file-'+file.uniqueIdentifier+' .resumable-file-progress').html('(file could not be uploaded: '+message+')');
-            });
-     
-            r.on('fileProgress', function(file){
-                // Handle progress for both the file and the overall upload
-                $('.resumable-file-'+file.uniqueIdentifier+' .resumable-file-progress').html(Math.floor(file.progress()*100) + '%');
-                $('.progress-bar').css({width:Math.floor(r.progress()*100) + '%'});
-            });
+        // Remove Media
+        $("#removemedia").click (function () {
+            var mediain_list = $("#mediaincheckbox:checked"),
+                mediaout_list = $("#mediaoutcheckbox:checked");
+            if ((mediain_list.length === 0) && (mediaout_list.length === 0)) {
+                bootbox.alert ($.t ("mediaman.Select Media Files Please"));
+                return;
+            }
+            for (var i = 0; i < mediain_list.length; i++) {
+                var file = mediain_list[i].value;
+                $.get("/media/transcodeinrm/" + file, function (response) {
+                    console.log (response);
+                });
+            }
+            for (var i = 0; i < mediaout_list.length; i++) {
+                var file = mediaout_list[i].value;
+                $.get("/media/transcodeoutrm/" + file, function (response) {
+                });
+            }
+        });
+
+        // Media download
+        $("#mediadownload").click (function () {
+            var mediain_list = $("#mediaincheckbox:checked"),
+                mediaout_list = $("#mediaoutcheckbox:checked");
+            if ((mediain_list.length === 0) && (mediaout_list.length === 0)) {
+                bootbox.alert ($.t ("mediaman.Select Media Files Please"));
+                return;
+            }
+        });
+
+        // Media upload
+        var r = new Resumable({
+            target: '/media/upload',
+            forceChunkSize: true,
+            method: 'octet',
+            simultaneousUploads: 1
+        });
+        r.assignBrowse($('#mediaupload'));
+        r.on('fileAdded', function(file){
+            $('.resumable-list').append('<li class="resumable-file-'+file.uniqueIdentifier+'">Uploading <span class="resumable-file-name"></span> <span class="resumable-file-progress"></span>');
+            $('.resumable-file-'+file.uniqueIdentifier+' .resumable-file-name').html(file.fileName);
+            r.upload();
+        });
+        r.on('complete', function(){
+            $('.resumable-progress .progress-resume-link, .resumable-progress .progress-pause-link').hide();
+        });
+        r.on('fileSuccess', function(file,message){
+            $('.resumable-file-'+file.uniqueIdentifier+' .resumable-file-progress').html('(completed)');
+        });
+        r.on('fileError', function(file, message){
+            $('.resumable-file-'+file.uniqueIdentifier+' .resumable-file-progress').html('(file could not be uploaded: '+message+')');
+        });
+        r.on('fileProgress', function(file){
+            $('.resumable-file-'+file.uniqueIdentifier+' .resumable-file-progress').html(Math.floor(file.progress()*100) + '%');
+            $('.progress-bar').css({width:Math.floor(r.progress()*100) + '%'});
         });
 
         refresh_transcode_in_list ();

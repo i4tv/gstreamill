@@ -145,6 +145,7 @@ gchar * media_transcode_in_rm (gchar *media)
                 return g_strdup ("{\n    \"result\": \"success\"\n}");
 
         } else {
+                GST_ERROR ("rm %s failure: %s", media, g_strerror (errno));
                 return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reseon\": \"%s\"}", g_strerror (errno));
         }
 }
