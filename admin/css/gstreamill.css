@@ -35,6 +35,6 @@
     border: 0;
 }
 
-#transcodeinlist li {
+#transcodeinlist li, #transcodeoutlist li {
     border: 0px;
 }
