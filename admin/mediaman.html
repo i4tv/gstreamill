@@ -32,7 +32,7 @@
     function refresh_transcode_in_list () {
         $.get ("/media/transcodeinlist", function (list) {
             for (var i = 0, media; media = list[i]; i++) {
-                var li = '<li class=\"list-group-item\"><input type=\"checkbox\" id=\"mediaincheckbox\" value=\"' + media + '\"> ' + media;
+                var li = '<li class=\"list-group-item\" id=\"' + media + '\"><input type=\"checkbox\" id=\"mediaincheckbox\" value=\"' + media + '\"> ' + media;
                 $('#transcodeinlist').append(li);
             }
         });
@@ -42,7 +42,7 @@
         $.get ("/media/transcodeoutlist", function (obj) {
             for (name in obj) {
                 for (var i = 0, media; media = obj[name][i]; i++) {
-                    var li = '<li class=\"list-group-item\"><input type=\"checkbox\" id=\"mediaoutcheckbox\" value=\"' + name + '/' + media + '\"> ' + name + '/' + media;
+                    var li = '<li class=\"list-group-item\" id=\"' + name + '/' + media + '\"><input type=\"checkbox\" id=\"mediaoutcheckbox\" value=\"' + name + '/' + media + '\"> ' + name + '/' + media;
                     $('#transcodeoutlist').append(li);
                 }
             }
@@ -77,12 +77,13 @@
             for (var i = 0; i < mediain_list.length; i++) {
                 var file = mediain_list[i].value;
                 $.get("/media/transcodeinrm/" + file, function (response) {
-                    console.log (response);
+                    $("ul[id='transcodeinlist'] li[id='" + file + "']").remove ();
                 });
             }
             for (var i = 0; i < mediaout_list.length; i++) {
                 var file = mediaout_list[i].value;
                 $.get("/media/transcodeoutrm/" + file, function (response) {
+                    $("ul[id='transcodeoutlist'] li[id='" + file + "']").remove ();
                 });
             }
         });
