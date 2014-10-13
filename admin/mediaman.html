@@ -42,8 +42,8 @@
         $.get ("/media/transcodeoutlist", function (obj) {
             for (name in obj) {
                 for (var i = 0, media; media = obj[name][i]; i++) {
-                    var li = '<li class=\"list-group-item\"><input type=\"checkbox\" id=\"mediaoutcheckbox\" value=\"' + media + '\"> ' + media;
-                    $('.transcodeoutlist').append(li);
+                    var li = '<li class=\"list-group-item\"><input type=\"checkbox\" id=\"mediaoutcheckbox\" value=\"' + name + '/' + media + '\"> ' + name + '/' + media;
+                    $('#transcodeoutlist').append(li);
                 }
             }
         });
