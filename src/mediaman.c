@@ -102,7 +102,14 @@ static gchar * transcode_out_list (gchar *path)
                 g_free (p);
         }
         globfree (&pglob);
-        list[strlen (list) - 1] = ']';
+        if (strlen (list) == 1) {
+                p = list;
+                list = g_strdup_printf ("%s]", p);
+                g_free (p);
+
+        } else {
+                list[strlen (list) - 1] = ']';
+        }
 
         return list;
 }
