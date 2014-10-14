@@ -15,6 +15,8 @@
 #include "httpserver.h"
 
 typedef struct _HTTPMgmtPrivateData {
+        gint fd;
+        gchar *p;
         gchar *buf;
         gsize buf_size;
         gint64 send_position;

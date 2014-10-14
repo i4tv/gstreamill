@@ -12,6 +12,9 @@
 #include <stdlib.h>
 #include <augeas.h>
 
+#define __USE_GNU
+#include <sys/mman.h>
+
 #include "parson.h"
 #include "httpmgmt.h"
 #include "gstreamill.h"
@@ -909,6 +912,56 @@ static gchar * get_filename (gchar *parameters)
         return p;
 }
 
+static gsize media_download (HTTPMgmt *httpmgmt, RequestData *request_data, gchar **buf)
+{
+        gint fd;
+        struct stat st;
+        gsize buf_size;
+        gchar *p;
+
+        p = g_strdup_printf ("%s/%s", httpmgmt->gstreamill->media_dir, request_data->uri + 16);
+        GST_WARNING ("download %s", p);
+        fd = open (p, O_RDONLY);
+        g_free (p);
+        if (fd == -1) {
+                GST_ERROR ("open %s error: %s", p, g_strerror (errno));
+                p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"", g_strerror (errno));
+                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+                g_free (p);
+
+        } else {
+                if (fstat (fd, &st) == -1) {
+                        p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"", g_strerror (errno));
+                        *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+                        close (fd);
+                        g_free (p);
+
+                } else {
+                        gchar *p1, *p2;
+                        HTTPMgmtPrivateData *priv_data;
+
+                        p1 = mmap (NULL, st.st_size + sysconf (_SC_PAGE_SIZE), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+                        p2 = mmap (p1 + sysconf (_SC_PAGE_SIZE), st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+                        p = mremap (p2, st.st_size, st.st_size, MREMAP_MAYMOVE | MREMAP_FIXED, p1 + sysconf (_SC_PAGE_SIZE));
+                        p = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/octet-stream", st.st_size, NO_CACHE, "");
+                        memcpy (p1 + sysconf (_SC_PAGE_SIZE) - strlen (p), p, strlen (p));
+                        *buf = p1 + sysconf (_SC_PAGE_SIZE) - strlen (p);
+                        buf_size = strlen (p) + st.st_size;
+                        g_free (p);
+                        priv_data = (HTTPMgmtPrivateData *)g_malloc (sizeof (HTTPMgmtPrivateData));
+                        priv_data->buf = *buf;
+                        priv_data->buf_size = buf_size;
+                        priv_data->send_position = 0;
+                        priv_data->fd = fd;
+                        priv_data->p = p1;
+                        request_data->priv_data = priv_data;
+                        return buf_size;
+                }
+        }
+
+        return 0;
+}
+
 static gsize request_gstreamill_media (HTTPMgmt *httpmgmt, RequestData *request_data, gchar **buf)
 {
         gchar *path, *content, *p;
@@ -944,6 +997,13 @@ static gsize request_gstreamill_media (HTTPMgmt *httpmgmt, RequestData *request_
                         *buf = g_strdup_printf (http_204, PACKAGE_NAME, PACKAGE_VERSION);
                 }
                 g_free (path);
+
+        } else if ((request_data->method == HTTP_GET) && (g_str_has_prefix (request_data->uri, "/media/download"))) {
+                buf_size = media_download (httpmgmt, request_data, buf);
+                /* success? */
+                if (buf_size != 0) {
+                        return buf_size;
+                }
 
         } else if ((request_data->method == HTTP_GET) && (g_strcmp0 (request_data->uri, "/media/transcodeinlist") == 0)) {
                 path = g_strdup_printf ("%s/transcode/in", httpmgmt->gstreamill->media_dir);
@@ -986,6 +1046,20 @@ static gsize request_gstreamill_media (HTTPMgmt *httpmgmt, RequestData *request_
         return buf_size;
 }
 
+static free_priv_data (HTTPMgmtPrivateData *priv_data)
+{
+        if (priv_data->fd == -1) {
+                g_free (priv_data->buf);
+                g_free (priv_data);
+
+        } else {
+                close (priv_data->fd);
+                munmap (priv_data->p, priv_data->buf_size);
+                munmap (priv_data->p + sysconf (_SC_PAGE_SIZE), priv_data->buf_size - sysconf (_SC_PAGE_SIZE));
+                g_free (priv_data);
+        }
+}
+
 static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
 {
         RequestData *request_data = data;
@@ -1019,8 +1093,12 @@ static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
                 }
 
                 ret = write (request_data->sock, buf, buf_size);
+                /* send not completed or socket block? */
                 if (((ret > 0) && (ret != buf_size)) || ((ret == -1) && (errno == EAGAIN))) {
-                        /* send not completed or socket block, resend late */
+                        /* media download? */
+                        if (request_data->priv_data != NULL) {
+                                return ret > 0? 10 * GST_MSECOND + g_random_int_range (1, 1000000) : GST_CLOCK_TIME_NONE;
+                        }
                         priv_data = (HTTPMgmtPrivateData *)g_malloc (sizeof (HTTPMgmtPrivateData));
                         priv_data->buf = buf;
                         priv_data->buf_size = buf_size;
@@ -1032,7 +1110,13 @@ static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
                         GST_ERROR ("Write sock error: %s", g_strerror (errno));
                 }
                 /* send complete or socket error */
-                g_free (buf);
+                if (request_data->priv_data != NULL) {
+                        free_priv_data (request_data->priv_data);
+                        request_data->priv_data = NULL;
+
+                } else {
+                        g_free (buf);
+                }
                 return 0;
 
         case HTTP_CONTINUE:
@@ -1043,8 +1127,7 @@ static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
                         if ((ret == -1) && (errno != EAGAIN)) {
                                 GST_ERROR ("Write sock error: %s", g_strerror (errno));
                         }
-                        g_free (priv_data->buf);
-                        g_free (priv_data);
+                        free_priv_data (priv_data);
                         request_data->priv_data = NULL;
                         return 0;
 
