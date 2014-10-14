@@ -18,8 +18,6 @@
                     <hr>
                     <ul class="list-group" id="transcodeoutlist"></ul>
                     <hr>
-                    <button class="btn btn-primary mediaman" id="removemedia"><span data-i18n="mediaman.Remove Media"></span></button>
-                    <button class="btn btn-primary mediaman" id="mediadownload"><span data-i18n="mediaman.Media Download"></span></button>
                     <button class="btn btn-primary mediaman" id="mediaupload"><span data-i18n="mediaman.Media Upload"></span></button>
                 </div>
             </div>
@@ -32,7 +30,9 @@
     function refresh_transcode_in_list () {
         $.get ("/media/transcodeinlist", function (list) {
             for (var i = 0, media; media = list[i]; i++) {
-                var li = '<li class=\"list-group-item\" id=\"' + media + '\"><input type=\"checkbox\" id=\"mediaincheckbox\" value=\"' + media + '\"> ' + media;
+                var li = '<li class=\"list-group-item\" id=\"' + media + '\">' + media;
+                li += ' <a href="javascript:void(0)" onclick="remove_media(\'' + media + '\')"><span class="glyphicon glyphicon-trash"></span></a>'
+                li += ' <a href="/media/download/transcode/in/' + media + '"><span class="glyphicon glyphicon-save"></span></a>'
                 $('#transcodeinlist').append(li);
             }
         });
@@ -42,10 +42,18 @@
         $.get ("/media/transcodeoutlist", function (obj) {
             for (name in obj) {
                 for (var i = 0, media; media = obj[name][i]; i++) {
-                    var li = '<li class=\"list-group-item\" id=\"' + name + '/' + media + '\"><input type=\"checkbox\" id=\"mediaoutcheckbox\" value=\"' + name + '/' + media + '\"> ' + name + '/' + media;
+                    var li = '<li class=\"list-group-item\" id=\"' + name + '/' + media + '\">' + name + '/' + media;
+                    li += ' <a href="javascript:void(0)" onclick="remove_media(\'' + name + '/' + media + '\')"><span class="glyphicon glyphicon-trash"></span></a>'
+                    li += ' <a href="/media/download/transcode/out/' + name + '/' + media + '"><span class="glyphicon glyphicon-save"></span></a>'
                     $('#transcodeoutlist').append(li);
                 }
             }
+        });
+    }
+
+    function remove_media (media) {
+        $.get("/media/transcodeinrm/" + media, function (response) {
+            $("ul[id='transcodeinlist'] li[id='" + media + "']").remove ();
         });
     }
 
@@ -64,38 +72,6 @@
                 $(".nav").i18n ();
                 $(".mediaman").i18n ();
             });
-        });
-
-        // Remove Media
-        $("#removemedia").click (function () {
-            var mediain_list = $("#mediaincheckbox:checked"),
-                mediaout_list = $("#mediaoutcheckbox:checked");
-            if ((mediain_list.length === 0) && (mediaout_list.length === 0)) {
-                bootbox.alert ($.t ("mediaman.Select Media Files Please"));
-                return;
-            }
-            for (var i = 0; i < mediain_list.length; i++) {
-                var file = mediain_list[i].value;
-                $.get("/media/transcodeinrm/" + file, function (response) {
-                    $("ul[id='transcodeinlist'] li[id='" + file + "']").remove ();
-                });
-            }
-            for (var i = 0; i < mediaout_list.length; i++) {
-                var file = mediaout_list[i].value;
-                $.get("/media/transcodeoutrm/" + file, function (response) {
-                    $("ul[id='transcodeoutlist'] li[id='" + file + "']").remove ();
-                });
-            }
-        });
-
-        // Media download
-        $("#mediadownload").click (function () {
-            var mediain_list = $("#mediaincheckbox:checked"),
-                mediaout_list = $("#mediaoutcheckbox:checked");
-            if ((mediain_list.length === 0) && (mediaout_list.length === 0)) {
-                bootbox.alert ($.t ("mediaman.Select Media Files Please"));
-                return;
-            }
         });
 
         // Media upload
