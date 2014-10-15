@@ -928,38 +928,65 @@ static gsize media_download (HTTPMgmt *httpmgmt, RequestData *request_data, gcha
                 p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"", g_strerror (errno));
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
+                return 0;
+        }
+
+        if (fstat (fd, &st) == -1) {
+                GST_ERROR ("fstat error: %s", g_strerror (errno));
+                p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"", g_strerror (errno));
+                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+                close (fd);
+                g_free (p);
+                return 0;
 
         } else {
-                if (fstat (fd, &st) == -1) {
-                        p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"", g_strerror (errno));
+                gchar *p1, *p2;
+                HTTPMgmtPrivateData *priv_data;
+
+                p1 = mmap (NULL, st.st_size + sysconf (_SC_PAGE_SIZE), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+                if (p1 == MAP_FAILED) {
+                        GST_ERROR ("mmap anonymous error: %s", g_strerror (errno));
+                        p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"mmap anonymous %s\"", g_strerror (errno));
                         *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                         close (fd);
                         g_free (p);
-
-                } else {
-                        gchar *p1, *p2;
-                        HTTPMgmtPrivateData *priv_data;
-
-                        p1 = mmap (NULL, st.st_size + sysconf (_SC_PAGE_SIZE), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-                        p2 = mmap (p1 + sysconf (_SC_PAGE_SIZE), st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-                        p = mremap (p2, st.st_size, st.st_size, MREMAP_MAYMOVE | MREMAP_FIXED, p1 + sysconf (_SC_PAGE_SIZE));
-                        p = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/octet-stream", st.st_size, NO_CACHE, "");
-                        memcpy (p1 + sysconf (_SC_PAGE_SIZE) - strlen (p), p, strlen (p));
-                        *buf = p1 + sysconf (_SC_PAGE_SIZE) - strlen (p);
-                        buf_size = strlen (p) + st.st_size;
-                        g_free (p);
-                        priv_data = (HTTPMgmtPrivateData *)g_malloc (sizeof (HTTPMgmtPrivateData));
-                        priv_data->buf = *buf;
-                        priv_data->buf_size = buf_size;
-                        priv_data->send_position = 0;
-                        priv_data->fd = fd;
-                        priv_data->p = p1;
-                        request_data->priv_data = priv_data;
-                        return buf_size;
+                        return 0;
                 }
+                p2 = mmap (p1 + sysconf (_SC_PAGE_SIZE), st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+                if (p2 == MAP_FAILED) {
+                        GST_ERROR ("mmap file error: %s", g_strerror (errno));
+                        p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"mmap file %s\"", g_strerror (errno));
+                        *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+                        close (fd);
+                        g_free (p);
+                        munmap (p1, st.st_size + sysconf (_SC_PAGE_SIZE));
+                        return 0;
+                }
+                p = mremap (p2, st.st_size, st.st_size, MREMAP_MAYMOVE | MREMAP_FIXED, p1 + sysconf (_SC_PAGE_SIZE));
+                if (p == MAP_FAILED) {
+                        GST_ERROR ("mremap file error: %s", g_strerror (errno));
+                        p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"mremap file %s\"", g_strerror (errno));
+                        *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+                        close (fd);
+                        g_free (p);
+                        munmap (p1, st.st_size + sysconf (_SC_PAGE_SIZE));
+                        munmap (p2, st.st_size);
+                        return 0;
+                }
+                p = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/octet-stream", st.st_size, NO_CACHE, "");
+                memcpy (p1 + sysconf (_SC_PAGE_SIZE) - strlen (p), p, strlen (p));
+                *buf = p1 + sysconf (_SC_PAGE_SIZE) - strlen (p);
+                buf_size = strlen (p) + st.st_size;
+                g_free (p);
+                priv_data = (HTTPMgmtPrivateData *)g_malloc (sizeof (HTTPMgmtPrivateData));
+                priv_data->buf = *buf;
+                priv_data->buf_size = buf_size;
+                priv_data->send_position = 0;
+                priv_data->fd = fd;
+                priv_data->p = p1;
+                request_data->priv_data = priv_data;
+                return buf_size;
         }
-
-        return 0;
 }
 
 static gsize request_gstreamill_media (HTTPMgmt *httpmgmt, RequestData *request_data, gchar **buf)
