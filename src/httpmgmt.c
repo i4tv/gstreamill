@@ -1124,6 +1124,8 @@ static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
                 if (((ret > 0) && (ret != buf_size)) || ((ret == -1) && (errno == EAGAIN))) {
                         /* media download? */
                         if (request_data->priv_data != NULL) {
+                                priv_data = request_data->priv_data;
+                                priv_data->send_position += ret;
                                 return ret > 0? 10 * GST_MSECOND + g_random_int_range (1, 1000000) : GST_CLOCK_TIME_NONE;
                         }
                         priv_data = (HTTPMgmtPrivateData *)g_malloc (sizeof (HTTPMgmtPrivateData));
