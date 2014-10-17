@@ -146,23 +146,13 @@ gchar * media_transcode_out_list (gchar *path)
         return list;
 }
 
-gchar * media_transcode_in_rm (gchar *media)
+gchar * media_transcode_rm (gchar *media)
 {
         if (g_remove (media) == 0) {
                 return g_strdup ("{\n    \"result\": \"success\"\n}");
 
         } else {
                 GST_ERROR ("rm %s failure: %s", media, g_strerror (errno));
-                return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reseon\": \"%s\"}", g_strerror (errno));
-        }
-}
-
-gchar * media_transcode_out_rm (gchar *media)
-{
-        if (g_remove (media) == 0) {
-                return g_strdup ("{\n    \"result\": \"success\"\n}");
-
-        } else {
                 return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reseon\": \"%s\"}", g_strerror (errno));
         }
 }

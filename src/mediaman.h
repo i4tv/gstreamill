@@ -15,7 +15,6 @@ gssize media_size (gchar *path);
 gssize media_md5sum (gchar *path);
 gchar * media_transcode_in_list (gchar *path);
 gchar * media_transcode_out_list (gchar *path);
-gchar * media_transcode_in_rm (gchar *media);
-gchar * media_transcode_out_rm (gchar *media);
+gchar * media_transcode_rm (gchar *media);
 
 #endif /* __MEDIAMAN_H__ */

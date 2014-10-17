@@ -1039,17 +1039,10 @@ static gsize request_gstreamill_media (HTTPMgmt *httpmgmt, RequestData *request_
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
-        } else if ((request_data->method == HTTP_GET) && (g_str_has_prefix (request_data->uri, "/media/transcodeinrm/"))) {
-                p = request_data->uri + 21;
-                path = g_strdup_printf ("%s/transcode/in/%s", httpmgmt->gstreamill->media_dir, p);
-                p = media_transcode_in_rm (path);
-                g_free (path);
-                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
-
-        } else if ((request_data->method == HTTP_GET) && (g_str_has_prefix (request_data->uri, "/media/transcodeoutrm/"))) {
-                p = request_data->uri + 22;
-                path = g_strdup_printf ("%s/transcode/out/%s", httpmgmt->gstreamill->media_dir, p);
-                p = media_transcode_in_rm (path);
+        } else if ((request_data->method == HTTP_GET) && (g_str_has_prefix (request_data->uri, "/media/rm/transcode/"))) {
+                p = request_data->uri + 20;
+                path = g_strdup_printf ("%s/transcode/%s", httpmgmt->gstreamill->media_dir, p);
+                p = media_transcode_rm (path);
                 g_free (path);
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
 

@@ -30,8 +30,8 @@
     function refresh_transcode_in_list () {
         $.get ("/media/transcodeinlist", function (list) {
             for (var i = 0, media; media = list[i]; i++) {
-                var li = '<li class=\"list-group-item\" id=\"' + media + '\">' + media;
-                li += ' <a href="javascript:void(0)" onclick="remove_media(\'' + media + '\')"><span class="glyphicon glyphicon-trash"></span></a>'
+                var li = '<li class=\"list-group-item\" id=\"in/' + media + '\">' + media;
+                li += ' <a href="javascript:void(0)" onclick="remove_media(\'in/' + media + '\')"><span class="glyphicon glyphicon-trash"></span></a>'
                 li += ' <a href="/media/download/transcode/in/' + media + '"><span class="glyphicon glyphicon-save"></span></a>'
                 $('#transcodeinlist').append(li);
             }
@@ -42,8 +42,8 @@
         $.get ("/media/transcodeoutlist", function (obj) {
             for (name in obj) {
                 for (var i = 0, media; media = obj[name][i]; i++) {
-                    var li = '<li class=\"list-group-item\" id=\"' + name + '/' + media + '\">' + name + '/' + media;
-                    li += ' <a href="javascript:void(0)" onclick="remove_media(\'' + name + '/' + media + '\')"><span class="glyphicon glyphicon-trash"></span></a>'
+                    var li = '<li class=\"list-group-item\" id=\"out/' + name + '/' + media + '\">' + name + '/' + media;
+                    li += ' <a href="javascript:void(0)" onclick="remove_media(\'out/' + name + '/' + media + '\')"><span class="glyphicon glyphicon-trash"></span></a>'
                     li += ' <a href="/media/download/transcode/out/' + name + '/' + media + '"><span class="glyphicon glyphicon-save"></span></a>'
                     $('#transcodeoutlist').append(li);
                 }
@@ -52,8 +52,8 @@
     }
 
     function remove_media (media) {
-        $.get("/media/transcodeinrm/" + media, function (response) {
-            $("ul[id='transcodeinlist'] li[id='" + media + "']").remove ();
+        $.get("/media/rm/transcode/" + media, function (response) {
+            $("li[id='" + media + "']").remove ();
         });
     }
 
