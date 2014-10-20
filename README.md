@@ -74,6 +74,10 @@ gstreamill have been tested in ubuntu 14.04.
     make
     make install
 
+## dist package
+
+    ./make dist
+
 # USING GSTREAMILL
 
 ## Prerequisites
