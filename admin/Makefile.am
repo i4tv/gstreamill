@@ -66,3 +66,5 @@ localesen_DATA = \
 localeszh_CNdir = $(datadir)/gstreamill/admin/locales/zh_CN
 localeszh_CN_DATA = \
         locales/zh_CN/translation.json
+
+EXTRA_DIST = footer.html header.html index.html jobmanage.html newlivejob.html system.html gstreamill.html joblist.html jobstatus.html mediaman.html newtranscodejob.html setnetwork.html css js schemas fonts img locales
