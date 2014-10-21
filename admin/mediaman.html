@@ -35,6 +35,7 @@
                 li += ' <a href="/media/download/transcode/in/' + media + '"><span class="glyphicon glyphicon-save"></span></a>'
                 $('#transcodeinlist').append(li);
             }
+            $("#transcodeinlist li:odd").css ("background", "Lavender");
         });
     }
 
@@ -48,12 +49,17 @@
                     $('#transcodeoutlist').append(li);
                 }
             }
+            $("#transcodeoutlist li:odd").css ("background", "Lavender");
         });
     }
 
     function remove_media (media) {
         $.get("/media/rm/transcode/" + media, function (response) {
             $("li[id='" + media + "']").remove ();
+            $("#transcodeinlist li:even").css ("background", "White");
+            $("#transcodeinlist li:odd").css ("background", "Lavender");
+            $("#transcodeoutlist li:even").css ("background", "White");
+            $("#transcodeoutlist li:odd").css ("background", "Lavender");
         });
     }
 
