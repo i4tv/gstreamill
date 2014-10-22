@@ -8,5 +8,4 @@ gstreamill_CPPFLAGS = -DDATADIR='"$(datadir)"'
 
 gstreamill_SOURCES = utils.c main.c gstreamill.c httpserver.c source.c encoder.c job.c log.c httpstreaming.c httpmgmt.c mediaman.c parson.c jobdesc.c m3u8playlist.c
 
-EXTRA_DIST = encoder.h gstreamill.h httpmgmt.h httpserver.h httpstreaming.h jobdesc.h job.h log.h m3u8playlist.h mediaman.h parson.h source.h utils.h
-
+include_HEADERS = encoder.h gstreamill.h httpmgmt.h httpserver.h httpstreaming.h jobdesc.h job.h log.h m3u8playlist.h mediaman.h parson.h source.h utils.h
