@@ -620,10 +620,11 @@ void job_reset (Job *job)
                                 }
                         }
                         attr.mq_flags = 0;
-                        attr.mq_maxmsg = 32;
+                        attr.mq_maxmsg = 10;
                         attr.mq_msgsize = 128;
                         attr.mq_curmsgs = 0;
-                        if ((encoder->mqdes = mq_open (name, O_RDONLY | O_CREAT | O_NONBLOCK, 0666, &attr)) == -1) {
+                        encoder->mqdes = mq_open (name, O_RDONLY | O_CREAT | O_NONBLOCK, 0666, &attr);
+                        if (encoder->mqdes == -1) {
                                 GST_ERROR ("mq_open error : %s", g_strerror (errno));
                         }
                         sev.sigev_notify = SIGEV_THREAD;

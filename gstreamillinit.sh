@@ -21,3 +21,8 @@ chmod -R g+w /etc/gstreamill.d
 mkdir -p /usr/local/share/gstreamill
 chown -R root:gstreamill /usr/local/share/gstreamill
 chmod -R g+r /usr/local/share/gstreamill
+
+# /var/run/gstreamill, pid file directory
+mkdir -p /var/run/gstreamill
+chown -R root:gstreamill /var/run/gstreamill
+chmod -R g+w /var/run/gstreamill

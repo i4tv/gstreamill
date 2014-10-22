@@ -165,7 +165,6 @@ gint log_set_log_handler (Log *log)
         }
         log->func = log_func;
         log->log_hd = fopen (log->log_path, "ae");
-        setvbuf(log->log_hd, NULL, _IOLBF, 0);
         if (log->log_hd == NULL) {
                 GST_ERROR ("Error open log file %s, %s.", log->log_path, g_strerror (errno));
                 return -1;
@@ -174,6 +173,7 @@ gint log_set_log_handler (Log *log)
                 gst_debug_add_log_function (log_func, &(log->log_hd), NULL);
                 return 0;
         }
+        setvbuf (log->log_hd, NULL, _IOLBF, 0);
 
         g_free (dir);
 }

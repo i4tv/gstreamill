@@ -18,6 +18,8 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <locale.h>
+#include <pwd.h>
+#include <grp.h>
 
 #include "gstreamill.h"
 #include "httpstreaming.h"
@@ -26,7 +28,9 @@
 #include "jobdesc.h"
 #include "log.h"
 
-#define PID_FILE "/var/run/gstreamill.pid"
+#define GSTREAMILL_USER "gstreamill"
+#define GSTREAMILL_GROUP "gstreamill"
+#define PID_FILE "/var/run/gstreamill/pid"
 
 GST_DEBUG_CATEGORY(GSTREAMILL);
 #define GST_CAT_DEFAULT GSTREAMILL
@@ -62,6 +66,46 @@ static void print_version_info ()
         g_print ("gstreamill version: %s\n", VERSION);
         g_print ("gstreamill build: %s %s\n", __DATE__, __TIME__);
         g_print ("gstreamer version : %d.%d.%d %s\n", major, minor, micro, nano_str);
+}
+
+static gint set_user_and_group ()
+{
+        struct passwd *pwd;
+        struct group *grp;
+
+        /* set group id */
+        errno = 0;
+        grp = getgrnam (GSTREAMILL_GROUP);
+        if ((grp == NULL) && (errno == -1)) {
+                perror ("getgrnam failed");
+                return 4;
+
+        } else if (grp == NULL) {
+                g_print ("getgrnam(\"%s\") failed\n", GSTREAMILL_GROUP);
+                return 5;
+        }
+        if (setgid (grp->gr_gid) == -1) {
+                perror ("setuid failure");
+                return 6;
+        }
+
+        /* set user id */
+        errno = 0;
+        pwd = getpwnam (GSTREAMILL_USER);
+        if ((pwd == NULL) && (errno == -1)) {
+                perror ("getpwnam failed");
+                return 1;
+
+        } else if (pwd == NULL) {
+                g_print ("getpwnam(\"%s\") failed\n", GSTREAMILL_USER);
+                return 2;
+        }
+        if (setuid (pwd->pw_uid) == -1) {
+                perror ("setuid failure");
+                return 3;
+        }
+
+        return 0;
 }
 
 static gint init_log (gchar *log_path)
@@ -106,9 +150,15 @@ static GOptionEntry options[] = {
 static gint create_pid_file ()
 {
         gchar *pid;
+        GError *err = NULL;
 
         pid = g_strdup_printf ("%d", getpid ());
-        g_file_set_contents (PID_FILE, pid, strlen (pid), NULL);
+        if (!g_file_set_contents (PID_FILE, pid, strlen (pid), &err)) {
+                g_printf ("write pid %s failure: %s\n", PID_FILE, err->message);
+                g_error_free (err);
+                g_free (pid);
+                return 1;
+        }
         g_free (pid);
 
         return 0;
@@ -156,8 +206,8 @@ int main (int argc, char *argv[])
                 exit (0);
         }
 
-        if (getuid () != 0) {
-                g_print ("must be root user to run gstreamill\n");
+        if (set_user_and_group () != 0) {
+                g_print ("set user and group failure\n");
                 exit (2);
         }
 
@@ -307,20 +357,21 @@ int main (int argc, char *argv[])
                         exit (1);
                 }
 
+                /* create pid file */
+                if (create_pid_file () != 0) {
+                        exit (1);
+                }
+
                 /* daemonize */
                 if (daemon (0, 0) != 0) {
                         g_print ("Failed to daemonize");
+                        remove_pid_file ();
                         exit (1);
                 }
 
                 /* customize signal */
                 signal (SIGUSR1, sighandler);
                 signal (SIGUSR2, stop_gstreamill);
-
-                /* create pid file */
-                if (create_pid_file () != 0) {
-                        exit (1);
-                }
         }
 
         /* ignore SIGPIPE */
