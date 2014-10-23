@@ -154,7 +154,7 @@ static gint create_pid_file ()
 
         pid = g_strdup_printf ("%d", getpid ());
         if (!g_file_set_contents (PID_FILE, pid, strlen (pid), &err)) {
-                g_printf ("write pid %s failure: %s\n", PID_FILE, err->message);
+                GST_ERROR ("write pid %s failure: %s\n", PID_FILE, err->message);
                 g_error_free (err);
                 g_free (pid);
                 return 1;
@@ -357,15 +357,15 @@ int main (int argc, char *argv[])
                         exit (1);
                 }
 
-                /* create pid file */
-                if (create_pid_file () != 0) {
-                        exit (1);
-                }
-
                 /* daemonize */
                 if (daemon (0, 0) != 0) {
                         g_print ("Failed to daemonize");
                         remove_pid_file ();
+                        exit (1);
+                }
+
+                /* create pid file */
+                if (create_pid_file () != 0) {
                         exit (1);
                 }
 
