@@ -688,7 +688,7 @@ static guint64 create_job_process (Job *job)
 
         memset (path, '\0', sizeof (path));
         if (readlink ("/proc/self/exe", path, sizeof (path)) == -1) {
-                GST_ERROR ("Read /proc/self/exe error.");
+                GST_ERROR ("Read /proc/self/exe error: %s", g_strerror (errno));
                 return GST_STATE_NULL;
         }
         i = 0;
