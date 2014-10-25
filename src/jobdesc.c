@@ -77,7 +77,7 @@ gint jobdesc_streams_count (gchar *job, gchar *pipeline)
         JSON_Array *array;
         gsize size, i;
         gint count, index;
-        gchar *bin, *ptype;
+        gchar *bin, *ptype = NULL;
 
         val = json_parse_string_with_comments (job);
         obj = json_value_get_object (val);
@@ -258,8 +258,8 @@ gchar * jobdesc_element_property_value (gchar *job, gchar *property)
         JSON_Object *obj;
         JSON_Array *array;
         JSON_Value_Type type;
-        JSON_Value *value;
-        gchar *p;
+        JSON_Value *value = NULL;
+        gchar *p = NULL;
         gint64 i;
         gdouble n;
         gint index;

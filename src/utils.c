@@ -14,10 +14,14 @@
 
 gchar * unicode_file_name_2_shm_name (gchar *filename)
 {
+        const guchar *data;
+        gsize len;
         gchar *shm_name;
         gint i;
 
-        shm_name = g_base64_encode (filename, strlen (filename));
+        data = (guchar *)filename;
+        len = strlen (filename);
+        shm_name = g_base64_encode (data, len);
         for (i = 0; i < strlen (shm_name); i++) {
                 if (shm_name[i] == '+') {
                         shm_name[i] = '=';

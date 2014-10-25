@@ -5,8 +5,12 @@
  *
  */
 
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <glob.h>
+#include <glib.h>
+#include <glib/gstdio.h>
 #include <gst/gst.h>
 #include <string.h>
 #include <stdlib.h>
@@ -16,6 +20,7 @@
 #include <sys/mman.h>
 
 #include "parson.h"
+#include "jobdesc.h"
 #include "httpmgmt.h"
 #include "gstreamill.h"
 #include "mediaman.h"
@@ -341,7 +346,7 @@ static gchar * set_network_interfaces (RequestData *request_data)
         JSON_Value *val;
         JSON_Array *array;
         JSON_Object *obj;
-        gint if_count, i, ret;
+        gint if_count, i;
 
         aug = aug_init (NULL, NULL, AUG_NONE | AUG_NO_ERR_CLOSE | AUG_NO_MODL_AUTOLOAD);
         aug_set (aug, "/augeas/load/Interfaces/lens", "Interfaces.lns");
@@ -376,7 +381,7 @@ static gchar * set_network_interfaces (RequestData *request_data)
                 value = (gchar *)json_object_get_string (obj, "address");
                 if (value != NULL) {
                         path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/address", name);
-                        ret = aug_set (aug, path, value);
+                        aug_set (aug, path, value);
                         g_free (path);
                 }
                 value = (gchar *)json_object_get_string (obj, "netmask");
@@ -421,7 +426,7 @@ static gchar * set_network_interfaces (RequestData *request_data)
 static gchar * network_interfaces ()
 {
         augeas *aug;
-        gchar *value = NULL, **if_match, **option_match, *path, *result, *p, option[128];
+        gchar *value = NULL, **if_match, **option_match, *result, *p, option[128];
         gint if_number, option_number, i, j;
 
         aug = aug_init (NULL, NULL, AUG_NONE | AUG_NO_ERR_CLOSE | AUG_NO_MODL_AUTOLOAD);
@@ -508,7 +513,7 @@ static gchar * list_files (gchar *pattern, gchar *format)
 {
         glob_t pglob;
         gint i;
-        gchar *devices, *p;
+        gchar *devices = NULL, *p = NULL;
 
         p = g_strdup ("[");
         if (glob (pattern, 0, NULL, &pglob) == 0) {
@@ -692,7 +697,7 @@ static gchar * rm_job (gchar *uri)
 
 static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_data, gchar **buf)
 {
-        gchar *path, *http_header, *p;
+        gchar *path, *http_header, *p = NULL;
         gsize buf_size;
         GError *err = NULL;
 
@@ -873,27 +878,6 @@ static gsize get_chunksize (gchar *parameters)
         return size;
 }
 
-static gsize get_totalsize (gchar *parameters)
-{
-        gchar **pp1, **pp2, *p;
-        gsize size;
-
-        pp1 = pp2 = g_strsplit (parameters, "&", 0);
-        p = NULL;
-        while (*pp1 != NULL) {
-                if (g_str_has_prefix (*pp1, "resumableTotalSize")) {
-                        p = g_strdup (&((*pp1)[19]));
-                        break;
-                }
-                pp1++;
-        }
-        g_strfreev (pp2);
-        size = atoi (p);
-        g_free (p);
-
-        return size;
-}
-
 static gchar * get_filename (gchar *parameters)
 {
         gchar **pp1, **pp2, *p;
@@ -993,7 +977,6 @@ static gsize request_gstreamill_media (HTTPMgmt *httpmgmt, RequestData *request_
 {
         gchar *path, *content, *p;
         gsize buf_size, content_size;
-        gint i;
 
         if ((request_data->method == HTTP_POST) && (g_str_has_prefix (request_data->uri, "/media/upload"))) {
                 p = get_filename (request_data->parameters);
@@ -1066,7 +1049,7 @@ static gsize request_gstreamill_media (HTTPMgmt *httpmgmt, RequestData *request_
         return buf_size;
 }
 
-static free_priv_data (HTTPMgmtPrivateData *priv_data)
+static void free_priv_data (HTTPMgmtPrivateData *priv_data)
 {
         if (priv_data->fd == -1) {
                 g_free (priv_data->buf);

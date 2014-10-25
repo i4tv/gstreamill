@@ -4,6 +4,7 @@
  *  Copyright (C) Zhang Ping <zhangping@163.com>
  */
 
+#include <stdlib.h>
 #include <string.h>
 #include <gst/gst.h>
 #include <gst/app/gstappsrc.h>
@@ -728,13 +729,13 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
                         value = jobdesc_element_property_value (job, p);
                         g_free (p);
                         if (value == NULL) {
-                                return;
+                                return 1;
                         }
                         p = g_path_get_dirname (value);
                         g_free (value);
                         if (g_strcmp0 (p, ".") == 0) {
                                 g_free (p);
-                                return;
+                                return 1;
                         }
                         if (g_mkdir_with_parents (p, 0755) != 0) {
                                 GST_ERROR ("Can't open or create directory: %s.", p);

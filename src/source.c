@@ -588,7 +588,7 @@ static gchar * get_bin_name (gchar *bin)
 
 GSList * bins_parse (gchar *job, gchar *pipeline)
 {
-        GstElement *element, *src;
+        GstElement *element = NULL, *src;
         gchar *p, *p1, *src_name, *src_pad_name, **pp, **pp1, **bins, **binsp;
         Bin *bin;
         Link *link;

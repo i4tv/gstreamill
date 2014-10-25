@@ -8,6 +8,8 @@
 #include <string.h>
 #include <glob.h>
 #include <dirent.h>
+#include <glib.h>
+#include <glib/gstdio.h>
 #include <gio/gio.h>
 #include <gst/gst.h>
 
@@ -33,6 +35,8 @@ gboolean media_append (gchar *path, gchar *buf, gssize size)
         }
         g_object_unref (out);
         g_object_unref (gfile);
+
+        return TRUE;
 }
 
 gssize media_size (gchar *path)
@@ -81,7 +85,7 @@ static gchar * transcode_out_list (gchar *path)
 {
         gchar *pattern, *list, *p, *file;
         glob_t pglob;
-        gint i, n;
+        gint i;
 
         pattern = g_strdup_printf ("%s/*", path);
         glob (pattern, 0, NULL, &pglob);
@@ -117,7 +121,7 @@ static gchar * transcode_out_list (gchar *path)
 gchar * media_transcode_out_list (gchar *path)
 {
         struct dirent **outdirlist;
-        gchar *pattern, *list, *p1, *p2;
+        gchar *list, *p1, *p2;
         gint n;
 
         n = scandir (path, &outdirlist, NULL, alphasort);

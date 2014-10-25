@@ -12,6 +12,8 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <string.h>
+#include <glib.h>
+#include <glib/gstdio.h>
 
 #include "utils.h"
 #include "jobdesc.h"
@@ -487,7 +489,7 @@ static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime dura
 
         } else {
                 gint n;
-                guint8 *p;
+                gchar *p;
 
                 n = encoder_output->cache_size - rap_addr - 12;
                 p = buf;
@@ -520,7 +522,6 @@ static void notify_function (union sigval sv)
         GstClockTime segment_duration;
         gsize size;
         gchar *url, buf[128];
-        GError *err = NULL;
 
         encoder_output = (EncoderOutput *)sv.sival_ptr;
 

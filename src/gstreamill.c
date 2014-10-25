@@ -418,7 +418,7 @@ static void sync_check (Gstreamill *gstreamill, Job *job)
 {
         gint j;
         GstClockTimeDiff time_diff;
-        GstClockTime now, min, max;
+        GstClockTime min, max;
 
         min = GST_CLOCK_TIME_NONE;
         max = 0;
@@ -1152,7 +1152,7 @@ static gchar * source_streams_stat (Job *job)
         GstDateTime *time;
         gint i;
         guint64 timestamp;
-        gchar *source_streams, *p1, *p2, *heartbeat;
+        gchar *source_streams = NULL, *p1, *p2, *heartbeat;
         gchar *template_source_stream = "            {\n"
                                         "                \"name\": \"%s\",\n"
                                         "                \"timestamp\": %lu,\n"
@@ -1196,7 +1196,7 @@ static gchar * encoder_stat (EncoderOutput *encoder, guint64 jobstate)
         gint i;
         GstDateTime *time;
         guint64 timestamp;
-        gchar *encoder_stat, *encoder_streams, *p1, *p2, *heartbeat;
+        gchar *encoder_stat, *encoder_streams = NULL, *p1, *p2, *heartbeat;
         gchar *template_encoder_stream = "                {\n"
                                          "                    \"name\": \"%s\",\n"
                                          "                    \"timestamp\": %lu,\n"
@@ -1335,7 +1335,7 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
                           "%s\n"
                           "    ]\n"
                           "}\n";
-        gchar *stat, *name, *source_streams, *encoders, *p;
+        gchar *stat, *name = NULL, *source_streams = NULL, *encoders, *p;
         Job *job;
         GRegex *regex = NULL;
         GMatchInfo *match_info = NULL;

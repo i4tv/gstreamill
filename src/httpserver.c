@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <ctype.h>
 #include <fcntl.h>
 #include <netinet/tcp.h>
 #include <gst/gst.h>
@@ -566,6 +567,8 @@ static gchar * epoll_event_string (struct epoll_event event)
         if (event.events & EPOLLRDHUP) {
                 return "EPOLLRDHUP";
         }
+
+        return NULL;
 }
 
 static gint socket_prepare (HTTPServer *http_server)
@@ -688,6 +691,8 @@ static gpointer listen_thread (gpointer data)
                         GST_DEBUG ("event on sock %d events %s", request_data->sock, epoll_event_string (event_list[i]));
                 }
         }
+
+        return NULL;
 }
 
 typedef struct _ForeachFuncData {
@@ -755,6 +760,8 @@ static gpointer idle_thread (gpointer data)
                 }
                 g_mutex_unlock (&(http_server->idle_queue_mutex));
         }
+
+        return NULL;
 }
 
 static void block_queue_foreach_func (gpointer data, gpointer user_data)
@@ -788,6 +795,8 @@ static gpointer block_thread (gpointer data)
                 g_queue_foreach (http_server->block_queue, block_queue_foreach_func, http_server);
                 g_mutex_unlock (&(http_server->block_queue_mutex));
         }
+
+        return NULL;
 }
 
 static void invoke_user_callback (HTTPServer *http_server, RequestData **request_data_pointer)

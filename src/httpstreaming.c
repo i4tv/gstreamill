@@ -361,7 +361,7 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
         return buf_size;
 }
 
-static is_http_progress_play_url (RequestData *request_data)
+static gboolean is_http_progress_play_url (RequestData *request_data)
 {
         GRegex *regex = NULL;
         GMatchInfo *match_info = NULL;
@@ -492,7 +492,7 @@ static guint64 get_gint64_parameter (gchar *parameters, gchar *parameter)
 
 static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encoder_output)
 {
-        gchar *m3u8playlist;
+        gchar *m3u8playlist = NULL;
 
         /* live */
         if (g_str_has_prefix (request_data->uri, "/live/")) {
@@ -524,7 +524,7 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
         EncoderOutput *encoder_output;
         GstClock *system_clock = httpstreaming->httpserver->system_clock;
         HTTPStreamingPrivateData *priv_data;
-        gchar *buf;
+        gchar *buf = NULL;
         gsize buf_size;
         gint ret;
         gboolean is_http_progress_play_request = FALSE;
@@ -679,11 +679,6 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
 {
         RequestData *request_data = data;
         HTTPStreaming *httpstreaming = (HTTPStreaming *)user_data;
-        gchar *buf;
-        EncoderOutput *encoder_output;
-        HTTPStreamingPrivateData *priv_data;
-        GstClock *system_clock = httpstreaming->httpserver->system_clock;
-        gint ret;
 
         switch (request_data->status) {
         case HTTP_REQUEST:
