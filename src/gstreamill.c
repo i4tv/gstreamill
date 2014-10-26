@@ -25,6 +25,7 @@ GST_DEBUG_CATEGORY_EXTERN (GSTREAMILL);
 enum {
         GSTREAMILL_PROP_0,
         GSTREAMILL_PROP_LOGDIR,
+        GSTREAMILL_PROP_EXEPATH,
         GSTREAMILL_PROP_MEDIADIR,
         GSTREAMILL_PROP_DAEMON,
 };
@@ -72,6 +73,15 @@ static void gstreamill_class_init (GstreamillClass *gstreamillclass)
                 G_PARAM_WRITABLE | G_PARAM_READABLE
         );
         g_object_class_install_property (g_object_class, GSTREAMILL_PROP_MEDIADIR, param);
+
+        param = g_param_spec_string (
+                "exe_path",
+                "exe_path",
+                "exe path",
+                NULL,
+                G_PARAM_WRITABLE | G_PARAM_READABLE
+        );
+        g_object_class_install_property (g_object_class, GSTREAMILL_PROP_EXEPATH, param);
 }
 
 static void gstreamill_init (Gstreamill *gstreamill)
@@ -116,6 +126,10 @@ static void gstreamill_set_property (GObject *obj, guint prop_id, const GValue *
                 GSTREAMILL (obj)->media_dir = (gchar *)g_value_dup_string (value);
                 break;
 
+        case GSTREAMILL_PROP_EXEPATH:
+                GSTREAMILL (obj)->exe_path = (gchar *)g_value_dup_string (value);
+                break;
+
         default:
                 G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
                 break;
@@ -139,6 +153,10 @@ static void gstreamill_get_property (GObject *obj, guint prop_id, GValue *value,
                 g_value_set_string (value, gstreamill->media_dir);
                 break;
 
+        case GSTREAMILL_PROP_EXEPATH:
+                g_value_set_string (value, gstreamill->exe_path);
+                break;
+
         default:
                 G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
                 break;
@@ -158,6 +176,11 @@ static void gstreamill_dispose (GObject *obj)
         if (gstreamill->media_dir != NULL) {
                 g_free (gstreamill->media_dir);
                 gstreamill->media_dir = NULL;
+        }
+
+        if (gstreamill->exe_path != NULL) {
+                g_free (gstreamill->exe_path);
+                gstreamill->exe_path = NULL;
         }
 
         G_OBJECT_CLASS (parent_class)->dispose (obj);
@@ -682,17 +705,12 @@ static void child_watch_cb (GPid pid, gint status, Job *job);
 static guint64 create_job_process (Job *job)
 {
         GError *error = NULL;
-        gchar *argv[16], path[512], *p;
+        gchar *argv[16], *p;
         GPid pid;
         gint i, j;
 
-        memset (path, '\0', sizeof (path));
-        if (readlink ("/proc/self/exe", path, sizeof (path)) == -1) {
-                GST_ERROR ("Read /proc/self/exe error: %s", g_strerror (errno));
-                return GST_STATE_NULL;
-        }
         i = 0;
-        argv[i++] = g_strdup (path);
+        argv[i++] = g_strdup (job->exe_path);
         argv[i++] = g_strdup ("-l");
         argv[i++] = g_strdup (job->log_dir);
         argv[i++] = g_strdup ("-n");
@@ -850,7 +868,7 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
                 g_free (name);
                 return p;
         }
-        job = job_new ("job", job_desc, "name", name, NULL);
+        job = job_new ("job", job_desc, "name", name, "exe_path", gstreamill->exe_path, NULL);
         g_free (name);
 
         /* job initialize */

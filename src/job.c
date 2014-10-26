@@ -26,6 +26,7 @@ enum {
         JOB_PROP_0,
         JOB_PROP_NAME,
         JOB_PROP_DESCRIPTION,
+        JOB_PROP_EXEPATH,
 };
 
 static void job_set_property (GObject *obj, guint prop_id, const GValue *value, GParamSpec *pspec);
@@ -60,6 +61,15 @@ static void job_class_init (JobClass *jobclass)
                 G_PARAM_WRITABLE | G_PARAM_READABLE
         );
         g_object_class_install_property (g_object_class, JOB_PROP_DESCRIPTION, param);
+
+        param = g_param_spec_string (
+                "exe_path",
+                "exe_path",
+                "exe path",
+                NULL,
+                G_PARAM_WRITABLE | G_PARAM_READABLE
+        );
+        g_object_class_install_property (g_object_class, JOB_PROP_EXEPATH, param);
 }
 
 static void job_init (Job *job)
@@ -82,6 +92,10 @@ static void job_set_property (GObject *obj, guint prop_id, const GValue *value, 
                 JOB (obj)->description = (gchar *)g_value_dup_string (value);
                 break;
 
+        case JOB_PROP_EXEPATH:
+                JOB (obj)->exe_path = (gchar *)g_value_dup_string (value);
+                break;
+
         default:
                 G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
                 break;
@@ -99,6 +113,10 @@ static void job_get_property (GObject *obj, guint prop_id, GValue *value, GParam
 
         case JOB_PROP_DESCRIPTION:
                 g_value_set_string (value, job->description);
+                break;
+
+        case JOB_PROP_EXEPATH:
+                g_value_set_string (value, job->exe_path);
                 break;
 
         default:
@@ -155,6 +173,11 @@ static void job_dispose (GObject *obj)
         if (job->description != NULL) {
                 g_free (job->description);
                 job->description = NULL;
+        }
+
+        if (job->exe_path != NULL) {
+                g_free (job->exe_path);
+                job->exe_path = NULL;
         }
 
         G_OBJECT_CLASS (parent_class)->dispose (obj);

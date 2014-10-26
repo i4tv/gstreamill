@@ -37,6 +37,7 @@ struct _Job {
         GObject parent;
 
         gchar *description;
+        gchar *exe_path;
         gchar *name; /* same as the name in job config file */
         gboolean is_live;
         gboolean eos;
