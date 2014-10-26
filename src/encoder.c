@@ -179,7 +179,7 @@ static EncoderStream * encoder_get_stream (Encoder *encoder, gchar *name)
  */
 static gint cache_free (Encoder *encoder)
 {
-        if (*(encoder->output->head_addr) > *(encoder->output->tail_addr)) {
+        if (*(encoder->output->head_addr) >= *(encoder->output->tail_addr)) {
                 return *(encoder->output->head_addr) - *(encoder->output->tail_addr);
 
         } else {
@@ -329,7 +329,7 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
         (*(encoder->output->total_count)) += gst_buffer_get_size (buffer);
 
         /* update head_addr, free enough memory for current buffer. */
-        while (cache_free (encoder) < gst_buffer_get_size (buffer) + 12) { /* timestamp + gop size = 12 */
+        while (cache_free (encoder) <= gst_buffer_get_size (buffer) + 12) { /* timestamp + gop size = 12 */
                 move_head (encoder);
         }
 
