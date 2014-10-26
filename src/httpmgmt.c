@@ -1051,6 +1051,7 @@ static gsize request_gstreamill_media (HTTPMgmt *httpmgmt, RequestData *request_
 
 static void free_priv_data (HTTPMgmtPrivateData *priv_data)
 {
+        /* fd != -1, media download? */
         if (priv_data->fd == -1) {
                 g_free (priv_data->buf);
                 g_free (priv_data);
@@ -1105,6 +1106,7 @@ static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
                                 return ret > 0? 10 * GST_MSECOND + g_random_int_range (1, 1000000) : GST_CLOCK_TIME_NONE;
                         }
                         priv_data = (HTTPMgmtPrivateData *)g_malloc (sizeof (HTTPMgmtPrivateData));
+                        priv_data->fd = -1;
                         priv_data->buf = buf;
                         priv_data->buf_size = buf_size;
                         priv_data->send_position = ret > 0? ret : 0;
