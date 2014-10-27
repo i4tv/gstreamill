@@ -14,6 +14,9 @@
 #include "gstreamill.h"
 #include "httpserver.h"
 
+#define CONF_FILE "/usr/local/share/gstreamill/conf/gstreamill.conf"
+#define JOBS_DIR "/usr/local/share/gstreamill/conf/jobs.d/"
+
 typedef struct _HTTPMgmtPrivateData {
         gint fd;
         gchar *p;

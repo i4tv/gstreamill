@@ -47,7 +47,6 @@ PKG_CHECK_MODULES([augeas], [augeas])
 AC_CONFIG_FILES([
 Makefile
 src/Makefile
-admin/Makefile
 etc/Makefile
 usr/Makefile
 gstreamill.spec

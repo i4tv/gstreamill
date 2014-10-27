@@ -585,7 +585,7 @@ static gchar * get_conf ()
         gchar *p, *result;
         GError *err = NULL;
 
-        if (!g_file_get_contents ("/etc/gstreamill.conf", &p, NULL, &err)) {
+        if (!g_file_get_contents (CONF_FILE, &p, NULL, &err)) {
                 GST_ERROR ("read gstreamill conf file failure: %s", err->message);
                 result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"\n}", err->message);
                 g_error_free (err);
@@ -604,7 +604,7 @@ static gchar * put_conf (RequestData *request_data)
         GError *err = NULL;
 
         conf = request_data->raw_request + request_data->header_size;
-        if (!g_file_set_contents ("/etc/gstreamill.conf", conf, strlen (conf), &err)) {
+        if (!g_file_set_contents (CONF_FILE, conf, strlen (conf), &err)) {
                 GST_ERROR ("write gstreamill.conf failure: %s", err->message);
                 result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"\n}", err->message);
                 g_error_free (err);
@@ -622,7 +622,7 @@ static gchar * get_job (gchar *uri)
         gchar *job_path, *job, *p;
         GError *err = NULL;
 
-        job_path = g_strdup_printf ("/etc/gstreamill.d%s.job", &uri[13]);
+        job_path = g_strdup_printf (JOBS_DIR "%s.job", &uri[13]);
         if (!g_file_get_contents (job_path, &p, NULL, &err)) {
                 GST_ERROR ("read job %s failure: %s", job_path, err->message);
                 job = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"\n}", err->message);
@@ -643,15 +643,15 @@ static gchar * put_job (RequestData *request_data, gboolean create)
         gchar *job_path, *job, *result;
         GError *err = NULL;
 
-        if (!g_file_test ("/etc/gstreamill.d", G_FILE_TEST_EXISTS) && (g_mkdir_with_parents ("/etc/gstreamill.d", 0755) != 0)) {
-                GST_ERROR ("Can't open or create /etc/gstreamill.d directory");
-                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"can't create /etc/gstreamill.d\"\n}");
+        if (!g_file_test (JOBS_DIR, G_FILE_TEST_EXISTS) && (g_mkdir_with_parents (JOBS_DIR, 0755) != 0)) {
+                GST_ERROR ("Can't open or create " JOBS_DIR " directory");
+                return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"can't create " JOBS_DIR"\"\n}");
         }
         if (g_strcmp0 (&(request_data->uri[13]), "/") == 0) {
                 GST_ERROR ("put job error, name is null");
                 return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"name is null\"\n}");
         }
-        job_path = g_strdup_printf ("/etc/gstreamill.d%s.job", &(request_data->uri[13]));
+        job_path = g_strdup_printf (JOBS_DIR "%s.job", &(request_data->uri[14]));
         if (create && g_file_test (job_path, G_FILE_TEST_IS_REGULAR)) {
                 GST_ERROR ("Job exist: %s", job_path);
                 g_free (job_path);
@@ -681,7 +681,7 @@ static gchar * rm_job (gchar *uri)
 {
         gchar *job_path, *result;
 
-        job_path = g_strdup_printf ("/etc/gstreamill.d%s.job", &(uri[12]));
+        job_path = g_strdup_printf (JOBS_DIR "%s.job", &(uri[13]));
         if (g_unlink (job_path) == -1) {
                 GST_ERROR ("remove job %s failure: %s", job_path, g_strerror (errno));
                 result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"\n}", g_strerror (errno));
@@ -751,7 +751,7 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
                 g_free (p);
 
         } else if (g_strcmp0 (request_data->uri, "/admin/listlivejob") == 0) {
-                p = list_files ("/etc/gstreamill.d/*.job", "/etc/gstreamill.d/%[^.].job");
+                p = list_files (JOBS_DIR "/*.job", JOBS_DIR "/%[^.].job");
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
