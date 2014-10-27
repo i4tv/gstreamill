@@ -49,6 +49,7 @@ Makefile
 src/Makefile
 admin/Makefile
 etc/Makefile
+usr/Makefile
 gstreamill.spec
 ])
 

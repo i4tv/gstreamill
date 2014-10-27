@@ -1,5 +1,5 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-SUBDIRS = src admin etc
+SUBDIRS = src admin etc usr
 
 EXTRA_DIST = examples tools test
 
@@ -31,4 +31,7 @@ install-exec-hook:
 	    mkdir -p /etc/gstreamill.d; \
 	    chown -R root:gstreamill /etc/gstreamill.d; \
 	    chmod -R g+w /etc/gstreamill.d; \
+	}
+	test -s /usr/lib/systemd/system/gstreamill.service && { \
+	    systemctl enable gstreamill; \
 	}
