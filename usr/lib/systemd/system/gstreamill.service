@@ -2,9 +2,11 @@
 Description=The gstreamill encoder server
 
 [Service]
-ExecStart=/usr/local/bin/gstreamill --gst-debug=gstreamill:4
+Type=forking
+PIDFile=/var/run/gstreamill/pid
+ExecStart=/usr/local/bin/gstreamill
+ExecStop=/bin/kill -s SIGUSR2 $MAINPID
 Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
-Alias=gstreamill.service
