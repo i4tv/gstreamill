@@ -34,4 +34,5 @@ install-exec-hook:
 	}
 	test -s /usr/lib/systemd/system/gstreamill.service && { \
 	    systemctl enable gstreamill; \
+	    install -c -m 755 tools/startjobs.sh '/usr/local/bin/startjobs.sh'; \
 	} || true

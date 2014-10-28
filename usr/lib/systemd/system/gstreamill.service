@@ -6,6 +6,7 @@ Type=forking
 PIDFile=/var/run/gstreamill/pid
 ExecStart=/usr/local/bin/gstreamill
 ExecStop=/bin/kill -s SIGUSR2 $MAINPID
+ExecStartPost=/usr/local/bin/startjobs.sh
 Restart=on-failure
 
 [Install]
