@@ -1,7 +1,7 @@
 ## Makefile.am -- Process this file with automake to produce Makefile.in
-SUBDIRS = src etc usr
+SUBDIRS = src usr
 
-EXTRA_DIST = examples tools test
+EXTRA_DIST = examples tools test etc
 
 install-exec-hook:
 	id gstreamill || test "$$?" -eq 9 || { \
@@ -27,11 +27,9 @@ install-exec-hook:
 	    chown -R root:gstreamill /usr/local/share/gstreamill; \
 	    chmod -R g+w /usr/local/share/gstreamill; \
 	}
-	test -s /etc/gstreamill.d || { \
-	    mkdir -p /etc/gstreamill.d; \
-	    chown -R root:gstreamill /etc/gstreamill.d; \
-	    chmod -R g+w /etc/gstreamill.d; \
-	}
+	test -s /etc/init && { \
+	    install -c -m 755 etc/init/gstreamill.conf '/etc/init/gstreamill.conf'; \
+	} || true
 	test -s /usr/lib/systemd/system/gstreamill.service && { \
 	    systemctl enable gstreamill; \
 	    install -c -m 755 tools/startjobs.sh '/usr/local/bin/startjobs.sh'; \
