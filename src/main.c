@@ -190,8 +190,6 @@ int main (int argc, char *argv[])
         struct rlimit rlim;
         gchar exe_path[512];
 
-        setlocale (LC_ALL, "");
-
         ctx = g_option_context_new (NULL);
         g_option_context_add_main_entries (ctx, options, NULL);
         g_option_context_add_group (ctx, gst_init_get_option_group ());
