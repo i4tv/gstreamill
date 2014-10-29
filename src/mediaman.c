@@ -128,11 +128,11 @@ gchar * media_transcode_out_list (gchar *path)
         if (n < 0) {
                 GST_ERROR ("scandir error: %s", g_strerror (errno));
                 return g_strdup ("[]");
-
         }
         list = g_strdup ("{\n");
         while (n--) {
-                if ((g_strcmp0 (outdirlist[n]->d_name, ".") != 0) && (g_strcmp0 (outdirlist[n]->d_name, "..") != 0)) {
+                if ((g_strcmp0 (outdirlist[n]->d_name, ".") != 0) &&
+                    (g_strcmp0 (outdirlist[n]->d_name, "..") != 0)) {
                         p1 = g_strdup_printf ("%s/%s", path, outdirlist[n]->d_name);
                         p2 = transcode_out_list (p1);
                         g_free (p1);
@@ -150,10 +150,59 @@ gchar * media_transcode_out_list (gchar *path)
         return list;
 }
 
+static gchar * remove_empty_out_media_dir (gchar *media)
+{
+        gchar *path, *file;
+        struct dirent **namelist;
+        gint n, i;
+        gboolean rm_outdir;
+
+        path = g_path_get_dirname (media);
+        n = scandir (path, &namelist, NULL, alphasort);
+        i = n;
+        if (n < 0) {
+                GST_ERROR ("scandir error: %s", g_strerror (errno));
+                g_free (path);
+                return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reseon\": \"%s\"}", g_strerror (errno));
+        }
+        rm_outdir = TRUE;
+        while (n--) {
+                if ((g_strcmp0 (namelist[n]->d_name, ".") != 0) &&
+                   (g_strcmp0 (namelist[n]->d_name, "..") != 0) &&
+                   !g_str_has_prefix (namelist[n]->d_name, "gstreamill.log")) {
+                        rm_outdir = FALSE;
+                }
+        }
+        n = i;
+        while (n--) {
+                if ((g_strcmp0 (namelist[n]->d_name, ".") != 0) &&
+                   (g_strcmp0 (namelist[n]->d_name, "..") != 0) &&
+                   rm_outdir) {
+                        file = g_strdup_printf ("%s/%s", path, namelist[n]->d_name);
+                        if (g_remove (file) != 0) {
+                                GST_ERROR ("rm file %s failure: %s", file, g_strerror (errno));
+                        }
+                        g_free (file);
+                }
+                g_free (namelist[n]);
+        }
+        g_free (namelist);
+        if (rm_outdir) {
+                if (g_remove (path) != 0) {
+                        g_free (path);
+                        GST_ERROR ("rm %s failure: %s", path, g_strerror (errno));
+                        return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reseon\": \"%s\"}", g_strerror (errno));
+                }
+        }
+        g_free (path);
+        return g_strdup ("{\n    \"result\": \"success\"\n}");
+}
+
 gchar * media_transcode_rm (gchar *media)
 {
         if (g_remove (media) == 0) {
-                return g_strdup ("{\n    \"result\": \"success\"\n}");
+                /* if out dir empty, remove it */
+                return remove_empty_out_media_dir (media);
 
         } else {
                 GST_ERROR ("rm %s failure: %s", media, g_strerror (errno));
