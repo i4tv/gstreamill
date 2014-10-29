@@ -21,7 +21,7 @@ typedef struct _EncoderStreamState {
 
 typedef struct _EncoderOutput {
         gchar name[STREAM_NAME_LEN];
-        sem_t *semaphore; /* access of encoder output should be exclusive */
+        sem_t *semaphore; /* pointer to job semaphore */
         GstClockTime *heartbeat;
         gboolean *eos;
         gchar *cache_addr;

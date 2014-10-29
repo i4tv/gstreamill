@@ -25,6 +25,8 @@ typedef struct _JobOutput {
          * GST_STATE_READY: creating job process, subsequent state is GST_STATE_VOID_PENDING or GST_STATE_PLAYLING
          * GST_STATE_VOID_PENDING: create job failure.
          */
+        gchar *semaphore_name;
+        sem_t *semaphore; /* access of job output should be exclusive */
         guint64 *state;
         SourceState source;
         gint64 encoder_count;

@@ -137,6 +137,11 @@ static void job_dispose (GObject *obj)
                 return;
         }
         output = job->output;
+        if (output->semaphore != NULL) {
+                sem_close (output->semaphore);
+                sem_unlink (output->semaphore_name);
+                g_free (output->semaphore_name);
+        }
         for (i = 0; i < output->encoder_count; i++) {
                 /* message queue release */
                 name = g_strdup_printf ("/%s.%d", job->name, i);
@@ -226,7 +231,6 @@ static gsize status_output_size (gchar *job)
         size += sizeof (gint64); /* duration for transcode */
         size += jobdesc_streams_count (job, "source") * sizeof (struct _SourceStreamState);
         for (i = 0; i < jobdesc_encoders_count (job); i++) {
-                size += sizeof (sem_t); /* encoder output semaphore */
                 size += sizeof (GstClockTime); /* encoder output heartbeat */
                 size += sizeof (gboolean); /* end of stream */
                 pipeline = g_strdup_printf ("encoder.%d", i);
@@ -316,12 +320,13 @@ gint job_initialize (Job *job, gboolean daemon, gchar *media_dir)
 {
         gint i, fd;
         JobOutput *output;
-        gchar *name, *p, *name_hexstr;
+        gchar *name, *p, *name_hexstr, *semaphore_name;
 
         job->output_size = status_output_size (job->description);
+        name_hexstr = unicode_file_name_2_shm_name (job->name);
+        semaphore_name = g_strdup_printf ("/%s", name_hexstr);
         if (daemon) {
                 /* daemon, use share memory */
-                name_hexstr = unicode_file_name_2_shm_name (job->name);
                 fd = shm_open (name_hexstr, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
                 if (fd == -1) {
                         GST_ERROR ("shm_open %s failure: %s", name_hexstr, g_strerror (errno));
@@ -344,6 +349,17 @@ gint job_initialize (Job *job, gboolean daemon, gchar *media_dir)
         }
         output = (JobOutput *)g_malloc (sizeof (JobOutput));
         output->job_description = (gchar *)p;
+        output->semaphore = sem_open (semaphore_name, O_CREAT, 0644, 1);
+        if (output->semaphore == SEM_FAILED) {
+                GST_ERROR ("open semaphore failed: %s", g_strerror (errno));
+                g_free (semaphore_name);
+                output->semaphore_name = NULL;
+                output->semaphore = NULL;
+                return 1;
+        }
+        output->semaphore_name = semaphore_name;
+
+        sem_wait (output->semaphore);
         g_stpcpy (output->job_description, job->description);
         p += (strlen (job->description) / 8 + 1) * 8;
         output->state = (guint64 *)p;
@@ -367,9 +383,7 @@ gint job_initialize (Job *job, gboolean daemon, gchar *media_dir)
                 name = g_strdup_printf ("encoder.%d", i);
                 output->encoders[i].stream_count = jobdesc_streams_count (job->description, name);
                 g_free (name);
-                output->encoders[i].semaphore = (sem_t *)p;
-                sem_init (output->encoders[i].semaphore, 1, 1);
-                p += sizeof (sem_t);
+                output->encoders[i].semaphore = output->semaphore;
                 output->encoders[i].heartbeat = (GstClockTime *)p;
                 *(output->encoders[i].heartbeat) = gst_clock_get_time (job->system_clock);
                 p += sizeof (GstClockTime); /* encoder heartbeat */
@@ -433,6 +447,7 @@ gint job_initialize (Job *job, gboolean daemon, gchar *media_dir)
         } else {
                 job->output->master_m3u8_playlist = NULL;
         }
+        sem_post (output->semaphore);
 
         return 0;
 }
@@ -658,11 +673,6 @@ void job_reset (Job *job)
                         if (mq_notify (encoder->mqdes, &sev) == -1) {
                                 GST_ERROR ("mq_notify error : %s", g_strerror (errno));
                         }
-                }
-
-                /* reset semaphore */
-                if (job->age > 0) {
-                        sem_init (encoder->semaphore, 1, 1);
                 }
 
                 g_free (name);
