@@ -316,7 +316,7 @@ static gchar * add_header_footer (gchar *middle)
         gchar *buf, *path, *top, *bottom;
         GError *err = NULL;
 
-        path = g_strdup_printf ("%s/gstreamill/admin/header.html", DATADIR);
+        path = g_strdup_printf ("%s/admin/header.html", ADMIN_LOCATION);
         if (!g_file_get_contents (path, &top, NULL, &err)) {
                 GST_ERROR ("read %s failure: %s", path, err->message);
                 g_free (path);
@@ -324,7 +324,7 @@ static gchar * add_header_footer (gchar *middle)
                 return g_strdup ("Internal error, file header.html not found.");
         }
         g_free (path);
-        path = g_strdup_printf ("%s/gstreamill/admin/footer.html", DATADIR);
+        path = g_strdup_printf ("%s/admin/footer.html", ADMIN_LOCATION);
         if (!g_file_get_contents (path, &bottom, NULL, &err)) {
                 GST_ERROR ("read %s failure: %s", path, err->message);
                 g_error_free (err);
@@ -703,7 +703,7 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
 
         path = NULL;
         if (g_strcmp0 (request_data->uri, "/admin/") == 0) {
-                path = g_strdup_printf ("%s/gstreamill/admin/index.html", DATADIR);
+                path = g_strdup_printf ("%s/admin/index.html", ADMIN_LOCATION);
 
         } else if (g_str_has_prefix (request_data->uri, "/admin/start")) {
                 p = start_job (httpmgmt, request_data);
@@ -787,7 +787,7 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
 
         } else {
                 /* static content, prepare file path */
-                path = g_strdup_printf ("%s/gstreamill%s", DATADIR, request_data->uri);
+                path = g_strdup_printf ("%s%s", ADMIN_LOCATION, request_data->uri);
         }
 
         if (path == NULL) {

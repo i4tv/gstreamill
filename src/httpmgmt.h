@@ -14,8 +14,9 @@
 #include "gstreamill.h"
 #include "httpserver.h"
 
-#define CONF_FILE "/usr/local/share/gstreamill/conf/gstreamill.conf"
-#define JOBS_DIR "/usr/local/share/gstreamill/conf/jobs.d/"
+#define CONF_FILE "/etc/gstreamill.d/gstreamill.conf"
+#define JOBS_DIR "/etc/gstreamill.d/jobs.d/"
+#define ADMIN_LOCATION "/usr/share/gstreamill"
 
 typedef struct _HTTPMgmtPrivateData {
         gint fd;
