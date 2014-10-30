@@ -171,7 +171,6 @@ static gboolean stop = FALSE;
 static gboolean version = FALSE;
 static gchar *job_file = NULL;
 static gchar *log_dir = "/var/log/gstreamill";
-static gchar *media_dir = "/var/lib/gstreamill";
 static gchar *http_mgmt = "0.0.0.0:20118";
 static gchar *http_streaming = "0.0.0.0:20119";
 static gchar *shm_name = NULL;
@@ -179,7 +178,6 @@ static gint job_length = -1;
 static GOptionEntry options[] = {
         {"job", 'j', 0, G_OPTION_ARG_FILENAME, &job_file, ("-j /full/path/to/job.file: Specify a job file, full path is must."), NULL},
         {"log", 'l', 0, G_OPTION_ARG_FILENAME, &log_dir, ("-l /full/path/to/log: Specify log path, full path is must."), NULL},
-        {"media", 'd', 0, G_OPTION_ARG_FILENAME, &media_dir, ("-l /full/path/to/media: Specify media path for dvr and transcode, full path is must."), NULL},
         {"httpmgmt", 'm', 0, G_OPTION_ARG_STRING, &http_mgmt, ("-m http managment address, default is 0.0.0.0:20118."), NULL},
         {"httpstreaming", 'a', 0, G_OPTION_ARG_STRING, &http_streaming, ("-a http streaming address, default is 0.0.0.0:20119."), NULL},
         {"name", 'n', G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &shm_name, NULL, NULL},
@@ -341,7 +339,7 @@ int main (int argc, char *argv[])
                 signal (SIGUSR1, sighandler);
                 signal (SIGUSR2, stop_job);
                 loop = g_main_loop_new (NULL, FALSE);
-                if (job_initialize (job, TRUE, media_dir) != 0) {
+                if (job_initialize (job, TRUE) != 0) {
                         GST_ERROR ("initialize livejob failure, exit");
                         exit (8);
                 }
@@ -376,7 +374,7 @@ int main (int argc, char *argv[])
                 }
 
                 /* media directory */
-                path = g_strdup_printf ("%s/dvr", media_dir);
+                path = g_strdup_printf ("%s/dvr", MEDIA_LOCATION);
                 if (!g_file_test (path, G_FILE_TEST_EXISTS)) {
                         g_printf ("Create DVR directory: %s", path);
                         if (g_mkdir_with_parents (path, 0755) != 0) {
@@ -384,7 +382,7 @@ int main (int argc, char *argv[])
                         }
                 }
                 g_free (path);
-                path = g_strdup_printf ("%s/transcode/in", media_dir);
+                path = g_strdup_printf ("%s/transcode/in", MEDIA_LOCATION);
                 if (!g_file_test (path, G_FILE_TEST_EXISTS)) {
                         g_printf ("Create transcode directory: %s", path);
                         if (g_mkdir_with_parents (path, 0755) != 0) {
@@ -392,7 +390,7 @@ int main (int argc, char *argv[])
                         }
                 }
                 g_free (path);
-                path = g_strdup_printf ("%s/transcode/out", media_dir);
+                path = g_strdup_printf ("%s/transcode/out", MEDIA_LOCATION);
                 if (!g_file_test (path, G_FILE_TEST_EXISTS)) {
                         g_printf ("Create transcode directory: %s", path);
                         if (g_mkdir_with_parents (path, 0755) != 0) {
@@ -435,7 +433,7 @@ int main (int argc, char *argv[])
         loop = g_main_loop_new (NULL, FALSE);
 
         /* gstreamill */
-        gstreamill = gstreamill_new ("daemon", !foreground, "log_dir", log_dir, "media_dir", media_dir, "exe_path", exe_path, NULL);
+        gstreamill = gstreamill_new ("daemon", !foreground, "log_dir", log_dir, "exe_path", exe_path, NULL);
         if (gstreamill_start (gstreamill) != 0) {
                 GST_ERROR ("start gstreamill error, exit.");
                 remove_pid_file ();

@@ -903,7 +903,7 @@ static gsize media_download (HTTPMgmt *httpmgmt, RequestData *request_data, gcha
         gsize buf_size;
         gchar *p;
 
-        p = g_strdup_printf ("%s/%s", httpmgmt->gstreamill->media_dir, request_data->uri + 16);
+        p = g_strdup_printf ("%s/%s", MEDIA_LOCATION, request_data->uri + 16);
         GST_WARNING ("download %s", p);
         fd = open (p, O_RDONLY);
         g_free (p);
@@ -980,7 +980,7 @@ static gsize request_gstreamill_media (HTTPMgmt *httpmgmt, RequestData *request_
 
         if ((request_data->method == HTTP_POST) && (g_str_has_prefix (request_data->uri, "/media/upload"))) {
                 p = get_filename (request_data->parameters);
-                path = g_strdup_printf ("%s/transcode/in/%s", httpmgmt->gstreamill->media_dir, p);
+                path = g_strdup_printf ("%s/transcode/in/%s", MEDIA_LOCATION, p);
                 g_free (p);
                 content = request_data->raw_request + request_data->header_size;
                 content_size = request_data->request_length - request_data->header_size;
@@ -996,7 +996,7 @@ static gsize request_gstreamill_media (HTTPMgmt *httpmgmt, RequestData *request_
 
         } else if ((request_data->method == HTTP_GET) && (g_str_has_prefix (request_data->uri, "/media/upload"))) {
                 p = get_filename (request_data->parameters);
-                path = g_strdup_printf ("%s/transcode/in/%s", httpmgmt->gstreamill->media_dir, p);
+                path = g_strdup_printf ("%s/transcode/in/%s", MEDIA_LOCATION, p);
                 g_free (p);
                 if (get_chunksize (request_data->parameters) * get_chunknumber (request_data->parameters) <= media_size (path)) {
                         p = g_strdup ("complete");
@@ -1016,7 +1016,7 @@ static gsize request_gstreamill_media (HTTPMgmt *httpmgmt, RequestData *request_
                 }
 
         } else if ((request_data->method == HTTP_GET) && (g_strcmp0 (request_data->uri, "/media/transcodeinlist") == 0)) {
-                path = g_strdup_printf ("%s/transcode/in", httpmgmt->gstreamill->media_dir);
+                path = g_strdup_printf ("%s/transcode/in", MEDIA_LOCATION);
                 p = media_transcode_in_list (path);
                 g_free (path);
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
@@ -1024,20 +1024,20 @@ static gsize request_gstreamill_media (HTTPMgmt *httpmgmt, RequestData *request_
 
         } else if ((request_data->method == HTTP_GET) && (g_str_has_prefix (request_data->uri, "/media/rm/transcode/"))) {
                 p = request_data->uri + 20;
-                path = g_strdup_printf ("%s/transcode/%s", httpmgmt->gstreamill->media_dir, p);
+                path = g_strdup_printf ("%s/transcode/%s", MEDIA_LOCATION, p);
                 p = media_transcode_rm (path);
                 g_free (path);
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
 
         } else if ((request_data->method == HTTP_GET) && (g_strcmp0 (request_data->uri, "/media/transcodeoutlist") == 0)) {
-                path = g_strdup_printf ("%s/transcode/out", httpmgmt->gstreamill->media_dir);
+                path = g_strdup_printf ("%s/transcode/out", MEDIA_LOCATION);
                 p = media_transcode_out_list (path);
                 g_free (path);
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
         } else if ((request_data->method == HTTP_GET) && (g_strcmp0 (request_data->uri, "/media/getmediadir") == 0)) {
-                p = g_strdup_printf ("{\n    \"media_dir\": \"%s\"\n}", httpmgmt->gstreamill->media_dir);
+                p = g_strdup_printf ("{\n    \"media_dir\": \"%s\"\n}", MEDIA_LOCATION);
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 

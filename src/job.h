@@ -12,6 +12,7 @@
 #include "encoder.h"
 
 #define SHM_SIZE 64*1024*1024
+#define MEDIA_LOCATION "/var/lib/gstreamill"
 
 typedef struct _Job Job;
 typedef struct _JobClass JobClass;
@@ -82,7 +83,7 @@ struct _JobClass {
 
 GType job_get_type (void);
 
-gint job_initialize (Job *job, gboolean daemon, gchar *media_dir);
+gint job_initialize (Job *job, gboolean daemon);
 void job_reset (Job *job);
 void job_stat_update (Job *job);
 gint job_start (Job *job);

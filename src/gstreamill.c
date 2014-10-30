@@ -26,7 +26,6 @@ enum {
         GSTREAMILL_PROP_0,
         GSTREAMILL_PROP_LOGDIR,
         GSTREAMILL_PROP_EXEPATH,
-        GSTREAMILL_PROP_MEDIADIR,
         GSTREAMILL_PROP_DAEMON,
 };
 
@@ -64,15 +63,6 @@ static void gstreamill_class_init (GstreamillClass *gstreamillclass)
                 G_PARAM_WRITABLE | G_PARAM_READABLE
         );
         g_object_class_install_property (g_object_class, GSTREAMILL_PROP_LOGDIR, param);
-
-        param = g_param_spec_string (
-                "media_dir",
-                "media_dir",
-                "media directory",
-                NULL,
-                G_PARAM_WRITABLE | G_PARAM_READABLE
-        );
-        g_object_class_install_property (g_object_class, GSTREAMILL_PROP_MEDIADIR, param);
 
         param = g_param_spec_string (
                 "exe_path",
@@ -122,10 +112,6 @@ static void gstreamill_set_property (GObject *obj, guint prop_id, const GValue *
                 GSTREAMILL (obj)->log_dir = (gchar *)g_value_dup_string (value);
                 break;
 
-        case GSTREAMILL_PROP_MEDIADIR:
-                GSTREAMILL (obj)->media_dir = (gchar *)g_value_dup_string (value);
-                break;
-
         case GSTREAMILL_PROP_EXEPATH:
                 GSTREAMILL (obj)->exe_path = (gchar *)g_value_dup_string (value);
                 break;
@@ -149,10 +135,6 @@ static void gstreamill_get_property (GObject *obj, guint prop_id, GValue *value,
                 g_value_set_string (value, gstreamill->log_dir);
                 break;
 
-        case GSTREAMILL_PROP_MEDIADIR:
-                g_value_set_string (value, gstreamill->media_dir);
-                break;
-
         case GSTREAMILL_PROP_EXEPATH:
                 g_value_set_string (value, gstreamill->exe_path);
                 break;
@@ -171,11 +153,6 @@ static void gstreamill_dispose (GObject *obj)
         if (gstreamill->log_dir != NULL) {
                 g_free (gstreamill->log_dir);
                 gstreamill->log_dir = NULL;
-        }
-
-        if (gstreamill->media_dir != NULL) {
-                g_free (gstreamill->media_dir);
-                gstreamill->media_dir = NULL;
         }
 
         if (gstreamill->exe_path != NULL) {
@@ -879,7 +856,7 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
         job->current_access = 0;
         job->age = 0;
         job->last_start_time = NULL;
-        if (job_initialize (job, gstreamill->daemon, gstreamill->media_dir) != 0) {
+        if (job_initialize (job, gstreamill->daemon) != 0) {
                 p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"initialize job failure\"\n}");
                 g_object_unref (job);
                 return p;
