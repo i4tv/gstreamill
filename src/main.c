@@ -30,7 +30,7 @@
 
 #define GSTREAMILL_USER "gstreamill"
 #define GSTREAMILL_GROUP "gstreamill"
-#define PID_FILE "/var/run/gstreamill/pid"
+#define PID_FILE "/run/gstreamill/gstreamill.pid"
 
 GST_DEBUG_CATEGORY(GSTREAMILL);
 #define GST_CAT_DEFAULT GSTREAMILL
@@ -104,6 +104,48 @@ static gint set_user_and_group ()
                 perror ("setuid failure");
                 return 3;
         }
+
+        return 0;
+}
+
+static gint prepare_gstreamill_run_dir ()
+{
+        gchar *run_dir;
+        struct group *grp;
+
+        /* mkdir */
+        run_dir = g_path_get_dirname (PID_FILE);
+        if (g_file_test (run_dir, G_FILE_TEST_EXISTS)) {
+                g_free (run_dir);
+                return 0;
+        }
+        if (g_mkdir (run_dir, 0755) == -1) {
+                perror ("chown of gstreamill run directory failure");
+                g_free (run_dir);
+                return 1;
+        }
+
+        /* set own and mod of dir */
+        grp = getgrnam (GSTREAMILL_GROUP);
+        if ((grp == NULL) && (errno == -1)) {
+                perror ("getgrnam failed");
+                return 2;
+
+        } else if (grp == NULL) {
+                g_print ("getgrnam(\"%s\") failed\n", GSTREAMILL_GROUP);
+                return 3;
+        }
+        if (chown (run_dir, -1, grp->gr_gid) == -1) {
+                perror ("chown of gstreamill run directory failure");
+                g_free (run_dir);
+                return 4;
+        }
+        if (chmod (run_dir, 0775) == -1) {
+                perror ("chmod of gstreamill run directory failure");
+                g_free (run_dir);
+                return 5;
+        }
+        g_free (run_dir);
 
         return 0;
 }
@@ -205,18 +247,6 @@ int main (int argc, char *argv[])
                 exit (0);
         }
 
-        /* readlink exe path before setuid, on CentOS, readlink exe path after setgid/setuid failure on permission denied */
-        memset (exe_path, '\0', sizeof (exe_path));
-        if (readlink ("/proc/self/exe", exe_path, sizeof (exe_path)) == -1) {
-                g_print ("Read /proc/self/exe error: %s", g_strerror (errno));
-                exit (2);
-        }
-
-        if (set_user_and_group () != 0) {
-                g_print ("set user and group failure\n");
-                exit (3);
-        }
-
         /* stop gstreamill. */
         if (stop) {
                 gchar *pid_str;
@@ -232,6 +262,23 @@ int main (int argc, char *argv[])
                 g_print ("stoping gstreamill with pid %d ...\n", pid);
                 kill (pid, SIGUSR2);
                 exit (0);
+        }
+
+        /* readlink exe path before setuid, on CentOS, readlink exe path after setgid/setuid failure on permission denied */
+        memset (exe_path, '\0', sizeof (exe_path));
+        if (readlink ("/proc/self/exe", exe_path, sizeof (exe_path)) == -1) {
+                g_print ("Read /proc/self/exe error: %s", g_strerror (errno));
+                exit (2);
+        }
+
+        if (prepare_gstreamill_run_dir () != 0) {
+                g_print ("Can't create gstreamill run directory\n");
+                exit (3);
+        }
+
+        if (set_user_and_group () != 0) {
+                g_print ("set user and group failure\n");
+                exit (4);
         }
 
         if (job_file != NULL) {
@@ -259,13 +306,13 @@ int main (int argc, char *argv[])
                 job_desc = NULL;
                 fd = shm_open (shm_name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
                 if (ftruncate (fd, job_length) == -1) {
-                        exit (4);
+                        exit (5);
                 }
                 p = mmap (NULL, job_length, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
                 job_desc = g_strdup (p);
 
                 if ((job_desc != NULL) && (!jobdesc_is_valid (job_desc))) {
-                        exit (5);
+                        exit (6);
                 }
 
                 name = (gchar *)jobdesc_get_name (job_desc);
@@ -283,7 +330,7 @@ int main (int argc, char *argv[])
                 ret = init_log (log_path);
                 g_free (log_path);
                 if (ret != 0) {
-                        exit (6);
+                        exit (7);
                 }
 
                 /* launch a job. */
@@ -296,11 +343,11 @@ int main (int argc, char *argv[])
                 loop = g_main_loop_new (NULL, FALSE);
                 if (job_initialize (job, TRUE, media_dir) != 0) {
                         GST_ERROR ("initialize livejob failure, exit");
-                        exit (7);
+                        exit (8);
                 }
                 if (job_start (job) != 0) {
                         GST_ERROR ("start livejob failure, exit");
-                        exit (8);
+                        exit (9);
                 }
                 GST_WARNING ("livejob %s starting ...", name);
                 g_free (name);
@@ -325,7 +372,7 @@ int main (int argc, char *argv[])
                 /* pid file exist? */
                 if (g_file_test (PID_FILE, G_FILE_TEST_EXISTS)) {
                         g_print ("file %s found, gstreamill already running !!!\n", PID_FILE);
-                        exit (9);
+                        exit (10);
                 }
 
                 /* media directory */
@@ -360,7 +407,7 @@ int main (int argc, char *argv[])
                 g_free (path);
                 if (ret != 0) {
                         g_print ("Init log error, ret %d.\n", ret);
-                        exit (10);
+                        exit (11);
                 }
 
                 /* daemonize */
@@ -392,7 +439,7 @@ int main (int argc, char *argv[])
         if (gstreamill_start (gstreamill) != 0) {
                 GST_ERROR ("start gstreamill error, exit.");
                 remove_pid_file ();
-                exit (11);
+                exit (12);
         }
 
         /* httpstreaming, pull */
@@ -400,7 +447,7 @@ int main (int argc, char *argv[])
         if (httpstreaming_start (httpstreaming, 10) != 0) {
                 GST_ERROR ("start httpstreaming error, exit.");
                 remove_pid_file ();
-                exit (12);
+                exit (13);
         }
 
         if (!foreground) {
@@ -409,7 +456,7 @@ int main (int argc, char *argv[])
                 if (httpmgmt_start (httpmgmt) != 0) {
                         GST_ERROR ("start http mangment error, exit.");
                         remove_pid_file ();
-                        exit (13);
+                        exit (14);
                 }
 
         } else {
@@ -420,7 +467,7 @@ int main (int argc, char *argv[])
 
                 if (!g_file_get_contents (job_file, &job, NULL, NULL)) {
                         GST_ERROR ("Read job file %s error.", job_file);
-                        exit (14);
+                        exit (15);
                 }
                 p = gstreamill_job_start (gstreamill, job);
                 val = json_parse_string (p);
@@ -428,7 +475,7 @@ int main (int argc, char *argv[])
                 result = (gchar *)json_object_get_string (obj, "result");
                 GST_WARNING ("start job result: %s.", result);
                 if (g_strcmp0 (result, "success") != 0) {
-                        exit (15);
+                        exit (16);
                 }
                 json_value_free (val);
                 g_free (p);

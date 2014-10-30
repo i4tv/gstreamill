@@ -3,7 +3,7 @@ Description=The gstreamill encoder server
 
 [Service]
 Type=forking
-PIDFile=/var/run/gstreamill/pid
+PIDFile=/var/run/gstreamill/gstreamill.pid
 ExecStart=/usr/local/bin/gstreamill
 ExecStop=/bin/kill -s SIGUSR2 $MAINPID
 ExecStartPost=/usr/local/bin/startjobs.sh
