@@ -138,8 +138,12 @@ static void job_dispose (GObject *obj)
         }
         output = job->output;
         if (output->semaphore != NULL) {
-                sem_close (output->semaphore);
-                sem_unlink (output->semaphore_name);
+                if (sem_close (output->semaphore) == -1) {
+                        GST_ERROR ("sem_close failure: %s", g_strerror (errno));
+                }
+                if (sem_unlink (output->semaphore_name) == -1) {
+                        GST_ERROR ("sem_unlink %s error: %s", job->name, g_strerror (errno));
+                }
                 g_free (output->semaphore_name);
         }
         for (i = 0; i < output->encoder_count; i++) {
