@@ -90,7 +90,7 @@
                                 <input type="checkbox" id="encoderoutput" value="m3u8"> M3U8
                             </label>
                             <label class="checkbox-inline">
-                                <input type="checkbox" id="encoderoutput" value="dvr"> DVR
+                                <input type="checkbox" id="encoderoutput" value="dvr" disabled="true"> DVR
                             </label>
                         </div>
                     </div>
@@ -146,7 +146,7 @@
                     if (!output['m3u8']) {
                         delete job.m3u8streaming;
                     }
-                    if (!output['dvr']) {
+                    if (!output['m3u8'] || !output['dvr']) {
                         delete job.dvr_duration;
                     }
 
@@ -221,6 +221,15 @@
             } else {
                 $("#networksrcuri").hide ();
                 $("#networksrcprogramnumber").hide ();
+            }
+        });
+
+        /* dvr is rely on m3u8 */
+        $("[id='encoderoutput'][value='m3u8']").change (function () {
+            if ($("[id='encoderoutput'][value='m3u8']").is (":checked")) {
+                $("[id='encoderoutput'][value='dvr']").prop ("disabled", false);
+            } else {
+                $("[id='encoderoutput'][value='dvr']").prop ("disabled", true);
             }
         });
     });
