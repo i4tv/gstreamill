@@ -30,6 +30,7 @@ typedef struct _JobOutput {
         sem_t *semaphore; /* access of job output should be exclusive */
         guint64 *state;
         SourceState source;
+        guint64 sequence;
         gint64 encoder_count;
         EncoderOutput *encoders;
 

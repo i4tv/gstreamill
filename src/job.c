@@ -288,24 +288,29 @@ static gchar * render_master_m3u8_playlist (Job *job)
         return p;
 }
 
-static guint64 get_dvr_sequence (JobOutput *joboutput, gint index)
+static guint64 get_dvr_sequence (JobOutput *joboutput)
 {
         glob_t pglob;
         gchar *pattern, *format;
-        guint64 sequence;
+        guint64 encoder_sequence, sequence;
+        gint i;
 
-        pattern = g_strdup_printf ("%s/*", joboutput->encoders[index].record_path);
-        if (glob (pattern, 0, NULL, &pglob) == GLOB_NOMATCH) {
-                sequence = 0;
-
-        } else {
-                format = g_strdup_printf ("%s/%%*[^_]_%%lu_%%*[^_]$", joboutput->encoders[index].record_path);
-                sscanf (pglob.gl_pathv[pglob.gl_pathc - 1], format, &sequence);
-                sequence += 1;
-                g_free (format);
+        sequence = 0;
+        for (i = 0; i < joboutput->encoder_count; i++) {
+                encoder_sequence = 0;
+                pattern = g_strdup_printf ("%s/*", joboutput->encoders[i].record_path);
+                if (glob (pattern, 0, NULL, &pglob) != GLOB_NOMATCH) {
+                        format = g_strdup_printf ("%s/%%*[^_]_%%lu_%%*[^_]$", joboutput->encoders[i].record_path);
+                        sscanf (pglob.gl_pathv[pglob.gl_pathc - 1], format, &encoder_sequence);
+                        encoder_sequence += 1;
+                        g_free (format);
+                }
+                globfree (&pglob);
+                g_free (pattern);
+                if (encoder_sequence > sequence) {
+                        sequence = encoder_sequence;
+                }
         }
-        globfree (&pglob);
-        g_free (pattern);
 
         return sequence;
 }
@@ -328,6 +333,7 @@ gint job_initialize (Job *job, gboolean daemon)
 
         job->output_size = status_output_size (job->description);
         name_hexstr = unicode_file_name_2_shm_name (job->name);
+        GST_ERROR ("name:%s hexname: %s", job->name, name_hexstr);
         semaphore_name = g_strdup_printf ("/%s", name_hexstr);
         if (daemon) {
                 /* daemon, use share memory */
@@ -362,7 +368,6 @@ gint job_initialize (Job *job, gboolean daemon)
                 return 1;
         }
         output->semaphore_name = semaphore_name;
-
         sem_wait (output->semaphore);
         g_stpcpy (output->job_description, job->description);
         p += (strlen (job->description) / 8 + 1) * 8;
@@ -436,8 +441,8 @@ gint job_initialize (Job *job, gboolean daemon)
                     (g_mkdir_with_parents (output->encoders[i].record_path, 0755) != 0)) {
                         GST_ERROR ("Can't open or create %s directory", output->encoders[i].record_path);
                 }
-                output->encoders[i].sequence = get_dvr_sequence (output, i);
         }
+        output->sequence = get_dvr_sequence (output);
         job->output = output;
 
         /* m3u8 master playlist */
@@ -645,6 +650,9 @@ void job_reset (Job *job)
         for (i = 0; i < job->output->encoder_count; i++) {
                 encoder = &(job->output->encoders[i]);
                 name = g_strdup_printf ("/%s.%d", job->name, i);
+
+                /* encoder dvr sequence */
+                encoder->sequence = job->output->sequence;
 
                 /* reset m3u8 playlist */
                 if (encoder->m3u8_playlist != NULL) {
