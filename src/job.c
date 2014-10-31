@@ -627,8 +627,8 @@ void job_reset (Job *job)
         job->last_start_time = gst_date_time_to_iso8601_string (start_time);
         gst_date_time_unref (start_time);
 
-        /* is live job? */
-        if (!(job->is_live)) {
+        /* is live job with m3u8streaming? */
+        if (!(job->is_live) || !(jobdesc_m3u8streaming (job->description))) {
                 return;
         }
 
@@ -642,37 +642,35 @@ void job_reset (Job *job)
                 encoder = &(job->output->encoders[i]);
                 name = g_strdup_printf ("/%s.%d", job->name, i);
 
-                if (jobdesc_m3u8streaming (job->description)) {
-                        /* reset m3u8 playlist */
-                        if (encoder->m3u8_playlist != NULL) {
-                                m3u8playlist_free (encoder->m3u8_playlist);
-                        }
-                        encoder->m3u8_playlist = m3u8playlist_new (version, window_size, 0);
+                /* reset m3u8 playlist */
+                if (encoder->m3u8_playlist != NULL) {
+                        m3u8playlist_free (encoder->m3u8_playlist);
+                }
+                encoder->m3u8_playlist = m3u8playlist_new (version, window_size, 0);
 
-                        /* reset message queue */
-                        if (encoder->mqdes != -1) {
-                                if (mq_close (encoder->mqdes) == -1) {
-                                        GST_ERROR ("mq_close %s error: %s", name, g_strerror (errno));
-                                }
-                                if (mq_unlink (name) == -1) {
-                                        GST_ERROR ("mq_unlink %s error: %s", name, g_strerror (errno));
-                                }
+                /* reset message queue */
+                if (encoder->mqdes != -1) {
+                        if (mq_close (encoder->mqdes) == -1) {
+                                GST_ERROR ("mq_close %s error: %s", name, g_strerror (errno));
                         }
-                        attr.mq_flags = 0;
-                        attr.mq_maxmsg = 10;
-                        attr.mq_msgsize = 128;
-                        attr.mq_curmsgs = 0;
-                        encoder->mqdes = mq_open (name, O_RDONLY | O_CREAT | O_NONBLOCK, 0666, &attr);
-                        if (encoder->mqdes == -1) {
-                                GST_ERROR ("mq_open error : %s", g_strerror (errno));
+                        if (mq_unlink (name) == -1) {
+                                GST_ERROR ("mq_unlink %s error: %s", name, g_strerror (errno));
                         }
-                        sev.sigev_notify = SIGEV_THREAD;
-                        sev.sigev_notify_function = notify_function;
-                        sev.sigev_notify_attributes = NULL;
-                        sev.sigev_value.sival_ptr = encoder;
-                        if (mq_notify (encoder->mqdes, &sev) == -1) {
-                                GST_ERROR ("mq_notify error : %s", g_strerror (errno));
-                        }
+                }
+                attr.mq_flags = 0;
+                attr.mq_maxmsg = 10;
+                attr.mq_msgsize = 128;
+                attr.mq_curmsgs = 0;
+                encoder->mqdes = mq_open (name, O_RDONLY | O_CREAT | O_NONBLOCK, 0666, &attr);
+                if (encoder->mqdes == -1) {
+                        GST_ERROR ("mq_open error : %s", g_strerror (errno));
+                }
+                sev.sigev_notify = SIGEV_THREAD;
+                sev.sigev_notify_function = notify_function;
+                sev.sigev_notify_attributes = NULL;
+                sev.sigev_value.sival_ptr = encoder;
+                if (mq_notify (encoder->mqdes, &sev) == -1) {
+                        GST_ERROR ("mq_notify error : %s", g_strerror (errno));
                 }
 
                 g_free (name);
