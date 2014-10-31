@@ -5,7 +5,7 @@ Description=The gstreamill encoder server
 Type=forking
 PIDFile=/var/run/gstreamill/gstreamill.pid
 ExecStart=/usr/local/bin/gstreamill
-ExecStop=/bin/kill -s SIGUSR2 $MAINPID
+ExecStop=/bin/kill -s SIGTERM $MAINPID
 ExecStartPost=/usr/local/bin/startjobs.sh
 Restart=on-failure
 
