@@ -287,7 +287,7 @@ static void clean_job_list (Gstreamill *gstreamill)
 static gint stop_job (Job *job, gint sig)
 {
         if (job->worker_pid != 0) {
-                if (sig == SIGUSR2) {
+                if (sig == SIGTERM) {
                         /* normally stop */
                         *(job->output->state) = GST_STATE_PAUSED;
                         GST_WARNING ("Stop job %s, pid %d.", job->name, job->worker_pid);
@@ -513,7 +513,7 @@ static void job_check_func (gpointer data, gpointer user_data)
                 }
 
                 if (eos) {
-                        stop_job (job, SIGUSR2);
+                        stop_job (job, SIGTERM);
                         job->eos = TRUE;
                 }
         }
@@ -656,7 +656,7 @@ void gstreamill_stop (Gstreamill *gstreamill)
         list = gstreamill->job_list;
         while (list != NULL) {
                 job = list->data;
-                stop_job (job, SIGUSR2);
+                stop_job (job, SIGTERM);
                 list = list->next;
         }
         g_mutex_unlock (&(gstreamill->job_list_mutex));
@@ -908,7 +908,7 @@ gchar * gstreamill_job_stop (Gstreamill *gstreamill, gchar *name)
 
         job = get_job (gstreamill, name);
         if (job != NULL) {
-                stop_job (job, SIGUSR2);
+                stop_job (job, SIGTERM);
                 return g_strdup_printf ("{\n    \"name\": \"%s\",\n    \"result\": \"success\"\n}", name);
 
         } else {

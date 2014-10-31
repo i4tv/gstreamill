@@ -258,7 +258,7 @@ int main (int argc, char *argv[])
                 pid = atoi (pid_str);
                 g_free (pid_str);
                 g_print ("stoping gstreamill with pid %d ...\n", pid);
-                kill (pid, SIGUSR2);
+                kill (pid, SIGTERM);
                 exit (0);
         }
 
@@ -337,7 +337,7 @@ int main (int argc, char *argv[])
                 job->eos = FALSE;
                 signal (SIGPIPE, SIG_IGN);
                 signal (SIGUSR1, sighandler);
-                signal (SIGUSR2, stop_job);
+                signal (SIGTERM, stop_job);
                 loop = g_main_loop_new (NULL, FALSE);
                 if (job_initialize (job, TRUE) != 0) {
                         GST_ERROR ("initialize livejob failure, exit");
@@ -422,7 +422,7 @@ int main (int argc, char *argv[])
 
                 /* customize signal */
                 signal (SIGUSR1, sighandler);
-                signal (SIGUSR2, stop_gstreamill);
+                signal (SIGTERM, stop_gstreamill);
         }
 
         /* ignore SIGPIPE */
