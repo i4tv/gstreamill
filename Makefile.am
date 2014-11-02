@@ -5,8 +5,9 @@ EXTRA_DIST = examples tools test etc
 
 install-exec-hook:
 	id gstreamill || test "$$?" -eq 9 || { \
-	    useradd -G video,audio gstreamill; \
+	    useradd gstreamill; \
 	}
+	usermod -a -G video,audio gstreamill;
 	chmod u+s $(bindir)/gstreamill
 	test -s /var/lib/gstreamill || { \
 	    mkdir -p /var/lib/gstreamill/in /var/lib/gstreamill/out; \
