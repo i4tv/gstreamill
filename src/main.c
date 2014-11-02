@@ -68,6 +68,7 @@ static void print_version_info ()
         g_print ("gstreamer version : %d.%d.%d %s\n", major, minor, micro, nano_str);
 }
 
+#if 0
 static gint set_user_and_group ()
 {
         struct passwd *pwd;
@@ -107,6 +108,7 @@ static gint set_user_and_group ()
 
         return 0;
 }
+#endif
 
 static gint prepare_gstreamill_run_dir ()
 {
@@ -273,12 +275,12 @@ int main (int argc, char *argv[])
                 g_print ("Can't create gstreamill run directory\n");
                 exit (3);
         }
-
+/*
         if (set_user_and_group () != 0) {
                 g_print ("set user and group failure\n");
                 exit (4);
         }
-
+*/
         if (job_file != NULL) {
                 /* gstreamill command with job, run in foreground */
                 foreground = TRUE;

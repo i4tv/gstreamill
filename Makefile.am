@@ -8,6 +8,7 @@ install-exec-hook:
 	    useradd gstreamill; \
 	}
 	usermod -a -G video,audio gstreamill;
+	chown root:gstreamill $(bindir)/gstreamill
 	chmod u+s $(bindir)/gstreamill
 	test -s /var/lib/gstreamill || { \
 	    mkdir -p /var/lib/gstreamill/in /var/lib/gstreamill/out; \
