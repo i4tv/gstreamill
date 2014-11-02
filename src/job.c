@@ -333,7 +333,6 @@ gint job_initialize (Job *job, gboolean daemon)
 
         job->output_size = status_output_size (job->description);
         name_hexstr = unicode_file_name_2_shm_name (job->name);
-        GST_ERROR ("name:%s hexname: %s", job->name, name_hexstr);
         semaphore_name = g_strdup_printf ("/%s", name_hexstr);
         if (daemon) {
                 /* daemon, use share memory */
