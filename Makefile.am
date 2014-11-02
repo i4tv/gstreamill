@@ -10,19 +10,14 @@ install-exec-hook:
 	chmod u+s $(bindir)/gstreamill
 	test -s /var/lib/gstreamill || { \
 	    mkdir -p /var/lib/gstreamill/in /var/lib/gstreamill/out; \
-	    chown -R root:gstreamill /var/lib/gstreamill; \
-	    chmod -R g+w /var/lib/gstreamill; \
 	}
+	chown -R root:gstreamill /var/lib/gstreamill;
+	chmod -R g+w /var/lib/gstreamill;
 	test -s /var/log/gstreamill || { \
 	    mkdir -p /var/log/gstreamill; \
-	    chown -R root:gstreamill /var/log/gstreamill; \
-	    chmod -R g+w /var/log/gstreamill; \
 	}
-	test -s /var/run/gstreamill || { \
-	    mkdir -p /var/run/gstreamill; \
-	    chown -R root:gstreamill /var/run/gstreamill; \
-	    chmod -R g+w /var/run/gstreamill; \
-	}
+	chown -R root:gstreamill /var/log/gstreamill;
+	chmod -R g+w /var/log/gstreamill;
 	test -s /usr/share/gstreamill && { \
 	    chown -R root:gstreamill /usr/share/gstreamill; \
 	    chmod -R g+w /usr/share/gstreamill; \
