@@ -730,6 +730,7 @@ gint job_start (Job *job)
                 *(job->output->state) = GST_STATE_VOID_PENDING;
                 return 4;
         }
+        GST_WARNING ("Set source pipeline to play state ok");
         *(job->output->source.duration) = 0;
         if (!job->is_live && gst_element_query_duration (job->source->pipeline, GST_FORMAT_TIME, &duration)) {
                 *(job->output->source.duration) = duration;
@@ -753,9 +754,11 @@ gint job_start (Job *job)
 
                         }
                 }
+                GST_WARNING ("Set encoder %s to play state ok", encoder->name);
                 encoder->state = GST_STATE_PLAYING;
         }
         *(job->output->state) = GST_STATE_PLAYING;
+        GST_WARNING ("Set job %s to play state ok", job->name);
 
         return 0;
 }

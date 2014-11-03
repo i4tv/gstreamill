@@ -1313,6 +1313,7 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
                           "    \"name\": \"%s\",\n"
                           "    \"age\": %d,\n"
                           "    \"last_start_time\": \"%s\",\n"
+                          "    \"state\": \"%s\",\n"
                           "    \"current_access\": %d, \n"
                           "    \"cpu_average\": %d,\n"
                           "    \"cpu_current\": %d,\n"
@@ -1357,6 +1358,7 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
                                 job->name,
                                 job->age,
                                 job->last_start_time,
+                                gst_element_state_get_name ((GstState)job->output->state),
                                 job->current_access,
                                 job->cpu_average,
                                 job->cpu_current,
