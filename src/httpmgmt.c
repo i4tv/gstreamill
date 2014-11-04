@@ -509,7 +509,7 @@ static gchar * network_devices ()
         return result;
 }
 
-static gchar * list_files (gchar *pattern, gchar *format)
+static gchar * list_devices (gchar *pattern, gchar *format)
 {
         glob_t pglob;
         gint i;
@@ -731,12 +731,12 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
                 g_free (p);
 
         } else if (g_strcmp0 (request_data->uri, "/admin/audiodevices") == 0) {
-                p = list_files ("/dev/snd/pcmC*c", NULL);
+                p = list_devices ("/dev/snd/pcmC*c", NULL);
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
         } else if (g_strcmp0 (request_data->uri, "/admin/videodevices") == 0) {
-                p = list_files ("/dev/video*", NULL);
+                p = list_devices ("/dev/video*", NULL);
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
@@ -751,7 +751,7 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
                 g_free (p);
 
         } else if (g_strcmp0 (request_data->uri, "/admin/listlivejob") == 0) {
-                p = list_files (JOBS_DIR "/*.job", JOBS_DIR "/%[^.].job");
+                p = list_devices (JOBS_DIR "/*.job", JOBS_DIR "/%[^.].job");
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
