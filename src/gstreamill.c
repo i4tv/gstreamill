@@ -1001,7 +1001,7 @@ EncoderOutput * gstreamill_get_encoder_output (Gstreamill *gstreamill, gchar *ur
                 return NULL;
         }
         if (*(job->output->state) != GST_STATE_PLAYING) {
-                GST_ERROR ("FATAL: Job state is not playing");
+                GST_ERROR ("FATAL: Job %s state is not playing", job->name);
                 return NULL;
         }
         if (index >= job->output->encoder_count) {
