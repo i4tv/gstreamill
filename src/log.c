@@ -150,6 +150,7 @@ static void log_func (GstDebugCategory *category,
                  gst_debug_level_get_name (level),
                  gst_debug_category_get_name (category), file, line,
                  gst_debug_message_get (message));
+        fflush (log_hd);
         g_date_time_unref (datetime);
         g_free (date);
 }
