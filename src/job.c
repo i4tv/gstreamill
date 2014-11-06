@@ -441,7 +441,9 @@ gint job_initialize (Job *job, gboolean daemon)
                         GST_ERROR ("Can't open or create %s directory", output->encoders[i].record_path);
                 }
         }
-        output->sequence = get_dvr_sequence (output);
+        if (job->is_live) {
+                output->sequence = get_dvr_sequence (output);
+        }
         job->output = output;
 
         /* m3u8 master playlist */
