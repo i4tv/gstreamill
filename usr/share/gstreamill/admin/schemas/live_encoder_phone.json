@@ -36,7 +36,7 @@
     },
     "bins": [
         "appsrc name=video ! queue ! videoconvert ! queue ! videoscale ! queue ! x264enc ! queue ! muxer.",
-        "appsrc name=audio ! queue ! audioconvert ! voaacenc ! muxer.",
+        "appsrc name=audio ! queue ! audioconvert ! voaacenc ! queue ! aacparse ! queue ! muxer.",
         "mpegtsmux name=muxer ! queue ! appsink"
     ],
     "udpstreaming": "225.0.0.1:10000"
