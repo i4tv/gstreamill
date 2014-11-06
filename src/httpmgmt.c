@@ -423,7 +423,7 @@ static gchar * set_network_interfaces (RequestData *request_data)
         return result;
 }
 
-static gchar * network_interfaces ()
+static gchar * get_network_interfaces ()
 {
         augeas *aug;
         gchar *value = NULL, **if_match, **option_match, *result, *p, option[128];
@@ -716,7 +716,7 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
                 g_free (p);
 
         } else if (g_strcmp0 (request_data->uri, "/admin/networkinterfaces") == 0) {
-                p = network_interfaces ();
+                p = get_network_interfaces ();
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
