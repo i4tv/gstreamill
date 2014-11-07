@@ -433,7 +433,6 @@ static gchar * get_network_interfaces_debian ()
         aug_set (aug, "/augeas/load/Interfaces/lens", "Interfaces.lns");
         aug_set (aug, "/augeas/load/Interfaces/incl", "/etc/network/interfaces");
         aug_load (aug);
-        //aug_get (aug, "//files/etc/network/interfaces", (const gchar **)&value);
         if_number = aug_match (aug, "//files/etc/network/interfaces/iface[.!='lo']", &if_match);
         result = g_strdup ("[");
         for (i = 0; i < if_number; i++) {
