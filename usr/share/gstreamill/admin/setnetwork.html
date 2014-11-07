@@ -29,7 +29,7 @@
     }
 
     function setnetwork () {
-        $.get("/admin/networkinterfaces", function (data) {
+        $.get("/admin/getnetworkinterfaces", function (data) {
             for (var i = 0; i < data.length; i++) {
                 var interface = data[i],
                     interface_title = document.createElement ("h3"),
