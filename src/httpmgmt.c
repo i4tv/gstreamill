@@ -423,7 +423,7 @@ static gchar * set_network_interfaces (RequestData *request_data)
         return result;
 }
 
-static gchar * get_network_interfaces ()
+static gchar * get_network_interfaces_debian ()
 {
         augeas *aug;
         gchar *value = NULL, **if_match, **option_match, *result, *p, option[128];
@@ -433,7 +433,7 @@ static gchar * get_network_interfaces ()
         aug_set (aug, "/augeas/load/Interfaces/lens", "Interfaces.lns");
         aug_set (aug, "/augeas/load/Interfaces/incl", "/etc/network/interfaces");
         aug_load (aug);
-        aug_get (aug, "//files/etc/network/interfaces", (const gchar **)&value);
+        //aug_get (aug, "//files/etc/network/interfaces", (const gchar **)&value);
         if_number = aug_match (aug, "//files/etc/network/interfaces/iface[.!='lo']", &if_match);
         result = g_strdup ("[");
         for (i = 0; i < if_number; i++) {
@@ -469,7 +469,89 @@ static gchar * get_network_interfaces ()
         return result;
 }
 
-static gchar * network_devices ()
+static gchar * get_network_interfaces_redhat ()
+{
+        augeas *aug;
+        gchar *value = NULL, **if_match, **option_match, *result, *p, option[128];
+        gint if_number, option_number, i, j;
+
+        aug = aug_init (NULL, NULL, AUG_NONE | AUG_NO_ERR_CLOSE | AUG_NO_MODL_AUTOLOAD);
+        aug_set (aug, "/augeas/load/Shellvars/lens", "Shellvars.lns");
+        aug_set (aug, "/augeas/load/Shellvars/incl[6]", "/etc/sysconfig/network-scripts/ifcfg-*");
+        aug_load (aug);
+        if_number = aug_match (aug, "//files/etc/sysconfig/network-scripts/*", &if_match);
+        result = g_strdup ("[");
+        for (i = 0; i < if_number; i++) {
+                GST_ERROR ("%s", if_match[i]);
+                if (g_str_has_suffix (if_match[i], "ifcfg-lo") || g_str_has_prefix (if_match[i], "/augeas")) {
+                        continue;
+                }
+                p = result;
+                result = g_strdup_printf ("%s{", p);
+                g_free (p);
+                p = g_strdup_printf ("%s/*", if_match[i]);
+                option_number = aug_match (aug, p, &option_match);
+                g_free (p);
+                for (j = 0; j < option_number; j++) {
+                        GST_ERROR ("- %s", option_match[j]);
+                        p = g_strdup_printf ("%s/%%[^$]", if_match[i]);
+                        sscanf (option_match[j], p, option);
+                        g_free (p);
+                        if (g_str_has_prefix (option, "#comment")) {
+                                continue;
+                        }
+                        if (g_strcmp0 (option, "NAME") == 0) {
+                                aug_get (aug, option_match[j], (const gchar **)&value);
+                                p = result;
+                                result = g_strdup_printf ("%s\n\"name\": \"%s\",", p, value);
+                                GST_ERROR ("result : %s", result);
+                                g_free (p);
+                        }
+                        if (g_str_has_prefix (option, "IPADDR")) {
+                                aug_get (aug, option_match[j], (const gchar **)&value);
+                                p = result;
+                                result = g_strdup_printf ("%s\n\"address\": \"%s\",", p, value);
+                                g_free (p);
+                        }
+                        if (g_str_has_prefix (option, "GATEWAY")) {
+                                aug_get (aug, option_match[j], (const gchar **)&value);
+                                p = result;
+                                result = g_strdup_printf ("%s\n\"gateway\": \"%s\",", p, value);
+                                g_free (p);
+                        }
+                        if (g_str_has_prefix (option, "PREFIX")) {
+                                aug_get (aug, option_match[j], (const gchar **)&value);
+                                p = result;
+                                result = g_strdup_printf ("%s\n\"netmask\": \"%s\",", p, value);
+                                g_free (p);
+                        }
+                        g_free (option_match[j]);
+                }
+                g_free (option_match);
+                g_free (if_match[i]);
+                result[strlen (result) - 1] = '}';
+                p = result;
+                result = g_strdup_printf ("%s,", p);
+                g_free (p);
+        }
+        g_free (if_match);
+        aug_close (aug);
+        result[strlen (result) - 1] = ']';
+
+        return result;
+}
+
+static gchar * get_network_interfaces ()
+{
+        if (g_file_test ("/etc/network/interfaces", G_FILE_TEST_IS_REGULAR)) {
+                return get_network_interfaces_debian ();
+
+        } else {
+                return get_network_interfaces_redhat ();
+        }
+}
+
+static gchar * get_network_devices ()
 {
         gchar *p1, p2[128], *result, **devices, **device;
         GError *err = NULL;
@@ -715,7 +797,7 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
-        } else if (g_strcmp0 (request_data->uri, "/admin/networkinterfaces") == 0) {
+        } else if (g_strcmp0 (request_data->uri, "/admin/getnetworkinterfaces") == 0) {
                 p = get_network_interfaces ();
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
@@ -725,8 +807,8 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
-        } else if (g_strcmp0 (request_data->uri, "/admin/networkdevices") == 0) {
-                p = network_devices ();
+        } else if (g_strcmp0 (request_data->uri, "/admin/getnetworkdevices") == 0) {
+                p = get_network_devices ();
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
