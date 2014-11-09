@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# iTVEncoder Tutorial documentation build configuration file, created by
+# Gstreamill Tutorial documentation build configuration file, created by
 # sphinx-quickstart on Fri May 24 08:45:43 2013.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -37,8 +37,8 @@ source_suffix = '.rst'
 master_doc = 'documents'
 
 # General information about the project.
-project = u'iTVEncoder Tutorial'
-copyright = u'2013, iTV'
+project = u'Gstreamill Tutorial'
+copyright = u'2013, i4TV'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -158,7 +158,7 @@ html_additional_pages = {'index': 'index.html'}
 #html_file_suffix = ''
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'iTVEncoderTutorialdoc'
+htmlhelp_basename = 'GstreamillTutorialdoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -172,7 +172,7 @@ htmlhelp_basename = 'iTVEncoderTutorialdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'iTVEncoderTutorial.tex', u'iTVEncoder Tutorial Documentation',
+  ('index', 'GstreamillTutorial.tex', u'Gstreamill Tutorial Documentation',
    u'Zhang Ping', 'manual'),
 ]
 
