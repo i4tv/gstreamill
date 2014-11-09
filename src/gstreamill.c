@@ -719,8 +719,8 @@ static guint64 create_job_process (Job *job)
         job->worker_pid = pid;
         g_child_watch_add (pid, (GChildWatchFunc)child_watch_cb, job);
 
-        while (*(job->output->state) == GST_STATE_READY || *(job->output->state) == GST_STATE_VOID_PENDING) {
-                GST_WARNING ("waiting job process creating ...");
+        while (*(job->output->state) == GST_STATE_READY) {
+                GST_WARNING ("waiting job process creating ... state: %s", gst_element_state_get_name (*(job->output->state)));
                 g_usleep (50000);
         }
 
