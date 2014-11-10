@@ -195,16 +195,17 @@ gboolean bus_callback (GstBus *bus, GstMessage *msg, gpointer user_data)
                 gst_tag_list_foreach (tags, print_one_tag, NULL);
                 break;
 
-        /*
-        an error occurred. When the application receives an error message it should
-        stop playback of the pipeline and not assume that more data will be played.
-        */
+        /***
+         * an error occurred. When the application receives an error message it should
+         * stop playback of the pipeline and not assume that more data will be played.
+         * suprocess should be restart on this error.
+         */
         case GST_MESSAGE_ERROR: 
                 gst_message_parse_error (msg, &error, &debug);
                 g_free (debug);
                 GST_ERROR ("%s error found: %s, exit", g_value_get_string (&name), error->message);
                 g_error_free (error);
-                exit (8); /* exit 4 for pipeline error */
+                exit (101); /* exit 4 for pipeline error */
                 break;
 
         case GST_MESSAGE_STATE_CHANGED:

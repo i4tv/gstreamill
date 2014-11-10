@@ -742,8 +742,22 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
         }
 
         if (WIFEXITED (status) && (WEXITSTATUS (status) != 0)) {
-                GST_ERROR ("Start job failure: return %d", WEXITSTATUS (status));
-                return;
+                if (WEXITSTATUS (status) < 100) {
+                        GST_ERROR ("Start job failure: subprocess return %d and don't restart it.", WEXITSTATUS (status));
+                        return;
+
+                } else {
+                        GST_ERROR ("Job %s exit on critical error return %d, restart ...", job->name, WEXITSTATUS (status));
+                        job_reset (job);
+                        if (create_job_process (job) == JOB_STATE_PLAYING) {
+                                GST_ERROR ("Restart job %s success", job->name);
+
+                        } else {
+                                /* create process failure, clean from job list */
+                                GST_ERROR ("Restart job %s failure", job->name);
+                                *(job->output->state) = JOB_STATE_NULL;
+                        }
+                }
         }
 
         if (WIFSIGNALED (status)) {
