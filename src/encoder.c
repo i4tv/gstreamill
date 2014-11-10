@@ -20,8 +20,7 @@ GST_DEBUG_CATEGORY_EXTERN (GSTREAMILL);
 
 enum {
         ENCODER_PROP_0,
-        ENCODER_PROP_NAME,
-        ENCODER_PROP_STATE
+        ENCODER_PROP_NAME
 };
 
 static void encoder_set_property (GObject *obj, guint prop_id, const GValue *value, GParamSpec *pspec);
@@ -47,17 +46,6 @@ static void encoder_class_init (EncoderClass *encoderclass)
                 G_PARAM_WRITABLE | G_PARAM_READABLE
         );
         g_object_class_install_property (g_object_class, ENCODER_PROP_NAME, param);
-
-        param = g_param_spec_int (
-                "state",
-                "statef",
-                "state",
-                GST_STATE_VOID_PENDING,
-                GST_STATE_PLAYING,
-                GST_STATE_VOID_PENDING,
-                G_PARAM_WRITABLE | G_PARAM_READABLE
-        );
-        g_object_class_install_property (g_object_class, ENCODER_PROP_STATE, param);
 }
 
 static void encoder_init (Encoder *encoder)
@@ -98,10 +86,6 @@ static void encoder_set_property (GObject *obj, guint prop_id, const GValue *val
                 ENCODER (obj)->name = (gchar *)g_value_dup_string (value);
                 break;
 
-        case ENCODER_PROP_STATE:
-                ENCODER (obj)->state= g_value_get_int (value);
-                break;
-
         default:
                 G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
                 break;
@@ -115,10 +99,6 @@ static void encoder_get_property (GObject *obj, guint prop_id, GValue *value, GP
         switch (prop_id) {
         case ENCODER_PROP_NAME:
                 g_value_set_string (value, encoder->name);
-                break;
-
-        case ENCODER_PROP_STATE:
-                g_value_set_int (value, encoder->state);
                 break;
 
         default:

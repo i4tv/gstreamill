@@ -21,8 +21,7 @@ GST_DEBUG_CATEGORY_EXTERN (GSTREAMILL);
 
 enum {
         SOURCE_PROP_0,
-        SOURCE_PROP_NAME,
-        SOURCE_PROP_STATE
+        SOURCE_PROP_NAME
 };
 
 static void source_set_property (GObject *obj, guint prop_id, const GValue *value, GParamSpec *pspec);
@@ -48,17 +47,6 @@ static void source_class_init (SourceClass *sourceclass)
                 G_PARAM_WRITABLE | G_PARAM_READABLE
         );
         g_object_class_install_property (g_object_class, SOURCE_PROP_NAME, param);
-
-        param = g_param_spec_int (
-                "state",
-                "statef",
-                "state",
-                GST_STATE_VOID_PENDING,
-                GST_STATE_PLAYING,
-                GST_STATE_VOID_PENDING,
-                G_PARAM_WRITABLE | G_PARAM_READABLE
-        );
-        g_object_class_install_property (g_object_class, SOURCE_PROP_STATE, param);
 }
 
 static void source_init (Source *source)
@@ -99,8 +87,19 @@ static void source_set_property (GObject *obj, guint prop_id, const GValue *valu
                 SOURCE (obj)->name = (gchar *)g_value_dup_string (value);
                 break;
 
-        case SOURCE_PROP_STATE:
-                SOURCE (obj)->state= g_value_get_int (value);
+        default:
+                G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
+                break;
+        }
+}
+
+static void source_get_property (GObject *obj, guint prop_id, GValue *value, GParamSpec *pspec)
+{
+        Source *source = SOURCE (obj);
+
+        switch (prop_id) {
+        case SOURCE_PROP_NAME:
+                g_value_set_string (value, source->name);
                 break;
 
         default:
@@ -138,25 +137,6 @@ static void source_finalize (GObject *obj)
         g_array_free (source->streams, FALSE);
 
         G_OBJECT_CLASS (parent_class)->finalize (obj);
-}
-
-static void source_get_property (GObject *obj, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-        Source *source = SOURCE (obj);
-
-        switch (prop_id) {
-        case SOURCE_PROP_NAME:
-                g_value_set_string (value, source->name);
-                break;
-
-        case SOURCE_PROP_STATE:
-                g_value_set_int (value, source->state);
-                break;
-
-        default:
-                G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
-                break;
-        }
 }
 
 static void print_one_tag (const GstTagList * list, const gchar * tag, gpointer user_data)

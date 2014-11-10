@@ -74,7 +74,6 @@ struct _Source {
 
         gchar *name;
         GstClock *system_clock;
-        GstState state; /* state of the pipeline */
         GSList *bins;
         GstElement *pipeline;
 

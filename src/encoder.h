@@ -59,7 +59,6 @@ struct _Encoder {
         gchar *name;
         gint id;
         GstClock *system_clock;
-        GstState state; /* state of the pipeline */
         GSList *bins;
         GstElement *pipeline;
         GArray *streams;

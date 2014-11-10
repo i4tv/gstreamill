@@ -757,7 +757,6 @@ gint job_start (Job *job)
         if (!job->is_live && gst_element_query_duration (job->source->pipeline, GST_FORMAT_TIME, &duration)) {
                 *(job->output->source.duration) = duration;
         }
-        job->source->state = GST_STATE_PLAYING;
         for (i = 0; i < job->encoder_array->len; i++) {
                 encoder = g_array_index (job->encoder_array, gpointer, i);
                 ret = gst_element_set_state (encoder->pipeline, GST_STATE_PLAYING);
@@ -777,7 +776,6 @@ gint job_start (Job *job)
                         }
                 }
                 GST_WARNING ("Set encoder %s to play state ok", encoder->name);
-                encoder->state = GST_STATE_PLAYING;
         }
         *(job->output->state) = JOB_STATE_PLAYING;
         GST_WARNING ("Set job %s to play state ok", job->name);
