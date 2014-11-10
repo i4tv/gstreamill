@@ -315,6 +315,26 @@ static guint64 get_dvr_sequence (JobOutput *joboutput)
         return sequence;
 }
 
+gchar * job_state_get_name (guint64 state)
+{
+        switch (state) {
+        case JOB_STATE_VOID_PENDING:
+                return ("JOB_STATE_VOID_PENDING");
+        case JOB_STATE_READY:
+                return ("JOB_STATE_READY");
+        case JOB_STATE_PLAYING:
+                return ("JOB_STATE_PLAYING");
+        case JOB_STATE_START_FAILURE:
+                return ("JOB_STATE_START_FAILURE");
+        case JOB_STATE_PAUSED:
+                return ("JOB_STATE_PAUSED");
+        case JOB_STATE_NULL:
+                return ("JOB_STATE_NULL");
+        }
+
+        return NULL;
+}
+
 /**
  * job_initialize:
  * @job: (in): the job to be initialized.
@@ -371,7 +391,7 @@ gint job_initialize (Job *job, gboolean daemon)
         g_stpcpy (output->job_description, job->description);
         p += (strlen (job->description) / 8 + 1) * 8;
         output->state = (guint64 *)p;
-        *(output->state) = GST_STATE_READY;
+        *(output->state) = JOB_STATE_READY;
         p += sizeof (guint64); /* state */
         output->source.duration = (gint64 *)p;
         p += sizeof (gint64); /* duration for transcode */
@@ -709,13 +729,13 @@ gint job_start (Job *job)
         job->source = source_initialize (job->description, &(job->output->source));
         if (job->source == NULL) {
                 GST_WARNING ("Initialize job source error.");
-                *(job->output->state) = GST_STATE_VOID_PENDING;
+                *(job->output->state) = JOB_STATE_START_FAILURE;
                 return 1;
         }
 
         if (encoder_initialize (job->encoder_array, job->description, job->output->encoders, job->source) != 0) {
                 GST_WARNING ("Initialize job encoder error.");
-                *(job->output->state) = GST_STATE_VOID_PENDING;
+                *(job->output->state) = JOB_STATE_START_FAILURE;
                 return 2;
         }
 
@@ -724,12 +744,12 @@ gint job_start (Job *job)
         ret = gst_element_get_state (job->source->pipeline, NULL, NULL, 5 * GST_SECOND);
         if (ret == GST_STATE_CHANGE_FAILURE) {
                 GST_WARNING ("Set %s source pipeline to play error.", job->name);
-                *(job->output->state) = GST_STATE_VOID_PENDING;
+                *(job->output->state) = JOB_STATE_START_FAILURE;
                 return 3;
 
         } else if (ret == GST_STATE_CHANGE_ASYNC) {
                 GST_WARNING ("Set %s source pipeline to play timeout.", job->name);
-                *(job->output->state) = GST_STATE_VOID_PENDING;
+                *(job->output->state) = JOB_STATE_START_FAILURE;
                 return 4;
         }
         GST_WARNING ("Set source pipeline to play state ok");
@@ -743,7 +763,7 @@ gint job_start (Job *job)
                 ret = gst_element_set_state (encoder->pipeline, GST_STATE_PLAYING);
                 if (ret == GST_STATE_CHANGE_FAILURE) {
                         GST_WARNING ("Set %s to play error.", encoder->name);
-                        *(job->output->state) = GST_STATE_VOID_PENDING;
+                        *(job->output->state) = JOB_STATE_START_FAILURE;
                         return 5;
 
                 }
@@ -751,7 +771,7 @@ gint job_start (Job *job)
                         ret = gst_element_set_state (encoder->udpstreaming, GST_STATE_PLAYING);
                         if (ret == GST_STATE_CHANGE_FAILURE) {
                                 GST_WARNING ("Set %s udpstreaming to play error.", encoder->name);
-                                *(job->output->state) = GST_STATE_VOID_PENDING;
+                                *(job->output->state) = JOB_STATE_START_FAILURE;
                                 return 6;
 
                         }
@@ -759,7 +779,7 @@ gint job_start (Job *job)
                 GST_WARNING ("Set encoder %s to play state ok", encoder->name);
                 encoder->state = GST_STATE_PLAYING;
         }
-        *(job->output->state) = GST_STATE_PLAYING;
+        *(job->output->state) = JOB_STATE_PLAYING;
         GST_WARNING ("Set job %s to play state ok", job->name);
 
         return 0;

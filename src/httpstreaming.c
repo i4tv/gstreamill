@@ -661,7 +661,7 @@ static GstClockTime http_continue_process (HTTPStreaming *httpstreaming, Request
                 }
         }
         if ((priv_data->livejob_age != priv_data->job->age) ||
-            (*(priv_data->job->output->state) != GST_STATE_PLAYING)) {
+            (*(priv_data->job->output->state) != JOB_STATE_PLAYING)) {
                 g_free (request_data->priv_data);
                 request_data->priv_data = NULL;
                 gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);

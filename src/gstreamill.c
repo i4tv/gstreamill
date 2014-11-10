@@ -260,7 +260,7 @@ static void clean_job_list (Gstreamill *gstreamill)
                         job = list->data;
 
                         /* clean live job */
-                        if (job->is_live && (*(job->output->state) == GST_STATE_NULL && job->current_access == 0)) {
+                        if (job->is_live && (*(job->output->state) == JOB_STATE_NULL && job->current_access == 0)) {
                                 GST_WARNING ("Remove live job: %s.", job->name);
                                 gstreamill->job_list = g_slist_remove (gstreamill->job_list, job);
                                 g_object_unref (job);
@@ -289,7 +289,7 @@ static gint stop_job (Job *job, gint sig)
         if (job->worker_pid != 0) {
                 if (sig == SIGTERM) {
                         /* normally stop */
-                        *(job->output->state) = GST_STATE_PAUSED;
+                        *(job->output->state) = JOB_STATE_PAUSED;
                         GST_WARNING ("Stop job %s, pid %d.", job->name, job->worker_pid);
 
                 } else {
@@ -472,7 +472,7 @@ static void job_check_func (gpointer data, gpointer user_data)
                                 job->memory);
         }
 
-        if (*(job->output->state) != GST_STATE_PLAYING) {
+        if (*(job->output->state) != JOB_STATE_PLAYING) {
                 return;
         }
 
@@ -708,7 +708,7 @@ static guint64 create_job_process (Job *job)
                         }
                 }
                 g_error_free (error);
-                return GST_STATE_NULL;
+                return JOB_STATE_START_FAILURE;
         }
 
         for (j = 0; j < i; j++) {
@@ -719,8 +719,8 @@ static guint64 create_job_process (Job *job)
         job->worker_pid = pid;
         g_child_watch_add (pid, (GChildWatchFunc)child_watch_cb, job);
 
-        while (*(job->output->state) == GST_STATE_READY) {
-                GST_WARNING ("waiting job process creating ... state: %s", gst_element_state_get_name (*(job->output->state)));
+        while ((*(job->output->state) == JOB_STATE_READY) || (*(job->output->state) == JOB_STATE_VOID_PENDING)) {
+                GST_WARNING ("waiting job process creating ... state: %s", job_state_get_name (*(job->output->state)));
                 g_usleep (50000);
         }
 
@@ -736,51 +736,41 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
 
         if (WIFEXITED (status) && (WEXITSTATUS (status) == 0)) {
                 GST_ERROR ("Job %s normaly exit, status is %d", job->name, WEXITSTATUS (status));
-                if (*(job->output->state) == GST_STATE_READY) {
-                        *(job->output->state) = GST_STATE_VOID_PENDING;
-
-                } else {
-                        *(job->output->state) = GST_STATE_NULL;
-                        job->eos = TRUE;
-                }
+                *(job->output->state) = JOB_STATE_NULL;
+                job->eos = TRUE;
                 return;
         }
 
         if (WIFEXITED (status) && (WEXITSTATUS (status) != 0)) {
                 GST_ERROR ("Job %s abnormaly exit, status is %d", job->name, WEXITSTATUS (status));
-                if (*(job->output->state) == GST_STATE_READY) {
-                        *(job->output->state) = GST_STATE_VOID_PENDING;
-
-                } else {
-                        *(job->output->state) = GST_STATE_NULL;
-                        job->eos = TRUE;
-                }
+                *(job->output->state) = JOB_STATE_NULL;
+                job->eos = TRUE;
                 return;
         }
 
         if (WIFSIGNALED (status)) {
-                if (*(job->output->state) == GST_STATE_PAUSED) {
+                if (*(job->output->state) == JOB_STATE_PAUSED) {
                         GST_ERROR ("Job %s exit on signal and paused, stopping gstreamill...", job->name);
-                        *(job->output->state) = GST_STATE_NULL;
+                        *(job->output->state) = JOB_STATE_NULL;
                         return;
                 }
 
                 if (!job->is_live) {
                         GST_ERROR ("Nonlive job %s exit on an unhandled signal.", job->name);
-                        *(job->output->state) = GST_STATE_NULL;
+                        *(job->output->state) = JOB_STATE_NULL;
                         job->eos = TRUE;
                         return;
                 }
 
                 GST_ERROR ("Live job %s exit on an unhandled signal, restart.", job->name);
                 job_reset (job);
-                if (create_job_process (job) == GST_STATE_PLAYING) {
+                if (create_job_process (job) == JOB_STATE_PLAYING) {
                         GST_ERROR ("Restart job %s success", job->name);
 
                 } else {
                         /* create process failure, clean from job list */
                         GST_ERROR ("Restart job %s failure", job->name);
-                        *(job->output->state) = GST_STATE_NULL;
+                        *(job->output->state) = JOB_STATE_NULL;
                 }
         }
 
@@ -865,10 +855,10 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
         /* reset and start job */
         job_reset (job);
         if (gstreamill->daemon) {
-                GstState stat;
+                guint64 stat;
 
                 stat = create_job_process (job);
-                if (stat == GST_STATE_PLAYING) {
+                if (stat == JOB_STATE_PLAYING) {
                         GST_ERROR ("Start job %s success", job->name);
                         g_mutex_lock (&(gstreamill->job_list_mutex));
                         gstreamill->job_list = g_slist_append (gstreamill->job_list, job);
@@ -876,7 +866,7 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
                         p = g_strdup_printf ("{\n    \"name\": \"%s\",\n\"result\": \"success\"\n}", job->name);
 
                 } else {
-                        GST_ERROR ("Start job %s failure, return stat: %s", job->name, gst_element_state_get_name (stat));
+                        GST_ERROR ("Start job %s failure, return stat: %s", job->name, job_state_get_name (stat));
                         g_object_unref (job);
                         p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"create process failure\"\n}");
                 }
@@ -1000,7 +990,7 @@ EncoderOutput * gstreamill_get_encoder_output (Gstreamill *gstreamill, gchar *ur
                 GST_ERROR ("Job %s not found.", uri);
                 return NULL;
         }
-        if (*(job->output->state) != GST_STATE_PLAYING) {
+        if (*(job->output->state) != JOB_STATE_PLAYING) {
                 GST_ERROR ("FATAL: Job %s state is not playing", job->name);
                 return NULL;
         }
@@ -1156,7 +1146,7 @@ static gchar * source_streams_stat (Job *job)
 
         for (i = 0; i < job->output->source.stream_count; i++) {
                 stat = &(job->output->source.streams[i]);
-                if (*(job->output->state) == GST_STATE_PLAYING) {
+                if (*(job->output->state) == JOB_STATE_PLAYING) {
                         timestamp = stat->current_timestamp;
                         time = gst_date_time_new_from_unix_epoch_local_time (stat->last_heartbeat/GST_SECOND);
                         heartbeat = gst_date_time_to_iso8601_string (time);
@@ -1209,7 +1199,7 @@ static gchar * encoder_stat (EncoderOutput *encoder, guint64 jobstate)
 
         for (i = 0; i < encoder->stream_count; i++) {
                 stat = &(encoder->streams[i]);
-                if (jobstate == GST_STATE_PLAYING) {
+                if (jobstate == JOB_STATE_PLAYING) {
                         timestamp = stat->current_timestamp;
                         time = gst_date_time_new_from_unix_epoch_local_time (stat->last_heartbeat/GST_SECOND);
                         heartbeat = gst_date_time_to_iso8601_string (time);
@@ -1358,7 +1348,7 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
                                 job->name,
                                 job->age,
                                 job->last_start_time,
-                                gst_element_state_get_name ((GstState)job->output->state),
+                                job_state_get_name (*(job->output->state)),
                                 job->current_access,
                                 job->cpu_average,
                                 job->cpu_current,

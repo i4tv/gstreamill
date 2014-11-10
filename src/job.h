@@ -17,15 +17,25 @@
 typedef struct _Job Job;
 typedef struct _JobClass JobClass;
 
+/** job state
+ * JOB_STATE_VOID_PENDING: no pending state.
+ * JOB_STATE_READY: creating job process, subsequent state is JOB_STATE_PLAYLING or JOB_STATE_START_FAILURE
+ * JOB_STATE_PLAYLING: playing state, subprocess running.
+ * JOB_STATE_START_FAILURE: subprocess start failure.
+ * JOB_STATE_PAUSED: stoping state, subprocess is being stop.
+ * JOB_STATE_NULL: stoped state, subprocess finished.
+ */
+typedef enum {
+        JOB_STATE_VOID_PENDING = 0,
+        JOB_STATE_READY = 1,
+        JOB_STATE_PLAYING = 2,
+        JOB_STATE_START_FAILURE = 3,
+        JOB_STATE_PAUSED = 4,
+        JOB_STATE_NULL = 5
+} JobState;
+
 typedef struct _JobOutput {
         gchar *job_description;
-        /*
-         * GST_STATE_PLAYLING: playing state, subprocess running.
-         * GST_STATE_PAUSED: stoping state, subprocess is being stop.
-         * GST_STATE_NULL: stoped state, subprocess finished or create job process failure.
-         * GST_STATE_READY: creating job process, subsequent state is GST_STATE_VOID_PENDING or GST_STATE_PLAYLING
-         * GST_STATE_VOID_PENDING: create job failure.
-         */
         gchar *semaphore_name;
         sem_t *semaphore; /* access of job output should be exclusive */
         guint64 *state;
@@ -84,6 +94,7 @@ struct _JobClass {
 
 GType job_get_type (void);
 
+gchar * job_state_get_name (guint64 state);
 gint job_initialize (Job *job, gboolean daemon);
 void job_reset (Job *job);
 void job_stat_update (Job *job);
