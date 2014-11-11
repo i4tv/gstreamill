@@ -22,8 +22,6 @@
 #define LOG_SIZE 4*1024*1024
 #define LOG_ROTATE 100
 
-#define MEDIA_LOCATION "/var/lib/gstreamill"
-
 typedef struct _Gstreamill      Gstreamill;
 typedef struct _GstreamillClass GstreamillClass;
 

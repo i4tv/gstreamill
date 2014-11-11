@@ -397,6 +397,110 @@ gint job_initialize (Job *job, gboolean daemon)
         return 0;
 }
 
+static gchar * render_master_m3u8_playlist (Job *job)
+{
+        GString *master_m3u8_playlist;
+        gchar *p, *value;
+        gint i;
+
+        master_m3u8_playlist = g_string_new ("");
+        g_string_append_printf (master_m3u8_playlist, M3U8_HEADER_TAG);
+        if (jobdesc_m3u8streaming_version (job->description) == 0) {
+                g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, 3);
+
+        } else {
+                g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, jobdesc_m3u8streaming_version (job->description));
+        }
+
+        for (i = 0; i < job->output->encoder_count; i++) {
+                p = g_strdup_printf ("encoder.%d.elements.x264enc.property.bitrate", i);
+                value = jobdesc_element_property_value (job->description, p);
+                if (value != NULL) {
+                        GST_INFO ("job %s with m3u8 output, append end tag", job->name);
+                        g_string_append_printf (master_m3u8_playlist, M3U8_STREAM_INF_TAG, 1, value);
+                        g_string_append_printf (master_m3u8_playlist, "encoder/%d/playlist.m3u8<%%parameters%%>\n", i);
+                        g_free (value);
+                }
+                g_free (p);
+        }
+
+        p = master_m3u8_playlist->str;
+        g_string_free (master_m3u8_playlist, FALSE);
+
+        return p;
+}
+
+static guint64 get_dvr_sequence (JobOutput *joboutput)
+{
+        glob_t pglob;
+        gchar *pattern, *format;
+        guint64 encoder_sequence, sequence;
+        gint i;
+
+        sequence = 0;
+        for (i = 0; i < joboutput->encoder_count; i++) {
+                encoder_sequence = 0;
+                pattern = g_strdup_printf ("%s/*", joboutput->encoders[i].record_path);
+                if (glob (pattern, 0, NULL, &pglob) != GLOB_NOMATCH) {
+                        format = g_strdup_printf ("%s/%%*[^_]_%%lu_%%*[^_]$", joboutput->encoders[i].record_path);
+                        sscanf (pglob.gl_pathv[pglob.gl_pathc - 1], format, &encoder_sequence);
+                        encoder_sequence += 1;
+                        g_free (format);
+                }
+                globfree (&pglob);
+                g_free (pattern);
+                if (encoder_sequence > sequence) {
+                        sequence = encoder_sequence;
+                }
+        }
+
+        return sequence;
+}
+
+/*
+ * job_live_output_initialize:
+ * @job: (in): job object
+ *
+ * live output is gstreamill output, for client access.
+ *
+ */
+gint job_live_output_initialize (Job *job)
+{
+        gint i;
+        JobOutput *output;
+
+        output = job->output;
+        /* m3u8 master playlist */
+        if (jobdesc_m3u8streaming (job->description)) {
+                output->master_m3u8_playlist = render_master_m3u8_playlist (job);
+                if (output->master_m3u8_playlist == NULL) {
+                        GST_ERROR ("job %s render master m3u8 playlist failure", job->name);
+                        return 1;
+                }
+
+        } else {
+                output->master_m3u8_playlist = NULL;
+        }
+
+        /* initialize dvr parameters */
+        for (i = 0; i < output->encoder_count; i++) {
+                /* timeshift and dvr */
+                output->encoders[i].record_path = NULL;
+                output->encoders[i].dvr_duration = jobdesc_dvr_duration (job->description);
+                if (output->encoders[i].dvr_duration == 0) {
+                        continue;
+                }
+                output->encoders[i].record_path = g_strdup_printf ("%s/dvr/%s/%d", MEDIA_LOCATION, job->name, i);
+                if (!g_file_test (output->encoders[i].record_path, G_FILE_TEST_EXISTS) &&
+                    (g_mkdir_with_parents (output->encoders[i].record_path, 0755) != 0)) {
+                        GST_ERROR ("Can't open or create %s directory", output->encoders[i].record_path);
+                }
+        }
+        output->sequence = get_dvr_sequence (output);
+
+        return 0;
+}
+
 /*
  * job_stat_update:
  * @job: (in): job object
