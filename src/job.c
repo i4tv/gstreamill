@@ -255,33 +255,6 @@ static gsize status_output_size (gchar *job)
         return size;
 }
 
-static guint64 get_dvr_sequence (JobOutput *joboutput)
-{
-        glob_t pglob;
-        gchar *pattern, *format;
-        guint64 encoder_sequence, sequence;
-        gint i;
-
-        sequence = 0;
-        for (i = 0; i < joboutput->encoder_count; i++) {
-                encoder_sequence = 0;
-                pattern = g_strdup_printf ("%s/*", joboutput->encoders[i].record_path);
-                if (glob (pattern, 0, NULL, &pglob) != GLOB_NOMATCH) {
-                        format = g_strdup_printf ("%s/%%*[^_]_%%lu_%%*[^_]$", joboutput->encoders[i].record_path);
-                        sscanf (pglob.gl_pathv[pglob.gl_pathc - 1], format, &encoder_sequence);
-                        encoder_sequence += 1;
-                        g_free (format);
-                }
-                globfree (&pglob);
-                g_free (pattern);
-                if (encoder_sequence > sequence) {
-                        sequence = encoder_sequence;
-                }
-        }
-
-        return sequence;
-}
-
 gchar * job_state_get_name (guint64 state)
 {
         switch (state) {
@@ -417,24 +390,8 @@ gint job_initialize (Job *job, gboolean daemon)
                 *(output->encoders[i].last_rap_addr) = 0;
                 p += sizeof (guint64); /* last rap addr */
                 output->encoders[i].m3u8_playlist = NULL;
-
-                /* timeshift and dvr */
-                output->encoders[i].record_path = NULL;
-                output->encoders[i].dvr_duration = jobdesc_dvr_duration (job->description);
-                if (output->encoders[i].dvr_duration == 0) {
-                        continue;
-                }
-                output->encoders[i].record_path = g_strdup_printf ("%s/dvr/%s/%d", MEDIA_LOCATION, job->name, i);
-                if (!g_file_test (output->encoders[i].record_path, G_FILE_TEST_EXISTS) &&
-                    (g_mkdir_with_parents (output->encoders[i].record_path, 0755) != 0)) {
-                        GST_ERROR ("Can't open or create %s directory", output->encoders[i].record_path);
-                }
-        }
-        if (job->is_live) {
-                output->sequence = get_dvr_sequence (output);
         }
         job->output = output;
-
         sem_post (semaphore);
 
         return 0;

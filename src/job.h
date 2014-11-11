@@ -12,7 +12,6 @@
 #include "encoder.h"
 
 #define SHM_SIZE 64*1024*1024
-#define MEDIA_LOCATION "/var/lib/gstreamill"
 
 typedef struct _Job Job;
 typedef struct _JobClass JobClass;
