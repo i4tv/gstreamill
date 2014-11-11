@@ -816,6 +816,39 @@ static Job * get_job (Gstreamill *gstreamill, gchar *name)
         return job;
 }
 
+static gchar * render_master_m3u8_playlist (Job *job)
+{
+        GString *master_m3u8_playlist;
+        gchar *p, *value;
+        gint i;
+
+        master_m3u8_playlist = g_string_new ("");
+        g_string_append_printf (master_m3u8_playlist, M3U8_HEADER_TAG);
+        if (jobdesc_m3u8streaming_version (job->description) == 0) {
+                g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, 3);
+
+        } else {
+                g_string_append_printf (master_m3u8_playlist, M3U8_VERSION_TAG, jobdesc_m3u8streaming_version (job->description));
+        }
+
+        for (i = 0; i < job->output->encoder_count; i++) {
+                p = g_strdup_printf ("encoder.%d.elements.x264enc.property.bitrate", i);
+                value = jobdesc_element_property_value (job->description, p);
+                if (value != NULL) {
+                        GST_INFO ("job %s with m3u8 output, append end tag", job->name);
+                        g_string_append_printf (master_m3u8_playlist, M3U8_STREAM_INF_TAG, 1, value);
+                        g_string_append_printf (master_m3u8_playlist, "encoder/%d/playlist.m3u8<%%parameters%%>\n", i);
+                        g_free (value);
+                }
+                g_free (p);
+        }
+
+        p = master_m3u8_playlist->str;
+        g_string_free (master_m3u8_playlist, FALSE);
+
+        return p;
+}
+
 /**
  * gstreamill_job_start:
  * @job: (in): json type of job description.
@@ -862,6 +895,19 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
                 p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"initialize job failure\"\n}");
                 g_object_unref (job);
                 return p;
+        }
+
+        /* m3u8 master playlist */
+        if (jobdesc_m3u8streaming (job->description)) {
+                job->output->master_m3u8_playlist = render_master_m3u8_playlist (job);
+                if (job->output->master_m3u8_playlist == NULL) {
+                        GST_ERROR ("job %s render master m3u8 playlist failure", job->name);
+                        p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"render master m3u8 playlist failure\"\n}");
+                        return p;
+                }
+
+        } else {
+                job->output->master_m3u8_playlist = NULL;
         }
 
         /* reset and start job */
