@@ -339,6 +339,30 @@ static gchar * add_header_footer (gchar *middle)
         return buf;
 }
 
+static augeas * aug_init_debian ()
+{
+        augeas *aug;
+
+        aug = aug_init (NULL, NULL, AUG_NONE | AUG_NO_ERR_CLOSE | AUG_NO_MODL_AUTOLOAD);
+        aug_set (aug, "/augeas/load/Interfaces/lens", "Interfaces.lns");
+        aug_set (aug, "/augeas/load/Interfaces/incl", "/etc/network/interfaces");
+        aug_load (aug);
+
+        return aug;
+}
+
+static augeas * aug_init_redhat ()
+{
+        augeas *aug;
+
+        aug = aug_init (NULL, NULL, AUG_NONE | AUG_NO_ERR_CLOSE | AUG_NO_MODL_AUTOLOAD);
+        aug_set (aug, "/augeas/load/Shellvars/lens", "Shellvars.lns");
+        aug_set (aug, "/augeas/load/Shellvars/incl[6]", "/etc/sysconfig/network-scripts/ifcfg-*");
+        aug_load (aug);
+
+        return aug;
+}
+
 static gchar * set_network_interfaces_debian (RequestData *request_data)
 {
         gchar *interfaces, *result, *name, *path, *value;
@@ -348,10 +372,7 @@ static gchar * set_network_interfaces_debian (RequestData *request_data)
         JSON_Object *obj;
         gint if_count, i;
 
-        aug = aug_init (NULL, NULL, AUG_NONE | AUG_NO_ERR_CLOSE | AUG_NO_MODL_AUTOLOAD);
-        aug_set (aug, "/augeas/load/Interfaces/lens", "Interfaces.lns");
-        aug_set (aug, "/augeas/load/Interfaces/incl", "/etc/network/interfaces");
-        aug_load (aug);
+        aug = aug_init_debian ();
         interfaces = request_data->raw_request + request_data->header_size;
         val = json_parse_string (interfaces);
         if (val == NULL) {
@@ -432,10 +453,7 @@ static gchar * set_network_interfaces_redhat (RequestData *request_data)
         JSON_Object *obj;
         gint if_count, i;
 
-        aug = aug_init (NULL, NULL, AUG_NONE | AUG_NO_ERR_CLOSE | AUG_NO_MODL_AUTOLOAD);
-        aug_set (aug, "/augeas/load/Shellvars/lens", "Shellvars.lns");
-        aug_set (aug, "/augeas/load/Shellvars/incl[6]", "/etc/sysconfig/network-scripts/ifcfg-*");
-        aug_load (aug);
+        aug = aug_init_redhat ();
         interfaces = request_data->raw_request + request_data->header_size;
         val = json_parse_string (interfaces);
         if (val == NULL) {
@@ -505,10 +523,7 @@ static gchar * get_network_interfaces_debian ()
         gchar *value = NULL, **if_match, **option_match, *result, *p, option[128];
         gint if_number, option_number, i, j;
 
-        aug = aug_init (NULL, NULL, AUG_NONE | AUG_NO_ERR_CLOSE | AUG_NO_MODL_AUTOLOAD);
-        aug_set (aug, "/augeas/load/Interfaces/lens", "Interfaces.lns");
-        aug_set (aug, "/augeas/load/Interfaces/incl", "/etc/network/interfaces");
-        aug_load (aug);
+        aug = aug_init_debian ();
         if_number = aug_match (aug, "//files/etc/network/interfaces/iface[.!='lo']", &if_match);
         result = g_strdup ("[");
         for (i = 0; i < if_number; i++) {
@@ -550,10 +565,7 @@ static gchar * get_network_interfaces_redhat ()
         gchar *value = NULL, **if_match, **option_match, *result, *p, option[128];
         gint if_number, option_number, i, j;
 
-        aug = aug_init (NULL, NULL, AUG_NONE | AUG_NO_ERR_CLOSE | AUG_NO_MODL_AUTOLOAD);
-        aug_set (aug, "/augeas/load/Shellvars/lens", "Shellvars.lns");
-        aug_set (aug, "/augeas/load/Shellvars/incl[6]", "/etc/sysconfig/network-scripts/ifcfg-*");
-        aug_load (aug);
+        aug = aug_init_redhat ();
         if_number = aug_match (aug, "//files/etc/sysconfig/network-scripts/*", &if_match);
         result = g_strdup ("[");
         for (i = 0; i < if_number; i++) {
