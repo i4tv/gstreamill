@@ -864,8 +864,8 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
                 return p;
         }
 
-        if (job->is_live && (job_live_output_initialize (job) != 0)) {
-                p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"initialize live job output failure\"\n}");
+        if (job->is_live && (job_output_initialize (job) != 0)) {
+                p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"initialize job output failure\"\n}");
                 g_object_unref (job);
                 return p;
         }
@@ -890,6 +890,7 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
                 }
 
         } else {
+                job_encoders_output_initialize (job);
                 if (job_start (job) == 0) {
                         g_mutex_lock (&(gstreamill->job_list_mutex));
                         gstreamill->job_list = g_slist_append (gstreamill->job_list, job);

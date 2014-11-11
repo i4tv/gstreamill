@@ -333,7 +333,6 @@ gint job_initialize (Job *job, gboolean daemon)
         g_stpcpy (output->job_description, job->description);
         p += (strlen (job->description) / 8 + 1) * 8;
         output->state = (guint64 *)p;
-        *(output->state) = JOB_STATE_READY;
         p += sizeof (guint64); /* state */
         output->source.duration = (gint64 *)p;
         p += sizeof (gint64); /* duration for transcode */
@@ -355,15 +354,12 @@ gint job_initialize (Job *job, gboolean daemon)
                 g_free (name);
                 output->encoders[i].semaphore = output->semaphore;
                 output->encoders[i].heartbeat = (GstClockTime *)p;
-                *(output->encoders[i].heartbeat) = gst_clock_get_time (job->system_clock);
                 p += sizeof (GstClockTime); /* encoder heartbeat */
                 output->encoders[i].eos = (gboolean *)p;
-                *(output->encoders[i].eos) = FALSE;
                 p += sizeof (gboolean);
                 output->encoders[i].streams = (struct _EncoderStreamState *)p;
                 p += output->encoders[i].stream_count * sizeof (struct _EncoderStreamState); /* encoder state */
                 output->encoders[i].total_count = (guint64 *)p;
-                *(output->encoders[i].total_count) = 0;
                 p += sizeof (guint64); /* total count size */
                 output->encoders[i].mqdes = -1;
 
@@ -374,22 +370,13 @@ gint job_initialize (Job *job, gboolean daemon)
 
                 output->encoders[i].cache_addr = p;
                 p += SHM_SIZE;
-                /* initialize gop size = 0. */
-                *(gint32 *)(output->encoders[i].cache_addr + 8) = 0;
-                /* first gop timestamp is 0 */
-                *(GstClockTime *)(output->encoders[i].cache_addr) = 0;
                 output->encoders[i].cache_size = SHM_SIZE;
                 output->encoders[i].head_addr = (guint64 *)p;
-                *(output->encoders[i].head_addr) = 0;
                 p += sizeof (guint64); /* cache head */
                 output->encoders[i].tail_addr = (guint64 *)p;
-                /* timestamp + gop size = 12 */
-                *(output->encoders[i].tail_addr) = 12;
                 p += sizeof (guint64); /* cache tail */
                 output->encoders[i].last_rap_addr = (guint64 *)p;
-                *(output->encoders[i].last_rap_addr) = 0;
                 p += sizeof (guint64); /* last rap addr */
-                output->encoders[i].m3u8_playlist = NULL;
         }
         job->output = output;
         sem_post (semaphore);
@@ -458,13 +445,13 @@ static guint64 get_dvr_sequence (JobOutput *joboutput)
 }
 
 /*
- * job_live_output_initialize:
+ * job_output_initialize:
  * @job: (in): job object
  *
- * live output is gstreamill output, for client access.
+ * job output, for client access.
  *
  */
-gint job_live_output_initialize (Job *job)
+gint job_output_initialize (Job *job)
 {
         gint i;
         JobOutput *output;
@@ -484,6 +471,7 @@ gint job_live_output_initialize (Job *job)
 
         /* initialize dvr parameters */
         for (i = 0; i < output->encoder_count; i++) {
+                output->encoders[i].m3u8_playlist = NULL;
                 /* timeshift and dvr */
                 output->encoders[i].record_path = NULL;
                 output->encoders[i].dvr_duration = jobdesc_dvr_duration (job->description);
@@ -499,6 +487,43 @@ gint job_live_output_initialize (Job *job)
         output->sequence = get_dvr_sequence (output);
 
         return 0;
+}
+
+/*
+ * job_encoders_output_initialize:
+ * @job: (in): job object
+ *
+ * subprocess output.
+ *
+ */
+void job_encoders_output_initialize (Job *job)
+{
+        gint i;
+        JobOutput *output;
+
+        output = job->output;
+        sem_wait (output->semaphore);
+        *(output->state) = JOB_STATE_READY;
+        for (i = 0; i < output->encoder_count; i++) {
+                *(output->encoders[i].heartbeat) = gst_clock_get_time (job->system_clock);
+                *(output->encoders[i].eos) = FALSE;
+                *(output->encoders[i].total_count) = 0;
+
+                /* non live job has no output */
+                if (!job->is_live) {
+                        continue;
+                }
+
+                /* initialize gop size = 0. */
+                *(gint32 *)(output->encoders[i].cache_addr + 8) = 0;
+                /* first gop timestamp is 0 */
+                *(GstClockTime *)(output->encoders[i].cache_addr) = 0;
+                *(output->encoders[i].head_addr) = 0;
+                /* timestamp + gop size = 12 */
+                *(output->encoders[i].tail_addr) = 12;
+                *(output->encoders[i].last_rap_addr) = 0;
+        }
+        sem_post (output->semaphore);
 }
 
 /*

@@ -345,6 +345,7 @@ int main (int argc, char *argv[])
                         GST_ERROR ("initialize livejob failure, exit");
                         exit (8);
                 }
+                job_encoders_output_initialize (job);
                 if (job_start (job) != 0) {
                         GST_ERROR ("start livejob failure, exit");
                         exit (9);

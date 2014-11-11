@@ -97,7 +97,8 @@ GType job_get_type (void);
 
 gchar * job_state_get_name (guint64 state);
 gint job_initialize (Job *job, gboolean daemon);
-gint job_live_output_initialize (Job *job);
+gint job_output_initialize (Job *job);
+void job_encoders_output_initialize (Job *job);
 void job_reset (Job *job);
 void job_stat_update (Job *job);
 gint job_start (Job *job);
