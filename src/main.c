@@ -218,7 +218,11 @@ Gstreamill *gstreamill;
 static void stop_gstreamill (gint number)
 {
         gstreamill_stop (gstreamill);
-        remove_pid_file ();
+
+        /* run in background, remove pid file. */
+        if (number == SIGTERM) {
+                remove_pid_file ();
+        }
 }
 
 int main (int argc, char *argv[])
@@ -465,6 +469,12 @@ int main (int argc, char *argv[])
                 gchar *job, *p, *result;
                 JSON_Value *val;
                 JSON_Object *obj;
+
+                /* ctrl-c, stop gstreamill */
+                signal (SIGINT, stop_gstreamill);
+
+                /* ctrl-\, stop gstreamill */
+                signal (SIGQUIT, stop_gstreamill);
 
                 if (!g_file_get_contents (job_file, &job, NULL, NULL)) {
                         GST_ERROR ("Read job file %s error.", job_file);

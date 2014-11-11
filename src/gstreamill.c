@@ -651,12 +651,18 @@ void gstreamill_stop (Gstreamill *gstreamill)
         Job *job;
         GSList *list;
 
+        GST_WARNING ("Stop gstreamill ...");
         gstreamill->stop = TRUE;
         g_mutex_lock (&(gstreamill->job_list_mutex));
         list = gstreamill->job_list;
         while (list != NULL) {
                 job = list->data;
-                stop_job (job, SIGTERM);
+                if (gstreamill->daemon) {
+                        stop_job (job, SIGTERM);
+
+                } else {
+                        *(job->output->state) = JOB_STATE_NULL;
+                }
                 list = list->next;
         }
         g_mutex_unlock (&(gstreamill->job_list_mutex));
