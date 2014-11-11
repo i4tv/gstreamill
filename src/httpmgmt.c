@@ -339,7 +339,7 @@ static gchar * add_header_footer (gchar *middle)
         return buf;
 }
 
-static gchar * set_network_interfaces (RequestData *request_data)
+static gchar * set_network_interfaces_debian (RequestData *request_data)
 {
         gchar *interfaces, *result, *name, *path, *value;
         augeas *aug;
@@ -421,6 +421,82 @@ static gchar * set_network_interfaces (RequestData *request_data)
         aug_close (aug);
 
         return result;
+}
+
+static gchar * set_network_interfaces_redhat (RequestData *request_data)
+{
+        gchar *interfaces, *result, *name, *path, *value;
+        augeas *aug;
+        JSON_Value *val;
+        JSON_Array *array;
+        JSON_Object *obj;
+        gint if_count, i;
+
+        aug = aug_init (NULL, NULL, AUG_NONE | AUG_NO_ERR_CLOSE | AUG_NO_MODL_AUTOLOAD);
+        aug_set (aug, "/augeas/load/Shellvars/lens", "Shellvars.lns");
+        aug_set (aug, "/augeas/load/Shellvars/incl[6]", "/etc/sysconfig/network-scripts/ifcfg-*");
+        aug_load (aug);
+        interfaces = request_data->raw_request + request_data->header_size;
+        val = json_parse_string (interfaces);
+        if (val == NULL) {
+                GST_ERROR ("parse json type interfaces failure");
+                result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid data\"\n}");
+                aug_close (aug);
+                return result;
+        }
+        array = json_value_get_array (val);
+        if (array == NULL) {
+                GST_ERROR ("get interfaces array failure");
+                result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"not array type interfaces\"\n}");
+                aug_close (aug);
+                json_value_free (val);
+                return result;
+        }
+        if_count = json_array_get_count (array);
+        for (i = 0; i < if_count; i++) {
+                obj = json_array_get_object (array, i);
+                name = (gchar *)json_object_get_string (obj, "name");
+                value = (gchar *)json_object_get_string (obj, "address");
+                if (value != NULL) {
+                        path = g_strdup_printf ("//files/etc/sysconfig/network-scripts/ifcfg-%s/IPADDR0", name);
+                        aug_set (aug, path, value);
+                        g_free (path);
+                }
+                value = (gchar *)json_object_get_string (obj, "netmask");
+                if (value != NULL) {
+                        path = g_strdup_printf ("//files/etc/sysconfig/network-scripts/ifcfg-%s/PREFIX0", name);
+                        aug_set (aug, path, value);
+                        g_free (path);
+                }
+                value = (gchar *)json_object_get_string (obj, "gateway");
+                if (value != NULL) {
+                        path = g_strdup_printf ("//files/etc/sysconfig/network-scripts/ifcfg-%s/GATEWAY0", name);
+                        aug_set (aug, path, value);
+                        g_free (path);
+                }
+        }
+        if (aug_save (aug) == -1) {
+                aug_get (aug, "/augeas//error", (const gchar **)&value);
+                GST_ERROR ("set /etc/network/interface failure: %s", value);
+                result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"\n}", value);
+
+        } else {
+                result = g_strdup ("{\n    \"result\": \"success\"\n}");
+        }
+        json_value_free (val);
+        aug_close (aug);
+
+        return result;
+}
+
+static gchar * set_network_interfaces (RequestData *request_data)
+{
+        if (g_file_test ("/etc/network/interfaces", G_FILE_TEST_IS_REGULAR)) {
+                return set_network_interfaces_debian (request_data);
+
+        } else {
+                return set_network_interfaces_redhat (request_data);
+        }
 }
 
 static gchar * get_network_interfaces_debian ()
