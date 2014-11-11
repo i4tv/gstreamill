@@ -350,10 +350,18 @@ gint job_initialize (Job *job, gboolean daemon)
         gint i, fd;
         JobOutput *output;
         gchar *name, *p, *name_hexstr, *semaphore_name;
+        sem_t *semaphore;
 
         job->output_size = status_output_size (job->description);
         name_hexstr = unicode_file_name_2_shm_name (job->name);
         semaphore_name = g_strdup_printf ("/%s", name_hexstr);
+        semaphore = sem_open (semaphore_name, O_CREAT, 0644, 1);
+        if (semaphore == SEM_FAILED) {
+                GST_ERROR ("open semaphore failed: %s", g_strerror (errno));
+                g_free (semaphore_name);
+                return 1;
+        }
+        sem_wait (semaphore);
         if (daemon) {
                 /* daemon, use share memory */
                 fd = shm_open (name_hexstr, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
@@ -361,12 +369,14 @@ gint job_initialize (Job *job, gboolean daemon)
                         GST_ERROR ("shm_open %s failure: %s", name_hexstr, g_strerror (errno));
                         job->output = NULL;
                         g_free (name_hexstr);
+                        sem_post (semaphore);
                         return 1;
                 }
                 g_free (name_hexstr);
                 if (ftruncate (fd, job->output_size) == -1) {
                         GST_ERROR ("ftruncate error: %s", g_strerror (errno));
                         job->output = NULL;
+                        sem_post (semaphore);
                         return 1;
                 }
                 p = mmap (NULL, job->output_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
@@ -378,16 +388,8 @@ gint job_initialize (Job *job, gboolean daemon)
         }
         output = (JobOutput *)g_malloc (sizeof (JobOutput));
         output->job_description = (gchar *)p;
-        output->semaphore = sem_open (semaphore_name, O_CREAT, 0644, 1);
-        if (output->semaphore == SEM_FAILED) {
-                GST_ERROR ("open semaphore failed: %s", g_strerror (errno));
-                g_free (semaphore_name);
-                output->semaphore_name = NULL;
-                output->semaphore = NULL;
-                return 1;
-        }
+        output->semaphore = semaphore;
         output->semaphore_name = semaphore_name;
-        sem_wait (output->semaphore);
         g_stpcpy (output->job_description, job->description);
         p += (strlen (job->description) / 8 + 1) * 8;
         output->state = (guint64 *)p;
@@ -471,13 +473,14 @@ gint job_initialize (Job *job, gboolean daemon)
                 job->output->master_m3u8_playlist = render_master_m3u8_playlist (job);
                 if (job->output->master_m3u8_playlist == NULL) {
                         GST_ERROR ("render master m3u8 playlist failure.");
+                        sem_post (semaphore);
                         return 1;
                 }
 
         } else {
                 job->output->master_m3u8_playlist = NULL;
         }
-        sem_post (output->semaphore);
+        sem_post (semaphore);
 
         return 0;
 }
