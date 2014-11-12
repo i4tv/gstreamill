@@ -4,7 +4,7 @@ author "Zhang Ping <dqzhangp@163.com>"
 start on (filesystem and net-device-up IFACE=lo)
 stop on runlevel [!2345]
  
-env DAEMON=/usr/local/bin/gstreamill
+env DAEMON=$(bindir)/gstreamill
 env PIDFILE=/var/run/gstreamill/gstreamill.pid
 
 pre-start script

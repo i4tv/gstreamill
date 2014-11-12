@@ -5,6 +5,7 @@ gstreamillconf_DATA = \
 
 install-exec-hook:
 	test -s /etc/init && { \
+	    sed -e 's:$$(bindir):$(bindir):' init/gstreamill.conf.in > init/gstreamill.conf; \
 	    install -c -m 755 init/gstreamill.conf '/etc/init/gstreamill.conf'; \
 	} || true
 	test -s /etc/gstreamill.d/jobs.d || { \
