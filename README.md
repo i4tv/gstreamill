@@ -247,7 +247,8 @@ Job example:
         "version" : 3,
         "window-size" : 10,
         "segment-duration" : 3.00
-    }
+    },
+    "dvr_duration": 86400
 }
 ```
 
@@ -267,7 +268,8 @@ JOB file structure:
     ],
     'm3u8streaming' : {
         ...
-    }
+    },
+    "dvr_duration": 86400
 }
 ```
 
@@ -284,6 +286,8 @@ source : source of encoders.
 encoders : encoders.
 
 m3u8streaming : m3u8 streaming
+
+dvr_duration : dvr duration, seconds.
 
 structure of source:
 ```json
