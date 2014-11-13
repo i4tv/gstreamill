@@ -287,7 +287,7 @@ encoders : encoders.
 
 m3u8streaming : m3u8 streaming
 
-dvr_duration : dvr duration, seconds.
+dvr_duration : dvr duration, seconds, it's optional.
 
 structure of source:
 ```json
