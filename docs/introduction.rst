@@ -5,6 +5,8 @@ User send job to gstreamill, gstreamill generate gstreamer pipelines use the job
 
 .. image:: _static/diagram.png
 
+Jobs are submited to gstreamill use json over http. source and encoders are gstreamer pipelines.
+
 gstreamer
 =========
 
