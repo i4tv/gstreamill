@@ -319,8 +319,8 @@ int main (int argc, char *argv[])
                         exit (6);
                 }
 
-                name = (gchar *)jobdesc_get_name (job_desc);
                 /* initialize log */
+                name = (gchar *)jobdesc_get_name (job_desc);
                 if (!jobdesc_is_live (job_desc)) {
                         gchar *p;
 
@@ -338,6 +338,7 @@ int main (int argc, char *argv[])
                 }
 
                 /* launch a job. */
+                GST_WARNING ("\n\nlivejob %s starting ...", name);
                 job = job_new ("name", name, "job", job_desc, NULL);
                 job->is_live = jobdesc_is_live (job_desc);
                 job->eos = FALSE;
@@ -354,7 +355,7 @@ int main (int argc, char *argv[])
                         GST_ERROR ("start livejob failure, exit");
                         exit (9);
                 }
-                GST_WARNING ("livejob %s starting ...", name);
+                GST_WARNING ("livejob %s started\n\n", name);
                 g_free (name);
                 g_free (job_desc);
 
