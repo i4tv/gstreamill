@@ -31,3 +31,10 @@ Gstreamill
 
 Jobs
 ----
+
+Logs
+----
+
+Default log directory is /var/log/gstreamill. Log file is gstreamill.log. In default log file size is 4M, log rotate size is 100.
+
+Subprocess, also job process, if it is live job, it's default log directory is /var/log/gstreamill/job-name/, job process's log file is gstreamill.log, if it is transcode job, it's log directory is set in job file's "log-path" configure item.

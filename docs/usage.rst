@@ -1,5 +1,11 @@
-Use Gstreamill
-**************
+Use Gstreamill through web page
+*******************************
+
+New testsrc Job
+===============
+
+New network source Job
+======================
 
 New v4l2src Job
 ===============
