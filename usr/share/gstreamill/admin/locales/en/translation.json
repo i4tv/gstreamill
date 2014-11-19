@@ -75,6 +75,7 @@
   "newtranscodejob": {
     "Add Encoder Output": "Add Encoder Output",
     "New Transcode Job": "New Transcode Job",
+    "Select Encapsulation Type": "Select Encapsulation Type",
     "Select Encoder Output": "Select Encoder Output",
     "Select Encoder Output Type": "Select Encoder Output Type",
     "Phone": "Phone",

@@ -53,7 +53,11 @@ adminschemas_DATA = \
         share/gstreamill/admin/schemas/transcode_encoder_phone_mp4.json \
         share/gstreamill/admin/schemas/transcode_encoder_pad_mp4.json \
         share/gstreamill/admin/schemas/transcode_encoder_tv_mp4.json \
-        share/gstreamill/admin/schemas/transcode_encoder_hdtv_mp4.json
+        share/gstreamill/admin/schemas/transcode_encoder_hdtv_mp4.json \
+        share/gstreamill/admin/schemas/transcode_encoder_phone_m3u8.json \
+        share/gstreamill/admin/schemas/transcode_encoder_pad_m3u8.json \
+        share/gstreamill/admin/schemas/transcode_encoder_tv_m3u8.json \
+        share/gstreamill/admin/schemas/transcode_encoder_hdtv_m3u8.json
 
 localesdir = /usr/share/gstreamill/admin/locales/dev
 locales_DATA = \

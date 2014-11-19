@@ -701,22 +701,27 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
                         }
                 }
 
-                /* not live and have filesink.location, mkdir */
+                /* mkdir for transcode job. */
                 if (!jobdesc_is_live (job)) {
-                        gchar *p, *value;
+                        gchar *locations[] = {"%s.elements.filesink.property.location", "%s.elements.hlssink.property.location", NULL};
+                        gchar *p, *value, **location;
 
-                        p = g_strdup_printf ("%s.elements.filesink.property.location", pipeline);
-                        value = jobdesc_element_property_value (job, p);
-                        g_free (p);
-                        if (value == NULL) {
+                        location = locations;
+                        while (*location != NULL) {
+                                p = g_strdup_printf (*location, pipeline);
+                                value = jobdesc_element_property_value (job, p);
+                                g_free (p);
+                                if (value != NULL) {
+                                        break;
+                                }
+                                location += 1;
+                        }
+                        if (*location == NULL) {
+                                GST_ERROR ("No location found for transcode");
                                 return 1;
                         }
                         p = g_path_get_dirname (value);
                         g_free (value);
-                        if (g_strcmp0 (p, ".") == 0) {
-                                g_free (p);
-                                return 1;
-                        }
                         if (g_mkdir_with_parents (p, 0755) != 0) {
                                 GST_ERROR ("Can't open or create directory: %s.", p);
                                 g_free (p);

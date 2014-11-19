@@ -58,6 +58,7 @@
   "newtranscodejob": {
     "New Transcode Job": "创建转码任务",
     "Select Encoder Output": "选择编码输出",
+    "Select Encapsulation Type": "选择封装格式",
     "Select Encoder Output Type": "选择编码输出类型",
     "Phone": "手机",
     "Pad": "平板电脑",
