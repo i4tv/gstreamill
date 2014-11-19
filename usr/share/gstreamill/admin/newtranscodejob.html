@@ -31,10 +31,23 @@
                     </div>
                     <div class="checkbox">
                         <label>
-                            <input type="checkbox" id="encoderoutput" value="hdtv"">
+                            <input type="checkbox" id="encoderoutput" value="hdtv">
                             <span class="newtranscodejob" data-i18n="newtranscodejob.HDTV"></span>
                         </label>
                     </div>
+                    <label class="newtranscodejob" data-i18n="newtranscodejob.Select Encapsulation Type"></label></br>
+                    <div class="checkbox">
+                        <label>
+                            <input type="radio" id="encapsulation" name="encapsulation" value="m3u8">
+                            <span>m3u8</span>
+                        </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="radio" id="encapsulation" name="encapsulation" value="mp4">
+                            <span>mp4</span>
+                        </label>
+                    </div></br>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default newtranscodejob" data-dismiss="modal" data-i18n="newtranscodejob.Cancel"></button>
@@ -96,17 +109,30 @@
         $("#createjob").click (function () {
             $.getJSON ("/admin/schemas/transcode_source_decodebin.json", function (job) {
 
+                var file_list = $("#mediacheckbox:checked");
+                if (file_list.length === 0) {
+                    bootbox.alert ($.t ("newtranscodejob.Select Media Files Please"));
+                    return;
+                }
+
                 var ischecked = {'phone': false, 'pad': false, 'tv': false, 'hdtv': false};
                 var checked = $('#encoderoutput:checked');
                 for (var i = 0; i < checked.length; i++) {
                     ischecked [checked[i].value] = true;
                 }
+
+                var encapsulation_value = $("#encapsulation:checked").val ();
+                if (typeof encapsulation_value === "undefined") {
+                    bootbox.alert ($.t ("newlivejob.Select Encapsulation Type"));
+                    return;
+                }
+
                 var encoders = [];
                 for (key in ischecked) {
                     if (ischecked[key]) {
                         $.ajax ({
                             type: "get",
-                            url: "schemas/transcode_encoder_" + key + "_mp4.json",
+                            url: "schemas/transcode_encoder_" + key + "_" + encapsulation_value + ".json",
                             dataType: "json",
                             async: false,
                             success: function (encoder) {
@@ -116,11 +142,6 @@
                     }
                 }
 
-                var file_list = $("#mediacheckbox:checked");
-                if (file_list.length === 0) {
-                    bootbox.alert ($.t ("newtranscodejob.Select Media Files Please"));
-                    return;
-                }
                 var result = "";
                 for (var i = 0; i < file_list.length; i++) {
                     var file = file_list[i].value;
@@ -136,7 +157,13 @@
                         var path = Document.GstreamillConf.conf.transcoderoot + "/out/" + file + "/",
                             bitrate = encoder.elements.x264enc.property.bitrate;
                             resolution = encoder.elements.videoscale.caps.replace (/video\/x-raw,width=(\d+),height=(\d+)/g, "$1x$2");
-                        encoder.elements.filesink.property.location = path + resolution + "_" + bitrate + "bps.mp4";
+
+                        if (encapsulation_value === "m3u8") {
+                            encoder.elements.hlssink.property["playlist-location"] = path + resolution + "_" + bitrate + "/playlist.m3u8";
+                            encoder.elements.hlssink.property.location = path + resolution + "_" + bitrate + "/segment%05d.ts";
+                        } else if (encapsulation_value === "mp4") {
+                            encoder.elements.filesink.property.location = path + resolution + "_" + bitrate + "bps.mp4";
+                        }
                     }
                     job.encoders = encoders;
                     $.ajax ({
