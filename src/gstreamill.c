@@ -753,6 +753,13 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
                         return;
 
                 } else {
+                        if (!job->is_live) {
+                                GST_ERROR ("Nonlive job %s exit on critical error return %d.", job->name, WEXITSTATUS (status));
+                                *(job->output->state) = JOB_STATE_NULL;
+                                job->eos = TRUE;
+                                return;
+                        }
+
                         GST_ERROR ("Job %s exit on critical error return %d, restart ...", job->name, WEXITSTATUS (status));
                         job_reset (job);
                         if (create_job_process (job) == JOB_STATE_PLAYING) {
