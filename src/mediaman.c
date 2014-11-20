@@ -96,7 +96,8 @@ static gchar * transcode_out_list (gchar *path)
         }
         list = g_strdup ("[");
         for (i = 0; i < pglob.gl_pathc; i++) {
-                if (g_str_has_suffix (pglob.gl_pathv[i], "gstreamill.log")) {
+                /* list mp4 files only */
+                if (!g_str_has_suffix (pglob.gl_pathv[i], ".mp4")) {
                         continue;
                 }
                 p = list;
