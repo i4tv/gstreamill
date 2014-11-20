@@ -9,7 +9,7 @@ State Interface
 gstreamill stat
 ---------------
 
-HTTP Request:
+HTTP Request::
 
     GET /stat/gstreamill HTTP/1.1
     Host: 192.168.7.60:20118
@@ -22,7 +22,7 @@ HTTP Request:
     Accept-Language: zh-CN,zh;q=0.8
     Cookie: i18next=en
 
-HTTP Response:
+HTTP Response::
 
     HTTP/1.1 200 Ok
     Server: gstreamill-0.5.3
