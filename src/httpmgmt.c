@@ -246,7 +246,6 @@ static gchar * request_gstreamill_stat (HTTPMgmt *httpmgmt, RequestData *request
 
         } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamill/job/")) {
                 p = gstreamill_job_stat (httpmgmt->gstreamill, request_data->uri);
-                GST_ERROR ("%s", p);
                 buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
@@ -1078,7 +1077,7 @@ static gsize media_download (HTTPMgmt *httpmgmt, RequestData *request_data, gcha
         g_free (p);
         if (fd == -1) {
                 GST_ERROR ("open %s error: %s", p, g_strerror (errno));
-                p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"", g_strerror (errno));
+                p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"\n}", g_strerror (errno));
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
                 return 0;
@@ -1086,7 +1085,7 @@ static gsize media_download (HTTPMgmt *httpmgmt, RequestData *request_data, gcha
 
         if (fstat (fd, &st) == -1) {
                 GST_ERROR ("fstat error: %s", g_strerror (errno));
-                p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"", g_strerror (errno));
+                p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"\n}", g_strerror (errno));
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 close (fd);
                 g_free (p);
@@ -1099,7 +1098,7 @@ static gsize media_download (HTTPMgmt *httpmgmt, RequestData *request_data, gcha
                 p1 = mmap (NULL, st.st_size + sysconf (_SC_PAGE_SIZE), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
                 if (p1 == MAP_FAILED) {
                         GST_ERROR ("mmap anonymous error: %s", g_strerror (errno));
-                        p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"mmap anonymous %s\"", g_strerror (errno));
+                        p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"mmap anonymous %s\"\n}", g_strerror (errno));
                         *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                         close (fd);
                         g_free (p);
@@ -1108,7 +1107,7 @@ static gsize media_download (HTTPMgmt *httpmgmt, RequestData *request_data, gcha
                 p2 = mmap (p1 + sysconf (_SC_PAGE_SIZE), st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
                 if (p2 == MAP_FAILED) {
                         GST_ERROR ("mmap file error: %s", g_strerror (errno));
-                        p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"mmap file %s\"", g_strerror (errno));
+                        p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"mmap file %s\"\n}", g_strerror (errno));
                         *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                         close (fd);
                         g_free (p);
@@ -1118,7 +1117,7 @@ static gsize media_download (HTTPMgmt *httpmgmt, RequestData *request_data, gcha
                 p = mremap (p2, st.st_size, st.st_size, MREMAP_MAYMOVE | MREMAP_FIXED, p1 + sysconf (_SC_PAGE_SIZE));
                 if (p == MAP_FAILED) {
                         GST_ERROR ("mremap file error: %s", g_strerror (errno));
-                        p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"mremap file %s\"", g_strerror (errno));
+                        p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"mremap file %s\"\n}", g_strerror (errno));
                         *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                         close (fd);
                         g_free (p);
