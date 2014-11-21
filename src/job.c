@@ -303,6 +303,7 @@ gint job_initialize (Job *job, gboolean daemon)
         }
         GST_WARNING ("lock output semaphore for initializing");
         sem_wait (semaphore);
+        GST_WARNING ("locked output semaphore");
         if (daemon) {
                 /* daemon, use share memory */
                 fd = shm_open (name_hexstr, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
@@ -345,6 +346,11 @@ gint job_initialize (Job *job, gboolean daemon)
         }
         p += output->source.stream_count * sizeof (struct _SourceStreamState);
         output->encoder_count = jobdesc_encoders_count (job->description);
+        if (output->encoder_count == 0) {
+                GST_ERROR ("Invalid job without encoders, initialize job failure");
+                sem_post (semaphore);
+                return 1;
+        }
         output->encoders = (struct _EncoderOutput *)g_malloc (output->encoder_count * sizeof (struct _EncoderOutput));
         for (i = 0; i < output->encoder_count; i++) {
                 name = g_strdup_printf ("%s.encoder.%d", job->name, i);
