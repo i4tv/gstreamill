@@ -301,6 +301,7 @@ gint job_initialize (Job *job, gboolean daemon)
                 g_free (semaphore_name);
                 return 1;
         }
+        GST_WARNING ("lock output semaphore for initializing");
         sem_wait (semaphore);
         if (daemon) {
                 /* daemon, use share memory */
@@ -380,6 +381,7 @@ gint job_initialize (Job *job, gboolean daemon)
         }
         job->output = output;
         sem_post (semaphore);
+        GST_WARNING ("initializing complete, unlock output semaphore");
 
         return 0;
 }
