@@ -31,13 +31,12 @@ On successful, returns a response body with the following structure::
 
 The following table defines the properties
 
-    ============= ==== ===========
-    Property name Type Description
-    ============= ==== ===========
+    ============= ====== =================================
+    Property name Type   Description
+    ============= ====== =================================
     version       string The version of the gstreamill
-    =======       ====== =============================
     buildtime     string The build time of the gstreamill
-    =========     ====== ================================
+    ============= ====== ================================
 
 Administrator Interface
 ======================
