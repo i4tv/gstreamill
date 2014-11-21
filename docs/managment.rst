@@ -1,13 +1,13 @@
 Management Interfaces
-*********************
+=====================
 
 Gstreamill managment API subject to RESTful, allowing easy integration into operator environment.
 
 State Interface
-===============
+---------------
 
 Gstreamill stat
----------------
+~~~~~~~~~~~~~~~
 
 Get current stat of gstreamill server.
 
