@@ -35,8 +35,11 @@ The following table defines the properties
     Property name Type   Description
     ============= ====== =================================
     version       string The version of the gstreamill
+    builddate     string The build date of the gstreamill
     buildtime     string The build time of the gstreamill
-    ============= ====== ================================
+    starttime     string Start time of the gstreamill
+    jobcount      number Current count of jobs
+    ============= ====== =================================
 
 Administrator Interface
 ======================
