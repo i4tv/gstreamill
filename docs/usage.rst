@@ -4,6 +4,8 @@ Using Gstreamill
 Prerequisites
 =============
 
+Install following package before using gstreamill.
+
 * gstreamer1.0-plugins-ugly
 * gstreamer1.0-plugins-bad
 * gstreamer1.0-plugins-good
