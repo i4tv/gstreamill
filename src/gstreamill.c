@@ -1207,7 +1207,7 @@ static gchar * source_streams_stat (Job *job)
         return source_streams;
 }
 
-static gchar * encoder_stat (EncoderOutput *encoder, guint64 jobstate)
+static gchar * encoder_stat (EncoderOutput *encoder_output, guint64 jobstate)
 {
         EncoderStreamState *stat;
         gint i;
@@ -1229,8 +1229,9 @@ static gchar * encoder_stat (EncoderOutput *encoder, guint64 jobstate)
                                   "            ]\n"
                                   "        }";
 
-        for (i = 0; i < encoder->stream_count; i++) {
-                stat = &(encoder->streams[i]);
+        sem_wait (encoder_output->semaphore);
+        for (i = 0; i < encoder_output->stream_count; i++) {
+                stat = &(encoder_output->streams[i]);
                 if (jobstate == JOB_STATE_PLAYING) {
                         timestamp = stat->current_timestamp;
                         time = gst_date_time_new_from_unix_epoch_local_time (stat->last_heartbeat/GST_SECOND);
@@ -1256,15 +1257,16 @@ static gchar * encoder_stat (EncoderOutput *encoder, guint64 jobstate)
                 }
                 g_free (p2);
         }
-        time = gst_date_time_new_from_unix_epoch_local_time (*(encoder->heartbeat)/GST_SECOND);
+        time = gst_date_time_new_from_unix_epoch_local_time (*(encoder_output->heartbeat)/GST_SECOND);
         p1 = gst_date_time_to_iso8601_string (time);
         gst_date_time_unref (time);
         encoder_stat = g_strdup_printf (template_encoder,
-                                        encoder->name,
+                                        encoder_output->name,
                                         p1,
-                                        *(encoder->total_count),
-                                        encoder->stream_count,
+                                        *(encoder_output->total_count),
+                                        encoder_output->stream_count,
                                         encoder_streams);
+        sem_post (encoder_output->semaphore);
         g_free (p1);
 
         return encoder_stat;
@@ -1272,16 +1274,16 @@ static gchar * encoder_stat (EncoderOutput *encoder, guint64 jobstate)
 
 static gchar * encoders_stat (Job *job)
 {
-        EncoderOutput *encoder;
+        EncoderOutput *encoder_output;
         gint i;
         gchar *encoders, *p1, *p2;
 
-        encoder = &(job->output->encoders[0]);
-        encoders = encoder_stat (encoder, *(job->output->state));
+        encoder_output = &(job->output->encoders[0]);
+        encoders = encoder_stat (encoder_output, *(job->output->state));
         for (i = 1; i < job->output->encoder_count; i++) {
                 p1 = encoders;
-                encoder = &(job->output->encoders[i]);
-                p2 = encoder_stat (encoder, *(job->output->state));
+                encoder_output = &(job->output->encoders[i]);
+                p2 = encoder_stat (encoder_output, *(job->output->state));
                 encoders = g_strdup_printf ("%s,\n%s", p1, p2);
                 g_free (p1);
                 g_free (p2);
