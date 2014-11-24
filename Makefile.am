@@ -26,5 +26,6 @@ install-exec-hook:
 	}
 	test -s /usr/lib/systemd/system/gstreamill.service && { \
 	    systemctl enable gstreamill; \
+	    install -c -m 755 tools/cleangstmill.sh '$(bindir)/cleangstmill.sh'; \
 	    install -c -m 755 tools/startjobs.sh '$(bindir)/startjobs.sh'; \
 	} || true

@@ -4,6 +4,7 @@ Description=The gstreamill encoder server
 [Service]
 Type=forking
 PIDFile=/var/run/gstreamill/gstreamill.pid
+ExecStartPre=$(bindir)/cleangstmill.sh
 ExecStart=$(bindir)/gstreamill
 ExecStop=/bin/kill -s SIGTERM $MAINPID
 ExecStartPost=$(bindir)/startjobs.sh
