@@ -8,7 +8,12 @@ env DAEMON=$(bindir)/gstreamill
 env PIDFILE=/var/run/gstreamill/gstreamill.pid
 
 pre-start script
-    rm -f /var/run/gstreamill/gstreamill.pid
+    rm -rf /var/run/gstreamill/gstreamill.pid
+    mount -t mqueue none /var/run/gstreamill/mq
+    mkdir -p /var/run/gstreamill/mq
+    rm -rf /var/run/gstreamill/mq/*
+    umount /var/run/gstreamill/mq
+    rm -rf /dev/shm/*
 end script
 
 post-start script
