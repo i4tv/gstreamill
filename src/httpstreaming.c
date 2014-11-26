@@ -205,7 +205,11 @@ static GstClockTime send_chunk (EncoderOutput *encoder_output, RequestData *requ
 
         priv_data = request_data->priv_data;
 
-        sem_wait (encoder_output->semaphore);
+        if (sem_wait (encoder_output->semaphore) == -1) {
+                GST_ERROR ("send_chunk sem_wait failure: %s", g_strerror (errno));
+                /* sem_wait failure, wait a while. */
+                return 100 * GST_MSECOND + g_random_int_range (1, 1000000);
+        }
         tail_addr = *(encoder_output->tail_addr);
         current_gop_end_addr = get_current_gop_end (encoder_output, priv_data);
 
@@ -326,7 +330,10 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
 
         /* live segment */
         sscanf (request_data->uri, "/live/%*[^/]/encoder/%*[^/]/%lu.ts", &timestamp);
-        sem_wait (encoder_output->semaphore);
+        if (sem_wait (encoder_output->semaphore) == -1) {
+                GST_ERROR ("get_mpeg2ts_segment sem_wait failure: %s", g_strerror (errno));
+                return 0;
+        }
         /* seek gop */
         rap_addr = encoder_output_gop_seek (encoder_output, timestamp);
         if (rap_addr != G_MAXUINT64) {

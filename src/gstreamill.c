@@ -472,18 +472,20 @@ static void job_check_func (gpointer data, gpointer user_data)
                                 job->memory);
         }
 
-        if (*(job->output->state) != JOB_STATE_PLAYING) {
+        if (sem_wait (job->output->semaphore) == -1) {
+                GST_ERROR ("%s job_check_func sem_trywait failure: %s", job->name, g_strerror (errno));
                 return;
         }
 
+        if (*(job->output->state) != JOB_STATE_PLAYING) {
+                sem_post (job->output->semaphore);
+                return;
+        }
         source_check (gstreamill, job);
-
         encoders_check (gstreamill, job);
-
         if (job->is_live) {
                 sync_check (gstreamill, job);
         }
-
         /* check non live job eos */
         if (!job->is_live) {
                 gint i;
@@ -517,6 +519,7 @@ static void job_check_func (gpointer data, gpointer user_data)
                         job->eos = TRUE;
                 }
         }
+        sem_post (job->output->semaphore);
 }
 
 static void dvr_clean (Gstreamill *gstreamill)
@@ -1229,7 +1232,6 @@ static gchar * encoder_stat (EncoderOutput *encoder_output, guint64 jobstate)
                                   "            ]\n"
                                   "        }";
 
-        sem_wait (encoder_output->semaphore);
         for (i = 0; i < encoder_output->stream_count; i++) {
                 stat = &(encoder_output->streams[i]);
                 if (jobstate == JOB_STATE_PLAYING) {
@@ -1266,7 +1268,6 @@ static gchar * encoder_stat (EncoderOutput *encoder_output, guint64 jobstate)
                                         *(encoder_output->total_count),
                                         encoder_output->stream_count,
                                         encoder_streams);
-        sem_post (encoder_output->semaphore);
         g_free (p1);
 
         return encoder_stat;
@@ -1359,6 +1360,7 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
         Job *job;
         GRegex *regex = NULL;
         GMatchInfo *match_info = NULL;
+        struct timespec ts;
 
         regex = g_regex_new ("/job/(?<name>[^/]*).*", G_REGEX_OPTIMIZE, 0, NULL);
         match_info = NULL;
@@ -1375,6 +1377,18 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
         if (job == NULL) {
                 GST_ERROR ("uri %s not found.", uri);
                 return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"not found\",\n    \"name\": \"%s\"\n}", name);
+        }
+        if (clock_gettime (CLOCK_REALTIME, &ts) == -1) {
+                GST_ERROR ("clock_gettime error: %s", g_strerror (errno));
+                return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"clock_gettime error\",\n    \"name\": \"%s\"\n}", name);
+        }
+        ts.tv_sec += 1;
+        while (sem_timedwait (job->output->semaphore, &ts) == -1) {
+                if (errno == EINTR) {
+                        continue;
+                }
+                GST_ERROR ("sem_timedwait failure: %s", g_strerror (errno));
+                return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"sem_timedwait failure\",\n    \"name\": \"%s\"\n}", name);
         }
         source_streams = source_streams_stat (job);
         encoders = encoders_stat (job);
@@ -1393,6 +1407,7 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
                                 source_streams,
                                 job->output->encoder_count,
                                 encoders);
+        sem_post (job->output->semaphore);
         g_free (encoders);
         g_free (source_streams);
         stat = g_strdup_printf ("{\n    \"result\": \"success\",\n    \"data\": %s}", p);

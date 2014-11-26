@@ -303,8 +303,11 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
         *(encoder->output->heartbeat) = gst_clock_get_time (encoder->system_clock);
         sample = gst_app_sink_pull_sample (GST_APP_SINK (sink));
         buffer = gst_sample_get_buffer (sample);
-
-        sem_wait (encoder->output->semaphore);
+        if (sem_wait (encoder->output->semaphore) == -1) {
+                GST_ERROR ("new_sample_callback sem_wait failure: %s", g_strerror (errno));
+                gst_sample_unref (sample);
+                return GST_FLOW_OK;
+        }
 
         (*(encoder->output->total_count)) += gst_buffer_get_size (buffer);
 
@@ -349,7 +352,6 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
         copy_buffer (encoder, buffer);
 
         sem_post (encoder->output->semaphore);
-
         gst_sample_unref (sample);
 
         return GST_FLOW_OK;
@@ -779,7 +781,10 @@ gboolean is_encoder_output_ready (EncoderOutput *encoder_output)
 {
         gboolean ready;
 
-        sem_wait (encoder_output->semaphore);
+        if (sem_wait (encoder_output->semaphore) == -1) {
+                GST_ERROR ("is_encoder_output_ready sem_wait failure: %s", g_strerror (errno));
+                return FALSE;
+        }
         if (*(encoder_output->head_addr) == *(encoder_output->tail_addr)) {
                 ready = FALSE;
 

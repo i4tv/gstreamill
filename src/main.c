@@ -346,15 +346,21 @@ int main (int argc, char *argv[])
                 signal (SIGUSR1, sighandler);
                 signal (SIGTERM, stop_job);
                 loop = g_main_loop_new (NULL, FALSE);
+
                 GST_WARNING ("Initializing job ...");
                 if (job_initialize (job, TRUE) != 0) {
-                        GST_ERROR ("initialize livejob failure, exit");
+                        GST_ERROR ("initialize job failure, exit");
                         exit (8);
                 }
                 GST_WARNING ("Initializing job done");
+
                 GST_WARNING ("Initializing job's encoders output ...");
-                job_encoders_output_initialize (job);
+                if (job_encoders_output_initialize (job) != 0) {
+                        GST_ERROR ("initialize job encoders' output failure, exit");
+                        exit (8);
+                }
                 GST_WARNING ("Initializing job's encoders output done");
+
                 GST_WARNING ("Starting job ...");
                 if (job_start (job) != 0) {
                         GST_ERROR ("start livejob failure, exit");

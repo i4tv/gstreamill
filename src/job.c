@@ -290,6 +290,7 @@ gint job_initialize (Job *job, gboolean daemon)
         gint i, fd;
         JobOutput *output;
         gchar *name, *p, *name_hexstr, *semaphore_name;
+        struct timespec ts;
         sem_t *semaphore;
 
         job->output_size = status_output_size (job->description);
@@ -301,9 +302,20 @@ gint job_initialize (Job *job, gboolean daemon)
                 g_free (semaphore_name);
                 return 1;
         }
-        GST_WARNING ("lock output semaphore for initializing");
-        sem_wait (semaphore);
-        GST_WARNING ("locked output semaphore");
+        if (clock_gettime (CLOCK_REALTIME, &ts) == -1) {
+                GST_ERROR ("clock_gettime error: %s", g_strerror (errno));
+                g_free (semaphore_name);
+                return 1;
+        }
+        ts.tv_sec += 2;
+        while (sem_timedwait (semaphore, &ts) == -1) {
+                if (errno == EINTR) {
+                        continue;
+                }
+                GST_ERROR ("sem_timedwait failure: %s", g_strerror (errno));
+                g_free (semaphore_name);
+                return 1;
+        }
         if (daemon) {
                 /* daemon, use share memory */
                 fd = shm_open (name_hexstr, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
@@ -387,7 +399,6 @@ gint job_initialize (Job *job, gboolean daemon)
         }
         job->output = output;
         sem_post (semaphore);
-        GST_WARNING ("initializing complete, unlock output semaphore");
 
         return 0;
 }
@@ -501,21 +512,32 @@ gint job_output_initialize (Job *job)
  * job_encoders_output_initialize:
  * @job: (in): job object
  *
- * subprocess output.
+ * subprocess encoders output.
  *
+ * Returns: 0 on success.
  */
-void job_encoders_output_initialize (Job *job)
+gint job_encoders_output_initialize (Job *job)
 {
         gint i;
-        JobOutput *output;
+        struct timespec ts;
 
-        output = job->output;
-        sem_wait (output->semaphore);
-        *(output->state) = JOB_STATE_READY;
-        for (i = 0; i < output->encoder_count; i++) {
-                *(output->encoders[i].heartbeat) = gst_clock_get_time (job->system_clock);
-                *(output->encoders[i].eos) = FALSE;
-                *(output->encoders[i].total_count) = 0;
+        if (clock_gettime (CLOCK_REALTIME, &ts) == -1) {
+                GST_ERROR ("job_encoders_output_initialize clock_gettime error: %s", g_strerror (errno));
+                return 1;
+        }
+        ts.tv_sec += 2;
+        while (sem_timedwait (job->output->semaphore, &ts) == -1) {
+                if (errno == EINTR) {
+                        continue;
+                }
+                GST_ERROR ("job_encoders_output_initialize sem_timedwait failure: %s", g_strerror (errno));
+                return 1;
+        }
+        *(job->output->state) = JOB_STATE_READY;
+        for (i = 0; i < job->output->encoder_count; i++) {
+                *(job->output->encoders[i].heartbeat) = gst_clock_get_time (job->system_clock);
+                *(job->output->encoders[i].eos) = FALSE;
+                *(job->output->encoders[i].total_count) = 0;
 
                 /* non live job has no output */
                 if (!job->is_live) {
@@ -523,15 +545,17 @@ void job_encoders_output_initialize (Job *job)
                 }
 
                 /* initialize gop size = 0. */
-                *(gint32 *)(output->encoders[i].cache_addr + 8) = 0;
+                *(gint32 *)(job->output->encoders[i].cache_addr + 8) = 0;
                 /* first gop timestamp is 0 */
-                *(GstClockTime *)(output->encoders[i].cache_addr) = 0;
-                *(output->encoders[i].head_addr) = 0;
+                *(GstClockTime *)(job->output->encoders[i].cache_addr) = 0;
+                *(job->output->encoders[i].head_addr) = 0;
                 /* timestamp + gop size = 12 */
-                *(output->encoders[i].tail_addr) = 12;
-                *(output->encoders[i].last_rap_addr) = 0;
+                *(job->output->encoders[i].tail_addr) = 12;
+                *(job->output->encoders[i].last_rap_addr) = 0;
         }
-        sem_post (output->semaphore);
+        sem_post (job->output->semaphore);
+
+        return 0;
 }
 
 /*
@@ -588,15 +612,27 @@ static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime dura
         gsize segment_size;
         gchar *buf;
         GError *err = NULL;
+        struct timespec ts;
 
         /* seek gop it's timestamp is m3u8_push_request->timestamp */
-        sem_wait (encoder_output->semaphore);
+        if (clock_gettime (CLOCK_REALTIME, &ts) == -1) {
+                GST_ERROR ("dvr_record_segment clock_gettime error: %s", g_strerror (errno));
+                return;
+        }
+        ts.tv_sec += 2;
+        while (sem_timedwait (encoder_output->semaphore, &ts) == -1) {
+                if (errno == EINTR) {
+                        continue;
+                }
+                GST_ERROR ("dvr_record_segment sem_timedwait failure: %s", g_strerror (errno));
+                return;
+        }
         rap_addr = encoder_output_gop_seek (encoder_output, encoder_output->last_timestamp);
-        sem_post (encoder_output->semaphore);
 
         /* gop not found? */
         if (rap_addr == G_MAXUINT64) {
                 GST_ERROR ("Segment not found!");
+                sem_post (encoder_output->semaphore);
                 return;
         }
 
@@ -617,6 +653,7 @@ static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime dura
                 p += n;
                 memcpy (p, encoder_output->cache_addr, segment_size - n);
         }
+        sem_post (encoder_output->semaphore);
 
         realtime = g_get_real_time ();
         path = g_strdup_printf ("/%s/%ld_%lu_%lu.ts", encoder_output->record_path, realtime, encoder_output->sequence, duration);
