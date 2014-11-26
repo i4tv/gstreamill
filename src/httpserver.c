@@ -900,7 +900,7 @@ static void thread_pool_func (gpointer data, gpointer user_data)
                 request_data->status = HTTP_CONTINUE;
 
         } else {
-                GST_ERROR ("warning!!! unprocessed event, sock %d status %d events %d", request_data->sock, request_data->status, request_data->events);
+                GST_WARNING ("warning!!! unprocessed event, sock %d status %d events %d", request_data->sock, request_data->status, request_data->events);
         }
         g_mutex_unlock (&(request_data->events_mutex));
         

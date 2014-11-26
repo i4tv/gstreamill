@@ -186,11 +186,11 @@ gboolean bus_callback (GstBus *bus, GstMessage *msg, gpointer user_data)
 
         switch (GST_MESSAGE_TYPE (msg)) {
         case GST_MESSAGE_EOS:
-                GST_INFO ("%s end of stream\n", g_value_get_string (&name));
+                GST_DEBUG ("%s end of stream\n", g_value_get_string (&name));
                 break;
 
         case GST_MESSAGE_TAG:
-                GST_INFO ("TAG");
+                GST_DEBUG ("TAG");
                 gst_message_parse_tag (msg, &tags);
                 gst_tag_list_foreach (tags, print_one_tag, NULL);
                 break;
