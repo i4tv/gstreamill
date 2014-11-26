@@ -205,7 +205,7 @@ static void rotate_log (Gstreamill *gstreamill, gchar *log_path, pid_t pid)
                 name = g_strdup_printf ("%s-%lu", log_path, gst_clock_get_time (gstreamill->system_clock));
                 g_rename (log_path, name);
                 g_free (name);
-                GST_INFO ("log rotate %s, process pid %d.", log_path, pid);
+                GST_DEBUG ("log rotate %s, process pid %d.", log_path, pid);
                 kill (pid, SIGUSR1); /* reopen log file. */
                 name = g_strdup_printf ("%s-*", log_path);
                 glob (name, 0, NULL, &pglob);
@@ -313,7 +313,7 @@ static void source_check (Gstreamill *gstreamill, Job *job)
 
         /* log source timestamp. */
         for (i = 0; i < job->output->source.stream_count; i++) {
-                GST_INFO ("%s timestamp %" GST_TIME_FORMAT,
+                GST_DEBUG ("%s timestamp %" GST_TIME_FORMAT,
                                 job->output->source.streams[i].name,
                                 GST_TIME_ARGS (job->output->source.streams[i].current_timestamp));
         }
@@ -330,7 +330,7 @@ static void source_check (Gstreamill *gstreamill, Job *job)
                 time_diff = GST_CLOCK_DIFF (job->output->source.streams[i].last_heartbeat, now);
                 if (((time_diff > HEARTBEAT_THRESHHOLD) && gstreamill->daemon && job->is_live) ||
                     ((time_diff > NONLIVE_HEARTBEAT_THRESHHOLD) && gstreamill->daemon && !job->is_live)) {
-                        GST_ERROR ("%s heart beat error %lu, restart job.",
+                        GST_WARNING ("%s heart beat error %lu, restart job.",
                                         job->output->source.streams[i].name,
                                         time_diff);
                         /* restart job. */
@@ -338,7 +338,7 @@ static void source_check (Gstreamill *gstreamill, Job *job)
                         return;
 
                 } else {
-                        GST_INFO ("%s heartbeat %" GST_TIME_FORMAT,
+                        GST_DEBUG ("%s heartbeat %" GST_TIME_FORMAT,
                                         job->output->source.streams[i].name,
                                         GST_TIME_ARGS (job->output->source.streams[i].last_heartbeat));
                 }
@@ -354,7 +354,7 @@ static void encoders_check (Gstreamill *gstreamill, Job *job)
         /* log encoder current timestamp. */
         for (j = 0; j < job->output->encoder_count; j++) {
                 for (k = 0; k < job->output->encoders[j].stream_count; k++) {
-                        GST_INFO ("%s.%s timestamp %" GST_TIME_FORMAT,
+                        GST_DEBUG ("%s.%s timestamp %" GST_TIME_FORMAT,
                                         job->output->encoders[j].name,
                                         job->output->encoders[j].streams[k].name,
                                         GST_TIME_ARGS (job->output->encoders[j].streams[k].current_timestamp));
@@ -377,7 +377,7 @@ static void encoders_check (Gstreamill *gstreamill, Job *job)
                         now = gst_clock_get_time (gstreamill->system_clock);
                         time_diff = GST_CLOCK_DIFF (job->output->encoders[j].streams[k].last_heartbeat, now);
                         if ((time_diff > HEARTBEAT_THRESHHOLD) && gstreamill->daemon) {
-                                GST_ERROR ("%s.%s heartbeat error %lu, restart",
+                                GST_WARNING ("%s.%s heartbeat error %lu, restart",
                                                 job->output->encoders[j].name,
                                                 job->output->encoders[j].streams[k].name,
                                                 time_diff);
@@ -386,7 +386,7 @@ static void encoders_check (Gstreamill *gstreamill, Job *job)
                                 return;
 
                         } else {
-                                GST_INFO ("%s.%s heartbeat %" GST_TIME_FORMAT,
+                                GST_DEBUG ("%s.%s heartbeat %" GST_TIME_FORMAT,
                                                 job->output->encoders[j].name,
                                                 job->output->encoders[j].streams[k].name,
                                                 GST_TIME_ARGS (job->output->encoders[j].streams[k].last_heartbeat));
@@ -399,7 +399,7 @@ static void encoders_check (Gstreamill *gstreamill, Job *job)
                 now = gst_clock_get_time (gstreamill->system_clock);
                 time_diff = GST_CLOCK_DIFF (*(job->output->encoders[j].heartbeat), now);
                 if ((time_diff > ENCODER_OUTPUT_HEARTBEAT_THRESHHOLD) && gstreamill->daemon) {
-                        GST_ERROR ("%s job->output heart beat error %lu, restart",
+                        GST_WARNING ("%s job->output heart beat error %lu, restart",
                                         job->output->encoders[j].name,
                                         time_diff);
                         /* restart job. */
@@ -407,7 +407,7 @@ static void encoders_check (Gstreamill *gstreamill, Job *job)
                         return;
 
                 } else {
-                        GST_INFO ("%s job->output heartbeat %" GST_TIME_FORMAT,
+                        GST_DEBUG ("%s job->output heartbeat %" GST_TIME_FORMAT,
                                         job->output->encoders[j].name,
                                         GST_TIME_ARGS (*(job->output->encoders[j].heartbeat)));
                 }
@@ -438,10 +438,10 @@ static void sync_check (Gstreamill *gstreamill, Job *job)
         }
         time_diff = GST_CLOCK_DIFF (min, max);
         if ((time_diff > SYNC_THRESHHOLD) && gstreamill->daemon){
-                GST_ERROR ("%s sync error %lu", job->name, time_diff);
+                GST_WARNING ("%s sync error %lu", job->name, time_diff);
                 job->output->source.sync_error_times += 1;
                 if (job->output->source.sync_error_times == 3) {
-                        GST_ERROR ("sync error times %ld, restart %s", job->output->source.sync_error_times, job->name);
+                        GST_WARNING ("sync error times %ld, restart %s", job->output->source.sync_error_times, job->name);
                         /* restart job. */
                         stop_job (job, SIGKILL);
                         return;
@@ -458,14 +458,14 @@ static void job_check_func (gpointer data, gpointer user_data)
         Gstreamill *gstreamill = (Gstreamill *)user_data;
 
         if (gstreamill->stop) {
-                GST_ERROR ("waitting %s stopped", job->name);
+                GST_INFO ("waitting %s stopped", job->name);
                 return;
         }
 
         /* stat report. */
         if (gstreamill->daemon && (job->worker_pid != 0)) {
                 job_stat_update (job);
-                GST_INFO ("Job %s's average cpu: %d%%, cpu: %d%%, rss: %lu",
+                GST_DEBUG ("Job %s's average cpu: %d%%, cpu: %d%%, rss: %lu",
                                 job->name,
                                 job->cpu_average,
                                 job->cpu_current,
@@ -473,7 +473,7 @@ static void job_check_func (gpointer data, gpointer user_data)
         }
 
         if (sem_wait (job->output->semaphore) == -1) {
-                GST_ERROR ("%s job_check_func sem_trywait failure: %s", job->name, g_strerror (errno));
+                GST_WARNING ("%s job_check_func sem_trywait failure: %s", job->name, g_strerror (errno));
                 return;
         }
 
@@ -551,7 +551,7 @@ static void dvr_clean (Gstreamill *gstreamill)
                         time = (now / 1000000 - job->output->encoders[i].dvr_duration) / 10;
                         while (time > 11) {
                                 pattern = g_strdup_printf ("%s/%lu*.ts", job->output->encoders[i].record_path, time - 1);
-                                GST_ERROR ("%s", pattern);
+                                GST_DEBUG ("%s", pattern);
                                 glob (pattern, 0, NULL, &pglob);
                                 for (j = 0; j < pglob.gl_pathc; j++) {
                                         g_remove (pglob.gl_pathv[j]);
@@ -583,7 +583,7 @@ static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClock
 
         /* stop? */
         if (gstreamill->stop && g_slist_length (gstreamill->job_list) == 0) {
-                GST_ERROR ("streamill stopped");
+                GST_INFO ("streamill stopped");
                 exit (0);
         }
 
@@ -607,7 +607,7 @@ static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClock
         ret = gst_clock_id_wait_async (nextid, gstreamill_monitor, gstreamill, NULL);
         gst_clock_id_unref (nextid);
         if (ret != GST_CLOCK_OK) {
-                GST_WARNING ("Register gstreamill monitor failure");
+                GST_ERROR ("Register gstreamill monitor failure");
                 return FALSE;
         }
 
@@ -634,7 +634,7 @@ gint gstreamill_start (Gstreamill *gstreamill)
         ret = gst_clock_id_wait_async (id, gstreamill_monitor, gstreamill, NULL);
         gst_clock_id_unref (id);
         if (ret != GST_CLOCK_OK) {
-                GST_WARNING ("Regist gstreamill monitor failure");
+                GST_ERROR ("Regist gstreamill monitor failure");
                 return 1;
         }
 
@@ -654,7 +654,7 @@ void gstreamill_stop (Gstreamill *gstreamill)
         Job *job;
         GSList *list;
 
-        GST_WARNING ("Stop gstreamill ...");
+        GST_INFO ("Stop gstreamill ...");
         gstreamill->stop = TRUE;
         g_mutex_lock (&(gstreamill->job_list_mutex));
         list = gstreamill->job_list;
@@ -710,7 +710,7 @@ static guint64 create_job_process (Job *job)
         }
         argv[i++] = NULL;
         if (!g_spawn_async (NULL, argv, NULL, G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &pid, &error)) {
-                GST_ERROR ("Start job %s error, reason: %s.", job->name, error->message);
+                GST_WARNING ("Start job %s error, reason: %s.", job->name, error->message);
                 for (j = 0; j < i; j++) {
                         if (argv[j] != NULL) {
                                 g_free (argv[j]);
@@ -729,7 +729,7 @@ static guint64 create_job_process (Job *job)
         g_child_watch_add (pid, (GChildWatchFunc)child_watch_cb, job);
 
         while ((*(job->output->state) == JOB_STATE_READY) || (*(job->output->state) == JOB_STATE_VOID_PENDING)) {
-                GST_WARNING ("waiting job process creating ... state: %s", job_state_get_name (*(job->output->state)));
+                GST_DEBUG ("waiting job process creating ... state: %s", job_state_get_name (*(job->output->state)));
                 g_usleep (50000);
         }
 
@@ -744,7 +744,7 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
         job->worker_pid = 0;
 
         if (WIFEXITED (status) && (WEXITSTATUS (status) == 0)) {
-                GST_ERROR ("Job %s normaly exit, status is %d", job->name, WEXITSTATUS (status));
+                GST_WARNING ("Job %s normaly exit, status is %d", job->name, WEXITSTATUS (status));
                 *(job->output->state) = JOB_STATE_NULL;
                 job->eos = TRUE;
                 return;
@@ -752,25 +752,25 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
 
         if (WIFEXITED (status) && (WEXITSTATUS (status) != 0)) {
                 if (WEXITSTATUS (status) < 100) {
-                        GST_ERROR ("Start job failure: subprocess return %d and don't restart it.", WEXITSTATUS (status));
+                        GST_WARNING ("Start job failure: subprocess return %d and don't restart it.", WEXITSTATUS (status));
                         return;
 
                 } else {
                         if (!job->is_live) {
-                                GST_ERROR ("Nonlive job %s exit on critical error return %d.", job->name, WEXITSTATUS (status));
+                                GST_WARNING ("Nonlive job %s exit on critical error return %d.", job->name, WEXITSTATUS (status));
                                 *(job->output->state) = JOB_STATE_NULL;
                                 job->eos = TRUE;
                                 return;
                         }
 
-                        GST_ERROR ("Job %s exit on critical error return %d, restart ...", job->name, WEXITSTATUS (status));
+                        GST_INFO ("Job %s exit on critical error return %d, restart ...", job->name, WEXITSTATUS (status));
                         job_reset (job);
                         if (create_job_process (job) == JOB_STATE_PLAYING) {
-                                GST_ERROR ("Restart job %s success", job->name);
+                                GST_INFO ("Restart job %s success", job->name);
 
                         } else {
                                 /* create process failure, clean from job list */
-                                GST_ERROR ("Restart job %s failure", job->name);
+                                GST_WARNING ("Restart job %s failure", job->name);
                                 *(job->output->state) = JOB_STATE_NULL;
                         }
                 }
@@ -778,26 +778,26 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
 
         if (WIFSIGNALED (status)) {
                 if (*(job->output->state) == JOB_STATE_PAUSED) {
-                        GST_ERROR ("Job %s exit on signal and paused, stopping gstreamill...", job->name);
+                        GST_INFO ("Job %s exit on signal and paused, stopping gstreamill...", job->name);
                         *(job->output->state) = JOB_STATE_NULL;
                         return;
                 }
 
                 if (!job->is_live) {
-                        GST_ERROR ("Nonlive job %s exit on an unhandled signal.", job->name);
+                        GST_INFO ("Nonlive job %s exit on an unhandled signal.", job->name);
                         *(job->output->state) = JOB_STATE_NULL;
                         job->eos = TRUE;
                         return;
                 }
 
-                GST_ERROR ("Live job %s exit on an unhandled signal, restart.", job->name);
+                GST_INFO ("Live job %s exit on an unhandled signal, restart.", job->name);
                 job_reset (job);
                 if (create_job_process (job) == JOB_STATE_PLAYING) {
-                        GST_ERROR ("Restart job %s success", job->name);
+                        GST_INFO ("Restart job %s success", job->name);
 
                 } else {
                         /* create process failure, clean from job list */
-                        GST_ERROR ("Restart job %s failure", job->name);
+                        GST_WARNING ("Restart job %s failure", job->name);
                         *(job->output->state) = JOB_STATE_NULL;
                 }
         }
@@ -849,16 +849,16 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
         }
 
         if (jobdesc_is_live (job_desc)) {
-                GST_ERROR ("live job arrived:\n%s", job_desc);
+                GST_INFO ("live job arrived:\n%s", job_desc);
 
         } else {
-                GST_ERROR ("transcode job arrived:\n%s", job_desc);
+                GST_INFO ("transcode job arrived:\n%s", job_desc);
         }
 
         /* create job object */
         name = jobdesc_get_name (job_desc);
         if (get_job (gstreamill, name) != NULL) {
-                GST_ERROR ("start job failure, duplicated name %s.", name);
+                GST_WARNING ("start job failure, duplicated name %s.", name);
                 p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"duplicated name\"\n}");
                 g_free (name);
                 return p;
@@ -893,14 +893,14 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
 
                 stat = create_job_process (job);
                 if (stat == JOB_STATE_PLAYING) {
-                        GST_ERROR ("Start job %s success", job->name);
+                        GST_INFO ("Start job %s success", job->name);
                         g_mutex_lock (&(gstreamill->job_list_mutex));
                         gstreamill->job_list = g_slist_append (gstreamill->job_list, job);
                         g_mutex_unlock (&(gstreamill->job_list_mutex));
                         p = g_strdup_printf ("{\n    \"name\": \"%s\",\n\"result\": \"success\"\n}", job->name);
 
                 } else {
-                        GST_ERROR ("Start job %s failure, return stat: %s", job->name, job_state_get_name (stat));
+                        GST_WARNING ("Start job %s failure, return stat: %s", job->name, job_state_get_name (stat));
                         g_object_unref (job);
                         p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"create process failure\"\n}");
                 }
@@ -1022,15 +1022,15 @@ EncoderOutput * gstreamill_get_encoder_output (Gstreamill *gstreamill, gchar *ur
         }
         job = gstreamill_get_job (gstreamill, uri);
         if (job == NULL) {
-                GST_ERROR ("Job %s not found.", uri);
+                GST_WARNING ("Job %s not found.", uri);
                 return NULL;
         }
         if (*(job->output->state) != JOB_STATE_PLAYING) {
-                GST_ERROR ("FATAL: Job %s state is not playing", job->name);
+                GST_WARNING ("FATAL: Job %s state is not playing", job->name);
                 return NULL;
         }
         if (index >= job->output->encoder_count) {
-                GST_ERROR ("Encoder %s not found.", uri);
+                GST_WARNING ("Encoder %s not found.", uri);
                 return NULL;
         }
         g_mutex_lock (&(job->access_mutex));
@@ -1055,7 +1055,7 @@ gchar * gstreamill_get_master_m3u8playlist (Gstreamill *gstreamill, gchar *uri)
 
         job = gstreamill_get_job (gstreamill, uri);
         if (job == NULL) {
-                GST_ERROR ("Job %s not found.", uri);
+                GST_WARNING ("Job %s not found.", uri);
                 return NULL;
         }
 
@@ -1083,7 +1083,7 @@ void gstreamill_unaccess (Gstreamill *gstreamill, gchar *uri)
 
         job = gstreamill_get_job (gstreamill, uri);
         if (job == NULL) {
-                GST_ERROR ("Job %s not found.", uri);
+                GST_WARNING ("Job %s not found.", uri);
                 return;
         }
         g_mutex_lock (&(job->access_mutex));
@@ -1370,16 +1370,16 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
                 name = g_match_info_fetch_named (match_info, "name");
         }
         if (name == NULL) {
-                GST_ERROR ("wrong uri");
+                GST_WARNING ("wrong uri");
                 return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"wrong uri\"\n}");
         }
         job = get_job (gstreamill, name);
         if (job == NULL) {
-                GST_ERROR ("uri %s not found.", uri);
+                GST_WARNING ("uri %s not found.", uri);
                 return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"not found\",\n    \"name\": \"%s\"\n}", name);
         }
         if (clock_gettime (CLOCK_REALTIME, &ts) == -1) {
-                GST_ERROR ("clock_gettime error: %s", g_strerror (errno));
+                GST_WARNING ("clock_gettime error: %s", g_strerror (errno));
                 return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"clock_gettime error\",\n    \"name\": \"%s\"\n}", name);
         }
         ts.tv_sec += 1;
@@ -1387,7 +1387,7 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
                 if (errno == EINTR) {
                         continue;
                 }
-                GST_ERROR ("sem_timedwait failure: %s", g_strerror (errno));
+                GST_WARNING ("sem_timedwait failure: %s", g_strerror (errno));
                 return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"sem_timedwait failure\",\n    \"name\": \"%s\"\n}", name);
         }
         source_streams = source_streams_stat (job);
@@ -1432,7 +1432,7 @@ gchar * gstreamill_gstreamer_stat (Gstreamill *gstreamill, gchar *uri)
         }
 
         if ((cmd != NULL) && !g_spawn_command_line_sync (cmd, &std_out, NULL, NULL, &error)) {
-                GST_ERROR ("gst-inspect error, reason: %s.", error->message);
+                GST_WARNING ("gst-inspect error, reason: %s.", error->message);
                 g_error_free (error);
         }
 

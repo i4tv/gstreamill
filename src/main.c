@@ -338,7 +338,7 @@ int main (int argc, char *argv[])
                 }
 
                 /* launch a job. */
-                GST_WARNING ("\n\nlivejob %s starting ...", name);
+                GST_INFO ("\n\nlivejob %s starting ...", name);
                 job = job_new ("name", name, "job", job_desc, NULL);
                 job->is_live = jobdesc_is_live (job_desc);
                 job->eos = FALSE;
@@ -347,26 +347,26 @@ int main (int argc, char *argv[])
                 signal (SIGTERM, stop_job);
                 loop = g_main_loop_new (NULL, FALSE);
 
-                GST_WARNING ("Initializing job ...");
+                GST_INFO ("Initializing job ...");
                 if (job_initialize (job, TRUE) != 0) {
                         GST_ERROR ("initialize job failure, exit");
                         exit (8);
                 }
-                GST_WARNING ("Initializing job done");
+                GST_INFO ("Initializing job done");
 
-                GST_WARNING ("Initializing job's encoders output ...");
+                GST_INFO ("Initializing job's encoders output ...");
                 if (job_encoders_output_initialize (job) != 0) {
                         GST_ERROR ("initialize job encoders' output failure, exit");
                         exit (8);
                 }
-                GST_WARNING ("Initializing job's encoders output done");
+                GST_INFO ("Initializing job's encoders output done");
 
-                GST_WARNING ("Starting job ...");
+                GST_INFO ("Starting job ...");
                 if (job_start (job) != 0) {
                         GST_ERROR ("start livejob failure, exit");
                         exit (9);
                 }
-                GST_WARNING ("job %s started\n\n", name);
+                GST_INFO ("job %s started\n\n", name);
                 g_free (name);
                 g_free (job_desc);
 
@@ -447,7 +447,7 @@ int main (int argc, char *argv[])
         /* ignore SIGPIPE */
         signal (SIGPIPE, SIG_IGN);
 
-        GST_WARNING ("gstreamill started ...");
+        GST_INFO ("gstreamill started ...");
 
         loop = g_main_loop_new (NULL, FALSE);
 
@@ -496,7 +496,7 @@ int main (int argc, char *argv[])
                 val = json_parse_string (p);
                 obj = json_value_get_object (val);
                 result = (gchar *)json_object_get_string (obj, "result");
-                GST_WARNING ("start job result: %s.", result);
+                GST_INFO ("start job result: %s.", result);
                 if (g_strcmp0 (result, "success") != 0) {
                         exit (16);
                 }

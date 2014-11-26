@@ -206,7 +206,7 @@ static GstClockTime send_chunk (EncoderOutput *encoder_output, RequestData *requ
         priv_data = request_data->priv_data;
 
         if (sem_wait (encoder_output->semaphore) == -1) {
-                GST_ERROR ("send_chunk sem_wait failure: %s", g_strerror (errno));
+                GST_WARNING ("send_chunk sem_wait failure: %s", g_strerror (errno));
                 /* sem_wait failure, wait a while. */
                 return 100 * GST_MSECOND + g_random_int_range (1, 1000000);
         }
@@ -314,7 +314,7 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
                 path = g_strdup_printf ("%s/%s", encoder_output->record_path, file);
                 g_free (file);
                 if (!g_file_get_contents (path, &file, &buf_size, &err)) {
-                        GST_ERROR ("read %s failure: %s", path, err->message);
+                        GST_WARNING ("read %s failure: %s", path, err->message);
                         g_free (path);
                         g_error_free (err);
                         return 0;
@@ -331,7 +331,7 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
         /* live segment */
         sscanf (request_data->uri, "/live/%*[^/]/encoder/%*[^/]/%lu.ts", &timestamp);
         if (sem_wait (encoder_output->semaphore) == -1) {
-                GST_ERROR ("get_mpeg2ts_segment sem_wait failure: %s", g_strerror (errno));
+                GST_WARNING ("get_mpeg2ts_segment sem_wait failure: %s", g_strerror (errno));
                 return 0;
         }
         /* seek gop */
@@ -359,7 +359,7 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
 
         } else {
                 /* segment not found */
-                GST_ERROR ("Segment not found!");
+                GST_WARNING ("Segment not found!");
                 *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
                 buf_size = strlen (*buf);
         }
@@ -376,7 +376,7 @@ static gboolean is_http_progress_play_url (RequestData *request_data)
         gint index;
 
         if (request_data->parameters[0] != '\0') {
-                GST_ERROR ("parameters is needless : %s?%s", request_data->uri, request_data->parameters);
+                GST_WARNING ("parameters is needless : %s?%s", request_data->uri, request_data->parameters);
                 return FALSE;
         }
 
@@ -713,7 +713,7 @@ gint httpstreaming_start (HTTPStreaming *httpstreaming, gint maxthreads)
 
         /* get streaming listen port */
         if (sscanf (httpstreaming->address, "%[^:]:%s", node, service) == EOF) {
-                GST_ERROR ("http streaming address error: %s", httpstreaming->address);
+                GST_WARNING ("http streaming address error: %s", httpstreaming->address);
                 return 1;
         }
 

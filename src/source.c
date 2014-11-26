@@ -211,13 +211,13 @@ gboolean bus_callback (GstBus *bus, GstMessage *msg, gpointer user_data)
         case GST_MESSAGE_STATE_CHANGED:
                 g_value_init (&state, G_TYPE_INT);
                 gst_message_parse_state_changed (msg, &old, &new, &pending);
-                GST_INFO ("pipeline %s element %s state from %s to %s",
+                GST_DEBUG ("pipeline %s element %s state from %s to %s",
                           g_value_get_string (&name),
                           GST_MESSAGE_SRC_NAME (msg),
                           gst_element_state_get_name (old),
                           gst_element_state_get_name (new));
                 if (g_strcmp0 (g_value_get_string (&name), GST_MESSAGE_SRC_NAME (msg)) == 0) {
-                        GST_INFO ("pipeline %s state change to %s", g_value_get_string (&name), gst_element_state_get_name (new));
+                        GST_DEBUG ("pipeline %s state change to %s", g_value_get_string (&name), gst_element_state_get_name (new));
                         g_value_set_int (&state, new);
                         g_object_set_property (object, "state", &state);
                         g_value_unset (&state);
@@ -226,20 +226,20 @@ gboolean bus_callback (GstBus *bus, GstMessage *msg, gpointer user_data)
 
         case GST_MESSAGE_STREAM_STATUS:
                 gst_message_parse_stream_status (msg, &type, NULL);
-                GST_INFO ("stream status %d", type);
+                GST_DEBUG ("stream status %d", type);
                 break;
 
         case GST_MESSAGE_NEW_CLOCK:
                 gst_message_parse_new_clock (msg, &clock);
-                GST_INFO ("New source clock %s", GST_OBJECT_NAME (clock));
+                GST_DEBUG ("New source clock %s", GST_OBJECT_NAME (clock));
                 break;
 
         case GST_MESSAGE_ASYNC_DONE:
-                GST_INFO ("source %s message: %s", g_value_get_string (&name), GST_MESSAGE_TYPE_NAME (msg));
+                GST_DEBUG ("source %s message: %s", g_value_get_string (&name), GST_MESSAGE_TYPE_NAME (msg));
                 break;
 
         default:
-                GST_INFO ("%s message: %s", g_value_get_string (&name), GST_MESSAGE_TYPE_NAME (msg));
+                GST_DEBUG ("%s message: %s", g_value_get_string (&name), GST_MESSAGE_TYPE_NAME (msg));
         }
         g_value_unset (&name);
 
@@ -358,7 +358,7 @@ static GstElement * element_create (gchar *job, gchar *pipeline, gchar *param)
                                         g_free (value);
                                         return NULL;
                                 }
-                                GST_INFO ("Set property: %s = %s.", *pp, value);
+                                GST_DEBUG ("Set property: %s = %s.", *pp, value);
                                 g_free (value);
                         }
                         g_free (p);
@@ -430,7 +430,7 @@ static void pad_added_callback (GstElement *src, GstPad *pad, gpointer data)
                 GST_WARNING ("skip sometimes pad: %s", src_pad_name);
                 return;
         }
-        GST_INFO ("sometimes pad: %s found", src_pad_name);
+        GST_DEBUG ("sometimes pad: %s found", src_pad_name);
 
         pipeline = (GstElement *)gst_element_get_parent (src);
         elements = bin->elements;
@@ -444,7 +444,7 @@ static void pad_added_callback (GstElement *src, GstPad *pad, gpointer data)
         links = bin->links;
         while (links != NULL) {
                 link = links->data;
-                GST_INFO ("Link %s -> %s", link->src_name, link->sink_name);
+                GST_DEBUG ("Link %s -> %s", link->src_name, link->sink_name);
                 if (link->caps != NULL) {
                         caps = gst_caps_from_string (link->caps);
                         gst_element_link_filtered (link->src, link->sink, caps);
@@ -457,7 +457,7 @@ static void pad_added_callback (GstElement *src, GstPad *pad, gpointer data)
         }
 
         if (gst_element_link (src, bin->previous->sink)) {
-                GST_INFO ("new added pad name: %s, delayed src pad name %s. ok!", src_pad_name, bin->previous->src_pad_name);
+                GST_DEBUG ("new added pad name: %s, delayed src pad name %s. ok!", src_pad_name, bin->previous->src_pad_name);
         }
 
         g_free (src_pad_name);
@@ -511,7 +511,7 @@ static void delay_sometimes_pad_link (Source *source, gchar *name)
                                                                 source->bins,
                                                                 (GClosureNotify)free_bin,
                                                                 (GConnectFlags) 0);
-                        GST_INFO ("delay sometimes pad linkage %s", bin->name);
+                        GST_DEBUG ("delay sometimes pad linkage %s", bin->name);
                         elements = elements->next;
                 }
                 bins = bins->next;
@@ -765,7 +765,7 @@ static GstElement * create_source_pipeline (Source *source)
                         links = bin->links;
                         while (links != NULL) {
                                 link = links->data;
-                                GST_INFO ("link %s -> %s", link->src_name, link->sink_name);
+                                GST_DEBUG ("link %s -> %s", link->src_name, link->sink_name);
                                 if (link->caps != NULL) {
                                         caps = gst_caps_from_string (link->caps);
                                         gst_element_link_filtered (link->src, link->sink, caps);
@@ -789,7 +789,7 @@ static GstElement * create_source_pipeline (Source *source)
                 if (g_strcmp0 ("GstAppSink", g_type_name (type)) == 0) {
                         stream = source_get_stream (source, bin->name);
                         gst_app_sink_set_callbacks (GST_APP_SINK (element), &appsink_callbacks, stream, NULL);
-                        GST_INFO ("Set callbacks for bin %s", bin->name);
+                        GST_DEBUG ("Set callbacks for bin %s", bin->name);
                 }
 
                 bins = g_slist_next (bins);
@@ -818,7 +818,7 @@ static gint source_extract_streams (Source *source, gchar *job)
                 if (g_match_info_matches (match_info)) {
                         stream = (SourceStream *)g_malloc (sizeof (SourceStream));
                         stream->name = g_match_info_fetch_named (match_info, "name");
-                        GST_INFO ("source stream %s found %s", stream->name, bin);
+                        GST_DEBUG ("source stream %s found %s", stream->name, bin);
                         g_match_info_free (match_info);
                         g_array_append_val (source->streams, stream);
 

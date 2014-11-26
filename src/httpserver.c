@@ -650,7 +650,7 @@ static gpointer listen_thread (gpointer data)
         for (;;) {
                 n = epoll_wait (http_server->epollfd, event_list, kMaxRequests, -1);
                 if (n == -1) {
-                        GST_ERROR ("epoll_wait error %s", g_strerror (errno));
+                        GST_WARNING ("epoll_wait error %s", g_strerror (errno));
                         continue;
                 }
                 for (i = 0; i < n; i++) {
@@ -926,7 +926,7 @@ static void thread_pool_func (gpointer data, gpointer user_data)
 
                 } else {
                         /* Bad Request */
-                        GST_ERROR ("Bad request, return is %d, sock is %d", ret, request_data->sock);
+                        GST_WARNING ("Bad request, return is %d, sock is %d", ret, request_data->sock);
                         gchar *buf = g_strdup_printf (http_400, PACKAGE_NAME, PACKAGE_VERSION);
                         if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
                                 GST_ERROR ("write sock %d error.", request_data->sock);
@@ -983,7 +983,12 @@ gint httpserver_report_request_data (HTTPServer *http_server)
         for (i = 0; i < kMaxRequests; i++) {
                 request_data = http_server->request_data_pointers[i];
                 if (request_data->status != HTTP_NONE) {
-                        GST_INFO ("%d : status %d sock %d uri %s wakeuptime %lu", i, request_data->status, request_data->sock, request_data->uri, request_data->wakeup_time);
+                        GST_INFO ("%d : status %d sock %d uri %s wakeuptime %lu",
+                         i,
+                         request_data->status,
+                         request_data->sock,
+                         request_data->uri,
+                         request_data->wakeup_time);
 
                 } else {
                         count += 1;
