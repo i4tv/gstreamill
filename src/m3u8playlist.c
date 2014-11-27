@@ -31,6 +31,7 @@ static void m3u8entry_free (M3U8Entry * entry)
 {
         g_return_if_fail (entry != NULL);
 
+        g_free (entry->url);
         g_free (entry);
 }
 
@@ -114,10 +115,9 @@ static gchar * m3u8playlist_render (M3U8Playlist * playlist)
         return p;
 }
 
-gchar * m3u8playlist_add_entry (M3U8Playlist *playlist, const gchar *url, gfloat duration)
+gint m3u8playlist_add_entry (M3U8Playlist *playlist, const gchar *url, gfloat duration)
 {
         M3U8Entry *entry;
-        gchar *rm_url = NULL;
 
         g_rw_lock_writer_lock (&(playlist->lock));
 
@@ -127,7 +127,6 @@ gchar * m3u8playlist_add_entry (M3U8Playlist *playlist, const gchar *url, gfloat
                 M3U8Entry *old_entry;
 
                 old_entry = g_queue_pop_head (playlist->entries);
-                rm_url = old_entry->url;
                 m3u8entry_free (old_entry);
         }
         playlist->sequence_number++;;
@@ -141,7 +140,7 @@ gchar * m3u8playlist_add_entry (M3U8Playlist *playlist, const gchar *url, gfloat
 
         g_rw_lock_writer_unlock (&(playlist->lock));
 
-        return rm_url;
+        return 0;
 }
 
 gchar * m3u8playlist_live_get_playlist (M3U8Playlist *playlist)
@@ -264,7 +263,6 @@ gchar * m3u8playlist_dvr_get_playlist (gchar *path, gint64 start, gint64 duratio
                                 pp = g_strsplit (p, "_", 0);
                                 /* remove .ts */
                                 pp[2][strlen (pp[2]) - 3] = '\0';
-                                GST_ERROR ("%s", p);
                                 m3u8playlist_add_entry (m3u8playlist, p, g_strtod ((pp[2]), NULL));
                         }
                 }
