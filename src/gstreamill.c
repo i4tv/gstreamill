@@ -1109,22 +1109,21 @@ void gstreamill_unaccess (Gstreamill *gstreamill, gchar *uri)
  */
 gchar * gstreamill_stat (Gstreamill *gstreamill)
 {
-        gchar *template = "{\n"
-                          "    \"version\": \"%s\",\n"
-                          "    \"builddate\": \"%s\",\n"
-                          "    \"buildtime\": \"%s\",\n"
-                          "    \"starttime\": \"%s\",\n"
-                          "    \"jobcount\": %d\n}\n";
-        gchar *stat;
+        JSON_Value *value;
+        JSON_Object *object;
         guint jobcount;
+        gchar *stat;
 
+        value = json_value_init_object ();
+        object = json_value_get_object (value);
+        json_object_set_string (object, "version", VERSION);
+        json_object_set_string (object, "builddate", __DATE__);
+        json_object_set_string (object, "buildtime", __TIME__);
+        json_object_set_string (object, "starttime", gstreamill->start_time);
         jobcount = gstreamill_job_number (gstreamill);
-        stat = g_strdup_printf (template,
-                                VERSION,
-                                __DATE__,
-                                __TIME__,
-                                gstreamill->start_time,
-                                jobcount);
+        json_object_set_number (object, "jobcount", jobcount);
+        stat = json_serialize_to_string (value);
+        json_value_free (value);
 
         return stat;
 }

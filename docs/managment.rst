@@ -331,7 +331,15 @@ HTTP Request::
 
 On success, returns a response body with the following structure::
 
-    ["em3","em2","em1","em4"]
+    {
+        "result": "success",
+        "data": [
+            "em3",
+            "em4",
+            "em2",
+            "em1"
+        ]
+    }
 
 get network interfaces
 ----------------------

@@ -145,17 +145,21 @@ GType httpmgmt_get_type (void)
 
 static gchar * system_stat ()
 {
+        JSON_Value *value;
+        JSON_Object *object;
         gchar *std_out, *p, **pp1, **pp2, model_name[128], *result;
         gint count;
         GError *err = NULL;
 
+        value = json_value_init_object ();
+        object = json_value_get_object (value);
+
         /* cpu mode */
-        result = g_strdup ("{\n");
         if (!g_file_get_contents ("/proc/cpuinfo", &p, NULL, &err)) {
                 GST_ERROR ("read /proc/cpuinfo failure: %s", err->message);
-                g_free (result);
                 result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"\n}", err->message);
                 g_error_free (err);
+                json_value_free (value);
                 return result;
         }
 
@@ -170,57 +174,43 @@ static gchar * system_stat ()
                 break;
         }
         g_strfreev (pp2);
-        p = result;
-        result = g_strdup_printf ("%s    \"CPU_Model\": \"%s\"", p, model_name);
-        g_free (p);
+        json_object_set_string (object, "CPU_Model", model_name);
 
         if (!g_spawn_command_line_sync ("lscpu", &std_out, NULL, NULL, &err)) {
                 GST_ERROR ("invoke lscpu failure: %s", err->message);
-                g_free (result);
                 result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"\n}", err->message);
                 g_error_free (err);
+                json_value_free (value);
                 return result;
         }
         pp1 = pp2 = g_strsplit (std_out, "\n", 0);
         while (*pp1 != NULL) {
                 if (g_str_has_prefix (*pp1, "CPU(s)")) {
                         sscanf (*pp1, "CPU(s):%*[ ]%d", &count);
-                        p = result;
-                        result = g_strdup_printf ("%s,\n    \"CPU_Count\": %d", p, count);
-                        g_free (p);
+                        json_object_set_number (object, "CPU_Count", count);
 
                 } else if (g_str_has_prefix (*pp1, "Thread(s) per core")) {
                         sscanf (*pp1, "Thread(s) per core:%*[ ]%d", &count);
-                        p = result;
-                        result = g_strdup_printf ("%s,\n    \"Threads_per_Core\": %d", p, count);
-                        g_free (p);
+                        json_object_set_number (object, "Threads_per_Core", count);
 
                 } else if (g_str_has_prefix (*pp1, "Core(s) per socket")) {
                         sscanf (*pp1, "Core(s) per socket:%*[ ]%d", &count);
-                        p = result;
-                        result = g_strdup_printf ("%s,\n    \"Core_per_Socket\": %d", p, count);
-                        g_free (p);
+                        json_object_set_number (object, "Core_per_Socket", count);
 
                 } else if (g_str_has_prefix (*pp1, "Socket(s)")) {
                         sscanf (*pp1, "Socket(s):%*[ ]%d", &count);
-                        p = result;
-                        result = g_strdup_printf ("%s,\n    \"Sockets_Count\": %d", p, count);
-                        g_free (p);
+                        json_object_set_number (object, "Sockets_Count", count);
 
                 } else if (g_str_has_prefix (*pp1, "CPU MHz")){
                         sscanf (*pp1, "CPU MHz:%*[ ]%d", &count);
-                        p = result;
-                        result = g_strdup_printf ("%s,\n    \"CPU_MHz\": %d", p, count);
-                        g_free (p);
+                        json_object_set_number (object, "CPU_MHz", count);
                 }
                 pp1++;
         }
         g_strfreev (pp2);
         g_free (std_out);
-
-        p = result;
-        result = g_strdup_printf ("%s\n}", p);
-        g_free (p);
+        result = json_serialize_to_string (value);
+        json_value_free (value);
 
         return result;
 }
@@ -560,26 +550,27 @@ static gchar * get_network_interfaces_debian ()
 
 static gchar * get_network_interfaces_redhat ()
 {
+        JSON_Value *value_obj, *value_array;
+        JSON_Object *object;
+        JSON_Array *array;
         augeas *aug;
         gchar *value = NULL, **if_match, **option_match, *result, *p, option[128];
         gint if_number, option_number, i, j;
 
         aug = aug_init_redhat ();
         if_number = aug_match (aug, "//files/etc/sysconfig/network-scripts/*", &if_match);
-        result = g_strdup ("[");
+        value_array = json_value_init_array ();
+        array = json_value_get_array (value_array);
         for (i = 0; i < if_number; i++) {
-                GST_ERROR ("%s", if_match[i]);
                 if (g_str_has_suffix (if_match[i], "ifcfg-lo") || g_str_has_prefix (if_match[i], "/augeas")) {
                         continue;
                 }
-                p = result;
-                result = g_strdup_printf ("%s{", p);
-                g_free (p);
                 p = g_strdup_printf ("%s/*", if_match[i]);
                 option_number = aug_match (aug, p, &option_match);
                 g_free (p);
+                value_obj = json_value_init_object ();
+                object = json_value_get_object (value_obj);
                 for (j = 0; j < option_number; j++) {
-                        GST_ERROR ("- %s", option_match[j]);
                         p = g_strdup_printf ("%s/%%[^$]", if_match[i]);
                         sscanf (option_match[j], p, option);
                         g_free (p);
@@ -588,41 +579,30 @@ static gchar * get_network_interfaces_redhat ()
                         }
                         if (g_strcmp0 (option, "NAME") == 0) {
                                 aug_get (aug, option_match[j], (const gchar **)&value);
-                                p = result;
-                                result = g_strdup_printf ("%s\n\"name\": \"%s\",", p, value);
-                                GST_ERROR ("result : %s", result);
-                                g_free (p);
+                                json_object_set_string (object, "name", value);
                         }
                         if (g_str_has_prefix (option, "IPADDR")) {
                                 aug_get (aug, option_match[j], (const gchar **)&value);
-                                p = result;
-                                result = g_strdup_printf ("%s\n\"address\": \"%s\",", p, value);
-                                g_free (p);
+                                json_object_set_string (object, "address", value);
                         }
                         if (g_str_has_prefix (option, "GATEWAY")) {
                                 aug_get (aug, option_match[j], (const gchar **)&value);
-                                p = result;
-                                result = g_strdup_printf ("%s\n\"gateway\": \"%s\",", p, value);
-                                g_free (p);
+                                json_object_set_string (object, "gateway", value);
                         }
                         if (g_str_has_prefix (option, "PREFIX")) {
                                 aug_get (aug, option_match[j], (const gchar **)&value);
-                                p = result;
-                                result = g_strdup_printf ("%s\n\"netmask\": \"%s\",", p, value);
-                                g_free (p);
+                                json_object_set_string (object, "netmask", value);
                         }
                         g_free (option_match[j]);
                 }
                 g_free (option_match);
                 g_free (if_match[i]);
-                result[strlen (result) - 1] = '}';
-                p = result;
-                result = g_strdup_printf ("%s,", p);
-                g_free (p);
+                json_array_append_value (array, value_obj);
         }
         g_free (if_match);
         aug_close (aug);
-        result[strlen (result) - 1] = ']';
+        result = json_serialize_to_string (value_array);
+        json_value_free (value_array);
 
         return result;
 }
@@ -639,18 +619,24 @@ static gchar * get_network_interfaces ()
 
 static gchar * get_network_devices ()
 {
+        JSON_Value *value_obj, *value_array;
+        JSON_Object *object;
+        JSON_Array *array;
         gchar *p1, p2[128], *result, **devices, **device;
         GError *err = NULL;
+
 
         if (!g_file_get_contents ("/proc/net/dev", &p1, NULL, &err)) {
                 GST_ERROR ("read /proc/net/dev failure: %s", err->message);
                 result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"\n}", err->message);
                 g_error_free (err);
+                return result;
         }
         devices = g_strsplit (p1, "\n", 0);
         g_free (p1);
         device = devices;
-        result = g_strdup ("[");
+        value_array = json_value_init_array ();
+        array = json_value_get_array (value_array);
         while (*device != NULL) {
                 if (g_str_has_prefix (*device, "Inter") ||
                     g_str_has_prefix (*device, " face") ||
@@ -659,20 +645,17 @@ static gchar * get_network_devices ()
                         continue;
                 }
                 if (sscanf (*device, "%*[ ]%[^:]:%*[.]", p2) != EOF) {
-                        p1 = result;
-                        result = g_strdup_printf ("%s\"%s\",", p1, p2);
-                        g_free (p1);
+                        json_array_append_string (array, p2);
                 }
                 device++;
         }
         g_strfreev (devices);
-        if (strlen (result) > 1) {
-                result[strlen (result) - 1] = ']';
-
-        } else {
-                g_free (result);
-                result = g_strdup ("[]");
-        }
+        value_obj = json_value_init_object ();
+        object = json_value_get_object (value_obj);
+        json_object_set_string (object, "result", "success");
+        json_object_set_value (object, "data", value_array);
+        result = json_serialize_to_string (value_obj);
+        json_value_free (value_obj);
 
         return result;
 }
