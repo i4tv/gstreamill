@@ -1165,20 +1165,27 @@ gchar * gstreamill_list_nonlive_job (Gstreamill *gstreamill)
         return jobarray;
 }
 
-static gchar * source_streams_stat (Job *job)
+static JSON_Value * source_stat (Job *job)
 {
+        JSON_Value *value_source, *value_streams, *value_stream;
+        JSON_Array *array_streams;
+        JSON_Object *object_source, *object_stream;
         SourceStreamState *stat;
         GstDateTime *time;
         gint i;
         guint64 timestamp;
-        gchar *source_streams = NULL, *p1, *p2, *heartbeat;
-        gchar *template_source_stream = "            {\n"
-                                        "                \"name\": \"%s\",\n"
-                                        "                \"timestamp\": %lu,\n"
-                                        "                \"heartbeat\": \"%s\"\n"
-                                        "            }";
+        gchar *heartbeat;
 
+        value_source = json_value_init_object ();
+        object_source = json_value_get_object (value_source);
+        json_object_set_number (object_source, "duration", *(job->output->source.duration));
+        json_object_set_number (object_source, "sync_error_times", job->output->source.sync_error_times);
+        json_object_set_number (object_source, "stream_count", job->output->source.stream_count);
+        value_streams = json_value_init_array ();
+        array_streams = json_value_get_array (value_streams);
         for (i = 0; i < job->output->source.stream_count; i++) {
+                value_stream = json_value_init_object ();
+                object_stream = json_value_get_object (value_stream);
                 stat = &(job->output->source.streams[i]);
                 if (*(job->output->state) == JOB_STATE_PLAYING) {
                         timestamp = stat->current_timestamp;
@@ -1190,48 +1197,43 @@ static gchar * source_streams_stat (Job *job)
                         timestamp = 0;
                         heartbeat = g_strdup ("0");
                 }
-                p2 = g_strdup_printf (template_source_stream,
-                                      stat->name,
-                                      timestamp,
-                                      heartbeat);
+                json_object_set_string (object_stream, "name", stat->name);
+                json_object_set_number (object_stream, "timestamp", timestamp);
+                json_object_set_string (object_stream, "heartbeat", heartbeat);
                 g_free (heartbeat);
-                if (i == 0) {
-                        source_streams = g_strdup (p2);
-
-                } else {
-                        p1 = source_streams;
-                        source_streams = g_strdup_printf ("%s,\n%s", p1, p2);
-                        g_free (p1);
-                }
-                g_free (p2);
+                json_array_append_value (array_streams, value_stream);
         }
+        json_object_set_value (object_source, "streams", value_streams);
 
-        return source_streams;
+        return value_source;
 }
 
-static gchar * encoder_stat (EncoderOutput *encoder_output, guint64 jobstate)
+static JSON_Value * encoder_stat (EncoderOutput *encoder_output, guint64 jobstate)
 {
+        JSON_Value *value_encoder, *value_streams, *value_stream;
+        JSON_Array *array_streams;
+        JSON_Object *object_encoder, *object_stream;
         EncoderStreamState *stat;
         gint i;
         GstDateTime *time;
         guint64 timestamp;
-        gchar *encoder_stat, *encoder_streams = NULL, *p1, *p2, *heartbeat;
-        gchar *template_encoder_stream = "                {\n"
-                                         "                    \"name\": \"%s\",\n"
-                                         "                    \"timestamp\": %lu,\n"
-                                         "                    \"heartbeat\": \"%s\"\n"
-                                         "                }";
-        gchar *template_encoder = "        {\n"
-                                  "            \"name\": \"%s\",\n"
-                                  "            \"heartbeat\": \"%s\",\n"
-                                  "            \"count\": %ld,\n"
-                                  "            \"streamcount\": %ld,\n"
-                                  "            \"streams\": [\n"
-                                  "%s\n"
-                                  "            ]\n"
-                                  "        }";
+        gchar *heartbeat;
 
+        value_encoder = json_value_init_object ();
+        object_encoder = json_value_get_object (value_encoder);
+        json_object_set_string (object_encoder, "name", encoder_output->name);
+        time = gst_date_time_new_from_unix_epoch_local_time (*(encoder_output->heartbeat)/GST_SECOND);
+        heartbeat = gst_date_time_to_iso8601_string (time);
+        gst_date_time_unref (time);
+        json_object_set_string (object_encoder, "heartbeat", heartbeat);
+        g_free (heartbeat);
+        json_object_set_number (object_encoder, "count", *(encoder_output->total_count));
+        json_object_set_number (object_encoder, "streamcount", encoder_output->stream_count);
+        value_streams = json_value_init_array ();
+        array_streams = json_value_get_array (value_streams);
         for (i = 0; i < encoder_output->stream_count; i++) {
+                value_stream = json_value_init_object ();
+                object_stream = json_value_get_object (value_stream);
                 stat = &(encoder_output->streams[i]);
                 if (jobstate == JOB_STATE_PLAYING) {
                         timestamp = stat->current_timestamp;
@@ -1243,53 +1245,34 @@ static gchar * encoder_stat (EncoderOutput *encoder_output, guint64 jobstate)
                         timestamp = 0;
                         heartbeat = g_strdup ("0");
                 }
-                p2 = g_strdup_printf (template_encoder_stream,
-                                      stat->name,
-                                      timestamp,
-                                      heartbeat);
+                json_object_set_string (object_stream, "name", stat->name);
+                json_object_set_number (object_stream, "timestamp", timestamp);
+                json_object_set_string (object_stream, "heartbeat", heartbeat);
                 g_free (heartbeat);
-                if (i == 0) {
-                        encoder_streams = g_strdup (p2);
-
-                } else {
-                        p1 = encoder_streams;
-                        encoder_streams = g_strdup_printf ("%s,\n%s", p1, p2);
-                        g_free (p1);
-                }
-                g_free (p2);
+                json_array_append_value (array_streams, value_stream);
         }
-        time = gst_date_time_new_from_unix_epoch_local_time (*(encoder_output->heartbeat)/GST_SECOND);
-        p1 = gst_date_time_to_iso8601_string (time);
-        gst_date_time_unref (time);
-        encoder_stat = g_strdup_printf (template_encoder,
-                                        encoder_output->name,
-                                        p1,
-                                        *(encoder_output->total_count),
-                                        encoder_output->stream_count,
-                                        encoder_streams);
-        g_free (p1);
+        json_object_set_value (object_encoder, "streams", value_streams);
 
-        return encoder_stat;
+        return value_encoder;
 }
 
-static gchar * encoders_stat (Job *job)
+static JSON_Value * encoders_stat (Job *job)
 {
+        JSON_Value *value_encoders, *value_encoder;
+        JSON_Array *array_encoders;
         EncoderOutput *encoder_output;
         gint i;
-        gchar *encoders, *p1, *p2;
 
-        encoder_output = &(job->output->encoders[0]);
-        encoders = encoder_stat (encoder_output, *(job->output->state));
-        for (i = 1; i < job->output->encoder_count; i++) {
-                p1 = encoders;
+        value_encoders = json_value_init_array ();
+        array_encoders = json_value_get_array (value_encoders);
+        for (i = 0; i < job->output->encoder_count; i++) {
                 encoder_output = &(job->output->encoders[i]);
-                p2 = encoder_stat (encoder_output, *(job->output->state));
-                encoders = g_strdup_printf ("%s,\n%s", p1, p2);
-                g_free (p1);
-                g_free (p2);
+                value_encoder = json_value_init_object ();
+                value_encoder = encoder_stat (encoder_output, *(job->output->state));
+                json_array_append_value (array_encoders, value_encoder);
         }
 
-        return encoders;
+        return value_encoders;
 }
 
 /**
@@ -1333,33 +1316,14 @@ static gchar * encoders_stat (Job *job)
  */
 gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
 {
-        gchar *template = "{\n"
-                          "    \"name\": \"%s\",\n"
-                          "    \"age\": %d,\n"
-                          "    \"last_start_time\": \"%s\",\n"
-                          "    \"state\": \"%s\",\n"
-                          "    \"current_access\": %d, \n"
-                          "    \"cpu_average\": %d,\n"
-                          "    \"cpu_current\": %d,\n"
-                          "    \"memory\": %llu,\n"
-                          "    \"source\": {\n"
-                          "        \"duration\": %ld,\n"
-                          "        \"sync_error_times\": %ld,\n"
-                          "        \"stream_count\": %ld,\n"
-                          "        \"streams\": [\n"
-                          "%s\n"
-                          "        ]\n"
-                          "    },\n"
-                          "    \"encoder_count\": %ld,\n"
-                          "    \"encoders\": [\n"
-                          "%s\n"
-                          "    ]\n"
-                          "}\n";
-        gchar *stat, *name = NULL, *source_streams = NULL, *encoders, *p;
+        JSON_Value *value_job, *value_source, *value_encoders, *value_result;
+        JSON_Object *object_job, *object_result;
+        gchar *result, *name = NULL;
         Job *job;
         GRegex *regex = NULL;
         GMatchInfo *match_info = NULL;
         struct timespec ts;
+
 
         regex = g_regex_new ("/job/(?<name>[^/]*).*", G_REGEX_OPTIMIZE, 0, NULL);
         match_info = NULL;
@@ -1389,30 +1353,32 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
                 GST_WARNING ("sem_timedwait failure: %s", g_strerror (errno));
                 return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"sem_timedwait failure\",\n    \"name\": \"%s\"\n}", name);
         }
-        source_streams = source_streams_stat (job);
-        encoders = encoders_stat (job);
-        p = g_strdup_printf (template,
-                                job->name,
-                                job->age,
-                                job->last_start_time,
-                                job_state_get_name (*(job->output->state)),
-                                job->current_access,
-                                job->cpu_average,
-                                job->cpu_current,
-                                job->memory,
-                                *(job->output->source.duration),
-                                job->output->source.sync_error_times,
-                                job->output->source.stream_count,
-                                source_streams,
-                                job->output->encoder_count,
-                                encoders);
-        sem_post (job->output->semaphore);
-        g_free (encoders);
-        g_free (source_streams);
-        stat = g_strdup_printf ("{\n    \"result\": \"success\",\n    \"data\": %s}", p);
-        g_free (p);
 
-        return stat;
+        value_job = json_value_init_object ();
+        object_job = json_value_get_object (value_job);
+        json_object_set_string (object_job, "name", job->name);
+        json_object_set_number (object_job, "age", job->age);
+        json_object_set_string (object_job, "last_start_time", job->last_start_time);
+        json_object_set_string (object_job, "state", job_state_get_name (*(job->output->state)));
+        json_object_set_number (object_job, "current_access", job->current_access);
+        json_object_set_number (object_job, "cpu_average", job->cpu_average);
+        json_object_set_number (object_job, "cpu_current", job->cpu_current);
+        json_object_set_number (object_job, "memory", job->memory);
+        value_source = source_stat (job);
+        json_object_set_value (object_job, "source", value_source);
+        json_object_set_number (object_job, "encoder_count", job->output->encoder_count);
+        value_encoders = encoders_stat (job);
+        json_object_set_value (object_job, "encoders", value_encoders);
+        sem_post (job->output->semaphore);
+
+        value_result = json_value_init_object ();
+        object_result = json_value_get_object (value_result);
+        json_object_set_string (object_result, "result", "success");
+        json_object_set_value (object_result, "data", value_job);
+        result = json_serialize_to_string (value_result);
+        json_value_free (value_result);
+
+        return result;
 }
 
 gchar * gstreamill_gstreamer_stat (Gstreamill *gstreamill, gchar *uri)
