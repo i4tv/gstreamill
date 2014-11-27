@@ -508,18 +508,22 @@ static gchar * set_network_interfaces (RequestData *request_data)
 
 static gchar * get_network_interfaces_debian ()
 {
+        JSON_Value *value_obj, *value_array;
+        JSON_Object *object;
+        JSON_Array *array;
         augeas *aug;
         gchar *value = NULL, **if_match, **option_match, *result, *p, option[128];
         gint if_number, option_number, i, j;
 
         aug = aug_init_debian ();
+        value_array = json_value_init_array ();
+        array = json_value_get_array (value_array);
         if_number = aug_match (aug, "//files/etc/network/interfaces/iface[.!='lo']", &if_match);
-        result = g_strdup ("[");
         for (i = 0; i < if_number; i++) {
                 aug_get (aug, if_match[i], (const gchar **)&value);
-                p = result;
-                result = g_strdup_printf ("%s{\"name\": \"%s\",", p, value);
-                g_free (p);
+                value_obj = json_value_init_object ();
+                object = json_value_get_object (value_obj);
+                json_object_set_string (object, "name", value);
                 p = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/*", value);
                 option_number = aug_match (aug, p, &option_match);
                 g_free (p);
@@ -529,21 +533,17 @@ static gchar * get_network_interfaces_debian ()
                                 continue;
                         }
                         aug_get (aug, option_match[j], (const gchar **)&value);
-                        p = result;
-                        result = g_strdup_printf ("%s\n\"%s\": \"%s\",", p, option, value);
-                        g_free (p);
+                        json_object_set_string (object, option, value);
                         g_free (option_match[j]);
                 }
                 g_free (option_match);
                 g_free (if_match[i]);
-                result[strlen (result) - 1] = '}';
-                p = result;
-                result = g_strdup_printf ("%s,", p);
-                g_free (p);
+                json_array_append_value (array, value_obj);
         }
         g_free (if_match);
         aug_close (aug);
-        result[strlen (result) - 1] = ']';
+        result = json_serialize_to_string (value_array);
+        json_value_free (value_array);
 
         return result;
 }
@@ -558,9 +558,9 @@ static gchar * get_network_interfaces_redhat ()
         gint if_number, option_number, i, j;
 
         aug = aug_init_redhat ();
-        if_number = aug_match (aug, "//files/etc/sysconfig/network-scripts/*", &if_match);
         value_array = json_value_init_array ();
         array = json_value_get_array (value_array);
+        if_number = aug_match (aug, "//files/etc/sysconfig/network-scripts/*", &if_match);
         for (i = 0; i < if_number; i++) {
                 if (g_str_has_suffix (if_match[i], "ifcfg-lo") || g_str_has_prefix (if_match[i], "/augeas")) {
                         continue;
