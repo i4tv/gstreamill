@@ -34,13 +34,13 @@ gstreamill is an open source, GPL licensed "stream mill" based on gstreamer-1.0.
 
 ## Application
 
-    IP --------+ 
-               |                      +------- UDP
-    CVBS ------+    +------------+    |
-               +----+ gstreamill +----+------ M3U8(HLS)
-    SDI -------+    +------+-----+    |
-               |           |          +------ HTTP
-    LIVE ------+           |
+    IP >-------+ 
+               |                      +------> UDP
+    CVBS >-----+    +------------+    |
+               +----+ gstreamill +----+-----> M3U8(HLS)
+    SDI >------+    +------+-----+    |
+               |           |          +-----> HTTP
+    LIVE >-----+           |
                            |
              REST interface (json over http post)
 
