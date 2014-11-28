@@ -19,7 +19,7 @@
 
 ## Overview
 
-gstreamill is an open source, GPL licensed "stream mill" based on gstreamer-1.0. To send query to a gstreamill server to provoke a live encode, transcode or recoder job. query is carried in http post, post body is the job to be provoke, job is descripted in json.
+gstreamill is an open source, GPL licensed "stream mill" based on gstreamer-1.0 with dvr support and hls output. 
 
 ## Highlight
 
@@ -30,15 +30,15 @@ gstreamill is an open source, GPL licensed "stream mill" based on gstreamer-1.0.
    * Job run in subprocess, and auto restart on error.
    * Base on gstreamer and easy to extend.
    * B/S Management.
-   * Time Shift and DVR support.
+   * Time Shift and Catchup.
 
 ## Application
 
     IP >-------+ 
-               |                      +------> UDP
-    CVBS >-----+    +------------+    |
-               +----+ gstreamill +----+-----> M3U8(HLS)
-    SDI >------+    +------+-----+    |
+               |    +------------+    +------> UDP
+    CVBS >-----+    | gstreamill |    |                   +-- live
+               +----+  with dvr  +----+-----> M3U8(HLS) --+-- time shift
+    SDI >------+    +------+-----+    |                   +-- catch up
                |           |          +-----> HTTP
     LIVE >-----+           |
                            |
