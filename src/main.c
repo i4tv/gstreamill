@@ -234,7 +234,8 @@ int main (int argc, char *argv[])
         GError *err = NULL;
         gboolean foreground;
         struct rlimit rlim;
-        gchar exe_path[512];
+        GDateTime *datetime;
+        gchar exe_path[512], *date;
 
         ctx = g_option_context_new (NULL);
         g_option_context_add_main_entries (ctx, options, NULL);
@@ -338,7 +339,11 @@ int main (int argc, char *argv[])
                 }
 
                 /* launch a job. */
-                GST_INFO ("\n\nlivejob %s starting ...", name);
+                datetime = g_date_time_new_now_local ();
+                date = g_date_time_format (datetime, "%b %d %H:%M:%S");
+                fprintf (_log->log_hd, "\n*** %s : job %s starting ***\n\n", date, name);
+                g_date_time_unref (datetime);
+                g_free (date);
                 job = job_new ("name", name, "job", job_desc, NULL);
                 job->is_live = jobdesc_is_live (job_desc);
                 job->eos = FALSE;
@@ -366,7 +371,11 @@ int main (int argc, char *argv[])
                         GST_ERROR ("start livejob failure, exit");
                         exit (9);
                 }
-                GST_INFO ("job %s started\n\n", name);
+                datetime = g_date_time_new_now_local ();
+                date = g_date_time_format (datetime, "%b %d %H:%M:%S");
+                fprintf (_log->log_hd, "\n*** %s : job %s started ***\n\n", date, name);
+                g_date_time_unref (datetime);
+                g_free (date);
                 g_free (name);
                 g_free (job_desc);
 
@@ -429,7 +438,7 @@ int main (int argc, char *argv[])
 
                 /* daemonize */
                 if (daemon (0, 0) != 0) {
-                        g_print ("Failed to daemonize");
+                        fprintf (_log->log_hd, "Failed to daemonize");
                         remove_pid_file ();
                         exit (1);
                 }
@@ -447,7 +456,11 @@ int main (int argc, char *argv[])
         /* ignore SIGPIPE */
         signal (SIGPIPE, SIG_IGN);
 
-        GST_INFO ("gstreamill started ...");
+        datetime = g_date_time_new_now_local ();
+        date = g_date_time_format (datetime, "%b %d %H:%M:%S");
+        fprintf (_log->log_hd, "\n*** %s : gstreamill started ***\n\n", date);
+        g_date_time_unref (datetime);
+        g_free (date);
 
         loop = g_main_loop_new (NULL, FALSE);
 
