@@ -631,7 +631,7 @@ static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime dura
 
         /* gop not found? */
         if (rap_addr == G_MAXUINT64) {
-                GST_WARNING ("Segment not found!");
+                GST_WARNING ("%s: record segment, but segment not found!", encoder_output->name);
                 sem_post (encoder_output->semaphore);
                 return;
         }

@@ -150,22 +150,22 @@ static void print_one_tag (const GstTagList * list, const gchar * tag, gpointer 
 
                 val = gst_tag_list_get_value_index (list, tag, i);
                 if (G_VALUE_HOLDS_STRING (val)) {
-                        GST_INFO ("%20s : %s", tag, g_value_get_string (val));
+                        GST_DEBUG ("%20s : %s", tag, g_value_get_string (val));
 
                 } else if (G_VALUE_HOLDS_UINT (val)) {
-                        GST_INFO ("%20s : %u", tag, g_value_get_uint (val));
+                        GST_DEBUG ("%20s : %u", tag, g_value_get_uint (val));
 
                 } else if (G_VALUE_HOLDS_DOUBLE (val)) {
-                        GST_INFO ("%20s : %g", tag, g_value_get_double (val));
+                        GST_DEBUG ("%20s : %g", tag, g_value_get_double (val));
 
                 } else if (G_VALUE_HOLDS_BOOLEAN (val)) {
-                        GST_INFO ("%20s : %s", tag, (g_value_get_boolean (val)) ? "true" : "false");
+                        GST_DEBUG ("%20s : %s", tag, (g_value_get_boolean (val)) ? "true" : "false");
 
                 } else if (GST_VALUE_HOLDS_BUFFER (val)) {
-                        GST_INFO ("%20s : buffer of size %lu", tag, gst_buffer_get_size (gst_value_get_buffer (val)));
+                        GST_DEBUG ("%20s : buffer of size %lu", tag, gst_buffer_get_size (gst_value_get_buffer (val)));
 
                 } else {
-                        GST_INFO ("%20s : tag of type '%s'", tag, G_VALUE_TYPE_NAME (val));
+                        GST_DEBUG ("%20s : tag of type '%s'", tag, G_VALUE_TYPE_NAME (val));
                 }
         }
 }
