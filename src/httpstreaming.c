@@ -439,22 +439,21 @@ static gchar * request_crossdomain (RequestData *request_data)
 
 static gchar * request_master_m3u8_playlist (HTTPStreaming *httpstreaming, RequestData *request_data)
 {
-        gchar *buf;
-        gchar *master_m3u8_playlist, *p, *replace;
+        gchar *master_m3u8_playlist, *buf, *replace;
         GRegex *regex;
 
         /* master m3u8 request? */
-        p = gstreamill_get_master_m3u8playlist (httpstreaming->gstreamill, request_data->uri);
+        buf = gstreamill_get_master_m3u8playlist (httpstreaming->gstreamill, request_data->uri);
         regex = g_regex_new ("(<%parameters%>)", 0, 0, NULL);
         if (g_strcmp0 (request_data->parameters, "") == 0) {
-                master_m3u8_playlist = g_regex_replace (regex, p, -1, 0, "", 0, NULL);
+                master_m3u8_playlist = g_regex_replace (regex, buf, -1, 0, "", 0, NULL);
 
         } else {
                 replace = g_strdup_printf ("?%s", request_data->parameters);
-                master_m3u8_playlist = g_regex_replace (regex, p, -1, 0, replace, 0, NULL);
+                master_m3u8_playlist = g_regex_replace (regex, buf, -1, 0, replace, 0, NULL);
                 g_free (replace);
         }
-        g_free (p);
+        g_free (buf);
         g_regex_unref (regex);
         if (master_m3u8_playlist != NULL) {
                 buf = g_strdup_printf (http_200,
@@ -503,7 +502,7 @@ static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encod
 
         /* live */
         if (g_str_has_prefix (request_data->uri, "/live/")) {
-                return m3u8playlist_live_get_playlist (encoder_output->m3u8_playlist);
+                m3u8playlist = m3u8playlist_live_get_playlist (encoder_output->m3u8_playlist);
 
         } else if (g_str_has_prefix (request_data->uri, "/dvr/")) {
                 /* time shift */
@@ -511,7 +510,7 @@ static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encod
                         gint64 offset;
 
                         offset = get_gint64_parameter (request_data->parameters, "offset");
-                        return m3u8playlist_timeshift_get_playlist (encoder_output->record_path, offset);
+                        m3u8playlist = m3u8playlist_timeshift_get_playlist (encoder_output->record_path, offset);
 
                 /* dvr */
                 } else if (g_strrstr (request_data->parameters, "start") != NULL) {
@@ -519,7 +518,7 @@ static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encod
 
                         start = get_gint64_parameter (request_data->parameters, "start");
                         duration = get_gint64_parameter (request_data->parameters, "duration");
-                        return m3u8playlist_dvr_get_playlist (encoder_output->record_path, start, duration);
+                        m3u8playlist = m3u8playlist_dvr_get_playlist (encoder_output->record_path, start, duration);
                 }
         }
 

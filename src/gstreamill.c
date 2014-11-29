@@ -1051,7 +1051,7 @@ EncoderOutput * gstreamill_get_encoder_output (Gstreamill *gstreamill, gchar *ur
 gchar * gstreamill_get_master_m3u8playlist (Gstreamill *gstreamill, gchar *uri)
 {
         Job *job;
-        gchar *master_m3u8_playlist;
+        gchar *buf;
 
         job = gstreamill_get_job (gstreamill, uri);
         if (job == NULL) {
@@ -1059,14 +1059,20 @@ gchar * gstreamill_get_master_m3u8playlist (Gstreamill *gstreamill, gchar *uri)
                 return NULL;
         }
 
+        buf = g_strdup_printf ("/live/%s/playlist.m3u8", job->name);
+        if (g_strcmp0 (buf, uri) != 0) {
+                GST_WARNING ("Get master playlist uri error: %s", uri);
+                g_free (buf);
+                return NULL;
+        }
+        g_free (buf);
+
         if (job->output->master_m3u8_playlist == NULL) {
-                master_m3u8_playlist = NULL;
+                 return NULL;
 
         } else {
-                master_m3u8_playlist = g_strdup (job->output->master_m3u8_playlist);
+                return g_strdup (job->output->master_m3u8_playlist);
         }
-
-        return master_m3u8_playlist;
 }
 
 /**
