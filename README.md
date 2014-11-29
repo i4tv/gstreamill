@@ -34,15 +34,15 @@ gstreamill is an open source, GPL licensed "stream mill" based on gstreamer-1.0 
 
 ## Application
 
-    IP >-------+ 
-               |    +------------+    +------> UDP
-    CVBS >-----+    | gstreamill |    |                   +-- live
-               +----+  with dvr  +----+-----> M3U8(HLS) --+-- time shift (?offset=-nnnn)
-    SDI >------+    +------+-----+    |                   +-- catch up - (?start=unix_time&duration=nnnn)
-               |           |          +-----> HTTP
-    LIVE >-----+           |
-                           |
-             REST interface (json over http post)
+    IP >-----+ 
+             |   +------------+   +----> UDP
+    CVBS >---+   | gstreamill |   |                 +-- live
+             +---+  with dvr  +---+---> M3U8(HLS) --+-- time shift (?offset=-nnnn)
+    SDI >----+   +------+-----+   |                 +-- catch up - (?start=unix_time&duration=nnnn)
+             |          |         +---> HTTP
+    LIVE >---+          |
+                        |
+         REST interface (json over http post)
 
 ## Third-party Applications
 
