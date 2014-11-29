@@ -16,6 +16,14 @@ M3U8Playlist * m3u8playlist_new (guint version, guint window_size, guint64 seque
 {
         M3U8Playlist *playlist;
 
+        if (version != 3) {
+                GST_WARNING ("version must be 3");
+                return NULL;
+        }
+        if (window_size < 1) {
+                GST_WARNING ("windows size must greater than 0");
+                return NULL;
+        }
         playlist = g_new0 (M3U8Playlist, 1);
         g_rw_lock_init (&(playlist->lock));
         playlist->version = version;
