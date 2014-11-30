@@ -476,8 +476,9 @@ gint job_output_initialize (Job *job)
         JobOutput *output;
 
         output = job->output;
-        /* m3u8 master playlist */
+        /* m3u8 streaming? */
         if (jobdesc_m3u8streaming (job->description)) {
+                /* m3u8 master playlist */
                 output->master_m3u8_playlist = render_master_m3u8_playlist (job);
                 if (output->master_m3u8_playlist == NULL) {
                         GST_ERROR ("job %s render master m3u8 playlist failure", job->name);
@@ -486,14 +487,16 @@ gint job_output_initialize (Job *job)
 
         } else {
                 output->master_m3u8_playlist = NULL;
+                return 0;
         }
 
-        /* initialize dvr parameters */
+        /* initialize m3u8 and dvr parameters */
         for (i = 0; i < output->encoder_count; i++) {
                 output->encoders[i].m3u8_playlist = NULL;
                 output->encoders[i].system_clock = job->system_clock;
                 /* timeshift and dvr */
                 output->encoders[i].record_path = NULL;
+                output->encoders[i].clock_time = GST_CLOCK_TIME_NONE;
                 output->encoders[i].dvr_duration = jobdesc_dvr_duration (job->description);
                 if (output->encoders[i].dvr_duration == 0) {
                         continue;
@@ -683,7 +686,28 @@ static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime dura
         sem_post (encoder_output->semaphore);
 
         realtime = g_get_real_time ();
-        path = g_strdup_printf ("/%s/%ld_%lu_%lu.ts", encoder_output->record_path, realtime, encoder_output->sequence, duration);
+        if (encoder_output->clock_time == GST_CLOCK_TIME_NONE) {
+                encoder_output->clock_time = realtime;
+
+        } else {
+                gint64 diff;
+
+                encoder_output->clock_time += duration / 1000;
+                if (encoder_output->clock_time > realtime) {
+                        diff = encoder_output->clock_time - realtime;
+
+                } else {
+                        diff = - (realtime - encoder_output->clock_time);
+                }
+                if (diff > duration / 1000) {
+                        GST_WARNING ("%s stream time diff %ld from realtime", encoder_output->name, diff);
+                }
+        }
+        path = g_strdup_printf ("/%s/%ld_%lu_%lu.ts",
+                                encoder_output->record_path,
+                                encoder_output->clock_time,
+                                encoder_output->sequence,
+                                duration);
         encoder_output->sequence += 1;
 
         if (!g_file_set_contents (path, buf, segment_size, &err)) {

@@ -146,10 +146,10 @@ GstClockTime m3u8playlist_add_entry (M3U8Playlist *playlist)
         }
         entry = g_queue_pop_head (playlist->adding_entries);
         if (entry == NULL) { 
-                duration = 0.1;
+                duration = 100000000;
 
         } else {
-                duration = entry->duration;
+                duration = entry->duration - 50000000;
                 playlist->sequence_number++;
                 g_queue_push_tail (playlist->entries, entry);
                 /* genertae playlist */
