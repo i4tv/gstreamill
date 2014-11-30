@@ -37,6 +37,7 @@ typedef struct _EncoderOutput {
         mqd_t mqdes;
         M3U8Playlist *m3u8_playlist;
         GstClockTime last_timestamp; /* last segment timestamp */
+        GstClock *system_clock;
 
         /* timeshift and dvr */
         gchar *record_path;

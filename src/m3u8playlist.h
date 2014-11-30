@@ -19,7 +19,7 @@
 
 typedef struct _M3U8Entry
 {
-        gfloat duration;
+        GstClockTime duration;
         gchar *url;
 } M3U8Entry;
 
@@ -31,13 +31,15 @@ typedef struct _M3U8Playlist
         guint64 sequence_number;
 
         /*< Private >*/
+        GQueue *adding_entries;
         GQueue *entries;
         gchar *playlist_str;
 } M3U8Playlist;
 
 M3U8Playlist * m3u8playlist_new (guint version, guint window_size, guint64 sequence);
 void m3u8playlist_free (M3U8Playlist *playlist);
-gint m3u8playlist_add_entry (M3U8Playlist *playlist, const gchar *url, gfloat duration);
+gint m3u8playlist_adding_entry (M3U8Playlist *playlist, const gchar *url, GstClockTime duration);
+GstClockTime m3u8playlist_add_entry (M3U8Playlist *playlist);
 gchar * m3u8playlist_live_get_playlist (M3U8Playlist *playlist); 
 gchar * m3u8playlist_timeshift_get_playlist (gchar *path, gint64 offset); 
 gchar * m3u8playlist_dvr_get_playlist (gchar *path, gint64 start, gint64 duration); 

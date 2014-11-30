@@ -28,6 +28,7 @@ M3U8Playlist * m3u8playlist_new (guint version, guint window_size, guint64 seque
         g_rw_lock_init (&(playlist->lock));
         playlist->version = version;
         playlist->window_size = window_size;
+        playlist->adding_entries = g_queue_new ();
         playlist->entries = g_queue_new ();
         playlist->playlist_str = NULL;
         playlist->sequence_number = sequence;
@@ -45,6 +46,8 @@ static void m3u8entry_free (M3U8Entry * entry)
 
 void m3u8playlist_free (M3U8Playlist * playlist)
 {
+        g_queue_foreach (playlist->adding_entries, (GFunc) m3u8entry_free, NULL);
+        g_queue_free (playlist->adding_entries);
         g_queue_foreach (playlist->entries, (GFunc) m3u8entry_free, NULL);
         g_queue_free (playlist->entries);
         g_rw_lock_clear ((&playlist->lock));
@@ -54,7 +57,7 @@ void m3u8playlist_free (M3U8Playlist * playlist)
         g_free (playlist);
 }
 
-static M3U8Entry * m3u8entry_new (const gchar * url, gfloat duration)
+static M3U8Entry * m3u8entry_new (const gchar * url, GstClockTime duration)
 {
         M3U8Entry *entry;
 
@@ -98,22 +101,15 @@ static gchar * m3u8playlist_render (M3U8Playlist * playlist)
         gchar *p;
 
         gstring = g_string_new ("");
-        /* #EXTM3U */
         g_string_append_printf (gstring, M3U8_HEADER_TAG);
-        /* #EXT-X-VERSION */
         g_string_append_printf (gstring, M3U8_VERSION_TAG, playlist->version);
-        /* #EXT-X-ALLOW_CACHE */
         g_string_append_printf (gstring, M3U8_ALLOW_CACHE_TAG, "NO");
-        /* #EXT-X-MEDIA-SEQUENCE */
         if (playlist->window_size != 0) {
                 g_string_append_printf (gstring, M3U8_MEDIA_SEQUENCE_TAG, playlist->sequence_number - playlist->entries->length);
         }
-        /* #EXT-X-TARGETDURATION */
         g_string_append_printf (gstring, M3U8_TARGETDURATION_TAG, m3u8playlist_target_duration (playlist));
         g_string_append_printf (gstring, "\n");
-        /* Entries */
         g_queue_foreach (playlist->entries, (GFunc) render_entry, gstring);
-        /* #EXT-X-ENDLIST */
         if (playlist->window_size == 0) {
                 g_string_append_printf (gstring, M3U8_X_ENDLIST_TAG);
         }
@@ -123,32 +119,49 @@ static gchar * m3u8playlist_render (M3U8Playlist * playlist)
         return p;
 }
 
-gint m3u8playlist_add_entry (M3U8Playlist *playlist, const gchar *url, gfloat duration)
+gint m3u8playlist_adding_entry (M3U8Playlist *playlist, const gchar *url, GstClockTime duration)
 {
         M3U8Entry *entry;
 
         g_rw_lock_writer_lock (&(playlist->lock));
 
         entry = m3u8entry_new (url, duration);
-        /* Delete old entries from the playlist */
-        while ((playlist->window_size != 0) && (playlist->entries->length >= playlist->window_size)) {
-                M3U8Entry *old_entry;
-
-                old_entry = g_queue_pop_head (playlist->entries);
-                m3u8entry_free (old_entry);
-        }
-        playlist->sequence_number++;;
-        g_queue_push_tail (playlist->entries, entry);
-
-        /* genertae playlist */
-        if (playlist->playlist_str != NULL) {
-                g_free (playlist->playlist_str);
-        }
-        playlist->playlist_str = m3u8playlist_render (playlist);
-
+        g_queue_push_tail (playlist->adding_entries, entry);
         g_rw_lock_writer_unlock (&(playlist->lock));
 
         return 0;
+}
+
+GstClockTime m3u8playlist_add_entry (M3U8Playlist *playlist)
+{
+        M3U8Entry *entry;
+        GstClockTime duration;
+
+        g_rw_lock_writer_lock (&(playlist->lock));
+
+        /* Delete old entries from the playlist */
+        while ((playlist->window_size != 0) && (playlist->entries->length >= playlist->window_size)) {
+                entry = g_queue_pop_head (playlist->entries);
+                m3u8entry_free (entry);
+        }
+        entry = g_queue_pop_head (playlist->adding_entries);
+        if (entry == NULL) { 
+                duration = 0.1;
+
+        } else {
+                duration = entry->duration;
+                playlist->sequence_number++;
+                g_queue_push_tail (playlist->entries, entry);
+                /* genertae playlist */
+                if (playlist->playlist_str != NULL) {
+                        g_free (playlist->playlist_str);
+                }
+                playlist->playlist_str = m3u8playlist_render (playlist);
+        }
+
+        g_rw_lock_writer_unlock (&(playlist->lock));
+
+        return duration;
 }
 
 gchar * m3u8playlist_live_get_playlist (M3U8Playlist *playlist)
@@ -156,7 +169,13 @@ gchar * m3u8playlist_live_get_playlist (M3U8Playlist *playlist)
         gchar *p;
 
         g_rw_lock_reader_lock (&(playlist->lock));
-        p = g_strdup (playlist->playlist_str);
+        if (playlist->playlist_str == NULL) {
+                GST_WARNING ("live playlist is null");
+                p = NULL;
+
+        } else {
+                p = g_strdup (playlist->playlist_str);
+        }
         g_rw_lock_reader_unlock (&(playlist->lock));
 
         return p;
@@ -184,7 +203,8 @@ gchar * m3u8playlist_timeshift_get_playlist (gchar *path, gint64 offset)
                                         m3u8playlist = m3u8playlist_new (3, 3, g_ascii_strtoull (pp[1], NULL, 10));
                                         /* remove .ts */
                                         pp[2][strlen (pp[2]) - 3] = '\0';
-                                        m3u8playlist_add_entry (m3u8playlist, p, g_strtod ((pp[2]), NULL));
+                                        m3u8playlist_adding_entry (m3u8playlist, p, g_strtod ((pp[2]), NULL));
+                                        m3u8playlist_add_entry (m3u8playlist);
                                         g_strfreev (pp);
                                         break;
                                 }
@@ -212,7 +232,8 @@ gchar * m3u8playlist_timeshift_get_playlist (gchar *path, gint64 offset)
                                 if (g_ascii_strtoull (pp[0], NULL, 10) > time) {
                                         /* remove .ts */
                                         pp[2][strlen (pp[2]) - 3] = '\0';
-                                        m3u8playlist_add_entry (m3u8playlist, p, g_strtod ((pp[2]), NULL));
+                                        m3u8playlist_adding_entry (m3u8playlist, p, g_strtod ((pp[2]), NULL));
+                                        m3u8playlist_add_entry (m3u8playlist);
                                         if (m3u8playlist->entries->length == 3) {
                                                 g_strfreev (pp);
                                                 break;
@@ -271,7 +292,8 @@ gchar * m3u8playlist_dvr_get_playlist (gchar *path, gint64 start, gint64 duratio
                                 pp = g_strsplit (p, "_", 0);
                                 /* remove .ts */
                                 pp[2][strlen (pp[2]) - 3] = '\0';
-                                m3u8playlist_add_entry (m3u8playlist, p, g_strtod ((pp[2]), NULL));
+                                m3u8playlist_adding_entry (m3u8playlist, p, g_strtod ((pp[2]), NULL));
+                                m3u8playlist_add_entry (m3u8playlist);
                         }
                 }
                 playlist = g_strdup (m3u8playlist->playlist_str);

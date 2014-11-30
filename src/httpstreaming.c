@@ -359,7 +359,7 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
 
         } else {
                 /* segment not found */
-                GST_WARNING ("Segment not found!");
+                GST_WARNING ("segment not found: %s", request_data->uri);
                 *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
                 buf_size = strlen (*buf);
         }
@@ -539,7 +539,7 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
         if (encoder_output == NULL) {
                 buf = request_crossdomain (request_data);
                 /* not crossdomain request if buf == NULL */
-                if (buf == NULL) {
+                if ((buf == NULL) && g_str_has_suffix (request_data->uri, "playlist.m3u8")) {
                         buf = request_master_m3u8_playlist (httpstreaming, request_data);
                 }
                 /* not master m3u8 playlist request if buf == NULL */
