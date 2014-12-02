@@ -100,7 +100,7 @@ gint job_initialize (Job *job, gboolean daemon);
 gint job_output_initialize (Job *job);
 gint job_encoders_output_initialize (Job *job);
 void job_reset (Job *job);
-void job_stat_update (Job *job);
+gint job_stat_update (Job *job);
 gint job_start (Job *job);
 
 #endif /* __JOB_H__ */

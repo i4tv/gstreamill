@@ -77,6 +77,7 @@ static void job_init (Job *job)
         job->system_clock = gst_system_clock_obtain ();
         g_object_set (job->system_clock, "clock-type", GST_CLOCK_TYPE_REALTIME, NULL);
         job->encoder_array = g_array_new (FALSE, FALSE, sizeof (gpointer));
+        g_mutex_init (&(job->access_mutex));
 }
 
 static void job_set_property (GObject *obj, guint prop_id, const GValue *value, GParamSpec *pspec)
@@ -568,8 +569,9 @@ gint job_encoders_output_initialize (Job *job)
  *
  * update job's stat
  *
+ * Returns: 0 on success.
  */
-void job_stat_update (Job *job)
+gint job_stat_update (Job *job)
 {
         gchar *stat_file, *stat, **stats, **cpustats;
         guint64 utime, stime, ctime; /* process user time, process system time, total cpu time */
@@ -578,7 +580,7 @@ void job_stat_update (Job *job)
         stat_file = g_strdup_printf ("/proc/%d/stat", job->worker_pid);
         if (!g_file_get_contents (stat_file, &stat, NULL, NULL)) {
                 GST_ERROR ("Read process %d's stat failure.", job->worker_pid);
-                return;
+                return 1;
         }
         stats = g_strsplit (stat, " ", 44);
         utime = g_ascii_strtoull (stats[13],  NULL, 10); /* seconds */
@@ -590,7 +592,7 @@ void job_stat_update (Job *job)
         g_strfreev (stats);
         if (!g_file_get_contents ("/proc/stat", &stat, NULL, NULL)) {
                 GST_ERROR ("Read /proc/stat failure.");
-                return;
+                return 1;
         }
         stats = g_strsplit (stat, "\n", 10);
         cpustats = g_strsplit (stats[0], " ", 10);
@@ -606,6 +608,8 @@ void job_stat_update (Job *job)
         job->last_ctime = ctime;
         job->last_utime = utime;
         job->last_stime = stime;
+
+        return 0;
 }
 
 static gboolean m3u8playlist_refresh (GstClock *clock, GstClockTime time, GstClockID id, gpointer user_data)
@@ -794,6 +798,7 @@ void job_reset (Job *job)
         struct mq_attr attr;
         gchar *name;
 
+        *(job->output->state) = JOB_STATE_VOID_PENDING;
         g_file_get_contents ("/proc/stat", &stat, NULL, NULL);
         stats = g_strsplit (stat, "\n", 10);
         cpustats = g_strsplit (stats[0], " ", 10);
