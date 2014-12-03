@@ -451,6 +451,8 @@ int main (int argc, char *argv[])
                 /* customize signal */
                 signal (SIGUSR1, sighandler);
                 signal (SIGTERM, stop_gstreamill);
+
+                fprintf (_log->log_hd, "\n*** %s : gstreamill started ***\n\n", date);
         }
 
         /* ignore SIGPIPE */
@@ -458,7 +460,6 @@ int main (int argc, char *argv[])
 
         datetime = g_date_time_new_now_local ();
         date = g_date_time_format (datetime, "%b %d %H:%M:%S");
-        fprintf (_log->log_hd, "\n*** %s : gstreamill started ***\n\n", date);
         g_date_time_unref (datetime);
         g_free (date);
 
