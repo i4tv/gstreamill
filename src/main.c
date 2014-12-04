@@ -452,16 +452,15 @@ int main (int argc, char *argv[])
                 signal (SIGUSR1, sighandler);
                 signal (SIGTERM, stop_gstreamill);
 
+                datetime = g_date_time_new_now_local ();
+                date = g_date_time_format (datetime, "%b %d %H:%M:%S");
                 fprintf (_log->log_hd, "\n*** %s : gstreamill started ***\n\n", date);
+                g_free (date);
+                g_date_time_unref (datetime);
         }
 
         /* ignore SIGPIPE */
         signal (SIGPIPE, SIG_IGN);
-
-        datetime = g_date_time_new_now_local ();
-        date = g_date_time_format (datetime, "%b %d %H:%M:%S");
-        g_date_time_unref (datetime);
-        g_free (date);
 
         loop = g_main_loop_new (NULL, FALSE);
 
