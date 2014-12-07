@@ -23,16 +23,16 @@ typedef struct _JobClass JobClass;
  * JOB_STATE_READY: creating job process, subsequent state is JOB_STATE_PLAYLING or JOB_STATE_START_FAILURE
  * JOB_STATE_PLAYLING: playing state, subprocess running.
  * JOB_STATE_START_FAILURE: subprocess start failure.
- * JOB_STATE_PAUSED: stoping state, subprocess is being stop.
- * JOB_STATE_NULL: stoped state, subprocess finished.
+ * JOB_STATE_STOPING: stoping state, subprocess is being stop.
+ * JOB_STATE_STOPED: stoped state, subprocess finished.
  */
 typedef enum {
         JOB_STATE_VOID_PENDING = 0,
         JOB_STATE_READY = 1,
         JOB_STATE_PLAYING = 2,
         JOB_STATE_START_FAILURE = 3,
-        JOB_STATE_PAUSED = 4,
-        JOB_STATE_NULL = 5
+        JOB_STATE_STOPING = 4,
+        JOB_STATE_STOPED = 5
 } JobState;
 
 typedef struct _JobOutput {
@@ -102,5 +102,6 @@ gint job_encoders_output_initialize (Job *job);
 void job_reset (Job *job);
 gint job_stat_update (Job *job);
 gint job_start (Job *job);
+gint job_stop (Job *job, gint sig);
 
 #endif /* __JOB_H__ */

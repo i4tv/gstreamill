@@ -44,6 +44,15 @@ static void sighandler (gint number)
 
 static void stop_job (gint number)
 {
+        GDateTime *datetime;
+        gchar *date;
+
+        datetime = g_date_time_new_now_local ();
+        date = g_date_time_format (datetime, "%b %d %H:%M:%S");
+        fprintf (_log->log_hd, "\n*** %s : job stoped ***\n\n", date);
+        g_free (date);
+        g_date_time_unref (datetime);
+
         exit (0);
 }
 

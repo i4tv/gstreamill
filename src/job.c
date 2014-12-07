@@ -267,10 +267,10 @@ gchar * job_state_get_name (guint64 state)
                 return ("JOB_STATE_PLAYING");
         case JOB_STATE_START_FAILURE:
                 return ("JOB_STATE_START_FAILURE");
-        case JOB_STATE_PAUSED:
-                return ("JOB_STATE_PAUSED");
-        case JOB_STATE_NULL:
-                return ("JOB_STATE_NULL");
+        case JOB_STATE_STOPING:
+                return ("JOB_STATE_STOPING");
+        case JOB_STATE_STOPED:
+                return ("JOB_STATE_STOPED");
         }
 
         return NULL;
@@ -579,7 +579,7 @@ gint job_stat_update (Job *job)
 
         stat_file = g_strdup_printf ("/proc/%d/stat", job->worker_pid);
         if (!g_file_get_contents (stat_file, &stat, NULL, NULL)) {
-                GST_ERROR ("Read process %d's stat failure.", job->worker_pid);
+                GST_ERROR ("Read job %s's stat failure.", job->name);
                 return 1;
         }
         stats = g_strsplit (stat, " ", 44);
@@ -751,10 +751,6 @@ static void notify_function (union sigval sv)
 
         /* generate playlist */
         size = mq_receive (encoder_output->mqdes, buf, 128, NULL);
-        if (size == -1) {
-                GST_ERROR ("mq_receive error : %s", g_strerror (errno));
-                return;
-        }
         buf[size] = '\0';
         sscanf (buf, "%lu", &segment_duration);
         last_timestamp = encoder_output_rap_timestamp (encoder_output, *(encoder_output->last_rap_addr));
@@ -944,4 +940,36 @@ gint job_start (Job *job)
 
         return 0;
 }
+
+/*
+ * job_stop:
+ * @job: (in): job to be start.
+ * @sig: (in): signal, SIGTERM or SIGUSR2
+ *
+ * initialize source, encoders and start job.
+ *
+ * Returns: 0 on success, otherwise return 1.
+ *
+ */
+gint job_stop (Job *job, gint sig)
+{
+        if (sig == SIGTERM) {
+                /* normally stop */
+                *(job->output->state) = JOB_STATE_STOPING;
+                GST_WARNING ("Stop job %s, pid %d.", job->name, job->worker_pid);
+
+        } else {
+                /* unexpect stop, restart job */
+                GST_WARNING ("Restart job %s, pid %d.", job->name, job->worker_pid);
+        }
+        if (job->worker_pid != 0) {
+                kill (job->worker_pid, sig);
+
+        } else {
+                GST_WARNING ("job %s's state is not playing", job->name); 
+        }
+
+        return 0;
+}
+
 

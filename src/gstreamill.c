@@ -258,9 +258,13 @@ static void clean_job_list (Gstreamill *gstreamill)
                 list = gstreamill->job_list;
                 while (list != NULL) {
                         job = list->data;
+                        if (job->is_live && (*(job->output->state) == JOB_STATE_STOPING)) {
+                                GST_WARNING ("%s state is JOB_STATE_STOPING, stop it", job->name);
+                                job_stop (job, SIGTERM);
+                        }
 
                         /* clean live job */
-                        if (job->is_live && (*(job->output->state) == JOB_STATE_NULL && job->current_access == 0)) {
+                        if (job->is_live && (*(job->output->state) == JOB_STATE_STOPED && job->current_access == 0)) {
                                 GST_WARNING ("Remove live job: %s.", job->name);
                                 gstreamill->job_list = g_slist_remove (gstreamill->job_list, job);
                                 g_object_unref (job);
@@ -281,27 +285,6 @@ static void clean_job_list (Gstreamill *gstreamill)
                         /* all list item have been checked */
                         done = TRUE;
                 }
-        }
-}
-
-static gint stop_job (Job *job, gint sig)
-{
-        if (job->worker_pid != 0) {
-                if (sig == SIGTERM) {
-                        /* normally stop */
-                        *(job->output->state) = JOB_STATE_PAUSED;
-                        GST_WARNING ("Stop job %s, pid %d.", job->name, job->worker_pid);
-
-                } else {
-                        /* unexpect stop, restart job */
-                        GST_WARNING ("Restart job %s, pid %d.", job->name, job->worker_pid);
-                }
-                kill (job->worker_pid, sig);
-
-                return 0;
-
-        } else {
-                return 1; /* stop a stoped job */
         }
 }
 
@@ -334,7 +317,7 @@ static void source_check (Gstreamill *gstreamill, Job *job)
                                      job->output->source.streams[i].name,
                                      time_diff);
                         /* restart job. */
-                        stop_job (job, SIGKILL);
+                        job_stop (job, SIGKILL);
                         return;
 
                 } else {
@@ -382,7 +365,7 @@ static void encoders_check (Gstreamill *gstreamill, Job *job)
                                              job->output->encoders[j].streams[k].name,
                                              time_diff);
                                 /* restart job. */
-                                stop_job (job, SIGKILL);
+                                job_stop (job, SIGKILL);
                                 return;
 
                         } else {
@@ -403,7 +386,7 @@ static void encoders_check (Gstreamill *gstreamill, Job *job)
                                      job->output->encoders[j].name,
                                      time_diff);
                         /* restart job. */
-                        stop_job (job, SIGKILL);
+                        job_stop (job, SIGKILL);
                         return;
 
                 } else {
@@ -443,7 +426,7 @@ static void sync_check (Gstreamill *gstreamill, Job *job)
                 if (job->output->source.sync_error_times == 3) {
                         GST_WARNING ("sync error times %ld, restart %s", job->output->source.sync_error_times, job->name);
                         /* restart job. */
-                        stop_job (job, SIGKILL);
+                        job_stop (job, SIGKILL);
                         return;
                 }
 
@@ -459,7 +442,7 @@ static void job_check_func (gpointer data, gpointer user_data)
         struct timespec ts;
 
         if (gstreamill->stop) {
-                GST_INFO ("waitting %s stopped", job->name);
+                GST_WARNING ("waitting %s stopped", job->name);
                 return;
         }
 
@@ -487,7 +470,7 @@ static void job_check_func (gpointer data, gpointer user_data)
                 if (errno == EINTR) {
                         continue;
                 }
-                GST_WARNING ("sem_timedwait failure: %s", g_strerror (errno));
+                GST_WARNING ("%s, sem_timedwait failure: %s", job->name, g_strerror (errno));
                 g_mutex_unlock (&(job->access_mutex));
                 return;
         }
@@ -531,7 +514,7 @@ static void job_check_func (gpointer data, gpointer user_data)
                 }
 
                 if (eos) {
-                        stop_job (job, SIGTERM);
+                        job_stop (job, SIGTERM);
                         job->eos = TRUE;
                 }
         }
@@ -583,6 +566,8 @@ static void dvr_clean (Gstreamill *gstreamill)
         gstreamill->last_dvr_clean_time = now;
 }
 
+extern Log *_log;
+
 static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClockID id, gpointer user_data)
 {
         GstClockID nextid;
@@ -600,7 +585,16 @@ static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClock
 
         /* stop? */
         if (gstreamill->stop && g_slist_length (gstreamill->job_list) == 0) {
-                GST_INFO ("streamill stopped");
+                GDateTime *datetime;
+                gchar *date;
+
+                datetime = g_date_time_new_now_local ();
+                date = g_date_time_format (datetime, "%b %d %H:%M:%S");
+                fprintf (_log->log_hd, "\n*** %s : gstreamill stoped ***\n\n", date);
+                fflush (_log->log_hd);
+                g_free (date);
+                g_date_time_unref (datetime);
+                g_usleep (500000);
                 exit (0);
         }
 
@@ -670,18 +664,25 @@ void gstreamill_stop (Gstreamill *gstreamill)
 {
         Job *job;
         GSList *list;
+        GDateTime *datetime;
+        gchar *date;
 
-        GST_INFO ("Stop gstreamill ...");
+        datetime = g_date_time_new_now_local ();
+        date = g_date_time_format (datetime, "%b %d %H:%M:%S");
+        fprintf (_log->log_hd, "\n*** %s : stoping gstreamill ***\n\n", date);
+        g_free (date);
+        g_date_time_unref (datetime);
+
         gstreamill->stop = TRUE;
         g_mutex_lock (&(gstreamill->job_list_mutex));
         list = gstreamill->job_list;
         while (list != NULL) {
                 job = list->data;
                 if (gstreamill->daemon) {
-                        stop_job (job, SIGTERM);
+                        job_stop (job, SIGTERM);
 
                 } else {
-                        *(job->output->state) = JOB_STATE_NULL;
+                        *(job->output->state) = JOB_STATE_STOPED;
                 }
                 list = list->next;
         }
@@ -755,6 +756,8 @@ static guint64 create_job_process (Job *job)
 
 static void child_watch_cb (GPid pid, gint status, Job *job)
 {
+        JobState job_state;
+
         g_mutex_lock (&(job->access_mutex));
         /* Close pid */
         g_spawn_close_pid (pid);
@@ -763,7 +766,14 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
 
         if (WIFEXITED (status) && (WEXITSTATUS (status) == 0)) {
                 GST_WARNING ("Job %s normaly exit, status is %d", job->name, WEXITSTATUS (status));
-                *(job->output->state) = JOB_STATE_NULL;
+                *(job->output->state) = JOB_STATE_STOPED;
+                job->eos = TRUE;
+                goto end;
+        }
+
+        if (*(job->output->state) == JOB_STATE_STOPING) {
+                GST_WARNING ("Job %s's state is STOPING", job->name);
+                *(job->output->state) = JOB_STATE_STOPED;
                 job->eos = TRUE;
                 goto end;
         }
@@ -776,34 +786,32 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
                 } else {
                         if (!job->is_live) {
                                 GST_WARNING ("Nonlive job %s exit on critical error return %d.", job->name, WEXITSTATUS (status));
-                                *(job->output->state) = JOB_STATE_NULL;
+                                *(job->output->state) = JOB_STATE_STOPED;
                                 job->eos = TRUE;
                                 goto end;
                         }
 
-                        GST_INFO ("Job %s exit on critical error return %d, restart ...", job->name, WEXITSTATUS (status));
+                        GST_WARNING ("Job %s exit on critical error return %d, restart ...", job->name, WEXITSTATUS (status));
                         job_reset (job);
-                        if (create_job_process (job) == JOB_STATE_PLAYING) {
+                        job_state = create_job_process (job);
+                        if (job_state == JOB_STATE_PLAYING) {
                                 GST_INFO ("Restart job %s success", job->name);
 
-                        } else {
+                        } else if (job_state == JOB_STATE_STOPING) {
+                                GST_WARNING ("Restart a stoping job: %s", job->name);
+
+                        } else if (job_state == JOB_STATE_START_FAILURE) {
                                 /* create process failure, clean from job list */
                                 GST_WARNING ("Restart job %s failure", job->name);
-                                *(job->output->state) = JOB_STATE_NULL;
+                                *(job->output->state) = JOB_STATE_STOPED;
                         }
                 }
         }
 
         if (WIFSIGNALED (status)) {
-                if (*(job->output->state) == JOB_STATE_PAUSED) {
-                        GST_INFO ("Job %s exit on signal and paused, stopping gstreamill...", job->name);
-                        *(job->output->state) = JOB_STATE_NULL;
-                        goto end;
-                }
-
                 if (!job->is_live) {
                         GST_INFO ("Nonlive job %s exit on an unhandled signal.", job->name);
-                        *(job->output->state) = JOB_STATE_NULL;
+                        *(job->output->state) = JOB_STATE_STOPED;
                         job->eos = TRUE;
                         goto end;
                 }
@@ -816,7 +824,7 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
                 } else {
                         /* create process failure, clean from job list */
                         GST_WARNING ("Restart job %s failure", job->name);
-                        *(job->output->state) = JOB_STATE_NULL;
+                        *(job->output->state) = JOB_STATE_STOPED;
                 }
         }
 
@@ -952,7 +960,7 @@ gchar * gstreamill_job_stop (Gstreamill *gstreamill, gchar *name)
 
         job = get_job (gstreamill, name);
         if (job != NULL) {
-                stop_job (job, SIGTERM);
+                job_stop (job, SIGTERM);
                 return g_strdup_printf ("{\n    \"name\": \"%s\",\n    \"result\": \"success\"\n}", name);
 
         } else {
@@ -1370,7 +1378,7 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
         }
         g_mutex_lock (&(job->access_mutex));
         if (clock_gettime (CLOCK_REALTIME, &ts) == -1) {
-                GST_WARNING ("clock_gettime error: %s", g_strerror (errno));
+                GST_WARNING ("clock_gettime error: %s unlock mutex", g_strerror (errno));
                 g_mutex_unlock (&(job->access_mutex));
                 return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"clock_gettime error\",\n    \"name\": \"%s\"\n}", name);
         }
@@ -1379,7 +1387,7 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
                 if (errno == EINTR) {
                         continue;
                 }
-                GST_WARNING ("sem_timedwait failure: %s", g_strerror (errno));
+                GST_WARNING ("%s, sem_timedwait failure: %s unlock mutex", job->name, g_strerror (errno));
                 g_mutex_unlock (&(job->access_mutex));
                 return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"sem_timedwait failure\",\n    \"name\": \"%s\"\n}", name);
         }
