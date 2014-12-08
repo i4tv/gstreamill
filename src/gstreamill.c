@@ -1398,15 +1398,17 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
         json_object_set_number (object_job, "age", job->age);
         json_object_set_string (object_job, "last_start_time", job->last_start_time);
         json_object_set_string (object_job, "state", job_state_get_name (*(job->output->state)));
-        json_object_set_number (object_job, "current_access", job->current_access);
-        json_object_set_number (object_job, "cpu_average", job->cpu_average);
-        json_object_set_number (object_job, "cpu_current", job->cpu_current);
-        json_object_set_number (object_job, "memory", job->memory);
-        value_source = source_stat (job);
-        json_object_set_value (object_job, "source", value_source);
-        json_object_set_number (object_job, "encoder_count", job->output->encoder_count);
-        value_encoders = encoders_stat (job);
-        json_object_set_value (object_job, "encoders", value_encoders);
+        if (*(job->output->state) == JOB_STATE_PLAYING) {
+                json_object_set_number (object_job, "current_access", job->current_access);
+                json_object_set_number (object_job, "cpu_average", job->cpu_average);
+                json_object_set_number (object_job, "cpu_current", job->cpu_current);
+                json_object_set_number (object_job, "memory", job->memory);
+                value_source = source_stat (job);
+                json_object_set_value (object_job, "source", value_source);
+                json_object_set_number (object_job, "encoder_count", job->output->encoder_count);
+                value_encoders = encoders_stat (job);
+                json_object_set_value (object_job, "encoders", value_encoders);
+        }
         sem_post (job->output->semaphore);
 
         value_result = json_value_init_object ();
