@@ -146,7 +146,8 @@ GstClockTime m3u8playlist_add_entry (M3U8Playlist *playlist)
         }
         entry = g_queue_pop_head (playlist->adding_entries);
         if (entry == NULL) { 
-                duration = 100000000;
+                GST_WARNING ("entry cache empty");
+                duration = 500000000;
 
         } else {
                 duration = entry->duration - 50000000;
