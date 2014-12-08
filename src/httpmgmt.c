@@ -768,7 +768,7 @@ static gchar * put_conf (RequestData *request_data)
         return result;
 }
 
-static gchar * get_job (gchar *uri)
+static gchar * get_job_description (gchar *uri)
 {
         gchar *job_path, *job, *p;
         GError *err = NULL;
@@ -912,7 +912,7 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
                 g_free (p);
 
         } else if (g_str_has_prefix (request_data->uri, "/admin/getjob/")) {
-                p = get_job (request_data->uri);
+                p = get_job_description (request_data->uri);
                 if (p != NULL) {
                         *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                         g_free (p);
