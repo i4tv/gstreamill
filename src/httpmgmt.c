@@ -1296,7 +1296,7 @@ static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
                 }
 
         case HTTP_FINISH:
-                g_free (request_data->priv_data);
+                free_priv_data (request_data->priv_data);
                 request_data->priv_data = NULL;
                 return 0;
 

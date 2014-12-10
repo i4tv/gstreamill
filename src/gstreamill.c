@@ -264,7 +264,7 @@ static void clean_job_list (Gstreamill *gstreamill)
                         }
 
                         /* clean live job */
-                        if (job->is_live && (*(job->output->state) == JOB_STATE_STOPED && job->current_access == 0)) {
+                        if (job->is_live && (*(job->output->state) == JOB_STATE_STOPED)) {
                                 GST_WARNING ("Remove live job: %s.", job->name);
                                 gstreamill->job_list = g_slist_remove (gstreamill->job_list, job);
                                 g_object_unref (job);
@@ -857,7 +857,12 @@ static Job * get_job (Gstreamill *gstreamill, gchar *name)
         }
         g_mutex_unlock (&(gstreamill->job_list_mutex));
 
-        return job;
+        if (job != NULL) {
+                return g_object_ref (job);
+
+        } else {
+                return NULL;
+        }
 }
 
 /**
@@ -885,10 +890,12 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
 
         /* create job object */
         name = jobdesc_get_name (job_desc);
-        if (get_job (gstreamill, name) != NULL) {
+        job = get_job (gstreamill, name);
+        if (job != NULL) {
                 GST_WARNING ("start job failure, duplicated name %s.", name);
                 p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"duplicated name\"\n}");
                 g_free (name);
+                g_object_unref (job);
                 return p;
         }
         job = job_new ("job", job_desc, "name", name, "exe_path", gstreamill->exe_path, NULL);
@@ -961,6 +968,7 @@ gchar * gstreamill_job_stop (Gstreamill *gstreamill, gchar *name)
         job = get_job (gstreamill, name);
         if (job != NULL) {
                 job_stop (job, SIGTERM);
+                g_object_unref (job);
                 return g_strdup_printf ("{\n    \"name\": \"%s\",\n    \"result\": \"success\"\n}", name);
 
         } else {
@@ -1054,10 +1062,12 @@ EncoderOutput * gstreamill_get_encoder_output (Gstreamill *gstreamill, gchar *ur
         }
         if (*(job->output->state) != JOB_STATE_PLAYING) {
                 GST_WARNING ("FATAL: Job %s state is not playing", job->name);
+                g_object_unref (job);
                 return NULL;
         }
         if (index >= job->output->encoder_count) {
                 GST_WARNING ("Encoder %s not found.", uri);
+                g_object_unref (job);
                 return NULL;
         }
         g_mutex_lock (&(job->access_mutex));
@@ -1078,7 +1088,7 @@ EncoderOutput * gstreamill_get_encoder_output (Gstreamill *gstreamill, gchar *ur
 gchar * gstreamill_get_master_m3u8playlist (Gstreamill *gstreamill, gchar *uri)
 {
         Job *job;
-        gchar *live_master, *dvr_master;
+        gchar *live_master, *dvr_master, *playlist;
 
         job = gstreamill_get_job (gstreamill, uri);
         if (job == NULL) {
@@ -1092,17 +1102,21 @@ gchar * gstreamill_get_master_m3u8playlist (Gstreamill *gstreamill, gchar *uri)
                 GST_WARNING ("Get master playlist uri error: %s", uri);
                 g_free (live_master);
                 g_free (dvr_master);
+                g_object_unref (job);
                 return NULL;
         }
         g_free (live_master);
         g_free (dvr_master);
 
         if (job->output->master_m3u8_playlist == NULL) {
-                 return NULL;
+                playlist = NULL;
 
         } else {
-                return g_strdup (job->output->master_m3u8_playlist);
+                playlist = g_strdup (job->output->master_m3u8_playlist);
         }
+        g_object_unref (job);
+
+        return playlist;
 }
 
 /**
@@ -1125,6 +1139,8 @@ void gstreamill_unaccess (Gstreamill *gstreamill, gchar *uri)
         g_mutex_lock (&(job->access_mutex));
         job->current_access -= 1;
         g_mutex_unlock (&(job->access_mutex));
+        g_object_unref (job);
+        g_object_unref (job);
 
         return;
 }
@@ -1367,6 +1383,9 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
         if (g_match_info_matches (match_info)) {
                 name = g_match_info_fetch_named (match_info, "name");
         }
+        if (match_info != NULL) {
+                g_match_info_free (match_info);
+        }
         if (name == NULL) {
                 GST_WARNING ("wrong uri");
                 return g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"wrong uri\"\n}");
@@ -1380,6 +1399,7 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
         if (clock_gettime (CLOCK_REALTIME, &ts) == -1) {
                 GST_WARNING ("clock_gettime error: %s unlock mutex", g_strerror (errno));
                 g_mutex_unlock (&(job->access_mutex));
+                g_object_unref (job);
                 return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"clock_gettime error\",\n    \"name\": \"%s\"\n}", name);
         }
         ts.tv_sec += 1;
@@ -1387,8 +1407,9 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
                 if (errno == EINTR) {
                         continue;
                 }
-                GST_WARNING ("%s, sem_timedwait failure: %s unlock mutex", job->name, g_strerror (errno));
+                GST_WARNING ("%s, sem_timedwait failure: %s", job->name, g_strerror (errno));
                 g_mutex_unlock (&(job->access_mutex));
+                g_object_unref (job);
                 return g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"sem_timedwait failure\",\n    \"name\": \"%s\"\n}", name);
         }
 
@@ -1418,6 +1439,7 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
         result = json_serialize_to_string (value_result);
         json_value_free (value_result);
         g_mutex_unlock (&(job->access_mutex));
+        g_object_unref (job);
 
         return result;
 }

@@ -656,6 +656,9 @@ static GstClockTime http_continue_process (HTTPStreaming *httpstreaming, Request
                         if (encoder_output != NULL) {
                                 gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
                         }
+                        if (priv_data->job != NULL) {
+                                g_object_unref (priv_data->job);
+                        }
                         g_free (priv_data);
                         request_data->priv_data = NULL;
                         return 0;
@@ -668,6 +671,7 @@ static GstClockTime http_continue_process (HTTPStreaming *httpstreaming, Request
         }
         if ((priv_data->livejob_age != priv_data->job->age) ||
             (*(priv_data->job->output->state) != JOB_STATE_PLAYING)) {
+                g_object_unref (priv_data->job);
                 g_free (request_data->priv_data);
                 request_data->priv_data = NULL;
                 gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
