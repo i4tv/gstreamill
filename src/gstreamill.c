@@ -877,6 +877,7 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
         Job *job;
 
         if (!jobdesc_is_valid (job_desc)) {
+                GST_ERROR ("invalid job descript: %s", job_desc);
                 p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"invalid job\"\n}");
                 return p;
         }
