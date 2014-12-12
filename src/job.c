@@ -156,7 +156,9 @@ static void job_dispose (GObject *obj)
                 if ((output->encoders[i].mqdes != -1) && (mq_unlink (name) == -1)) {
                         GST_ERROR ("mq_unlink %s error: %s", name, g_strerror (errno));
                 }
-                if (job->is_live && (output->encoders[i].record_path != NULL)) {
+                if (job->is_live &&
+                    (output->master_m3u8_playlist != NULL) &&
+                    (output->encoders[i].record_path != NULL)) {
                         g_free (output->encoders[i].record_path);
                 }
                 g_free (name);
@@ -756,6 +758,7 @@ static void notify_function (union sigval sv)
         last_timestamp = encoder_output_rap_timestamp (encoder_output, *(encoder_output->last_rap_addr));
         url = g_strdup_printf ("%lu.ts", encoder_output->last_timestamp);
         m3u8playlist_adding_entry (encoder_output->m3u8_playlist, url, segment_duration);
+        g_free (url);
         if (encoder_output->m3u8_playlist->playlist_str == NULL) {
                 GstClockTime now;
                 GstClockID nextid;
@@ -773,7 +776,6 @@ static void notify_function (union sigval sv)
                 dvr_record_segment (encoder_output, segment_duration);
         }
         encoder_output->last_timestamp = last_timestamp;
-        g_free (url);
 }
 
 /*
