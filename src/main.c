@@ -226,9 +226,14 @@ Gstreamill *gstreamill;
 
 static void stop_gstreamill (gint number)
 {
-        gstreamill_stop (gstreamill);
+        /* run in foreground? just exit */
+        if (!gstreamill->daemon) {
+                g_printf ("Interrupt signal received\n");
+                exit (0);
+        }
 
-        /* run in background, remove pid file. */
+        /* run in background, stop gstreamill and remove pid file. */
+        gstreamill_stop (gstreamill);
         if (number == SIGTERM) {
                 remove_pid_file ();
         }
