@@ -7,7 +7,7 @@
             }
         },
         "videoscale" : {
-            "caps" : "video/x-raw,width=720,height=576"
+            "caps" : "video/x-raw,format=I420,width=720,height=576"
         },
         "x264enc" : {
             "property" : {
