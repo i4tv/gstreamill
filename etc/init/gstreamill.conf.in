@@ -25,7 +25,7 @@ post-start script
 end script
  
 post-stop script
-    killall -q gstreamill
+    killall -q gstreamill || true
 end script
 
 expect fork
