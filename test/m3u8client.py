@@ -7,7 +7,7 @@ import m3u8
 import time
 import urllib2
 
-url = "http://192.168.7.40:20119/live/cctvnews/encoder/0/playlist.m3u8"
+url = "http://localhost:20119/live/CCTV-1/encoder/0/playlist.m3u8"
 media_sequence = 0
 
 playlist = m3u8.load(url)

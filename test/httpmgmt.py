@@ -3,7 +3,7 @@ import httplib
 
 def stop(server, port, job):
     conn = httplib.HTTPConnection(server, port)
-    stop = "/stop/%s" % job
+    stop = "/admin/stop/%s" % job
     conn.request("GET", stop)
     resp = conn.getresponse()
     if resp.status == 200:
@@ -15,7 +15,7 @@ def start(server, port, jobfile):
     conn = httplib.HTTPConnection(server, port)
     headers = {"Content-Type": "application/json"}
     job = open(jobfile).read()
-    conn.request("POST", "/start", job, headers)
+    conn.request("POST", "/admin/start", job, headers)
     resp = conn.getresponse()
     if resp.status == 200:
         data = resp.read ()
