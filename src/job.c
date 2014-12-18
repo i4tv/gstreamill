@@ -141,6 +141,8 @@ static void job_dispose (GObject *obj)
                 return;
         }
         output = job->output;
+
+        /* free semaphore */
         if (output->semaphore != NULL) {
                 if (sem_close (output->semaphore) == -1) {
                         GST_ERROR ("sem_close failure: %s", g_strerror (errno));
@@ -150,14 +152,22 @@ static void job_dispose (GObject *obj)
                 }
                 g_free (output->semaphore_name);
         }
-        for (i = 0; i < output->encoder_count; i++) {
-                if (job->is_live &&
-                    (output->master_m3u8_playlist != NULL) &&
-                    (output->encoders[i].record_path != NULL)) {
-                        g_free (output->encoders[i].record_path);
+
+        /* free encoders output */
+        if (job->is_live) {
+                if (output->master_m3u8_playlist != NULL) {
+                        g_free (output->master_m3u8_playlist);
+                }
+                for (i = 0; i < output->encoder_count; i++) {
+                        if (output->encoders[i].record_path != NULL) {
+                                g_free (output->encoders[i].record_path);
+                        }
+                        m3u8playlist_free (output->encoders[i].m3u8_playlist);
                 }
         }
-        /* share memory release */
+        g_free (output->encoders);
+
+        /* free share memory */
         if (job->output_fd != -1) {
                 g_close (job->output_fd, NULL);
                 if (munmap (output->job_description, job->output_size) == -1) {

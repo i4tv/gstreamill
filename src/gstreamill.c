@@ -627,7 +627,7 @@ static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClock
 
         return TRUE;
 }
-
+#if 0
 static gboolean m3u8playlist_refresh (GstClock *clock, GstClockTime time, GstClockID id, gpointer user_data)
 {
         GstClockID nextid;
@@ -653,7 +653,7 @@ static gboolean m3u8playlist_refresh (GstClock *clock, GstClockTime time, GstClo
 
         return TRUE;
 }
-
+#endif
 static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime duration)
 {
         gchar *path;
@@ -808,6 +808,8 @@ static gpointer msg_thread (gpointer data)
                         m3u8playlist_adding_entry (encoder_output->m3u8_playlist, seg_name, duration);
                         g_free (seg_name);
                         seg_name = g_strdup_printf ("%lu.ts", encoder_output->last_timestamp);
+                        m3u8playlist_add_entry (encoder_output->m3u8_playlist);
+#if 0
                         if (encoder_output->m3u8_playlist->playlist_str == NULL) {
                                 GstClockTime now;
                                 GstClockID nextid;
@@ -821,10 +823,12 @@ static gpointer msg_thread (gpointer data)
                                         GST_ERROR ("Register m3u8playlist_refresh failure");
                                 }
                         }
+#endif
                         if (encoder_output->dvr_duration != 0) {
                                 dvr_record_segment (encoder_output, duration);
                         }
                         encoder_output->last_timestamp = last_timestamp;
+                        gstreamill_unaccess (gstreamill, uri);
                 }
         }
 
