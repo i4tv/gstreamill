@@ -8,7 +8,7 @@
 #define __ENCODER_H__
 
 #include <semaphore.h>
-#include <mqueue.h>
+#include <sys/un.h>
 
 typedef struct _Encoder Encoder;
 typedef struct _EncoderClass EncoderClass;
@@ -34,7 +34,6 @@ typedef struct _EncoderOutput {
         EncoderStreamState *streams;
 
         /* m3u8 streaming */
-        mqd_t mqdes;
         M3U8Playlist *m3u8_playlist;
         GstClockTime last_timestamp; /* last segment timestamp */
         GstClock *system_clock;
@@ -58,6 +57,7 @@ typedef struct _EncoderStream {
 struct _Encoder {
         GObject parent;
 
+        gchar *job_name;
         gchar *name;
         gint id;
         GstClock *system_clock;
@@ -78,7 +78,9 @@ struct _Encoder {
         GstClockTime duration_accumulation; /* current segment duration accumulation */
 
         /* m3u8 playlist */
-        mqd_t mqdes;
+        gboolean has_m3u8_output;
+        struct sockaddr_un msg_sock_addr;
+        gint msg_sock;
         GstClockTime last_segment_duration;
         GstClockTime last_running_time;
 };

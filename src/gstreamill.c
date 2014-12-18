@@ -10,6 +10,9 @@
 #include <glob.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <sys/epoll.h>
 #include <glib.h>
 #include <glib/gstdio.h>
 
@@ -625,6 +628,209 @@ static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClock
         return TRUE;
 }
 
+static gboolean m3u8playlist_refresh (GstClock *clock, GstClockTime time, GstClockID id, gpointer user_data)
+{
+        GstClockID nextid;
+        GstClockReturn clock_ret;
+        GstClockTime now;
+        EncoderOutput *encoder_output;
+        M3U8Playlist *m3u8_playlist;
+        GstClockTime segment_duration;
+
+        encoder_output = (EncoderOutput *)user_data;
+        m3u8_playlist = encoder_output->m3u8_playlist;
+        segment_duration = m3u8playlist_add_entry (m3u8_playlist);
+
+        /* register playlist refresh */
+        now = gst_clock_get_time (encoder_output->system_clock);
+        nextid = gst_clock_new_single_shot_id (encoder_output->system_clock, now + segment_duration);
+        clock_ret = gst_clock_id_wait_async (nextid, m3u8playlist_refresh, encoder_output, NULL);
+        gst_clock_id_unref (nextid);
+        if (clock_ret != GST_CLOCK_OK) {
+                GST_ERROR ("Register gstreamill monitor failure");
+                return FALSE;
+        }
+
+        return TRUE;
+}
+
+static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime duration)
+{
+        gchar *path;
+        gint64 realtime;
+        guint64 rap_addr;
+        gsize segment_size;
+        gchar *buf;
+        GError *err = NULL;
+        struct timespec ts;
+
+        /* seek gop it's timestamp is m3u8_push_request->timestamp */
+        if (clock_gettime (CLOCK_REALTIME, &ts) == -1) {
+                GST_ERROR ("dvr_record_segment clock_gettime error: %s", g_strerror (errno));
+                return;
+        }
+        ts.tv_sec += 2;
+        while (sem_timedwait (encoder_output->semaphore, &ts) == -1) {
+                if (errno == EINTR) {
+                        continue;
+                }
+                GST_ERROR ("dvr_record_segment sem_timedwait failure: %s", g_strerror (errno));
+                return;
+        }
+        rap_addr = encoder_output_gop_seek (encoder_output, encoder_output->last_timestamp);
+
+        /* gop not found? */
+        if (rap_addr == G_MAXUINT64) {
+                GST_WARNING ("%s: record segment, but segment not found!", encoder_output->name);
+                sem_post (encoder_output->semaphore);
+                return;
+        }
+
+        segment_size = encoder_output_gop_size (encoder_output, rap_addr);
+        buf = g_malloc (segment_size);
+
+        /* copy segment to buf */
+        if (rap_addr + segment_size + 12 < encoder_output->cache_size) {
+                memcpy (buf, encoder_output->cache_addr + rap_addr + 12, segment_size);
+
+        } else {
+                gint n;
+                gchar *p;
+
+                n = encoder_output->cache_size - rap_addr - 12;
+                p = buf;
+                memcpy (p, encoder_output->cache_addr + rap_addr + 12, n);
+                p += n;
+                memcpy (p, encoder_output->cache_addr, segment_size - n);
+        }
+        sem_post (encoder_output->semaphore);
+
+        realtime = g_get_real_time ();
+        if (encoder_output->clock_time == GST_CLOCK_TIME_NONE) {
+                encoder_output->clock_time = realtime;
+
+        } else {
+                gint64 diff;
+
+                encoder_output->clock_time += duration / 1000;
+                if (encoder_output->clock_time > realtime) {
+                        diff = encoder_output->clock_time - realtime;
+                        if (diff > duration / 1000) {
+                                GST_WARNING ("%s stream time diff %ld from realtime", encoder_output->name, diff);
+                        }
+
+                } else {
+                        diff = realtime - encoder_output->clock_time;
+                        if (diff > duration / 1000) {
+                                GST_WARNING ("%s stream time diff -%ld from realtime", encoder_output->name, diff);
+                        }
+                }
+        }
+        path = g_strdup_printf ("/%s/%ld_%lu_%lu.ts",
+                                encoder_output->record_path,
+                                encoder_output->clock_time,
+                                encoder_output->sequence,
+                                duration);
+        encoder_output->sequence += 1;
+
+        if (!g_file_set_contents (path, buf, segment_size, &err)) {
+                GST_ERROR ("write segment %s failure: %s", path, err->message);
+                g_error_free (err);
+
+        } else {
+                GST_INFO ("write segment %s success", path);
+        }
+
+        g_free (path);
+        g_free (buf);
+}
+
+#define MSG_SOCK_PATH "/gstreamill"
+
+static gpointer msg_thread (gpointer data)
+{
+        Gstreamill *gstreamill = (Gstreamill *)data;
+        struct sockaddr_un msg_sock_addr;
+        gint msg_sock, epoll_fd, n, i;
+        struct epoll_event event, event_list[32];
+        gchar msg[128];
+        ssize_t size;
+
+        unlink (MSG_SOCK_PATH);
+
+        /* unix domain socket */
+        msg_sock = socket(AF_UNIX, SOCK_DGRAM, 0);
+        if (msg_sock == -1) {
+                GST_ERROR ("msg_sock socket error: %s", g_strerror (errno));
+                exit (20);
+        }
+        memset (&msg_sock_addr, 0, sizeof (struct sockaddr_un));
+        msg_sock_addr.sun_family = AF_UNIX;
+        strncpy (msg_sock_addr.sun_path, MSG_SOCK_PATH, sizeof (msg_sock_addr.sun_path) - 1);
+        if (bind (msg_sock, (struct sockaddr *)&msg_sock_addr, sizeof (struct sockaddr_un)) == -1) {
+                GST_ERROR ("msg_thread bind error: %s", g_strerror (errno));
+                exit (21);
+        }
+
+        /* epoll */
+        epoll_fd = epoll_create1 (0);
+        if (epoll_fd == -1) {
+                GST_ERROR ("epoll_create error %s", g_strerror (errno));
+                exit (22);
+        }
+        event.data.ptr = NULL;
+        event.events = EPOLLIN | EPOLLET;
+        if (epoll_ctl (epoll_fd, EPOLL_CTL_ADD, msg_sock, &event) == -1) {
+                GST_ERROR ("epoll_ctl add msg_sock error %s", g_strerror (errno));
+                exit (23);
+        }
+
+        /* loop waiting msg */
+        for (;;) {
+                gchar uri[128], *seg_name;
+                EncoderOutput *encoder_output;
+                GstClockTime duration, last_timestamp;
+
+                n = epoll_wait (epoll_fd, event_list, 32, -1);
+                if (n == -1) {
+                        GST_WARNING ("epoll_wait error %s", g_strerror (errno));
+                        continue;
+                }
+                for (i = 0; i < n; i++) {
+                        size = read (msg_sock, msg, 128);
+                        if (size == -1) {
+                                GST_ERROR ("msg_thread read error: %s", g_strerror (errno));
+                        }
+                        sscanf (msg, "%[^:]:%lu$", uri, &duration);
+                        encoder_output = gstreamill_get_encoder_output (gstreamill, uri);
+                        last_timestamp = encoder_output_rap_timestamp (encoder_output, *(encoder_output->last_rap_addr));
+                        seg_name = g_strdup_printf ("%lu.ts", encoder_output->last_timestamp);
+                        m3u8playlist_adding_entry (encoder_output->m3u8_playlist, seg_name, duration);
+                        g_free (seg_name);
+                        seg_name = g_strdup_printf ("%lu.ts", encoder_output->last_timestamp);
+                        if (encoder_output->m3u8_playlist->playlist_str == NULL) {
+                                GstClockTime now;
+                                GstClockID nextid;
+                                GstClockReturn clock_ret;
+
+                                now = gst_clock_get_time (encoder_output->system_clock);
+                                nextid = gst_clock_new_single_shot_id (encoder_output->system_clock, now + GST_SECOND);
+                                clock_ret = gst_clock_id_wait_async (nextid, m3u8playlist_refresh, encoder_output, NULL);
+                                gst_clock_id_unref (nextid);
+                                if (clock_ret != GST_CLOCK_OK) {
+                                        GST_ERROR ("Register m3u8playlist_refresh failure");
+                                }
+                        }
+                        if (encoder_output->dvr_duration != 0) {
+                                dvr_record_segment (encoder_output, duration);
+                        }
+                        encoder_output->last_timestamp = last_timestamp;
+                }
+        }
+
+        return NULL;
+}
+
 /**
  * gstreamill_start:
  * @gstreamill: (in): gstreamill to be starting
@@ -638,6 +844,9 @@ gint gstreamill_start (Gstreamill *gstreamill)
         GstClockID id;
         GstClockTime t;
         GstClockReturn ret;
+
+        /* message process thread */
+        gstreamill->msg_thread = g_thread_new ("msg_thread", msg_thread, gstreamill);
 
         /* regist gstreamill monitor */
         t = gst_clock_get_time (gstreamill->system_clock)  + 5000 * GST_MSECOND;

@@ -8,6 +8,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 #include <glob.h>
 #include <glib.h>
 #include <glib/gstdio.h>

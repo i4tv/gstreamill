@@ -5,7 +5,10 @@
  */
 
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <gst/gst.h>
 #include <gst/app/gstappsrc.h>
 #include <gst/app/gstappsink.h>
@@ -112,12 +115,7 @@ static void encoder_dispose (GObject *obj)
         Encoder *encoder = ENCODER (obj);
         GObjectClass *parent_class = g_type_class_peek (G_TYPE_OBJECT);
 
-        if (encoder->name != NULL) {
-                mq_close (encoder->mqdes);
-                g_free (encoder->name);
-                encoder->name = NULL;
-        }
-
+        g_free (encoder->job_name);
         G_OBJECT_CLASS (parent_class)->dispose (obj);
 }
 
@@ -323,7 +321,7 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
                  * write current gop timestamp,
                  * reserve 4 bytes for size of current gop,
                  */
-                if (encoder->mqdes == -1) {
+                if (encoder->has_m3u8_output == -1) {
                         /* no m3u8 output */
                         move_last_rap (encoder, buffer);
 
@@ -331,11 +329,10 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
                         gchar *msg;
 
                         move_last_rap (encoder, buffer);
-                        msg = g_strdup_printf ("%lu", encoder->last_segment_duration);
-                        if (mq_send (encoder->mqdes, msg, strlen (msg), 1) == -1) {
-                                GST_ERROR ("mq_send error: %s", g_strerror (errno));
-                        }
+                        msg = g_strdup_printf ("/live/%s/encoder/%d:%lu", encoder->job_name, encoder->id, encoder->last_segment_duration);
+                        sendto (encoder->msg_sock, msg, strlen (msg), 0, (struct sockaddr *)&(encoder->msg_sock_addr), sizeof (struct sockaddr));
                         g_free (msg);
+
                         encoder->last_running_time = GST_CLOCK_TIME_NONE;
                 }
         }
@@ -661,6 +658,7 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
         for (i = 0; i < count; i++) {
                 pipeline = g_strdup_printf ("encoder.%d", i);
                 encoder = encoder_new ("name", pipeline, NULL);
+                encoder->job_name = g_strdup (job_name);
                 encoder->id = i;
                 encoder->last_running_time = GST_CLOCK_TIME_NONE;
                 encoder->output = &(encoders[i]);
@@ -753,20 +751,14 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
 
                 /* m3u8 playlist */
                 if (jobdesc_m3u8streaming (job)) {
-                        gchar *mq_name;
-
-                        mq_name = g_strdup_printf ("/%s.%d", job_name, i);
-                        encoder->mqdes = mq_open (mq_name, O_WRONLY);
-                        if (encoder->mqdes == -1) {
-                                g_free (job_name);
-                                g_free (pipeline);
-                                GST_ERROR ("mq_open %s error: %s", mq_name, g_strerror (errno));
-                                return 1;
-                        }
-                        g_free (mq_name);
+                        memset (&(encoder->msg_sock_addr), 0, sizeof (struct sockaddr_un));
+                        encoder->msg_sock_addr.sun_family = AF_UNIX;
+                        strncpy (encoder->msg_sock_addr.sun_path, "/gstreamill", sizeof (encoder->msg_sock_addr.sun_path) - 1);
+                        encoder->msg_sock = socket(AF_UNIX, SOCK_DGRAM, 0);
+                        encoder->has_m3u8_output = TRUE;
 
                 } else {
-                        encoder->mqdes = -1;
+                        encoder->has_m3u8_output = FALSE;
                 }
 
                 g_free (pipeline);

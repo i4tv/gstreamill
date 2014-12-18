@@ -9,7 +9,6 @@
 #define __GSTREAMILL_H__
 
 #include <gst/gst.h>
-#include <mqueue.h>
 
 #include "config.h"
 #include "job.h"
@@ -33,6 +32,7 @@ struct _Gstreamill {
         gboolean daemon; /* run as daemon? */
         GstClock *system_clock;
         gchar *start_time;
+        GThread *msg_thread;
         gchar *log_dir;
         guint64 last_dvr_clean_time;
 

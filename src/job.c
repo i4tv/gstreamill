@@ -13,6 +13,9 @@
 #include <sys/mman.h>
 #include <string.h>
 #include <glib.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <semaphore.h>
 #include <glib/gstdio.h>
 
 #include "utils.h"
@@ -132,7 +135,7 @@ static void job_dispose (GObject *obj)
         GObjectClass *parent_class = g_type_class_peek (G_TYPE_OBJECT);
         JobOutput *output;
         gint i;
-        gchar *name, *name_hexstr;
+        gchar *name_hexstr;
 
         if (job->output == NULL) {
                 return;
@@ -148,20 +151,11 @@ static void job_dispose (GObject *obj)
                 g_free (output->semaphore_name);
         }
         for (i = 0; i < output->encoder_count; i++) {
-                /* message queue release */
-                name = g_strdup_printf ("/%s.%d", job->name, i);
-                if ((output->encoders[i].mqdes != -1) && (mq_close (output->encoders[i].mqdes) == -1)) {
-                        GST_ERROR ("mq_close %s error: %s", name, g_strerror (errno));
-                }
-                if ((output->encoders[i].mqdes != -1) && (mq_unlink (name) == -1)) {
-                        GST_ERROR ("mq_unlink %s error: %s", name, g_strerror (errno));
-                }
                 if (job->is_live &&
                     (output->master_m3u8_playlist != NULL) &&
                     (output->encoders[i].record_path != NULL)) {
                         g_free (output->encoders[i].record_path);
                 }
-                g_free (name);
         }
         /* share memory release */
         if (job->output_fd != -1) {
@@ -383,7 +377,6 @@ gint job_initialize (Job *job, gboolean daemon)
                 p += output->encoders[i].stream_count * sizeof (struct _EncoderStreamState); /* encoder state */
                 output->encoders[i].total_count = (guint64 *)p;
                 p += sizeof (guint64); /* total count size */
-                output->encoders[i].mqdes = -1;
 
                 /* non live job has no output */
                 if (!job->is_live) {
@@ -614,170 +607,6 @@ gint job_stat_update (Job *job)
         return 0;
 }
 
-static gboolean m3u8playlist_refresh (GstClock *clock, GstClockTime time, GstClockID id, gpointer user_data)
-{
-        GstClockID nextid;
-        GstClockReturn clock_ret;
-        GstClockTime now;
-        EncoderOutput *encoder_output;
-        M3U8Playlist *m3u8_playlist;
-        GstClockTime segment_duration;
-
-        encoder_output = (EncoderOutput *)user_data;
-        m3u8_playlist = encoder_output->m3u8_playlist;
-        segment_duration = m3u8playlist_add_entry (m3u8_playlist);
-
-        /* register playlist refresh */
-        now = gst_clock_get_time (encoder_output->system_clock);
-        nextid = gst_clock_new_single_shot_id (encoder_output->system_clock, now + segment_duration);
-        clock_ret = gst_clock_id_wait_async (nextid, m3u8playlist_refresh, encoder_output, NULL);
-        gst_clock_id_unref (nextid);
-        if (clock_ret != GST_CLOCK_OK) {
-                GST_ERROR ("Register gstreamill monitor failure");
-                return FALSE;
-        }
-
-        return TRUE;
-}
-
-static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime duration)
-{
-        gchar *path;
-        gint64 realtime;
-        guint64 rap_addr;
-        gsize segment_size;
-        gchar *buf;
-        GError *err = NULL;
-        struct timespec ts;
-
-        /* seek gop it's timestamp is m3u8_push_request->timestamp */
-        if (clock_gettime (CLOCK_REALTIME, &ts) == -1) {
-                GST_ERROR ("dvr_record_segment clock_gettime error: %s", g_strerror (errno));
-                return;
-        }
-        ts.tv_sec += 2;
-        while (sem_timedwait (encoder_output->semaphore, &ts) == -1) {
-                if (errno == EINTR) {
-                        continue;
-                }
-                GST_ERROR ("dvr_record_segment sem_timedwait failure: %s", g_strerror (errno));
-                return;
-        }
-        rap_addr = encoder_output_gop_seek (encoder_output, encoder_output->last_timestamp);
-
-        /* gop not found? */
-        if (rap_addr == G_MAXUINT64) {
-                GST_WARNING ("%s: record segment, but segment not found!", encoder_output->name);
-                sem_post (encoder_output->semaphore);
-                return;
-        }
-
-        segment_size = encoder_output_gop_size (encoder_output, rap_addr);
-        buf = g_malloc (segment_size);
-
-        /* copy segment to buf */
-        if (rap_addr + segment_size + 12 < encoder_output->cache_size) {
-                memcpy (buf, encoder_output->cache_addr + rap_addr + 12, segment_size);
-
-        } else {
-                gint n;
-                gchar *p;
-
-                n = encoder_output->cache_size - rap_addr - 12;
-                p = buf;
-                memcpy (p, encoder_output->cache_addr + rap_addr + 12, n);
-                p += n;
-                memcpy (p, encoder_output->cache_addr, segment_size - n);
-        }
-        sem_post (encoder_output->semaphore);
-
-        realtime = g_get_real_time ();
-        if (encoder_output->clock_time == GST_CLOCK_TIME_NONE) {
-                encoder_output->clock_time = realtime;
-
-        } else {
-                gint64 diff;
-
-                encoder_output->clock_time += duration / 1000;
-                if (encoder_output->clock_time > realtime) {
-                        diff = encoder_output->clock_time - realtime;
-                        if (diff > duration / 1000) {
-                                GST_WARNING ("%s stream time diff %ld from realtime", encoder_output->name, diff);
-                        }
-
-                } else {
-                        diff = realtime - encoder_output->clock_time;
-                        if (diff > duration / 1000) {
-                                GST_WARNING ("%s stream time diff -%ld from realtime", encoder_output->name, diff);
-                        }
-                }
-        }
-        path = g_strdup_printf ("/%s/%ld_%lu_%lu.ts",
-                                encoder_output->record_path,
-                                encoder_output->clock_time,
-                                encoder_output->sequence,
-                                duration);
-        encoder_output->sequence += 1;
-
-        if (!g_file_set_contents (path, buf, segment_size, &err)) {
-                GST_ERROR ("write segment %s failure: %s", path, err->message);
-                g_error_free (err);
-
-        } else {
-                GST_INFO ("write segment %s success", path);
-        }
-
-        g_free (path);
-        g_free (buf);
-}
-
-static void notify_function (union sigval sv)
-{
-        EncoderOutput *encoder_output;
-        struct sigevent sev;
-        GstClockTime last_timestamp;
-        GstClockTime segment_duration;
-        gsize size;
-        gchar *url, buf[128];
-
-        encoder_output = (EncoderOutput *)sv.sival_ptr;
-
-        /* mq_notify first */
-        sev.sigev_notify = SIGEV_THREAD;
-        sev.sigev_notify_function = notify_function;
-        sev.sigev_notify_attributes = NULL;
-        sev.sigev_value.sival_ptr = sv.sival_ptr;
-        if (mq_notify (encoder_output->mqdes, &sev) == -1) {
-                GST_ERROR ("mq_notify error : %s", g_strerror (errno));
-        }
-
-        /* generate playlist */
-        size = mq_receive (encoder_output->mqdes, buf, 128, NULL);
-        buf[size] = '\0';
-        sscanf (buf, "%lu", &segment_duration);
-        last_timestamp = encoder_output_rap_timestamp (encoder_output, *(encoder_output->last_rap_addr));
-        url = g_strdup_printf ("%lu.ts", encoder_output->last_timestamp);
-        m3u8playlist_adding_entry (encoder_output->m3u8_playlist, url, segment_duration);
-        g_free (url);
-        if (encoder_output->m3u8_playlist->playlist_str == NULL) {
-                GstClockTime now;
-                GstClockID nextid;
-                GstClockReturn clock_ret;
-
-                now = gst_clock_get_time (encoder_output->system_clock);
-                nextid = gst_clock_new_single_shot_id (encoder_output->system_clock, now + GST_SECOND);
-                clock_ret = gst_clock_id_wait_async (nextid, m3u8playlist_refresh, encoder_output, NULL);
-                gst_clock_id_unref (nextid);
-                if (clock_ret != GST_CLOCK_OK) {
-                        GST_ERROR ("Register m3u8playlist_refresh failure");
-                }
-        }
-        if (encoder_output->dvr_duration != 0) {
-                dvr_record_segment (encoder_output, segment_duration);
-        }
-        encoder_output->last_timestamp = last_timestamp;
-}
-
 /*
  * job_reset:
  * @job: job object
@@ -792,9 +621,6 @@ void job_reset (Job *job)
         gint i;
         EncoderOutput *encoder;
         guint version, window_size;
-        struct sigevent sev;
-        struct mq_attr attr;
-        gchar *name;
 
         *(job->output->state) = JOB_STATE_VOID_PENDING;
         g_file_get_contents ("/proc/stat", &stat, NULL, NULL);
@@ -830,7 +656,6 @@ void job_reset (Job *job)
 
         for (i = 0; i < job->output->encoder_count; i++) {
                 encoder = &(job->output->encoders[i]);
-                name = g_strdup_printf ("/%s.%d", job->name, i);
 
                 /* encoder dvr sequence */
                 encoder->sequence = job->output->sequence;
@@ -840,33 +665,6 @@ void job_reset (Job *job)
                         m3u8playlist_free (encoder->m3u8_playlist);
                 }
                 encoder->m3u8_playlist = m3u8playlist_new (version, window_size, 0);
-
-                /* reset message queue */
-                if (encoder->mqdes != -1) {
-                        if (mq_close (encoder->mqdes) == -1) {
-                                GST_ERROR ("mq_close %s error: %s", name, g_strerror (errno));
-                        }
-                        if (mq_unlink (name) == -1) {
-                                GST_ERROR ("mq_unlink %s error: %s", name, g_strerror (errno));
-                        }
-                }
-                attr.mq_flags = 0;
-                attr.mq_maxmsg = 10;
-                attr.mq_msgsize = 128;
-                attr.mq_curmsgs = 0;
-                encoder->mqdes = mq_open (name, O_RDONLY | O_CREAT | O_NONBLOCK, 0666, &attr);
-                if (encoder->mqdes == -1) {
-                        GST_ERROR ("mq_open error : %s", g_strerror (errno));
-                }
-                sev.sigev_notify = SIGEV_THREAD;
-                sev.sigev_notify_function = notify_function;
-                sev.sigev_notify_attributes = NULL;
-                sev.sigev_value.sival_ptr = encoder;
-                if (mq_notify (encoder->mqdes, &sev) == -1) {
-                        GST_ERROR ("mq_notify error : %s", g_strerror (errno));
-                }
-
-                g_free (name);
         }
 }
 
