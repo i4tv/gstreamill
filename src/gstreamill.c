@@ -801,6 +801,7 @@ static gpointer msg_thread (gpointer data)
                         if (size == -1) {
                                 GST_ERROR ("msg_thread read error: %s", g_strerror (errno));
                         }
+                        msg[size] = '\0';
                         sscanf (msg, "%[^:]:%lu$", uri, &duration);
                         encoder_output = gstreamill_get_encoder_output (gstreamill, uri);
                         last_timestamp = encoder_output_rap_timestamp (encoder_output, *(encoder_output->last_rap_addr));
