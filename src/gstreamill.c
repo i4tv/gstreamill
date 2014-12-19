@@ -627,33 +627,7 @@ static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClock
 
         return TRUE;
 }
-#if 0
-static gboolean m3u8playlist_refresh (GstClock *clock, GstClockTime time, GstClockID id, gpointer user_data)
-{
-        GstClockID nextid;
-        GstClockReturn clock_ret;
-        GstClockTime now;
-        EncoderOutput *encoder_output;
-        M3U8Playlist *m3u8_playlist;
-        GstClockTime segment_duration;
 
-        encoder_output = (EncoderOutput *)user_data;
-        m3u8_playlist = encoder_output->m3u8_playlist;
-        segment_duration = m3u8playlist_add_entry (m3u8_playlist);
-
-        /* register playlist refresh */
-        now = gst_clock_get_time (encoder_output->system_clock);
-        nextid = gst_clock_new_single_shot_id (encoder_output->system_clock, now + segment_duration);
-        clock_ret = gst_clock_id_wait_async (nextid, m3u8playlist_refresh, encoder_output, NULL);
-        gst_clock_id_unref (nextid);
-        if (clock_ret != GST_CLOCK_OK) {
-                GST_ERROR ("Register gstreamill monitor failure");
-                return FALSE;
-        }
-
-        return TRUE;
-}
-#endif
 static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime duration)
 {
         gchar *path;
@@ -806,25 +780,8 @@ static gpointer msg_thread (gpointer data)
                         encoder_output = gstreamill_get_encoder_output (gstreamill, uri);
                         last_timestamp = encoder_output_rap_timestamp (encoder_output, *(encoder_output->last_rap_addr));
                         seg_name = g_strdup_printf ("%lu.ts", encoder_output->last_timestamp);
-                        m3u8playlist_adding_entry (encoder_output->m3u8_playlist, seg_name, duration);
+                        m3u8playlist_add_entry (encoder_output->m3u8_playlist, seg_name, duration);
                         g_free (seg_name);
-                        seg_name = g_strdup_printf ("%lu.ts", encoder_output->last_timestamp);
-                        m3u8playlist_add_entry (encoder_output->m3u8_playlist);
-#if 0
-                        if (encoder_output->m3u8_playlist->playlist_str == NULL) {
-                                GstClockTime now;
-                                GstClockID nextid;
-                                GstClockReturn clock_ret;
-
-                                now = gst_clock_get_time (encoder_output->system_clock);
-                                nextid = gst_clock_new_single_shot_id (encoder_output->system_clock, now + GST_SECOND);
-                                clock_ret = gst_clock_id_wait_async (nextid, m3u8playlist_refresh, encoder_output, NULL);
-                                gst_clock_id_unref (nextid);
-                                if (clock_ret != GST_CLOCK_OK) {
-                                        GST_ERROR ("Register m3u8playlist_refresh failure");
-                                }
-                        }
-#endif
                         if (encoder_output->dvr_duration != 0) {
                                 dvr_record_segment (encoder_output, duration);
                         }
