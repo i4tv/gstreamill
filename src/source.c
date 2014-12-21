@@ -130,11 +130,14 @@ static void source_finalize (GObject *obj)
 
         for (i = source->streams->len - 1; i >= 0; i--) {
                 stream = g_array_index (source->streams, gpointer, i);
+                g_free (stream->name);
                 g_array_free (stream->encoders, FALSE);
                 g_free (stream);
                 g_array_remove_index (source->streams, i);
         }
         g_array_free (source->streams, FALSE);
+
+        g_slist_free (source->bins);
 
         G_OBJECT_CLASS (parent_class)->finalize (obj);
 }

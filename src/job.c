@@ -181,11 +181,6 @@ static void job_dispose (GObject *obj)
         }
         g_free (output);
 
-        if (job->name != NULL) {
-                g_free (job->name);
-                job->name = NULL;
-        }
-
         if (job->description != NULL) {
                 g_free (job->description);
                 job->description = NULL;
@@ -196,6 +191,11 @@ static void job_dispose (GObject *obj)
                 job->exe_path = NULL;
         }
 
+        if (job->name != NULL) {
+                g_free (job->name);
+                job->name = NULL;
+        }
+
         G_OBJECT_CLASS (parent_class)->dispose (obj);
 }
 
@@ -203,7 +203,17 @@ static void job_finalize (GObject *obj)
 {
         Job *job = JOB (obj);
         GObjectClass *parent_class = g_type_class_peek (G_TYPE_OBJECT);
+        Encoder *encoder;
+        gint i;
 
+        /* free source  */
+        g_object_unref (job->source);
+
+        /* free encoders */
+        for (i = 0; i < job->encoder_array->len; i++) {
+                encoder = g_array_index (job->encoder_array, gpointer, i);
+                g_object_unref (encoder);
+        }
         g_array_free (job->encoder_array, TRUE);
 
         G_OBJECT_CLASS (parent_class)->finalize (obj);

@@ -116,6 +116,8 @@ static void encoder_dispose (GObject *obj)
         GObjectClass *parent_class = g_type_class_peek (G_TYPE_OBJECT);
 
         g_free (encoder->job_name);
+        g_free (encoder->name);
+
         G_OBJECT_CLASS (parent_class)->dispose (obj);
 }
 
@@ -128,6 +130,7 @@ static void encoder_finalize (GObject *obj)
 
         for (i = encoder->streams->len - 1; i >= 0; i--) {
                 estream = g_array_index (encoder->streams, gpointer, i);
+                g_free (estream->name);
                 g_free (estream);
                 g_array_remove_index (encoder->streams, i);
         }
