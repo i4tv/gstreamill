@@ -765,13 +765,16 @@ gint job_stop (Job *job, gint sig)
 {
         if (sig == SIGTERM) {
                 /* normally stop */
-                *(job->output->state) = JOB_STATE_STOPING;
+                if (*(job->output->state) == JOB_STATE_PLAYING) {
+                        *(job->output->state) = JOB_STATE_STOPING;
+                }
                 GST_WARNING ("Stop job %s, pid %d.", job->name, job->worker_pid);
 
         } else {
                 /* unexpect stop, restart job */
                 GST_WARNING ("Restart job %s, pid %d.", job->name, job->worker_pid);
         }
+
         if (job->worker_pid != 0) {
                 kill (job->worker_pid, sig);
 
