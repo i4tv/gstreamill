@@ -1,8 +1,14 @@
 releases are sorted from youngest to oldest.
 
+v-0.6.0 2014-12-18
+- setuid gstreamill, don't run under root now.
+- complete media upload, support large media.
+- bugfix #11, #12, #30, #31, #33, #35, #36, #38.
+- running on CentOS7.
+- catch SIGINT and SIGQUIT.
+- use unix domain socket instead mqueue #45.
+
 v-0.5.0 2014-09-17 zhangping
 - B/S Managment
 - Transcode support
 
-v-0.4.0 2013-12-13 zhangping
-- ...
