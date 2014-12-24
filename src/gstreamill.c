@@ -268,7 +268,7 @@ static void clean_job_list (Gstreamill *gstreamill)
 
                         /* clean live job */
                         if (job->is_live && (*(job->output->state) == JOB_STATE_STOPED)) {
-                                GST_WARNING ("Remove live job: %s.", job->name);
+                                GST_WARNING ("Remove live job: %s access: %d.", job->name, job->current_access);
                                 gstreamill->job_list = g_slist_remove (gstreamill->job_list, job);
                                 g_object_unref (job);
                                 break;
@@ -725,7 +725,7 @@ static gpointer msg_thread (gpointer data)
 {
         Gstreamill *gstreamill = (Gstreamill *)data;
         struct sockaddr_un msg_sock_addr;
-        gint msg_sock, epoll_fd, n, i;
+        gint msg_sock, epoll_fd, n;
         struct epoll_event event, event_list[32];
         gchar msg[128];
         ssize_t size;
@@ -733,7 +733,7 @@ static gpointer msg_thread (gpointer data)
         unlink (MSG_SOCK_PATH);
 
         /* unix domain socket */
-        msg_sock = socket(AF_UNIX, SOCK_DGRAM, 0);
+        msg_sock = socket(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0);
         if (msg_sock == -1) {
                 GST_ERROR ("msg_sock socket error: %s", g_strerror (errno));
                 exit (20);
@@ -770,23 +770,30 @@ static gpointer msg_thread (gpointer data)
                         GST_WARNING ("epoll_wait error %s", g_strerror (errno));
                         continue;
                 }
-                for (i = 0; i < n; i++) {
+                for (;;) {
                         size = read (msg_sock, msg, 128);
-                        if (size == -1) {
+                        if ((size == -1) && (errno == EAGAIN)) {
+                                GST_ERROR ("msg_trhead read complete");
+                                break;
+
+                        } else if (size == -1) {
                                 GST_ERROR ("msg_thread read error: %s", g_strerror (errno));
+                                break;
                         }
                         msg[size] = '\0';
                         sscanf (msg, "%[^:]:%lu$", uri, &duration);
                         encoder_output = gstreamill_get_encoder_output (gstreamill, uri);
-                        last_timestamp = encoder_output_rap_timestamp (encoder_output, *(encoder_output->last_rap_addr));
-                        seg_name = g_strdup_printf ("%lu.ts", encoder_output->last_timestamp);
-                        m3u8playlist_add_entry (encoder_output->m3u8_playlist, seg_name, duration);
-                        g_free (seg_name);
-                        if (encoder_output->dvr_duration != 0) {
-                                dvr_record_segment (encoder_output, duration);
+                        if (encoder_output != NULL) {
+                                last_timestamp = encoder_output_rap_timestamp (encoder_output, *(encoder_output->last_rap_addr));
+                                seg_name = g_strdup_printf ("%lu.ts", encoder_output->last_timestamp);
+                                m3u8playlist_add_entry (encoder_output->m3u8_playlist, seg_name, duration);
+                                g_free (seg_name);
+                                if (encoder_output->dvr_duration != 0) {
+                                        dvr_record_segment (encoder_output, duration);
+                                }
+                                encoder_output->last_timestamp = last_timestamp;
+                                gstreamill_unaccess (gstreamill, uri);
                         }
-                        encoder_output->last_timestamp = last_timestamp;
-                        gstreamill_unaccess (gstreamill, uri);
                 }
         }
 
