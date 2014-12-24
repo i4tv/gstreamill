@@ -773,7 +773,7 @@ static gpointer msg_thread (gpointer data)
                 for (;;) {
                         size = read (msg_sock, msg, 128);
                         if ((size == -1) && (errno == EAGAIN)) {
-                                GST_ERROR ("msg_trhead read complete");
+                                GST_DEBUG ("msg_trhead read complete");
                                 break;
 
                         } else if (size == -1) {
