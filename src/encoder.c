@@ -333,7 +333,14 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
 
                         move_last_rap (encoder, buffer);
                         msg = g_strdup_printf ("/live/%s/encoder/%d:%lu", encoder->job_name, encoder->id, encoder->last_segment_duration);
-                        sendto (encoder->msg_sock, msg, strlen (msg), 0, (struct sockaddr *)&(encoder->msg_sock_addr), sizeof (struct sockaddr));
+                        if (sendto (encoder->msg_sock,
+                                    msg,
+                                    strlen (msg),
+                                    0,
+                                    (struct sockaddr *)&(encoder->msg_sock_addr),
+                                    sizeof (struct sockaddr)) == -1) {
+                                GST_ERROR ("sendto segment msg error: %s", g_strerror (errno));
+                        }
                         g_free (msg);
 
                         encoder->last_running_time = GST_CLOCK_TIME_NONE;
@@ -757,7 +764,7 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
                         memset (&(encoder->msg_sock_addr), 0, sizeof (struct sockaddr_un));
                         encoder->msg_sock_addr.sun_family = AF_UNIX;
                         strncpy (encoder->msg_sock_addr.sun_path, "/gstreamill", sizeof (encoder->msg_sock_addr.sun_path) - 1);
-                        encoder->msg_sock = socket(AF_UNIX, SOCK_DGRAM, 0);
+                        encoder->msg_sock = socket(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0);
                         encoder->has_m3u8_output = TRUE;
 
                 } else {
