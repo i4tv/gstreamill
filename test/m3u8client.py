@@ -3,6 +3,7 @@
 pip install m3u8 first, please
 """
 
+import sys
 import m3u8
 import time
 import urllib2
@@ -38,12 +39,15 @@ while True:
         if media_sequence + index < current_sequence:
             continue
         seg_url = "%s/%s" % (playlist.base_uri, segment.uri)
-        response = urllib2.urlopen(seg_url)
-        buf = response.read()
-        f = open(segment.uri, "w")
-        f.write(buf)
-        f.close
-        print "index: ", media_sequence + index, ", uri: ", segment.uri, ", size ", len(buf)
-        current_sequence += 1
+        try:
+            response = urllib2.urlopen(seg_url)
+            buf = response.read()
+            f = open(segment.uri, "w")
+            f.write(buf)
+            f.close
+            print "index: ", media_sequence + index, ", uri: ", segment.uri, ", size ", len(buf)
+            current_sequence += 1
+        except:
+            print "url: ", seg_url, sys.exc_info()
 
     time.sleep(target_duration - 1)
