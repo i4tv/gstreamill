@@ -361,9 +361,6 @@ int main (int argc, char *argv[])
                 job = job_new ("name", name, "job", job_desc, NULL);
                 job->is_live = jobdesc_is_live (job_desc);
                 job->eos = FALSE;
-                signal (SIGPIPE, SIG_IGN);
-                signal (SIGUSR1, sighandler);
-                signal (SIGTERM, stop_job);
                 loop = g_main_loop_new (NULL, FALSE);
 
                 GST_INFO ("Initializing job ...");
@@ -392,6 +389,10 @@ int main (int argc, char *argv[])
                 g_free (date);
                 g_free (name);
                 g_free (job_desc);
+
+                signal (SIGPIPE, SIG_IGN);
+                signal (SIGUSR1, sighandler);
+                signal (SIGTERM, stop_job);
 
                 g_main_loop_run (loop);
 
