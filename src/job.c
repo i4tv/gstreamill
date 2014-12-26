@@ -775,7 +775,7 @@ gint job_stop (Job *job, gint sig)
 {
         if (sig == SIGTERM) {
                 /* normally stop */
-                if (*(job->output->state) == JOB_STATE_PLAYING) {
+                if (*(job->output->state) != JOB_STATE_STOPED) {
                         *(job->output->state) = JOB_STATE_STOPING;
                 }
                 GST_WARNING ("Stop job %s, pid %d.", job->name, job->worker_pid);
