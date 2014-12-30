@@ -723,6 +723,7 @@ static gchar * stop_job (HTTPMgmt *httpmgmt, RequestData *request_data)
                 if (g_match_info_matches (match_info)) {
                         p = g_match_info_fetch_named (match_info, "name");
                         g_match_info_free (match_info);
+                        GST_WARNING ("stop job request, job name is %s", p);
                         buf = gstreamill_job_stop (httpmgmt->gstreamill, p);
                         g_free (p);
                         return buf;
