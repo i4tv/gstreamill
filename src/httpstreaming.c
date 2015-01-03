@@ -640,14 +640,18 @@ static GstClockTime http_continue_process (HTTPStreaming *httpstreaming, Request
         priv_data = request_data->priv_data;
         encoder_output = priv_data->encoder_output;
         if (priv_data->buf != NULL) {
-                ret = write (request_data->sock, priv_data->buf + priv_data->send_position, priv_data->buf_size - priv_data->send_position);
+                ret = write (request_data->sock,
+                             priv_data->buf + priv_data->send_position,
+                             priv_data->buf_size - priv_data->send_position);
+                /* send complete or send error */
                 if ((ret + priv_data->send_position == priv_data->buf_size) ||
                     ((ret == -1) && (errno != EAGAIN))) {
-                        /* send complete or send error, finish the request */
                         if ((ret == -1) && (errno != EAGAIN)) {
                                 GST_ERROR ("Write sock error: %s", g_strerror (errno));
                         }
                         g_free (priv_data->buf);
+                        priv_data->buf = NULL;
+                        /* progressive play? continue */
                         if (is_http_progress_play_url (request_data)) {
                                 priv_data->send_position = *(encoder_output->last_rap_addr) + 12;
                                 priv_data->buf = NULL;
@@ -671,10 +675,14 @@ static GstClockTime http_continue_process (HTTPStreaming *httpstreaming, Request
         }
         if ((priv_data->livejob_age != priv_data->job->age) ||
             (*(priv_data->job->output->state) != JOB_STATE_PLAYING)) {
-                g_object_unref (priv_data->job);
+                if (priv_data->encoder_output != NULL) {
+                        gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
+                }
+                if (priv_data->job != NULL) {
+                        g_object_unref (priv_data->job);
+                }
                 g_free (request_data->priv_data);
                 request_data->priv_data = NULL;
-                gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
                 return 0;
         }
         if (priv_data->send_position == *(encoder_output->tail_addr)) {
@@ -689,6 +697,7 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
 {
         RequestData *request_data = data;
         HTTPStreaming *httpstreaming = (HTTPStreaming *)user_data;
+        HTTPStreamingPrivateData *priv_data;
 
         switch (request_data->status) {
         case HTTP_REQUEST:
@@ -699,9 +708,18 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
                 return http_continue_process (httpstreaming, request_data);
 
         case HTTP_FINISH:
+                priv_data = request_data->priv_data;
+                if (priv_data->encoder_output != NULL) {
+                        gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
+                }
+                if (priv_data->job != NULL) {
+                        g_object_unref (priv_data->job);
+                }
+                if (priv_data->buf != NULL) {
+                        g_free (priv_data->buf);
+                }
                 g_free (request_data->priv_data);
                 request_data->priv_data = NULL;
-                gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
                 return 0;
 
         default:
