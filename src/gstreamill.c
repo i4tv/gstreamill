@@ -690,13 +690,13 @@ static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime dura
                 if (encoder_output->clock_time > realtime) {
                         diff = encoder_output->clock_time - realtime;
                         if (diff > duration / 1000) {
-                                GST_WARNING ("%s stream time diff %ld from realtime", encoder_output->name, diff);
+                                GST_WARNING ("%s stream time diff %ldus from realtime", encoder_output->name, diff);
                         }
 
                 } else {
                         diff = realtime - encoder_output->clock_time;
                         if (diff > duration / 1000) {
-                                GST_WARNING ("%s stream time diff -%ld from realtime", encoder_output->name, diff);
+                                GST_WARNING ("%s stream time diff -%ldus from realtime", encoder_output->name, diff);
                         }
                 }
         }
