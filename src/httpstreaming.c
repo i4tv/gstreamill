@@ -708,18 +708,20 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
                 return http_continue_process (httpstreaming, request_data);
 
         case HTTP_FINISH:
-                priv_data = request_data->priv_data;
-                if (priv_data->encoder_output != NULL) {
-                        gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
+                if (request_data->priv_data != NULL) {
+                        priv_data = request_data->priv_data;
+                        if (priv_data->encoder_output != NULL) {
+                                gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
+                        }
+                        if (priv_data->job != NULL) {
+                                g_object_unref (priv_data->job);
+                        }
+                        if (priv_data->buf != NULL) {
+                                g_free (priv_data->buf);
+                        }
+                        g_free (request_data->priv_data);
+                        request_data->priv_data = NULL;
                 }
-                if (priv_data->job != NULL) {
-                        g_object_unref (priv_data->job);
-                }
-                if (priv_data->buf != NULL) {
-                        g_free (priv_data->buf);
-                }
-                g_free (request_data->priv_data);
-                request_data->priv_data = NULL;
                 return 0;
 
         default:
