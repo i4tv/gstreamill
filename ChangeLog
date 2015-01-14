@@ -1,6 +1,6 @@
 releases are sorted from youngest to oldest.
 
-v-0.6.0 2014-12-18
+v-0.6.0 2015-01-14
 - setuid gstreamill, don't run under root now.
 - complete media upload, support large media.
 - bugfix #11, #12, #30, #31, #33, #35, #36, #38.
