@@ -321,6 +321,13 @@ int main (int argc, char *argv[])
                 gchar *log_path, *name;
                 gint ret;
 
+                /* set subprocess maximum of core file */
+                rlim.rlim_cur = 0;
+                rlim.rlim_max = 0;
+                if (setrlimit (RLIMIT_CORE, &rlim) == -1) {
+                        GST_ERROR ("setrlimit error: %s", g_strerror (errno));
+                }
+
                 /* read job description from share memory */
                 job_desc = NULL;
                 fd = shm_open (shm_name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
