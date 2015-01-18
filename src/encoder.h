@@ -78,6 +78,7 @@ struct _Encoder {
         GstClockTime duration_accumulation; /* current segment duration accumulation */
 
         /* m3u8 playlist */
+        gboolean has_video;
         gboolean has_m3u8_output;
         struct sockaddr_un msg_sock_addr;
         gint msg_sock;

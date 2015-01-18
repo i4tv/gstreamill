@@ -328,7 +328,8 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
          */
         copy_buffer (encoder, buffer);
 
-        if (!GST_BUFFER_FLAG_IS_SET (buffer, GST_BUFFER_FLAG_DELTA_UNIT)) {
+        if ((encoder->has_video && !GST_BUFFER_FLAG_IS_SET (buffer, GST_BUFFER_FLAG_DELTA_UNIT)) ||
+            (!encoder->has_video && (GST_BUFFER_PTS (buffer) == encoder->last_running_time))){
                 /* 
                  * random access point found.
                  * write previous gop size to 4 bytes reservation,
@@ -396,10 +397,6 @@ static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data
                         GstCaps *caps;
                         caps = gst_sample_get_caps (stream->source->ring[current_position]);
                         gst_app_src_set_caps (src, caps);
-                        if (!g_str_has_prefix (gst_caps_to_string (caps), "video")) {
-                                /* only for video stream, force key unit */
-                                stream->encoder = NULL;
-                        }
                         GST_INFO ("set stream %s caps: %s", stream->name, gst_caps_to_string (caps));
                 }
 
@@ -417,13 +414,18 @@ static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data
 
                                 stream->encoder->last_segment_duration = stream->encoder->duration_accumulation;
                                 running_time = GST_BUFFER_PTS (buffer);
-                                pad = gst_element_get_static_pad ((GstElement *)src, "src");
-                                event = gst_video_event_new_downstream_force_key_unit (running_time,
-                                                                                       running_time,
-                                                                                       running_time,
-                                                                                       TRUE,
-                                                                                       stream->encoder->force_key_count);
-                                gst_pad_push_event (pad, event);
+                                if (stream->encoder->has_video) {
+                                        pad = gst_element_get_static_pad ((GstElement *)src, "src");
+                                        event = gst_video_event_new_downstream_force_key_unit (running_time,
+                                                                                               running_time,
+                                                                                               running_time,
+                                                                                               TRUE,
+                                                                                               stream->encoder->force_key_count);
+                                        gst_pad_push_event (pad, event);
+
+                                } else {
+                                        stream->encoder->last_running_time = running_time;
+                                }
                                 stream->encoder->force_key_count++;
                                 stream->encoder->duration_accumulation = 0;
                         }
@@ -581,6 +583,9 @@ static gint encoder_extract_streams (Encoder *encoder, gchar **bins)
                         stream->name = g_match_info_fetch_named (match_info, "name");
                         g_match_info_free (match_info);
                         g_array_append_val (encoder->streams, stream);
+                        if (g_str_has_prefix (stream->name, "video")) {
+                                encoder->has_video = TRUE;
+                        }
                         GST_INFO ("encoder stream %s found %s", stream->name, bin);
 
                 } else if (g_str_has_prefix (bin, "appsrc")) {
@@ -676,6 +681,7 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
                 encoder->duration_accumulation = 0;
                 encoder->last_segment_duration = 0;
                 encoder->force_key_count = 0;
+                encoder->has_video = FALSE;
 
                 bins = jobdesc_bins (job, pipeline);
                 if (encoder_extract_streams (encoder, bins) != 0) {
@@ -691,7 +697,15 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
                         estream = g_array_index (encoder->streams, gpointer, j);
                         estream->state = &(encoders[i].streams[j]);
                         g_strlcpy (encoders[i].streams[j].name, estream->name, STREAM_NAME_LEN);
-                        estream->encoder = encoder;
+                        if (encoder->has_video && g_str_has_prefix (estream->name, "video")) {
+                                estream->encoder = encoder;
+
+                        } else if (!encoder->has_video && g_str_has_prefix (estream->name, "audio")) {
+                                estream->encoder = encoder;
+
+                        } else {
+                                estream->encoder = NULL;
+                        }
                         estream->source = NULL;
                         for (k = 0; k < source->streams->len; k++) {
                                 sstream = g_array_index (source->streams, gpointer, k);
