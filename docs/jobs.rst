@@ -158,7 +158,7 @@ bins is an array of bin, syntax of bin is like gst-launch, for example::
         "demuxer.audio ! mpegaudioparse ! queue ! mad ! queue ! appsink name = audio" 
     ]
 
-in this example, first bin with tsdemux has sometimes pads, second and third bin link with first bin: demuxer.video and demuxer.audio. second bin with appsink named video and third bin with appsink named audio. source bins must have bin with appsink that is corespond endoders' source.
+in this example, first bin with tsdemux has sometimes pads, second and third bin link with first bin: demuxer.video and demuxer.audio. second bin with appsink named video and third bin with appsink named audio. source bins must have bin with appsink that is corespond endoders' source, the appsink name property must has prefix video, audio or subtitle. encoders' bin will be linked to source's bin with the same property name of appsrc element.
 
 encoders structure::
 
