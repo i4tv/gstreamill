@@ -1,5 +1,8 @@
 releases are sorted from youngest to oldest.
 
+v-0.8.0 2015-
+- audio only support.
+
 v-0.6.0 2015-01-14
 - setuid gstreamill, don't run under root now.
 - complete media upload, support large media.

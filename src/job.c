@@ -437,12 +437,16 @@ static gchar * render_master_m3u8_playlist (Job *job)
         for (i = 0; i < job->output->encoder_count; i++) {
                 p = g_strdup_printf ("encoder.%d.elements.x264enc.property.bitrate", i);
                 value = jobdesc_element_property_value (job->description, p);
+                /* value == NULL, audio only? */
                 if (value != NULL) {
-                        GST_INFO ("job %s with m3u8 output, append end tag", job->name);
                         g_string_append_printf (master_m3u8_playlist, M3U8_STREAM_INF_TAG, 1, value);
-                        g_string_append_printf (master_m3u8_playlist, "encoder/%d/playlist.m3u8<%%parameters%%>\n", i);
                         g_free (value);
+
+                } else {
+                        /* audio only, use 64kbit bitrate */
+                        g_string_append_printf (master_m3u8_playlist, M3U8_STREAM_INF_TAG, 1, "64");
                 }
+                g_string_append_printf (master_m3u8_playlist, "encoder/%d/playlist.m3u8<%%parameters%%>\n", i);
                 g_free (p);
         }
 

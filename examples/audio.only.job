@@ -23,9 +23,7 @@
                 },
                 "faac" : {
                     "property" : {
-                        "name" : "faac",
-                        "mark-granule": true,
-                        "outputformat" : 1
+                        "bitrate": 64000
                     }
                 },
                 "appsink" : {
@@ -35,7 +33,7 @@
                 }
             },
             "bins" : [
-                "appsrc name=audio ! audioconvert ! audioresample ! voaacenc ! muxer.",
+                "appsrc name=audio ! audioconvert ! audioresample ! voaacenc ! aacparse ! muxer.",
                 "mpegtsmux name=muxer ! queue ! appsink"
             ]
         }
