@@ -1,0 +1,49 @@
+{
+    "name" : "audio.only",
+    "source" : {
+        "elements" : {
+            "audiotestsrc" : {
+                "property" : {
+                    "wave" : 8
+                }
+            }
+        },
+        "bins" : [
+            "audiotestsrc ! appsink name=audio"
+        ]
+    },
+    "encoders" : [
+        {
+            "elements": {
+                "appsrc" : {
+                    "property" : {
+                        "format" : 3,
+                        "is-live" : true
+                    }
+                },
+                "faac" : {
+                    "property" : {
+                        "name" : "faac",
+                        "mark-granule": true,
+                        "outputformat" : 1
+                    }
+                },
+                "appsink" : {
+                    "property" : {
+                        "sync" : false
+                    }
+                }
+            },
+            "bins" : [
+                "appsrc name=audio ! audioconvert ! audioresample ! voaacenc ! muxer.",
+                "mpegtsmux name=muxer ! queue ! appsink"
+            ]
+        }
+    ],
+    "m3u8streaming" : {
+        "version" : 3,
+        "window-size" : 10,
+        "segment-duration" : 3.00
+    }
+}
+
