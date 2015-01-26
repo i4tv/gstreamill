@@ -317,17 +317,6 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
                 move_head (encoder);
         }
 
-        /* udpstreaming? */
-        if (encoder->udpstreaming) {
-                udp_streaming (encoder, buffer);
-        }
-
-        /*
-         * copy buffer to cache.
-         * update tail_addr
-         */
-        copy_buffer (encoder, buffer);
-
         if ((encoder->has_video && !GST_BUFFER_FLAG_IS_SET (buffer, GST_BUFFER_FLAG_DELTA_UNIT)) ||
             (!encoder->has_video && (GST_BUFFER_PTS (buffer) == encoder->last_running_time))){
                 /* 
@@ -358,6 +347,17 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
                         encoder->last_running_time = GST_CLOCK_TIME_NONE;
                 }
         }
+
+        /* udpstreaming? */
+        if (encoder->udpstreaming) {
+                udp_streaming (encoder, buffer);
+        }
+
+        /*
+         * copy buffer to cache.
+         * update tail_addr
+         */
+        copy_buffer (encoder, buffer);
 
         sem_post (encoder->output->semaphore);
         gst_sample_unref (sample);
