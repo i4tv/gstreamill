@@ -1,7 +1,8 @@
 releases are sorted from youngest to oldest.
 
-v-0.8.0 2015-
+v-0.6.1 2015-01-26
 - audio only support.
+- vitamio on android player problem at meilisishui.com fix.
 
 v-0.6.0 2015-01-14
 - setuid gstreamill, don't run under root now.
