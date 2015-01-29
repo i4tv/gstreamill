@@ -1,7 +1,6 @@
 #!/bin/sh
 
-libtoolize --force --copy
-aclocal
-autoheader
-automake --add-missing
-autoconf
+autoreconf --verbose --force --install --make || {
+         echo 'autogen.sh failed';
+          exit 1;
+}
