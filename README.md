@@ -57,15 +57,13 @@ gstreamill is an open source, GPL licensed "stream mill" based on gstreamer-1.0 
 
 gstreamill have been tested in ubuntu 14.04.
 
-## Prerequisites
+## get source
 
-   * gnome-common
-   * autoconf
-   * automake
-   * libtool
-   * libgstreamer1.0-dev
-   * libgstreamer-plugins-base1.0-dev
-   * libaugeas-dev
+    git clone https://github.com/i4tv/gstreamill.git
+
+## install prerequisites
+
+    sudo apt-get install autoconf automake libtool libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libaugeas-dev
 
 ## Compile and install
 
@@ -80,16 +78,13 @@ gstreamill have been tested in ubuntu 14.04.
 
 # USING GSTREAMILL
 
-## Prerequisites
+## install prerequisites
 
-   * gstreamer1.0-plugins-ugly
-   * gstreamer1.0-plugins-bad
-   * gstreamer1.0-plugins-good
-   * gstreamer1.0-plugins-base
+    sudo apt-get install gstreamer1.0-plugins-ugly gstreamer1.0-plugins-bad gstreamer1.0-plugins-good gstreamer1.0-plugins-base
 
 ## B/S Management URL
 
-        http://gstreamill.ip:20118/admin/
+    http://gstreamill.ip:20118/admin/
 
 ## Command line
 

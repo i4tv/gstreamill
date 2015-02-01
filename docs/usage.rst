@@ -4,12 +4,9 @@ Using Gstreamill
 Prerequisites
 =============
 
-Install following package before using gstreamill.
+Install following package before using gstreamill::
 
-* gstreamer1.0-plugins-ugly
-* gstreamer1.0-plugins-bad
-* gstreamer1.0-plugins-good
-* gstreamer1.0-plugins-base
+    sudo apt-get install gstreamer1.0-plugins-ugly gstreamer1.0-plugins-bad gstreamer1.0-plugins-good gstreamer1.0-plugins-base
 
 Command line
 ============
