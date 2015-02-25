@@ -2,7 +2,7 @@
 /*
  *  mediaman
  *
- *  Copyright (C) Zhang Ping <zhangping@163.com>
+ *  Copyright (C) Zhang Ping <dqzhangp@163.com>
  */
 
 #include <string.h>

@@ -1,7 +1,7 @@
 /*
  *  encoder
  *
- *  Copyright (C) Zhang Ping <zhangping@163.com>
+ *  Copyright (C) Zhang Ping <dqzhangp@163.com>
  */
 
 #ifndef __ENCODER_H__

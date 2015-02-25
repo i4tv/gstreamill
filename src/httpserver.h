@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2012, 2013 iTV.cn
- * Author Zhang Ping <zhangping@itv.cn>
+ * Author Zhang Ping <dqzhangp@itv.cn>
  */
 
 #ifndef __HTTPSERVER_H__

@@ -1,7 +1,7 @@
 /*
  *  source
  *
- *  Copyright (C) Zhang Ping <zhangping@163.com>
+ *  Copyright (C) Zhang Ping <dqzhangp@163.com>
  */
 
 #ifndef __SOURCE_H__
