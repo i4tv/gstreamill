@@ -513,7 +513,8 @@ static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encod
                         m3u8playlist = m3u8playlist_timeshift_get_playlist (encoder_output->record_path, offset);
 
                 /* dvr */
-                } else if (g_strrstr (request_data->parameters, "start") != NULL) {
+                } else if (g_strrstr (request_data->parameters, "start") && 
+                        g_strrstr (request_data->parameters, "duration")) {
                         gint64 start, duration;
 
                         start = get_gint64_parameter (request_data->parameters, "start");
