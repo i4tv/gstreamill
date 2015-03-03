@@ -325,7 +325,7 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
                  * write current gop timestamp,
                  * reserve 4 bytes for size of current gop,
                  */
-                if (encoder->has_m3u8_output == -1) {
+                if (encoder->has_m3u8_output == FALSE) {
                         /* no m3u8 output */
                         move_last_rap (encoder, buffer);
 
