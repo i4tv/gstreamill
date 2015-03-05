@@ -104,8 +104,7 @@
     "m3u8streaming" : {
         "version" : 3,
         "window-size" : 4,
-        "segment-duration" : 3.00,
-        "push-server-uri" : "http://192.168.7.40/bgctv"
+        "segment-duration" : 3.00
     }
 }
 
