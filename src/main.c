@@ -26,6 +26,7 @@
 #include "httpmgmt.h"
 #include "parson.h"
 #include "jobdesc.h"
+#include "tssegment.h"
 #include "log.h"
 
 #define GSTREAMILL_USER "gstreamill"
@@ -327,6 +328,18 @@ int main (int argc, char *argv[])
                 if (setrlimit (RLIMIT_CORE, &rlim) == -1) {
                         GST_ERROR ("setrlimit error: %s", g_strerror (errno));
                 }
+
+                /* initialize ts segment static plugin */
+                gst_plugin_register_static (GST_VERSION_MAJOR,
+                                            GST_VERSION_MINOR,
+                                            "tssegment",
+                                            "ts segment plugin",
+                                            ts_segment_plugin_init,
+                                            "0.1.0",
+                                            "GPL",
+                                            "GStreamer",
+                                            "GStreamer",
+                                            "http://gstreamer.net/");
 
                 /* read job description from share memory */
                 job_desc = NULL;
