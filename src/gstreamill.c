@@ -719,7 +719,7 @@ static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime dura
         g_free (buf);
 }
 
-#define MSG_SOCK_PATH "/gstreamill"
+#define MSG_SOCK_PATH "/tmp/gstreamill"
 
 static gpointer msg_thread (gpointer data)
 {
