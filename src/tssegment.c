@@ -44,7 +44,10 @@ static void ts_segment_init (TsSegment *tssegment)
 {
         tssegment->sinkpad = gst_pad_new_from_static_template (&sink_template, "sink");
         gst_pad_set_chain_function (tssegment->sinkpad, GST_DEBUG_FUNCPTR(ts_segment_chain));
-        tssegment->srcpad = gst_pad_new_from_static_template (&src_template, "sink");
+        gst_element_add_pad (GST_ELEMENT (tssegment), tssegment->sinkpad);
+
+        tssegment->srcpad = gst_pad_new_from_static_template (&src_template, "src");
+        gst_element_add_pad (GST_ELEMENT (tssegment), tssegment->srcpad);
 }
 
 static void ts_segment_set_property (GObject *obj, guint prop_id, const GValue *value, GParamSpec *pspec)
@@ -66,5 +69,5 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
 
 gboolean ts_segment_plugin_init (GstPlugin * plugin)
 {
-        return gst_element_register (plugin, "plugin", GST_RANK_NONE, TYPE_TS_SEGMENT);
+        return gst_element_register (plugin, "tssegment", GST_RANK_NONE, TYPE_TS_SEGMENT);
 }

@@ -314,6 +314,21 @@ int main (int argc, char *argv[])
                 gst_debug_set_default_threshold (GST_LEVEL_WARNING);
         }
 
+        /* initialize ts segment static plugin */
+        if (!gst_plugin_register_static (GST_VERSION_MAJOR,
+                                         GST_VERSION_MINOR,
+                                         "tssegment",
+                                         "ts segment plugin",
+                                         ts_segment_plugin_init,
+                                         "0.1.0",
+                                         "GPL",
+                                         "GStreamer",
+                                         "GStreamer",
+                                         "http://gstreamer.net/")) {
+                GST_ERROR ("registe tssegment error");
+                exit (17);
+        }
+
         /* subprocess, create_job_process */
         if (shm_name != NULL) {
                 gint fd;
@@ -328,18 +343,6 @@ int main (int argc, char *argv[])
                 if (setrlimit (RLIMIT_CORE, &rlim) == -1) {
                         GST_ERROR ("setrlimit error: %s", g_strerror (errno));
                 }
-
-                /* initialize ts segment static plugin */
-                gst_plugin_register_static (GST_VERSION_MAJOR,
-                                            GST_VERSION_MINOR,
-                                            "tssegment",
-                                            "ts segment plugin",
-                                            ts_segment_plugin_init,
-                                            "0.1.0",
-                                            "GPL",
-                                            "GStreamer",
-                                            "GStreamer",
-                                            "http://gstreamer.net/");
 
                 /* read job description from share memory */
                 job_desc = NULL;
