@@ -35,6 +35,7 @@ AC_PROG_LIBTOOL
 PKG_CHECK_MODULES([gstreamer], [gstreamer-1.0])
 PKG_CHECK_MODULES([gstreamerapp], [gstreamer-app-1.0])
 PKG_CHECK_MODULES([gstreamerpluginsbase], [gstreamer-plugins-base-1.0])
+PKG_CHECK_MODULES([gstreamerpluginsbad], [gstreamer-plugins-bad-1.0])
 PKG_CHECK_MODULES([gio], [gio-2.0])
 
 PKG_CHECK_MODULES([augeas], [augeas])
