@@ -698,9 +698,15 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
                         estream->state = &(encoders[i].streams[j]);
                         g_strlcpy (encoders[i].streams[j].name, estream->name, STREAM_NAME_LEN);
                         if (encoder->has_video && g_str_has_prefix (estream->name, "video")) {
+                                /* have video */
                                 estream->encoder = encoder;
 
                         } else if (!encoder->has_video && g_str_has_prefix (estream->name, "audio")) {
+                                /* audio only */
+                                estream->encoder = encoder;
+
+                        } else if (!encoder->has_video && g_str_has_prefix (estream->name, "mpegts")) {
+                                /* audio only */
                                 estream->encoder = encoder;
 
                         } else {
@@ -777,7 +783,7 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
                 if (jobdesc_m3u8streaming (job)) {
                         memset (&(encoder->msg_sock_addr), 0, sizeof (struct sockaddr_un));
                         encoder->msg_sock_addr.sun_family = AF_UNIX;
-                        strncpy (encoder->msg_sock_addr.sun_path, "/gstreamill", sizeof (encoder->msg_sock_addr.sun_path) - 1);
+                        strncpy (encoder->msg_sock_addr.sun_path, MSG_SOCK_PATH, sizeof (encoder->msg_sock_addr.sun_path) - 1);
                         encoder->msg_sock = socket(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0);
                         encoder->has_m3u8_output = TRUE;
 

@@ -10,6 +10,8 @@
 #include <semaphore.h>
 #include <sys/un.h>
 
+#define MSG_SOCK_PATH "/gstreamill"
+
 typedef struct _Encoder Encoder;
 typedef struct _EncoderClass EncoderClass;
 

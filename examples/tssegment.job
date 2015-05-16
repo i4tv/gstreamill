@@ -6,7 +6,7 @@
         "elements" : {
             "udpsrc" : {
                 "property" : {
-                    "uri" : "udp://239.10.2.9:5000"
+                    "uri" : "udp://238.123.45.49:8192"
                 }
             },
             "appsink" : {
@@ -17,7 +17,7 @@
             }
         },
         "bins" : [
-            "udpsrc ! queue ! appsink name = ts"
+            "udpsrc ! queue ! tssegment ! queue ! appsink name = mpegts"
         ]
     },
     "encoders" : [
@@ -36,7 +36,7 @@
                 }
             },
             "bins" : [
-                "appsrc name=ts ! queue ! tssegment ! queue ! appsink"
+                "appsrc name=mpegts ! queue ! appsink"
             ]
         }
     ],
