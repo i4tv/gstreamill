@@ -444,6 +444,9 @@ static gchar * request_master_m3u8_playlist (HTTPStreaming *httpstreaming, Reque
 
         /* master m3u8 request? */
         buf = gstreamill_get_master_m3u8playlist (httpstreaming->gstreamill, request_data->uri);
+        if (buf == NULL) {
+                return buf;
+        }
         regex = g_regex_new ("(<%parameters%>)", 0, 0, NULL);
         if (g_strcmp0 (request_data->parameters, "") == 0) {
                 master_m3u8_playlist = g_regex_replace (regex, buf, -1, 0, "", 0, NULL);
