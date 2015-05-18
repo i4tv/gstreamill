@@ -223,10 +223,10 @@ typedef struct {
         gint16 pid;
         guint8 payload_unit_start_indicator;
         guint8 scram_afc_cc;
-        guint8 *payload;
-        guint8 *data_start;
-        guint8 *data_end;
-        guint8 *data;
+        const guint8 *payload;
+        const guint8 *data_start;
+        const guint8 *data_end;
+        const guint8 *data;
         guint8 afc_flags;
         guint64 pcr;
         guint64 offset;
@@ -303,7 +303,7 @@ typedef struct _TsSegment {
         GstAdapter *adapter;
         guint64 offset;
         guint16 packet_size;
-        guint8 *map_data;
+        const guint8 *map_data;
         gsize map_offset;
         gsize map_size;
         gboolean need_sync;
