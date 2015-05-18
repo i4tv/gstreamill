@@ -258,7 +258,7 @@ static gboolean tssegment_map (TsSegment *tssegment, gsize size)
 
 static gboolean try_discover_packet_size (TsSegment *tssegment)
 {
-        guint8 *data;
+        const guint8 *data;
         gsize size, i, j;
 
         static const guint psizes[] = {
@@ -322,7 +322,7 @@ out:
 static gboolean ts_segment_sync (TsSegment *tssegment)
 {
         gboolean found = FALSE;
-        guint8 *data;
+        const guint8 *data;
         guint packet_size;
         gsize size, sync_offset, i;
 
@@ -379,7 +379,7 @@ static inline guint64 compute_pcr (const guint8 * data)
 static gboolean parse_adaptation_field_control (TsSegment *tssegment, TSPacket *packet)
 {
         guint8 length, afcflags;
-        guint8 *data;
+        const guint8 *data;
 
         length = *packet->data++;
 
@@ -458,7 +458,7 @@ static gboolean parse_adaptation_field_control (TsSegment *tssegment, TSPacket *
 
 static TSPacketReturn parse_packet (TsSegment *tssegment, TSPacket *packet)
 {
-        guint8 *data;
+        const guint8 *data;
         guint8 tmp;
 
         data = packet->data_start;
@@ -507,7 +507,7 @@ static TSPacketReturn parse_packet (TsSegment *tssegment, TSPacket *packet)
 
 static TSPacketReturn next_ts_packet (TsSegment *tssegment, TSPacket *packet)
 {
-        guint8 *packet_data;
+        const guint8 *packet_data;
         guint packet_size;
         gsize sync_offset;
 
@@ -647,7 +647,7 @@ static GstMpegTsSection *push_section (TsSegment *tssegment, TSPacket *packet, G
         guint section_length;
         /* data points to the current read location
          * data_start points to the beginning of the data to accumulate */
-        guint8 *data, *data_start;
+        const guint8 *data, *data_start;
         guint8 packet_cc;
         GList *others = NULL;
         guint8 version_number, section_number, last_section_number;
@@ -1031,7 +1031,7 @@ static gboolean is_key_frame (TsSegment *tssegment, TSPacket *packet)
 {
         GstH264ParserResult res = GST_H264_PARSER_OK;
         GstH264NalParser *parser = tssegment->h264parser;
-        guint8 * data;
+        const guint8 * data;
         gsize size;
         gint offset = 0;
         GstH264NalUnit unit;
@@ -1103,7 +1103,7 @@ static gboolean is_key_frame (TsSegment *tssegment, TSPacket *packet)
 
 static void pending_packet (TsSegment *tssegment, TSPacket *packet)
 {
-        guint8 *data;
+        const guint8 *data;
         guint size;
 
         size = packet->data_end - packet->data_start;
