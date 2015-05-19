@@ -504,7 +504,7 @@ static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encod
         gchar *m3u8playlist = NULL;
 
         /* live */
-        if (g_str_has_prefix (request_data->uri, "/live/")) {
+        if (g_str_has_prefix (request_data->uri, "/live/") && (encoder_output->m3u8_playlist != NULL)) {
                 m3u8playlist = m3u8playlist_live_get_playlist (encoder_output->m3u8_playlist);
 
         } else if (g_str_has_prefix (request_data->uri, "/dvr/")) {

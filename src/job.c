@@ -507,7 +507,6 @@ gint job_output_initialize (Job *job)
 
         } else {
                 output->master_m3u8_playlist = NULL;
-                return 0;
         }
 
         /* initialize m3u8 and dvr parameters */
