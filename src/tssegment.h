@@ -10,6 +10,7 @@
 #include <gst/gst.h>
 #include <gst/base/gstadapter.h>
 #include <gst/mpegts/mpegts.h>
+#include <gst/mpegts/gstmpegtssection.h>
 #include <gst/codecparsers/gsth264parser.h>
 
 #define MPEGTS_NORMAL_PACKETSIZE 188
@@ -255,7 +256,7 @@ typedef struct _TSStream
         /* Content of the registration descriptor (if present) */
         guint32             registration_id;
 
-        GstMpegTsPMTStream *stream;
+        GstMpegtsPMTStream *stream;
 } TSStream;
 
 typedef struct _TsSegment {
@@ -273,7 +274,7 @@ typedef struct _TsSegment {
          * the Media Playlist */
         guint program_number;
         guint16 pmt_pid;
-        const GstMpegTsPMT *pmt;
+        const GstMpegtsPMT *pmt;
 
         /* arrays that say whether a pid is a known psi pid or a pes pid */
         /* Use MPEGTS_BIT_* to set/unset/check the values */

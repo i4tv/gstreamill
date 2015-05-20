@@ -564,10 +564,10 @@ GST_ERROR ("====%u", packet_size);
         }
 }
 
-static GstMpegTsSection *parse_section_header (TsSegment *tssegment, TSPacketStream * stream)
+static GstMpegtsSection *parse_section_header (TsSegment *tssegment, TSPacketStream * stream)
 {
         TSPacketStreamSubtable *subtable;
-        GstMpegTsSection *res;
+        GstMpegtsSection *res;
 
         subtable = find_subtable (stream->subtables, stream->table_id, stream->subtable_extension);
         if (subtable) {
@@ -635,10 +635,10 @@ static GstMpegTsSection *parse_section_header (TsSegment *tssegment, TSPacketStr
  * If more than one section is available, the 'remaining' field will
  * be set to the beginning of a valid GList containing other sections.
  * */
-static GstMpegTsSection *push_section (TsSegment *tssegment, TSPacket *packet, GList **remaining)
+static GstMpegtsSection *push_section (TsSegment *tssegment, TSPacket *packet, GList **remaining)
 {
-        GstMpegTsSection *section;
-        GstMpegTsSection *res = NULL;
+        GstMpegtsSection *section;
+        GstMpegtsSection *res = NULL;
         TSPacketStream *stream;
         gboolean long_packet;
         guint8 pointer = 0, table_id;
@@ -923,10 +923,10 @@ typedef struct
         guint16 pid;
 } PIDLookup;
 
-static gboolean apply_pat (TsSegment *tssegment, GstMpegTsSection * section)
+static gboolean apply_pat (TsSegment *tssegment, GstMpegtsSection * section)
 {
         GPtrArray *pat;
-        GstMpegTsPatProgram *patp;
+        GstMpegtsPatProgram *patp;
         //gint i;
 
         pat = gst_mpegts_section_get_pat (section);
@@ -943,9 +943,9 @@ static gboolean apply_pat (TsSegment *tssegment, GstMpegTsSection * section)
         return TRUE;
 }
 
-static gboolean apply_pmt (TsSegment *tssegment, GstMpegTsSection * section)
+static gboolean apply_pmt (TsSegment *tssegment, GstMpegtsSection * section)
 {
-        const GstMpegTsPMT *pmt;
+        const GstMpegtsPMT *pmt;
         gint i;
 
         pmt = gst_mpegts_section_get_pmt (section);
@@ -968,8 +968,8 @@ static gboolean apply_pmt (TsSegment *tssegment, GstMpegTsSection * section)
         //activate_program (tssegment, program, section->pid, section, pmt, initial_program);
         tssegment->pmt = pmt;
         for (i = 0; i < pmt->streams->len; ++i) {
-                GstMpegTsPMTStream *stream = g_ptr_array_index (pmt->streams, i);
-                if (stream->stream_type == GST_MPEG_TS_STREAM_TYPE_VIDEO_H264) {
+                GstMpegtsPMTStream *stream = g_ptr_array_index (pmt->streams, i);
+                if (stream->stream_type == GST_MPEGTS_STREAM_TYPE_VIDEO_H264) {
                         MPEGTS_BIT_SET (tssegment->is_pes, stream->pid);
                         tssegment->video_pid = stream->pid;
                         GST_ERROR ("264: %d, stream pid: %d", stream->pid, tssegment->video_pid);
@@ -986,7 +986,7 @@ void set_reference_offset (TsSegment *tssegment, guint64 refoffset)
         tssegment->refoffset = refoffset;
 }
 #endif
-static void handle_psi (TsSegment *tssegment, GstMpegTsSection *section)
+static void handle_psi (TsSegment *tssegment, GstMpegtsSection *section)
 {
         gboolean post_message = TRUE;
 
@@ -1170,7 +1170,7 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
                 if (packet.payload && MPEGTS_BIT_IS_SET (tssegment->known_psi, packet.pid)) {
                         /* base PSI data */
                         GList *others, *tmp;
-                        GstMpegTsSection *section;
+                        GstMpegtsSection *section;
 
                         section = push_section (tssegment, &packet, &others);
                         if (section) {
@@ -1178,7 +1178,7 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
                         }
                         if (G_UNLIKELY (others)) {
                                 for (tmp = others; tmp; tmp = tmp->next) {
-                                        handle_psi (tssegment, (GstMpegTsSection *) tmp->data);
+                                        handle_psi (tssegment, (GstMpegtsSection *) tmp->data);
                                 }
                                 g_list_free (others);
                         }
