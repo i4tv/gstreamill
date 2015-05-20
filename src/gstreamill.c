@@ -628,7 +628,7 @@ static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClock
         return TRUE;
 }
 
-static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime duration)
+static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime last_timestamp, GstClockTime duration)
 {
         gchar *path;
         gint64 realtime;
@@ -651,7 +651,7 @@ static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime dura
                 GST_ERROR ("dvr_record_segment sem_timedwait failure: %s", g_strerror (errno));
                 return;
         }
-        rap_addr = encoder_output_gop_seek (encoder_output, encoder_output->last_timestamp);
+        rap_addr = encoder_output_gop_seek (encoder_output, last_timestamp);
 
         /* gop not found? */
         if (rap_addr == G_MAXUINT64) {
@@ -719,8 +719,6 @@ static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime dura
         g_free (buf);
 }
 
-#define MSG_SOCK_PATH "/gstreamill"
-
 static gpointer msg_thread (gpointer data)
 {
         Gstreamill *gstreamill = (Gstreamill *)data;
@@ -785,13 +783,12 @@ static gpointer msg_thread (gpointer data)
                         encoder_output = gstreamill_get_encoder_output (gstreamill, uri);
                         if (encoder_output != NULL) {
                                 last_timestamp = encoder_output_rap_timestamp (encoder_output, *(encoder_output->last_rap_addr));
-                                seg_name = g_strdup_printf ("%lu.ts", encoder_output->last_timestamp);
+                                seg_name = g_strdup_printf ("%lu.ts", last_timestamp);
                                 m3u8playlist_add_entry (encoder_output->m3u8_playlist, seg_name, duration);
                                 g_free (seg_name);
                                 if (encoder_output->dvr_duration != 0) {
-                                        dvr_record_segment (encoder_output, duration);
+                                        dvr_record_segment (encoder_output, last_timestamp, duration);
                                 }
-                                encoder_output->last_timestamp = last_timestamp;
                                 gstreamill_unaccess (gstreamill, uri);
                         }
                 }

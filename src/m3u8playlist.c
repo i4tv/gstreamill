@@ -65,7 +65,7 @@ static void render_entry (M3U8Entry * entry, GString * gstring)
 {
         gchar *entry_str;
 
-        g_return_val_if_fail (entry != NULL, NULL);
+        g_return_if_fail (entry != NULL);
 
         entry_str = g_strdup_printf (M3U8_INF_TAG, (float) entry->duration / GST_SECOND, entry->url);
         g_string_append_printf (gstring, "%s", entry_str);

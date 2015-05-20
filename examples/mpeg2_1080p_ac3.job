@@ -5,24 +5,12 @@
         "elements" : {
             "udpsrc" : {
                 "property" : {
-                    "uri" : "udp://225.0.0.43:10000"
+                    "uri" : "udp://225.0.0.14:10000"
                 }
             },
             "tsdemux" : {
                 "property" : {
-                    "program-number" : 621
-                }
-            },
-            "textoverlay" : {
-                "property" : {
-                    "text" : "CCDT"
-                }
-            },
-            "deinterlace" : {
-                "property" : {
-                    "mode" : 1,
-                    "method" : 2,
-                    "fields" : 1
+                    "program-number" : 619
                 }
             },
             "appsink" : {
@@ -34,7 +22,7 @@
         },
         "bins" : [
             "udpsrc ! queue ! tsdemux name=demuxer",
-            "demuxer.video ! queue ! mpegvideoparse ! queue ! mpeg2dec ! queue ! textoverlay ! queue ! appsink name = video",
+            "demuxer.video ! queue ! mpegvideoparse ! queue ! mpeg2dec ! queue ! appsink name = video",
             "demuxer.audio ! ac3parse ! queue ! avdec_ac3 ! queue ! appsink name = audio"
         ]
     },
@@ -60,12 +48,22 @@
                         "mb-tree" : true,
                         "option-string" : ":ref=3:me=hex:subme=8:merange=16:nf=1:deblock=1,-2:weightp=1:scenecut=0:b-pyramid=2:direct=spatial"
                     }
+                },
+                "voaacenc": {
+                    "property": {
+                        "bitrate": 64000
+                    }
+                },
+                "appsink": {
+                    "property": {
+                        "sync": false
+                    }
                 }
             },
             "bins" : [
-                "appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc name=voaacenc0! queue ! muxer.",
+                "appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc name=voaacenc0 ! queue ! aacparse ! queue ! muxer.",
                 "appsrc name=video ! queue ! x264enc ! queue ! muxer.",
-                "mpegtsmux name=muxer ! queue ! appsink sync=FALSE"
+                "mpegtsmux name=muxer ! queue ! appsink"
             ]
         },
         {
@@ -84,7 +82,6 @@
                         "name" : "x264enc",
                         "bitrate" : 2000,
                         "bframes" : 3,
-                        "threads" : 4,
                         "byte-stream" : "TRUE",
                         "rc-lookahead" : 25,
                         "key-int-max" : 100,
@@ -92,20 +89,29 @@
                         "mb-tree" : true,
                         "option-string" : ":ref=3:me=hex:subme=8:merange=16:nf=1:deblock=1,-2:weightp=1:scenecut=0:b-pyramid=2:direct=spatial"
                     }
+                },
+                "voaacenc": {
+                    "property": {
+                        "bitrate": 64000
+                    }
+                },
+                "appsink": {
+                    "property": {
+                        "sync": false
+                    }
                 }
             },
             "bins" : [
-                "appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc name=voaacenc1 ! queue ! muxer.",
-                "appsrc name=video ! queue ! x264enc ! queue ! muxer.",
-                "mpegtsmux name=muxer ! queue ! appsink sync=FALSE"
+                /*"appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc ! queue ! aacparse ! queue ! muxer.",*/
+                "appsrc name=video ! queue ! videoconvert ! queue ! x264enc ! queue ! muxer.",
+                "mpegtsmux name=muxer ! queue ! appsink"
             ]
         }
     ],
-    "m3u8streaming" : {
+    "m3u8streaming": {
         "version" : 3,
-        "window-size" : 4,
-        "segment-duration" : 3.00,
-        "push-server-uri" : "http://192.168.7.40/bgctv"
+ 	"window-size": 10,
+        "segment-duration": 3   
     }
 }
 

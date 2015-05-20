@@ -26,6 +26,7 @@
 #include "httpmgmt.h"
 #include "parson.h"
 #include "jobdesc.h"
+#include "tssegment.h"
 #include "log.h"
 
 #define GSTREAMILL_USER "gstreamill"
@@ -311,6 +312,21 @@ int main (int argc, char *argv[])
 
         if (gst_debug_get_default_threshold () < GST_LEVEL_WARNING) {
                 gst_debug_set_default_threshold (GST_LEVEL_WARNING);
+        }
+
+        /* initialize ts segment static plugin */
+        if (!gst_plugin_register_static (GST_VERSION_MAJOR,
+                                         GST_VERSION_MINOR,
+                                         "tssegment",
+                                         "ts segment plugin",
+                                         ts_segment_plugin_init,
+                                         "0.1.0",
+                                         "GPL",
+                                         "GStreamer",
+                                         "GStreamer",
+                                         "http://gstreamer.net/")) {
+                GST_ERROR ("registe tssegment error");
+                exit (17);
         }
 
         /* subprocess, create_job_process */

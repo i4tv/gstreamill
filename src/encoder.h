@@ -10,6 +10,8 @@
 #include <semaphore.h>
 #include <sys/un.h>
 
+#define MSG_SOCK_PATH "/tmp/millsock"
+
 typedef struct _Encoder Encoder;
 typedef struct _EncoderClass EncoderClass;
 
@@ -35,7 +37,6 @@ typedef struct _EncoderOutput {
 
         /* m3u8 streaming */
         M3U8Playlist *m3u8_playlist;
-        GstClockTime last_timestamp; /* last segment timestamp */
         GstClock *system_clock;
 
         /* timeshift and dvr */

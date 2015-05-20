@@ -157,12 +157,12 @@ static void job_dispose (GObject *obj)
         if (job->is_live) {
                 if (output->master_m3u8_playlist != NULL) {
                         g_free (output->master_m3u8_playlist);
-                }
-                for (i = 0; i < output->encoder_count; i++) {
-                        if (output->encoders[i].record_path != NULL) {
-                                g_free (output->encoders[i].record_path);
+                        for (i = 0; i < output->encoder_count; i++) {
+                                if (output->encoders[i].record_path != NULL) {
+                                        g_free (output->encoders[i].record_path);
+                                }
+                                m3u8playlist_free (output->encoders[i].m3u8_playlist);
                         }
-                        m3u8playlist_free (output->encoders[i].m3u8_playlist);
                 }
         }
         g_free (output->encoders);
@@ -507,7 +507,6 @@ gint job_output_initialize (Job *job)
 
         } else {
                 output->master_m3u8_playlist = NULL;
-                return 0;
         }
 
         /* initialize m3u8 and dvr parameters */

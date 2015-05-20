@@ -80,7 +80,7 @@ gstreamill have been tested in ubuntu 14.04.
 
 ## install prerequisites
 
-    sudo apt-get install gstreamer1.0-plugins-ugly gstreamer1.0-plugins-bad gstreamer1.0-plugins-good gstreamer1.0-plugins-base
+    sudo apt-get install gstreamer1.0-plugins-ugly gstreamer1.0-plugins-bad gstreamer1.0-plugins-good gstreamer1.0-plugins-base libgstreamer-plugins-bad1.0-dev
 
 ## B/S Management URL
 

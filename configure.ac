@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([gstreamill], [0.6.2], [BUG-REPORT-ADDRESS])
+AC_INIT([gstreamill], [0.6.3], [BUG-REPORT-ADDRESS])
 AC_CONFIG_SRCDIR([src/main.c])
 AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE([foreign])
@@ -35,6 +35,7 @@ AC_PROG_LIBTOOL
 PKG_CHECK_MODULES([gstreamer], [gstreamer-1.0])
 PKG_CHECK_MODULES([gstreamerapp], [gstreamer-app-1.0])
 PKG_CHECK_MODULES([gstreamerpluginsbase], [gstreamer-plugins-base-1.0])
+PKG_CHECK_MODULES([gstreamerpluginsbad], [gstreamer-plugins-bad-1.0])
 PKG_CHECK_MODULES([gio], [gio-2.0])
 
 PKG_CHECK_MODULES([augeas], [augeas])
