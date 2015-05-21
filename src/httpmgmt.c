@@ -382,81 +382,118 @@ static gchar * set_network_interfaces_debian (RequestData *request_data)
         }
         if_count = json_array_get_count (array);
         for (i = 0; i < if_count; i++) {
-                obj = json_array_get_object (array, i);
-                name = (gchar *)json_object_get_string (obj, "name");
-                value = (gchar *)json_object_get_string (obj, "method");
-                if (value != NULL && strlen(value) != 0) {
-                        path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/method", name);
-                        if (0 == aug_get (aug, path, (const gchar **)&result)) {
-                                gchar* key_path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/auto", name);
-                                gchar* key = "method";
-                                aug_insert(aug, key_path, key, 0);
-                                g_free (key_path);
-                        }
-                        aug_set (aug, path, value);
-                        g_free (path);
+            obj = json_array_get_object (array, i);
+            name = (gchar *)json_object_get_string (obj, "name");
+
+            value = (gchar *)json_object_get_string (obj, "method");
+            path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/method", name);
+            if (value != NULL && strlen(value) != 0) {
+                if (0 == aug_get (aug, path, (const gchar **)&result)) {
+                    gchar* key_path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/auto", name);
+                    gchar* key = "method";
+                    aug_insert(aug, key_path, key, 0);
+                    g_free (key_path);
                 }
-                value = (gchar *)json_object_get_string (obj, "address");
-                if (value != NULL && strlen(value) != 0) {
-                        path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/address", name);
-                        if (0 == aug_get (aug, path, (const gchar **)&result)) {
-                                gchar* key_path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/auto", name);
-                                gchar* key = "address";
-                                aug_insert(aug, key_path, key, 0);
-                                g_free (key_path);
-                        }
-                        aug_set (aug, path, value);
-                        g_free (path);
+                aug_set (aug, path, value);
+            }
+            else {
+                if (0 != aug_get (aug, path, (const gchar **)&result)) {
+                    aug_rm(aug, path);
                 }
-                value = (gchar *)json_object_get_string (obj, "netmask");
-                if (value != NULL && strlen(value) != 0) {
-                        path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/netmask", name);
-                        if (0 == aug_get (aug, path, (const gchar **)&result)) {
-                                gchar* key_path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/auto", name);
-                                gchar* key = "netmask";
-                                aug_insert(aug, key_path, key, 0);
-                                g_free (key_path);
-                        }
-                        aug_set (aug, path, value);
-                        g_free (path);
+            }
+            g_free (path);
+
+            value = (gchar *)json_object_get_string (obj, "address");
+            path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/address", name);
+            if (value != NULL && strlen(value) != 0) {
+                if (0 == aug_get (aug, path, (const gchar **)&result)) {
+                    gchar* key_path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/auto", name);
+                    gchar* key = "address";
+                    aug_insert(aug, key_path, key, 0);
+                    g_free (key_path);
                 }
-                value = (gchar *)json_object_get_string (obj, "network");
-                if (value != NULL && strlen(value) != 0) {
-                        path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/network", name);
-                        if (0 == aug_get (aug, path, (const gchar **)&result)) {
-                                gchar* key_path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/auto", name);
-                                gchar* key = "network";
-                                aug_insert(aug, key_path, key, 0);
-                                g_free (key_path);
-                        }
-                        aug_set (aug, path, value);
-                        g_free (path);
+                aug_set (aug, path, value);
+            }
+            else {
+                if (0 != aug_get (aug, path, (const gchar **)&result)) {
+                    aug_rm(aug, path);
                 }
-                value = (gchar *)json_object_get_string (obj, "broadcast");
-                if (value != NULL && strlen(value) != 0) {
-                        path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/broadcast", name);
-                        if (0 == aug_get (aug, path, (const gchar **)&result)) {
-                                gchar* key_path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/auto", name);
-                                gchar* key = "broadcast";
-                                aug_insert(aug, key_path, key, 0);
-                                g_free (key_path);
-                        }
-                        aug_set (aug, path, value);
-                        g_free (path);
+            }
+            g_free (path);
+
+            value = (gchar *)json_object_get_string (obj, "netmask");
+            path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/netmask", name);
+            if (value != NULL && strlen(value) != 0) {
+                if (0 == aug_get (aug, path, (const gchar **)&result)) {
+                    gchar* key_path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/auto", name);
+                    gchar* key = "netmask";
+                    aug_insert(aug, key_path, key, 0);
+                    g_free (key_path);
                 }
-                value = (gchar *)json_object_get_string (obj, "gateway");
-                if (value != NULL && strlen(value) != 0) {
-                        path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/gateway", name);
-                        if (0 == aug_get (aug, path, (const gchar **)&result)) {
-                                gchar* key_path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/auto", name);
-                                gchar* key = "gateway";
-                                aug_insert(aug, key_path, key, 0);
-                                g_free (key_path);
-                        }
-                        aug_set (aug, path, value);
-                        g_free (path);
+                aug_set (aug, path, value);
+            }
+            else {
+                if (0 != aug_get (aug, path, (const gchar **)&result)) {
+                    aug_rm(aug, path);
                 }
+            }
+            g_free (path);
+
+            value = (gchar *)json_object_get_string (obj, "network");
+            path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/network", name);
+            if (value != NULL && strlen(value) != 0) {
+                if (0 == aug_get (aug, path, (const gchar **)&result)) {
+                    gchar* key_path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/auto", name);
+                    gchar* key = "network";
+                    aug_insert(aug, key_path, key, 0);
+                    g_free (key_path);
+                }
+                aug_set (aug, path, value);
+            }
+            else {
+                if (0 != aug_get (aug, path, (const gchar **)&result)) {
+                    aug_rm(aug, path);
+                }
+            }
+            g_free (path);
+
+            value = (gchar *)json_object_get_string (obj, "broadcast");
+            path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/broadcast", name);
+            if (value != NULL && strlen(value) != 0) {
+                if (0 == aug_get (aug, path, (const gchar **)&result)) {
+                    gchar* key_path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/auto", name);
+                    gchar* key = "broadcast";
+                    aug_insert(aug, key_path, key, 0);
+                    g_free (key_path);
+                }
+                aug_set (aug, path, value);
+            }
+            else {
+                if (0 != aug_get (aug, path, (const gchar **)&result)) {
+                    aug_rm(aug, path);
+                }
+            }
+            g_free (path);
+
+            value = (gchar *)json_object_get_string (obj, "gateway");
+            path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/gateway", name);
+            if (value != NULL && strlen(value) != 0) {
+                if (0 == aug_get (aug, path, (const gchar **)&result)) {
+                    gchar* key_path = g_strdup_printf ("//files/etc/network/interfaces/iface[.='%s']/auto", name);
+                    gchar* key = "gateway";
+                    aug_insert(aug, key_path, key, 0);
+                    g_free (key_path);
+                }
+                aug_set (aug, path, value);
+            }
+            else {
+                if (0 != aug_get (aug, path, (const gchar **)&result)) {
+                    aug_rm(aug, path);
+                }
+            }
+            g_free (path);
         }
+
         if (aug_save (aug) == -1) {
                 aug_get (aug, "/augeas//error", (const gchar **)&value);
                 GST_ERROR ("set /etc/network/interface failure: %s", value);
@@ -499,87 +536,80 @@ static gchar * set_network_interfaces_redhat (RequestData *request_data)
         }
         if_count = json_array_get_count (array);
         for (i = 0; i < if_count; i++) {
-                obj = json_array_get_object (array, i);
-                name = (gchar *)json_object_get_string (obj, "name");
-                value = (gchar *)json_object_get_string (obj, "address");
-                path = g_strdup_printf ("//files/etc/sysconfig/network-scripts/ifcfg-%s/IPADDR0", name);
-                if (value != NULL && strlen(value) != 0) {
-                        if (0 == aug_get (aug, path, (const gchar **)&result)) {
-                                gchar* key_path = g_strdup_printf ("//files/etc/sysconfig/network-scripts/ifcfg-%s/%s", name, "NAME");
-                                gchar* key = "IPADDR0";
-                                aug_insert(aug, key_path, key, 0);
-                                g_free (key_path);
-                        }
-                        aug_set (aug, path, value);
-                }
-                else {
-                    if (0 != aug_get (aug, path, (const gchar **)&result)) {
-                        gchar* key_path = g_strdup_printf ("//files/etc/sysconfig/network-scripts/ifcfg-%s/%s", name, "IPADDR0");
-                        aug_rm(aug, key_path);
-                        g_free(key_path);                   
-                    }
-                }
-                g_free (path);
+            obj = json_array_get_object (array, i);
+            name = (gchar *)json_object_get_string (obj, "name");
 
-                value = (gchar *)json_object_get_string (obj, "netmask");
-                path = g_strdup_printf ("//files/etc/sysconfig/network-scripts/ifcfg-%s/PREFIX0", name);
-                if (value != NULL && strlen(value) != 0) {
-                        if (0 == aug_get (aug, path, (const gchar **)&result)) {
-                                gchar* key_path = g_strdup_printf ("//files/etc/sysconfig/network-scripts/ifcfg-%s/%s", name, "NAME");
-                                gchar* key = "PREFIX0";
-                                aug_insert(aug, key_path, key, 0);
-                                g_free (key_path);
-                        }
-                        aug_set (aug, path, value);
+            value = (gchar *)json_object_get_string (obj, "address");
+            path = g_strdup_printf ("//files/etc/sysconfig/network-scripts/ifcfg-%s/IPADDR0", name);
+            if (value != NULL && strlen(value) != 0) {
+                if (0 == aug_get (aug, path, (const gchar **)&result)) {
+                    gchar* key_path = g_strdup_printf ("//files/etc/sysconfig/network-scripts/ifcfg-%s/%s", name, "NAME");
+                    gchar* key = "IPADDR0";
+                    aug_insert(aug, key_path, key, 0);
+                    g_free (key_path);
                 }
-                else {
-                    if (0 != aug_get (aug, path, (const gchar **)&result)) {
-                        gchar* key_path = g_strdup_printf ("//files/etc/sysconfig/network-scripts/ifcfg-%s/%s", name, "PREFIX0");
-                        aug_rm(aug, key_path);
-                        g_free (key_path);
-                    }
+                aug_set (aug, path, value);
+            }
+            else {
+                if (0 != aug_get (aug, path, (const gchar **)&result)) {
+                    aug_rm(aug, path);
                 }
-                g_free (path);
+            }
+            g_free (path);
 
-                value = (gchar *)json_object_get_string (obj, "gateway");
-                path = g_strdup_printf ("//files/etc/sysconfig/network-scripts/ifcfg-%s/GATEWAY0", name);
-                if (value != NULL && strlen(value) != 0) {
-                        if (0 == aug_get (aug, path, (const gchar **)&result)) {
-                                gchar* key_path = g_strdup_printf ("//files/etc/sysconfig/network-scripts/ifcfg-%s/%s", name, "NAME");
-                                gchar* key = "GATEWAY0";
-                                aug_insert(aug, key_path, key, 0);
-                                g_free (key_path);
-                        }
-                        aug_set (aug, path, value);
+            value = (gchar *)json_object_get_string (obj, "netmask");
+            path = g_strdup_printf ("//files/etc/sysconfig/network-scripts/ifcfg-%s/PREFIX0", name);
+            if (value != NULL && strlen(value) != 0) {
+                if (0 == aug_get (aug, path, (const gchar **)&result)) {
+                    gchar* key_path = g_strdup_printf ("//files/etc/sysconfig/network-scripts/ifcfg-%s/%s", name, "NAME");
+                    gchar* key = "PREFIX0";
+                    aug_insert(aug, key_path, key, 0);
+                    g_free (key_path);
                 }
-                else {
-                    if (0 != aug_get (aug, path, (const gchar **)&result)) {
-                        gchar* key_path = g_strdup_printf ("//files/etc/sysconfig/network-scripts/ifcfg-%s/%s", name, "GATEWAY0");
-                        aug_rm(aug, key_path);
-                        g_free (key_path);
-                    }
+                aug_set (aug, path, value);
+            }
+            else {
+                if (0 != aug_get (aug, path, (const gchar **)&result)) {
+                    aug_rm(aug, path);
                 }
-                g_free (path);
+            }
+            g_free (path);
 
-                value = (gchar *)json_object_get_string (obj, "nameserver1");
-                path = g_strdup_printf ("//files/etc/sysconfig/network-scripts/ifcfg-%s/DNS1", name);
-                if (value != NULL && strlen(value) != 0) {
-                        if (0 == aug_get (aug, path, (const gchar **)&result)) {
-                                gchar* key_path = g_strdup_printf ("//files/etc/sysconfig/network-scripts/ifcfg-%s/%s", name, "NAME");
-                                gchar* key = "DNS1";
-                                aug_insert(aug, key_path, key, 0);
-                                g_free (key_path);
-                        }
-                        aug_set (aug, path, value);
+            value = (gchar *)json_object_get_string (obj, "gateway");
+            path = g_strdup_printf ("//files/etc/sysconfig/network-scripts/ifcfg-%s/GATEWAY0", name);
+            if (value != NULL && strlen(value) != 0) {
+                if (0 == aug_get (aug, path, (const gchar **)&result)) {
+                    gchar* key_path = g_strdup_printf ("//files/etc/sysconfig/network-scripts/ifcfg-%s/%s", name, "NAME");
+                    gchar* key = "GATEWAY0";
+                    aug_insert(aug, key_path, key, 0);
+                    g_free (key_path);
                 }
-                else {
-                    if (0 != aug_get (aug, path, (const gchar **)&result)) {
-                        gchar* key_path = g_strdup_printf ("//files/etc/sysconfig/network-scripts/ifcfg-%s/%s", name, "DNS1");
-                        aug_rm(aug, key_path);
-                        g_free (key_path);
-                    }
+                aug_set (aug, path, value);
+            }
+            else {
+                if (0 != aug_get (aug, path, (const gchar **)&result)) {
+                    aug_rm(aug, path);
                 }
-                g_free (path);
+            }
+            g_free (path);
+
+            value = (gchar *)json_object_get_string (obj, "nameserver1");
+            path = g_strdup_printf ("//files/etc/sysconfig/network-scripts/ifcfg-%s/DNS1", name);
+            if (value != NULL && strlen(value) != 0) {
+                if (0 == aug_get (aug, path, (const gchar **)&result)) {
+                    gchar* key_path = g_strdup_printf ("//files/etc/sysconfig/network-scripts/ifcfg-%s/%s", name, "NAME");
+                    gchar* key = "DNS1";
+                    aug_insert(aug, key_path, key, 0);
+                    g_free (key_path);
+                }
+                aug_set (aug, path, value);
+            }
+            else {
+                if (0 != aug_get (aug, path, (const gchar **)&result)) {
+                    aug_rm(aug, path);
+                }
+            }
+            g_free (path);
         }
 
         if (aug_save (aug) == -1) {
