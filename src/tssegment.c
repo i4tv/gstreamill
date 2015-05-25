@@ -978,14 +978,7 @@ static gboolean apply_pmt (TsSegment *tssegment, GstMpegTsSection * section)
 
         return TRUE;
 }
-#if 0
-void set_reference_offset (TsSegment *tssegment, guint64 refoffset)
-{
-        GST_DEBUG ("Setting reference offset to %" G_GUINT64_FORMAT, refoffset);
 
-        tssegment->refoffset = refoffset;
-}
-#endif
 static void handle_psi (TsSegment *tssegment, GstMpegTsSection *section)
 {
         gboolean post_message = TRUE;
@@ -998,7 +991,6 @@ static void handle_psi (TsSegment *tssegment, GstMpegTsSection *section)
                         if (tssegment->seen_pat == FALSE) {
                                 tssegment->seen_pat = TRUE;
                                 GST_ERROR ("First PAT offset: %" G_GUINT64_FORMAT, section->offset);
-                                //set_reference_offset (tssegment, section->offset);
                         }
                         break;
                 case GST_MPEGTS_SECTION_PMT:
