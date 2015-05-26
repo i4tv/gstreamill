@@ -1034,10 +1034,6 @@ static gboolean is_key_frame (TsSegment *tssegment, TSPacket *packet)
                   packet->payload_unit_start_indicator, packet->scram_afc_cc & 0x30,
                   FLAGS_CONTINUITY_COUNTER (packet->scram_afc_cc), packet->payload);
 
-        if (!(G_UNLIKELY (packet->payload_unit_start_indicator) && FLAGS_HAS_PAYLOAD (packet->scram_afc_cc))) {
-                return FALSE;
-        }
-
         size = packet->data_end - packet->payload;
         data = packet->payload;
 
@@ -1179,7 +1175,9 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
                                 pending_packet (tssegment, &packet);
                         }
 
-                } else if (packet.pid == tssegment->video_pid) {
+                } else if ((packet.pid == tssegment->video_pid) &&
+                           G_LIKELY (packet.payload_unit_start_indicator) &&
+                           FLAGS_HAS_PAYLOAD (packet.scram_afc_cc)) {
                         if (is_key_frame (tssegment, &packet)) {
                                 /* push a segment downstream */
                                 if (tssegment->seen_key_frame) {
