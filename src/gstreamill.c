@@ -389,7 +389,7 @@ static void encoders_check (Gstreamill *gstreamill, Job *job)
                                      job->output->encoders[j].name,
                                      time_diff);
                         /* restart job. */
-                        job_stop (job, SIGKILL);
+                        //job_stop (job, SIGKILL);
                         return;
 
                 } else {
