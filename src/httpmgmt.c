@@ -829,6 +829,7 @@ static gchar * start_job (HTTPMgmt *httpmgmt, RequestData *request_data)
         if (request_data->method == HTTP_POST) {
                 /* start a job. */
                 job_description = request_data->raw_request + request_data->header_size;
+                GST_ERROR ("---------------: %s", job_description);
                 buf = gstreamill_job_start (httpmgmt->gstreamill, job_description);
 
         } else {
