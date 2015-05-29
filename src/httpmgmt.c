@@ -14,6 +14,7 @@
 #include <glib.h>
 #include <glib/gstdio.h>
 #include <gst/gst.h>
+#include <gst/pbutils/gstdiscoverer.h>
 #include <string.h>
 #include <stdlib.h>
 #include <augeas.h>
@@ -1178,6 +1179,71 @@ static gchar * get_filename (gchar *parameters)
         return p;
 }
 
+static JSON_Value *value;
+static JSON_Object *object;
+static void get_tag_foreach (const GstTagList * tags, const gchar * tag,
+        gpointer user_data)
+{
+    GValue val = { 0, };
+    gchar *str;
+    //guint depth = GPOINTER_TO_UINT (user_data);
+
+    if (!gst_tag_list_copy_value (&val, tags, tag))
+        return;
+
+    if (G_VALUE_HOLDS_STRING (&val)) {
+        str = g_value_dup_string (&val);
+    } else if (G_VALUE_TYPE (&val) == GST_TYPE_SAMPLE) {
+        GstSample *sample = gst_value_get_sample (&val);
+        GstBuffer *img = gst_sample_get_buffer (sample);
+        GstCaps *caps = gst_sample_get_caps (sample);
+
+        if (img) {
+            if (caps) {
+                gchar *caps_str;
+
+                caps_str = gst_caps_to_string (caps);
+                str = g_strdup_printf ("buffer of %" G_GSIZE_FORMAT " bytes, "
+                        "type: %s", gst_buffer_get_size (img), caps_str);
+                g_free (caps_str);
+            } else {
+                str = g_strdup_printf ("buffer of %" G_GSIZE_FORMAT " bytes",
+                        gst_buffer_get_size (img));
+            }   
+        } else {
+            str = g_strdup ("NULL buffer");
+        }   
+    } else {
+        str = gst_value_serialize (&val);
+    }
+
+    //GST_ERROR ("%*s%s: %s\n", 2 * depth, " ", gst_tag_get_nick (tag), str);
+
+    json_object_set_string(object, gst_tag_get_nick(tag), str);
+
+    g_free (str);
+
+    g_value_unset (&val);
+}
+
+
+static gchar* get_media_properties(GstDiscovererInfo * info)
+{
+    const GstTagList *tags;
+    value = json_value_init_object();
+    object = json_value_get_object(value);
+
+    json_object_set_number(object, "duration", gst_discoverer_info_get_duration (info));
+    json_object_set_string(object, "seekable", gst_discoverer_info_get_seekable (info) ? "yes" : "no");
+    if ((tags = gst_discoverer_info_get_tags (info))) {                                                                            
+        gst_tag_list_foreach (tags, get_tag_foreach, NULL);
+    }
+
+    gchar *result = json_serialize_to_string (value);
+    json_value_free (value);
+    return result;
+}
+
 static gsize media_download (HTTPMgmt *httpmgmt, RequestData *request_data, gchar **buf)
 {
         gint fd;
@@ -1323,7 +1389,47 @@ static gsize request_gstreamill_media (HTTPMgmt *httpmgmt, RequestData *request_
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
-        } else {
+        }
+        else if ((request_data->method == HTTP_POST) && 
+                (g_strcmp0 (request_data->uri, "/media/getmediainfo") == 0)) {
+
+            gchar* data = request_data->raw_request + request_data->header_size;
+            JSON_Value *val = json_parse_string(data);
+            gchar* uri = json_object_get_string(json_object(val), "uri");
+            GError *err = NULL;
+            gint timeout = 10;
+            GstDiscoverer *dc = gst_discoverer_new(timeout * GST_SECOND, &err);
+            GstDiscovererInfo *info = gst_discoverer_discover_uri (dc, uri, &err);
+            GstDiscovererResult result = gst_discoverer_info_get_result (info);
+            GstDiscovererStreamInfo *sinfo;
+            switch (result) {
+                case GST_DISCOVERER_OK:
+                    {
+                        break;
+                    }
+                case GST_DISCOVERER_TIMEOUT:
+                    {
+                        g_print ("Analyzing URI timed out\n");
+                        break;
+                    }
+            }
+            
+            if (sinfo = gst_discoverer_info_get_stream_info (info)) {
+                //print_topology (sinfo, 1);
+                p = g_strdup_printf(get_media_properties (info));
+                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+                gst_discoverer_stream_info_unref (sinfo);
+            }
+            else {
+                p = g_strdup_printf ("{\n    \"media_seekable\": \"%s\"\n}", "seekable");
+                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+            }
+
+            gst_discoverer_info_unref (info);
+            g_object_unref (dc);
+            g_free (p);
+        }
+        else {
                 *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
         }
         buf_size = strlen (*buf);
