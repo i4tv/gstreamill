@@ -1128,6 +1128,16 @@ static void pushing_data (TsSegment *tssegment)
         tssegment->current_size = 0;
 }
 
+static void segment_duration (TsSegment *tssegment, TSPacket *packet)
+{
+        if (tssegment->pts < packet->pcr) {
+                tssegment->duration = packet->pcr - tssegment->pts;
+
+        } else {
+                tssegment->duration = MAX_PCR - tssegment->pts + packet->pcr;
+        }
+}
+
 static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuffer * buf)
 {
         TsSegment *tssegment;
@@ -1181,8 +1191,8 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
                         if (is_key_frame (tssegment, &packet)) {
                                 /* push a segment downstream */
                                 if (tssegment->seen_key_frame) {
-                                        tssegment->duration = packet.pcr - tssegment->pts;
 GST_ERROR ("duration %lu", tssegment->duration);
+                                        segment_duration (tssegment, &packet);
                                         pushing_data (tssegment);
 
                                 } else {

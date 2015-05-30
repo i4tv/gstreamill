@@ -31,6 +31,8 @@
 #define FLAGS_HAS_PAYLOAD(f)           (f & 0x10)
 #define MPEGTS_AFC_PCR_FLAG            0x10
 
+#define MAX_PCR 2576980378112
+
 /* PCR_TO_GST calculation requires at least 10 extra bits.
  * Since maximum PCR value is coded with 42 bits, we are
  * safe to use direct calculation (10+42 < 63)*/
