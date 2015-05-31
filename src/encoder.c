@@ -178,10 +178,10 @@ static void move_head (Encoder *encoder)
         gop_size = encoder_output_gop_size (encoder->output, *(encoder->output->head_addr));
         /* move head. */
         if (*(encoder->output->head_addr) + gop_size < encoder->output->cache_size) {
-                *(encoder->output->head_addr) += gop_size;
+                *(encoder->output->head_addr) += gop_size + 12;
 
         } else {
-                *(encoder->output->head_addr) = *(encoder->output->head_addr) + gop_size - encoder->output->cache_size;
+                *(encoder->output->head_addr) = *(encoder->output->head_addr) + gop_size - encoder->output->cache_size + 12;
         }
 }
 
@@ -200,6 +200,7 @@ static void move_last_rap (Encoder *encoder, GstBuffer *buffer)
         } else {
                 size = encoder->output->cache_size - *(encoder->output->last_rap_addr) + *(encoder->output->tail_addr);
         }
+        size -= 12;
 
         if (*(encoder->output->last_rap_addr) + 12 < encoder->output->cache_size) {
                 memcpy (encoder->output->cache_addr + *(encoder->output->last_rap_addr) + 8, &size, 4);
@@ -855,7 +856,7 @@ static guint64 encoder_output_rap_next (EncoderOutput *encoder_output, guint64 r
         gop_size = encoder_output_gop_size (encoder_output, rap_addr);
 
         /* next random access address */
-        next_rap_addr = rap_addr + gop_size;
+        next_rap_addr = rap_addr + gop_size + 12;
         if (next_rap_addr >= encoder_output->cache_size) {
                 next_rap_addr -= encoder_output->cache_size;
         }

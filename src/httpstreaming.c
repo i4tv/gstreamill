@@ -189,7 +189,7 @@ static gint64 get_current_gop_end (EncoderOutput *encoder_output, HTTPStreamingP
                 /* current output gop. */
                 return -1;
         }
-        current_gop_end_addr = priv_data->rap_addr + current_gop_size;
+        current_gop_end_addr = priv_data->rap_addr + current_gop_size + 12;
         if (current_gop_end_addr > encoder_output->cache_size) {
                 current_gop_end_addr -= encoder_output->cache_size;
         }
