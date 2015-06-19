@@ -319,7 +319,7 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
         }
 
         if ((encoder->has_video && !GST_BUFFER_FLAG_IS_SET (buffer, GST_BUFFER_FLAG_DELTA_UNIT)) ||
-            (!encoder->has_video && (GST_BUFFER_PTS (buffer) == encoder->last_running_time))){
+            (!encoder->has_video && (GST_BUFFER_PTS (buffer) >= encoder->last_running_time))){
                 /* 
                  * random access point found.
                  * write previous gop size to 4 bytes reservation,
@@ -330,7 +330,7 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
                         /* no m3u8 output */
                         move_last_rap (encoder, buffer);
 
-                } else if (GST_BUFFER_PTS (buffer) == encoder->last_running_time) {
+                } else if (GST_BUFFER_PTS (buffer) >= encoder->last_running_time) {
                         gchar *msg;
 
                         move_last_rap (encoder, buffer);
@@ -584,7 +584,9 @@ static gint encoder_extract_streams (Encoder *encoder, gchar **bins)
                         stream->name = g_match_info_fetch_named (match_info, "name");
                         g_match_info_free (match_info);
                         g_array_append_val (encoder->streams, stream);
-                        if (g_str_has_prefix (stream->name, "video")) {
+                        if (g_str_has_prefix (stream->name, "video") &&
+                            strstr (bin, "x264enc") != NULL) {
+                                /* with video encoder */
                                 encoder->has_video = TRUE;
                         }
                         GST_INFO ("encoder stream %s found %s", stream->name, bin);
@@ -707,7 +709,7 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
                                 estream->encoder = encoder;
 
                         } else if (!encoder->has_video && g_str_has_prefix (estream->name, "mpegts")) {
-                                /* audio only */
+                                /* mpegts segment without video codec, bin name must be "mpegts" */
                                 estream->encoder = encoder;
 
                         } else {
