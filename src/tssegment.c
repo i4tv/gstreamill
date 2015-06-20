@@ -66,6 +66,7 @@ static void ts_segment_init (TsSegment *tssegment)
         /* network synchronization */
         MPEGTS_BIT_SET (tssegment->known_psi, 0x15);
         tssegment->seen_pat = FALSE;
+        tssegment->seen_pmt = FALSE;
 
         tssegment->video_pid = 0;
         tssegment->seen_key_frame = FALSE;
@@ -983,31 +984,58 @@ static gboolean apply_pmt (TsSegment *tssegment, GstMpegTsSection * section)
         return TRUE;
 }
 
-static void handle_psi (TsSegment *tssegment, GstMpegTsSection *section)
+static void handle_psi (TsSegment *tssegment, TSPacket *packet)
 {
+        GList *others;
+        GstMpegTsSection *section;
         gboolean post_message = TRUE;
+
+        section = push_section (tssegment, packet, &others);
+        if (section == NULL) {
+                return;
+        }
+
+        if ((section->section_type == GST_MPEGTS_SECTION_PAT) && tssegment->seen_pat){
+                gst_mpegts_section_unref (section);
+                return;
+        }
+
+        if ((section->section_type == GST_MPEGTS_SECTION_PMT) && tssegment->seen_pmt){
+                gst_mpegts_section_unref (section);
+                return;
+        }
 
         GST_ERROR ("Handling PSI (pid: 0x%04x , table_id: 0x%02x)", section->pid, section->table_id);
 
         switch (section->section_type) {
                 case GST_MPEGTS_SECTION_PAT:
                         post_message = apply_pat (tssegment, section);
-                        if (tssegment->seen_pat == FALSE) {
-                                tssegment->seen_pat = TRUE;
-                                GST_ERROR ("First PAT offset: %" G_GUINT64_FORMAT, section->offset);
-                        }
+                        memcpy (tssegment->pat_packet, packet->data_start, 188);
+                        tssegment->seen_pat = TRUE;
+                        //GST_ERROR ("First PAT offset: %" G_GUINT64_FORMAT, section->offset);
                         break;
                 case GST_MPEGTS_SECTION_PMT:
                         post_message = apply_pmt (tssegment, section);
+                        memcpy (tssegment->pmt_packet, packet->data_start, 188);
+                        tssegment->seen_pmt = TRUE;
                         break;
                 default:
                         break;
+        }
+
+        GST_ERROR ("Handling PSI (pid: 0x%04x , table_id: 0x%02x)", section->pid, section->table_id);
+        if (G_UNLIKELY (others)) {
+           //     for (tmp = others; tmp; tmp = tmp->next) {
+             //           handle_psi (tssegment, (GstMpegTsSection *) tmp->data);
+               // }
+                g_list_free (others);
         }
 
         /* Finally post message (if it wasn't corrupted) */
         if (post_message) {
                 gst_element_post_message (GST_ELEMENT_CAST (tssegment), gst_message_new_mpegts_section (GST_OBJECT (tssegment), section));
         }
+
         gst_mpegts_section_unref (section);
 }
 
@@ -1113,6 +1141,15 @@ static void pending_packet (TsSegment *tssegment, TSPacket *packet)
         tssegment->current_size += size;
 }
 
+static void tspacket_cc_inc (guint8 *tspacket)
+{
+        guint8 *buf = tspacket + 3;
+        guint8 cc = (*buf + 1) & 0x0f;
+
+        *buf &= 0xf0;
+        *buf |= cc;
+}
+
 static void pushing_data (TsSegment *tssegment)
 {
         guint8 *data;
@@ -1122,8 +1159,12 @@ static void pushing_data (TsSegment *tssegment)
                 return;
         }
 
-        data = g_malloc (tssegment->current_size);
-        memcpy (data, tssegment->data, tssegment->current_size);
+        data = g_malloc (tssegment->current_size + 188*2);
+        tspacket_cc_inc (tssegment->pat_packet);
+        memcpy (data, tssegment->pat_packet, 188);
+        tspacket_cc_inc (tssegment->pmt_packet);
+        memcpy (data + 188, tssegment->pmt_packet, 188);
+        memcpy (data + 188*2, tssegment->data, tssegment->current_size);
         buffer = gst_buffer_new_wrapped (data, tssegment->current_size);
         GST_BUFFER_PTS (buffer) = PCRTIME_TO_GSTTIME (tssegment->pts);
         GST_BUFFER_DURATION (buffer) = PCRTIME_TO_GSTTIME (tssegment->duration);
@@ -1583,13 +1624,16 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
                 }
 
                 if (packet.payload && MPEGTS_BIT_IS_SET (tssegment->known_psi, packet.pid)) {
+                        handle_psi (tssegment, &packet);
                         /* base PSI data */
-                        GList *others, *tmp;
-                        GstMpegTsSection *section;
+//                        GList *others, *tmp;
+//                        GstMpegTsSection *section;
 
+#if 0
                         section = push_section (tssegment, &packet, &others);
                         if (section) {
                                 handle_psi (tssegment, section);
+
                         }
                         if (G_UNLIKELY (others)) {
                                 for (tmp = others; tmp; tmp = tmp->next) {
@@ -1597,11 +1641,10 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
                                 }
                                 g_list_free (others);
                         }
-
                         if (tssegment->seen_key_frame) {
                                 pending_packet (tssegment, &packet);
                         }
-
+#endif
                 } else if ((packet.pid == tssegment->video_pid) &&
                            G_LIKELY (packet.payload_unit_start_indicator) &&
                            FLAGS_HAS_PAYLOAD (packet.scram_afc_cc)) {

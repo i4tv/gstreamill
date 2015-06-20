@@ -465,12 +465,15 @@ typedef struct _TsSegment {
         guint8 *is_pes;
         /* Whether we saw a PAT yet */
         gboolean seen_pat;
+        gboolean seen_pmt;
         guint16 video_pid;
         /* Reference offset */
         //guint64 refoffset;
         GPtrArray *pat;
         /* whether we saw a key frame */
         gboolean seen_key_frame;
+        guint8 pat_packet[188];
+        guint8 pmt_packet[188];
 
         guint8 *data;
         /* Amount of bytes in current ->data */
