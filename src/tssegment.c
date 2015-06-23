@@ -1165,9 +1165,9 @@ static void pushing_data (TsSegment *tssegment)
         tspacket_cc_inc (tssegment->pmt_packet);
         memcpy (data + 188, tssegment->pmt_packet, 188);
         memcpy (data + 188*2, tssegment->data, tssegment->current_size);
-        buffer = gst_buffer_new_wrapped (data, tssegment->current_size);
-        GST_BUFFER_PTS (buffer) = PCRTIME_TO_GSTTIME (tssegment->pts);
-        GST_BUFFER_DURATION (buffer) = PCRTIME_TO_GSTTIME (tssegment->duration);
+        buffer = gst_buffer_new_wrapped (data, tssegment->current_size + 188*2);
+        GST_BUFFER_PTS (buffer) = tssegment->pre_pts;
+        GST_BUFFER_DURATION (buffer) = tssegment->duration;
         GST_ERROR ("pushing %u data timestamp: %lu", tssegment->current_size, GST_BUFFER_PTS (buffer));
         gst_pad_push (tssegment->srcpad, buffer);
         tssegment->current_size = 0;
@@ -1175,11 +1175,11 @@ static void pushing_data (TsSegment *tssegment)
 
 static void segment_duration (TsSegment *tssegment, TSPacket *packet)
 {
-        if (tssegment->pts < packet->pcr) {
-                tssegment->duration = packet->pcr - tssegment->pts;
+        if (tssegment->pre_pts < tssegment->current_pts) {
+                tssegment->duration = tssegment->current_pts - tssegment->pre_pts;
 
         } else {
-                tssegment->duration = MAX_PCR - tssegment->pts + packet->pcr;
+                tssegment->duration = MAX_PCR - tssegment->pre_pts + tssegment->current_pts;
         }
 }
 
@@ -1365,10 +1365,10 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
                         goto next;
                 }
 ///GST_ERROR (">>>>>>>>>>>>>>>>>>>pcr %lu", packet.pcr);
-                if (packet.pcr != GST_CLOCK_TIME_NONE) {
-                        tssegment->pts = packet.pcr;
+                //if (packet.pcr != GST_CLOCK_TIME_NONE) {
+                  //      tssegment->pts = packet.pcr;
 ///GST_ERROR (">>>>>>>>>>>>>>>>>>pcr %lu", tssegment->pts);
-                }
+                //}
 
                 if (packet.payload && MPEGTS_BIT_IS_SET (tssegment->known_psi, packet.pid)) {
                         handle_psi (tssegment, &packet);
@@ -1399,21 +1399,23 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
                                 PESHeader res;
                                 mpegts_parse_pes_header (packet.payload, 184, &res);
                                 GST_ERROR ("PTS %" G_GUINT64_FORMAT " %" GST_TIME_FORMAT, res.PTS, GST_TIME_ARGS (MPEGTIME_TO_GSTTIME (res.PTS)));
-                                tssegment->pts = MPEGTIME_TO_GSTTIME (res.PTS);
+                                tssegment->current_pts = MPEGTIME_TO_GSTTIME (res.PTS);
                                 /* push a segment downstream */
                                 if (tssegment->seen_key_frame) {
                                         segment_duration (tssegment, &packet);
                                         pushing_data (tssegment);
+                                        tssegment->pre_pts = MPEGTIME_TO_GSTTIME (res.PTS);
 
                                 } else {
                                         tssegment->seen_key_frame = TRUE;
+                                        tssegment->pre_pts = MPEGTIME_TO_GSTTIME (res.PTS);
                                 }
 
-                       }
+                        }
                         /* push packet to segment */
                         pending_packet (tssegment, &packet);
 
-                } else if (tssegment->seen_key_frame) {
+               } else if (tssegment->seen_key_frame) {
                         /* push packet to segment if have seen key frame */
                         pending_packet (tssegment, &packet);
 

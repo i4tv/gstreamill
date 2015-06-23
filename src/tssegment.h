@@ -481,7 +481,8 @@ typedef struct _TsSegment {
         /* Size of ->data */
         guint allocated_size;
         /* Current PTS for the stream (in running time) */
-        GstClockTime pts;
+        GstClockTime pre_pts;
+        GstClockTime current_pts;
         GstClockTime duration;
 
         //gboolean push_section;
