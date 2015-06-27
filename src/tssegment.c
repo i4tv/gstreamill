@@ -1166,8 +1166,8 @@ static void pushing_data (TsSegment *tssegment)
         memcpy (data + 188, tssegment->pmt_packet, 188);
         memcpy (data + 188*2, tssegment->data, tssegment->current_size);
         buffer = gst_buffer_new_wrapped (data, tssegment->current_size + 188*2);
-        GST_BUFFER_PTS (buffer) = tssegment->pre_pts;
-        GST_BUFFER_DURATION (buffer) = tssegment->duration;
+        GST_BUFFER_PTS (buffer) = MPEGTIME_TO_GSTTIME (tssegment->pre_pts);
+        GST_BUFFER_DURATION (buffer) = MPEGTIME_TO_GSTTIME (tssegment->duration);
         GST_ERROR ("pushing %u data timestamp: %lu", tssegment->current_size, GST_BUFFER_PTS (buffer));
         gst_pad_push (tssegment->srcpad, buffer);
         tssegment->current_size = 0;
@@ -1179,7 +1179,7 @@ static void segment_duration (TsSegment *tssegment, TSPacket *packet)
                 tssegment->duration = tssegment->current_pts - tssegment->pre_pts;
 
         } else {
-                tssegment->duration = MAX_PCR - tssegment->pre_pts + tssegment->current_pts;
+                tssegment->duration = MAX_MPEGTIME - tssegment->pre_pts + tssegment->current_pts;
         }
 }
 
@@ -1399,16 +1399,16 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
                                 PESHeader res;
                                 mpegts_parse_pes_header (packet.payload, 184, &res);
                                 GST_ERROR ("PTS %" G_GUINT64_FORMAT " %" GST_TIME_FORMAT, res.PTS, GST_TIME_ARGS (MPEGTIME_TO_GSTTIME (res.PTS)));
-                                tssegment->current_pts = MPEGTIME_TO_GSTTIME (res.PTS);
+                                tssegment->current_pts = res.PTS;
                                 /* push a segment downstream */
                                 if (tssegment->seen_key_frame) {
                                         segment_duration (tssegment, &packet);
                                         pushing_data (tssegment);
-                                        tssegment->pre_pts = MPEGTIME_TO_GSTTIME (res.PTS);
+                                        tssegment->pre_pts = res.PTS;
 
                                 } else {
                                         tssegment->seen_key_frame = TRUE;
-                                        tssegment->pre_pts = MPEGTIME_TO_GSTTIME (res.PTS);
+                                        tssegment->pre_pts = res.PTS;
                                 }
 
                         }

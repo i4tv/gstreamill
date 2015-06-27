@@ -32,6 +32,7 @@
 #define MPEGTS_AFC_PCR_FLAG            0x10
 
 #define MAX_PCR 2576980378112
+#define MAX_MPEGTIME 8589934592
 
 /* PCR_TO_GST calculation requires at least 10 extra bits.
  * Since maximum PCR value is coded with 42 bits, we are
