@@ -458,26 +458,27 @@ static gchar * render_master_m3u8_playlist (Job *job)
 
 static guint64 get_dvr_sequence (JobOutput *joboutput)
 {
-        glob_t pglob;
-        gchar *pattern, *format;
-        guint64 encoder_sequence, sequence;
+        glob_t dglob, fglob;
+        gchar *pattern_dir, *pattern_seg, *format;
+        guint64 sequence;
         gint i;
 
         sequence = 0;
         for (i = 0; i < joboutput->encoder_count; i++) {
-                encoder_sequence = 0;
-                pattern = g_strdup_printf ("%s/*", joboutput->encoders[i].record_path);
-                if (glob (pattern, 0, NULL, &pglob) != GLOB_NOMATCH) {
-                        format = g_strdup_printf ("%s/%%*[^_]_%%lu_%%*[^_]$", joboutput->encoders[i].record_path);
-                        sscanf (pglob.gl_pathv[pglob.gl_pathc - 1], format, &encoder_sequence);
-                        encoder_sequence += 1;
-                        g_free (format);
+                pattern_dir = g_strdup_printf ("%s/*", joboutput->encoders[i].record_path);
+                if (glob (pattern_dir, 0, NULL, &dglob) != GLOB_NOMATCH) {
+                        pattern_seg = g_strdup_printf ("%s/*", dglob.gl_pathv[dglob.gl_pathc - 1]);
+                        if (glob (pattern_seg, 0, NULL, &fglob) != GLOB_NOMATCH) {
+                                format = g_strdup_printf ("%s/%%*[^_]_%%lu_%%*[^_]$", dglob.gl_pathv[dglob.gl_pathc - 1]);
+                                sscanf (fglob.gl_pathv[fglob.gl_pathc - 1], format, &sequence);
+                                sequence += 1;
+                                g_free (format);
+                        }
+                        g_free (pattern_seg);
+                        globfree (&fglob);
                 }
-                globfree (&pglob);
-                g_free (pattern);
-                if (encoder_sequence > sequence) {
-                        sequence = encoder_sequence;
-                }
+                globfree (&dglob);
+                g_free (pattern_dir);
         }
 
         return sequence;

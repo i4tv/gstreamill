@@ -630,13 +630,15 @@ static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClock
 
 static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime duration)
 {
-        gchar *path;
+        gchar *path, *record_dir;
         gint64 realtime;
         guint64 rap_addr;
         gsize segment_size;
         gchar *buf;
         GError *err = NULL;
         struct timespec ts;
+        struct tm tm;
+        time_t timet;
 
         /* seek gop it's timestamp is m3u8_push_request->timestamp */
         if (clock_gettime (CLOCK_REALTIME, &ts) == -1) {
@@ -700,11 +702,33 @@ static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime dura
                         }
                 }
         }
-        path = g_strdup_printf ("/%s/%ld_%lu_%lu.ts",
-                                encoder_output->record_path,
-                                encoder_output->clock_time,
-                                encoder_output->sequence,
-                                duration);
+
+        timet = encoder_output->clock_time / 1000000;
+        if (NULL == localtime_r (&timet, &tm)) {
+                GST_ERROR ("gmtime_r error");
+                g_free (buf);
+                return;
+        }
+        record_dir = g_strdup_printf ("%s/%04d%02d%02d%02d",
+                                       encoder_output->record_path,
+                                       tm.tm_year + 1900,
+                                       tm.tm_mon + 1,
+                                       tm.tm_mday,
+                                       tm.tm_hour);
+        if (!g_file_test (record_dir, G_FILE_TEST_EXISTS)) {
+                if (g_mkdir_with_parents (record_dir, 0755) != 0) {
+                        GST_ERROR ("Create record directory failure: %s", record_dir);
+                        g_free (record_dir);
+                        g_free (buf);
+                        return;
+                }
+        }
+        path = g_strdup_printf ("%s/%010lu_%lu_%lu.ts",
+                                 record_dir,
+                                 encoder_output->clock_time % 3600000000,
+                                 encoder_output->sequence,
+                                 duration);
+        g_free (record_dir);
         encoder_output->sequence += 1;
 
         if (!g_file_set_contents (path, buf, segment_size, &err)) {
