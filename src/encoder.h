@@ -35,6 +35,10 @@ typedef struct _EncoderOutput {
         gint64 stream_count;
         EncoderStreamState *streams;
 
+        /* buffer time, buffer time = base_time + pts, base_time = clock[first buffer] - pts[first buffer] */
+        gint64 base_time;
+        gboolean is_first_buffer;
+
         /* m3u8 streaming */
         M3U8Playlist *m3u8_playlist;
         GstClockTime last_timestamp; /* last segment timestamp */

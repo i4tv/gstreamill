@@ -192,6 +192,7 @@ static void move_last_rap (Encoder *encoder, GstBuffer *buffer)
 {
         gchar buf[12];
         gint32 size, n;
+        GstClockTime buffer_time;
 
         /* calculate and write gop size. */
         if (*(encoder->output->tail_addr) >= *(encoder->output->last_rap_addr)) {
@@ -217,7 +218,15 @@ static void move_last_rap (Encoder *encoder, GstBuffer *buffer)
 
         /* new gop timestamp, 4bytes reservation for gop size. */
         *(encoder->output->last_rap_addr) = *(encoder->output->tail_addr);
-        memcpy (buf, &(GST_BUFFER_PTS (buffer)), 8);
+        if (encoder->output->is_first_buffer) {
+                buffer_time = g_get_real_time ();
+                encoder->output->is_first_buffer = FALSE;
+                encoder->output->base_time = buffer_time - GST_BUFFER_PTS (buffer) / 1000;
+
+        } else {
+                buffer_time = encoder->output->base_time + GST_BUFFER_PTS (buffer) / 1000;
+        }
+        memcpy (buf, &buffer_time, 8);
         size = 0;
         memcpy (buf + 8, &size, 4);
         if (*(encoder->output->tail_addr) + 12 < encoder->output->cache_size) {
