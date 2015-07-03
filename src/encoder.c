@@ -305,6 +305,24 @@ static void udp_streaming (Encoder *encoder, GstBuffer *buffer)
         }
 }
 
+static void send_msg (Encoder *encoder)
+{
+        gchar *msg;
+
+        msg = g_strdup_printf ("/live/%s/encoder/%d:%lu", encoder->job_name, encoder->id, encoder->last_segment_duration);
+        if (sendto (encoder->msg_sock,
+                    msg,
+                    strlen (msg),
+                    0,
+                    (struct sockaddr *)&(encoder->msg_sock_addr),
+                    sizeof (struct sockaddr)) == -1) {
+                GST_ERROR ("sendto segment msg error: %s", g_strerror (errno));
+        }
+        g_free (msg);
+
+        encoder->last_running_time = GST_CLOCK_TIME_NONE;
+}
+
 static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
 {
         GstBuffer *buffer;
@@ -340,21 +358,14 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
                         move_last_rap (encoder, buffer);
 
                 } else if (GST_BUFFER_PTS (buffer) >= encoder->last_running_time) {
-                        gchar *msg;
-
                         move_last_rap (encoder, buffer);
-                        msg = g_strdup_printf ("/live/%s/encoder/%d:%lu", encoder->job_name, encoder->id, encoder->last_segment_duration);
-                        if (sendto (encoder->msg_sock,
-                                    msg,
-                                    strlen (msg),
-                                    0,
-                                    (struct sockaddr *)&(encoder->msg_sock_addr),
-                                    sizeof (struct sockaddr)) == -1) {
-                                GST_ERROR ("sendto segment msg error: %s", g_strerror (errno));
-                        }
-                        g_free (msg);
+                        send_msg (encoder);
 
-                        encoder->last_running_time = GST_CLOCK_TIME_NONE;
+                } else if (encoder->is_first_key) {
+                        /* move_last_rap if its first key even if has m3u8 output */
+                        move_last_rap (encoder, buffer);
+                        send_msg (encoder);
+                        encoder->is_first_key = FALSE;
                 }
         }
 
@@ -792,6 +803,7 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
                 udpstreaming_parse (job, encoder);
 
                 /* m3u8 playlist */
+                encoder->is_first_key = TRUE;
                 if (jobdesc_m3u8streaming (job)) {
                         memset (&(encoder->msg_sock_addr), 0, sizeof (struct sockaddr_un));
                         encoder->msg_sock_addr.sun_family = AF_UNIX;

@@ -517,7 +517,6 @@ gint job_output_initialize (Job *job)
                 output->encoders[i].system_clock = job->system_clock;
                 /* timeshift and dvr */
                 output->encoders[i].record_path = NULL;
-                output->encoders[i].clock_time = GST_CLOCK_TIME_NONE;
                 output->encoders[i].dvr_duration = jobdesc_dvr_duration (job->description);
                 if (output->encoders[i].dvr_duration == 0) {
                         continue;

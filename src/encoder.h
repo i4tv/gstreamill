@@ -46,7 +46,6 @@ typedef struct _EncoderOutput {
 
         /* timeshift and dvr */
         gchar *record_path;
-        GstClockTime clock_time;
         guint64 sequence;
         guint64 dvr_duration;
 } EncoderOutput;
@@ -86,6 +85,7 @@ struct _Encoder {
         /* m3u8 playlist */
         gboolean has_video;
         gboolean has_m3u8_output;
+        gboolean is_first_key;
         struct sockaddr_un msg_sock_addr;
         gint msg_sock;
         GstClockTime last_segment_duration;

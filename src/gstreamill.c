@@ -628,17 +628,35 @@ static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClock
         return TRUE;
 }
 
-static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime duration)
+static gchar *segment_dir (EncoderOutput *encoder_output)
 {
-        gchar *path, *record_dir;
+        struct tm tm;
+        time_t timet;
+        gchar *seg_path;
+
+        timet = encoder_output->last_timestamp / 1000000;
+        if (NULL == localtime_r (&timet, &tm)) {
+                GST_ERROR ("gmtime_r error");
+                return NULL;
+        }
+        seg_path = g_strdup_printf ("%04d%02d%02d%02d",
+                                       tm.tm_year + 1900,
+                                       tm.tm_mon + 1,
+                                       tm.tm_mday,
+                                       tm.tm_hour);
+
+        return seg_path;
+}
+
+static void dvr_record_segment (EncoderOutput *encoder_output, gchar *seg_path, GstClockTime duration)
+{
+        gchar *path, *record_dir, *seg_dir;
         gint64 realtime;
-        guint64 rap_addr;
+        guint64 rap_addr, diff;
         gsize segment_size;
         gchar *buf;
         GError *err = NULL;
         struct timespec ts;
-        struct tm tm;
-        time_t timet;
 
         /* seek gop it's timestamp is m3u8_push_request->timestamp */
         if (clock_gettime (CLOCK_REALTIME, &ts) == -1) {
@@ -682,39 +700,22 @@ static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime dura
         sem_post (encoder_output->semaphore);
 
         realtime = g_get_real_time ();
-        if (encoder_output->clock_time == GST_CLOCK_TIME_NONE) {
-                encoder_output->clock_time = realtime;
+        if (encoder_output->last_timestamp > realtime) {
+                diff = encoder_output->last_timestamp - realtime;
+                if (diff > 1000000000 /*1s*/) {
+                        GST_WARNING ("%s stream time diff %ldus from realtime", encoder_output->name, diff);
+                }
 
         } else {
-                gint64 diff;
-
-                encoder_output->clock_time += duration / 1000;
-                if (encoder_output->clock_time > realtime) {
-                        diff = encoder_output->clock_time - realtime;
-                        if (diff > duration / 1000) {
-                                GST_WARNING ("%s stream time diff %ldus from realtime", encoder_output->name, diff);
-                        }
-
-                } else {
-                        diff = realtime - encoder_output->clock_time;
-                        if (diff > duration / 1000) {
-                                GST_WARNING ("%s stream time diff -%ldus from realtime", encoder_output->name, diff);
-                        }
+                diff = realtime - encoder_output->last_timestamp;
+                if (diff > 1000000000 /*1s*/) {
+                        GST_WARNING ("%s stream time diff -%ldus from realtime", encoder_output->name, diff);
                 }
         }
 
-        timet = encoder_output->clock_time / 1000000;
-        if (NULL == localtime_r (&timet, &tm)) {
-                GST_ERROR ("gmtime_r error");
-                g_free (buf);
-                return;
-        }
-        record_dir = g_strdup_printf ("%s/%04d%02d%02d%02d",
-                                       encoder_output->record_path,
-                                       tm.tm_year + 1900,
-                                       tm.tm_mon + 1,
-                                       tm.tm_mday,
-                                       tm.tm_hour);
+        seg_dir = segment_dir (encoder_output);
+        record_dir = g_strdup_printf ("%s/%s", encoder_output->record_path, seg_dir);
+        g_free (seg_dir);
         if (!g_file_test (record_dir, G_FILE_TEST_EXISTS)) {
                 if (g_mkdir_with_parents (record_dir, 0755) != 0) {
                         GST_ERROR ("Create record directory failure: %s", record_dir);
@@ -725,7 +726,7 @@ static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime dura
         }
         path = g_strdup_printf ("%s/%010lu_%lu_%lu.ts",
                                  record_dir,
-                                 encoder_output->clock_time % 3600000000,
+                                 encoder_output->last_timestamp % 3600000000,
                                  encoder_output->sequence,
                                  duration);
         g_free (record_dir);
@@ -739,7 +740,6 @@ static void dvr_record_segment (EncoderOutput *encoder_output, GstClockTime dura
                 GST_INFO ("write segment %s success", path);
         }
 
-        g_free (path);
         g_free (buf);
 }
 
@@ -783,9 +783,9 @@ static gpointer msg_thread (gpointer data)
 
         /* loop waiting msg */
         for (;;) {
-                gchar uri[128], *seg_name;
+                gchar uri[128], *seg_dir, *seg_path;
                 EncoderOutput *encoder_output;
-                GstClockTime duration, last_timestamp;
+                GstClockTime duration;
 
                 n = epoll_wait (epoll_fd, event_list, 32, -1);
                 if (n == -1) {
@@ -805,17 +805,29 @@ static gpointer msg_thread (gpointer data)
                         msg[size] = '\0';
                         sscanf (msg, "%[^:]:%lu$", uri, &duration);
                         encoder_output = gstreamill_get_encoder_output (gstreamill, uri);
-                        if (encoder_output != NULL) {
-                                last_timestamp = encoder_output_rap_timestamp (encoder_output, *(encoder_output->last_rap_addr));
-                                seg_name = g_strdup_printf ("%lu.ts", encoder_output->last_timestamp);
-                                m3u8playlist_add_entry (encoder_output->m3u8_playlist, seg_name, duration);
-                                g_free (seg_name);
-                                if (encoder_output->dvr_duration != 0) {
-                                        dvr_record_segment (encoder_output, duration);
-                                }
-                                encoder_output->last_timestamp = last_timestamp;
-                                gstreamill_unaccess (gstreamill, uri);
+                        if (encoder_output == NULL) {
+                                GST_ERROR ("Encoder not found: %s", uri);
+                                continue;
                         }
+                        if (!encoder_output->is_first_buffer) {
+                                seg_dir = segment_dir (encoder_output);
+                                seg_path = g_strdup_printf ("%s/%010lu_%lu_%lu.ts",
+                                                             seg_dir,
+                                                             encoder_output->last_timestamp % 3600000000,
+                                                             encoder_output->sequence,
+                                                             duration);
+                                m3u8playlist_add_entry (encoder_output->m3u8_playlist, seg_path, duration);
+                                g_free (seg_path);
+                                if (encoder_output->dvr_duration != 0) {
+                                        dvr_record_segment (encoder_output, seg_dir, duration);
+                                }
+                                g_free (seg_dir);
+
+                        } else {
+                                encoder_output->is_first_buffer = FALSE;
+                        }
+                        encoder_output->last_timestamp = encoder_output_rap_timestamp (encoder_output, *(encoder_output->last_rap_addr));
+                        gstreamill_unaccess (gstreamill, uri);
                 }
         }
 
