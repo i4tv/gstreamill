@@ -5,11 +5,13 @@
  *
  */
 
+#define _XOPEN_SOURCE
 #include <unistd.h>
 #include <gst/gst.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 
 #include "httpstreaming.h"
 
@@ -303,36 +305,34 @@ static GstClockTime send_chunk (EncoderOutput *encoder_output, RequestData *requ
 static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *encoder_output, gchar **buf)
 {
         GstClockTime timestamp;
-        gchar *header, *path, *file;
-        guint64 rap_addr;
+        gint number;
+        guint64 year, month, mday, hour, sequence, duration, rap_addr;
+        GstClockTime us; /* microseconds */
+        struct tm tm;
+        gchar date[20], *header, *path, *file;
         gsize buf_size;
         GError *err = NULL;
 
-        /* dvr segment */
-        if (g_str_has_prefix (request_data->uri, "/dvr/")) {
-                file = g_path_get_basename (request_data->uri);
-                path = g_strdup_printf ("%s/%s", encoder_output->record_path, file);
-                g_free (file);
-                if (!g_file_get_contents (path, &file, &buf_size, &err)) {
-                        GST_WARNING ("read %s failure: %s", path, err->message);
-                        g_free (path);
-                        g_error_free (err);
-                        return 0;
-                }
-                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "video/mpeg", buf_size, CACHE_60s, "");
-                *buf = g_malloc (buf_size + strlen (header));
-                memcpy (*buf, header, strlen (header));
-                memcpy (*buf + strlen (header), file, buf_size);
-                g_free (header);
-                g_free (file); 
+        number = sscanf (request_data->uri,
+                         "/live/%*[^/]/encoder/%*[^/]/%04lu%02lu%02lu%02lu/%lu_%lu_%lu.ts$",
+                         &year, &month, &mday, &hour, &us, &sequence, &duration);
+        if (number != 7) {
+                GST_WARNING ("uri not found: %s", request_data->uri);
+                *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+                buf_size = strlen (*buf);
                 return buf_size;
         }
+        sprintf (date, "%04lu-%02lu-%02lu %02lu:00:00", year, month, mday, hour);
+        memset (&tm, 0, sizeof (struct tm));
+        strptime (date, "%Y-%m-%d %H:%M:%S", &tm);
+        timestamp = mktime (&tm) * 1000000 + us;
 
-        /* live segment */
-        sscanf (request_data->uri, "/live/%*[^/]/encoder/%*[^/]/%lu.ts", &timestamp);
+        /* read from memory */
         if (sem_wait (encoder_output->semaphore) == -1) {
                 GST_WARNING ("get_mpeg2ts_segment sem_wait failure: %s", g_strerror (errno));
-                return 0;
+                *buf = g_strdup_printf (http_500, PACKAGE_NAME, PACKAGE_VERSION);
+                buf_size = strlen (*buf);
+                return buf_size;
         }
         /* seek gop */
         rap_addr = encoder_output_gop_seek (encoder_output, timestamp);
@@ -358,12 +358,32 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
                 g_free (header);
 
         } else {
-                /* segment not found */
-                GST_WARNING ("segment not found: %s", request_data->uri);
-                *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
-                buf_size = strlen (*buf);
+                buf_size = 0;
         }
         sem_post (encoder_output->semaphore);
+
+        /* buf_size == 0? segment not found in memory, read frome dvr */
+        if (buf_size == 0) {
+                path = g_strdup_printf ("%s/%04lu%02lu%02lu%02lu/%010lu_%lu_%lu.ts",
+                                         encoder_output->record_path,
+                                         year, month, mday, hour, us, sequence, duration);
+                if (!g_file_get_contents (path, &file, &buf_size, &err)) {
+                        g_error_free (err);
+                        GST_WARNING ("segment not found: %s", request_data->uri);
+                        *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+                        buf_size = strlen (*buf);
+
+                } else {
+                        header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "video/mpeg", buf_size, CACHE_60s, "");
+                        *buf = g_malloc (buf_size + strlen (header));
+                        memcpy (*buf, header, strlen (header));
+                        memcpy (*buf + strlen (header), file, buf_size);
+                        g_free (header);
+                        g_free (file);
+                        buf_size += strlen (header);
+                }
+                g_free (path);
+        }
 
         return buf_size;
 }
