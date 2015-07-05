@@ -314,7 +314,7 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
         GError *err = NULL;
 
         number = sscanf (request_data->uri,
-                         "/live/%*[^/]/encoder/%*[^/]/%04lu%02lu%02lu%02lu/%lu_%lu_%lu.ts$",
+                         "/%*[^/]/%*[^/]/encoder/%*[^/]/%04lu%02lu%02lu%02lu/%lu_%lu_%lu.ts$",
                          &year, &month, &mday, &hour, &us, &sequence, &duration);
         if (number != 7) {
                 GST_WARNING ("uri not found: %s", request_data->uri);

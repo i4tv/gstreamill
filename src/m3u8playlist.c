@@ -5,11 +5,14 @@
  *
  */
 
+#define _XOPEN_SOURCE
 #include <glob.h>
 #include <string.h>
 #include <stdio.h>
 #include <gst/gst.h>
+#include <time.h>
 
+#include "utils.h"
 #include "m3u8playlist.h"
 
 M3U8Playlist * m3u8playlist_new (guint version, guint window_size, guint64 sequence)
@@ -161,24 +164,28 @@ gchar * m3u8playlist_timeshift_get_playlist (gchar *path, gint64 offset)
 {
         M3U8Playlist *m3u8playlist = NULL;
         gint i, j;
-        gchar **pp, *p;
+        gchar **pp, *p, *segment_dir;
         glob_t pglob;
         gchar *pattern, *playlist;
-        guint64 time;
+        time_t time, shift_position;
 
-        time = g_get_real_time () + 1000000 * offset;
+        shift_position = g_get_real_time () / 1000000 - offset;
         /* loop seek time shift position, step: 10s */
         for (i = 0; i < 10; i++) {
-                pattern = g_strdup_printf ("%s/%lu*.ts", path, time / 10000000 - i);
+                time = shift_position - i * 10;
+                segment_dir = timestamp_to_segment_dir (time);
+                pattern = g_strdup_printf ("%s/%s/%03lu*.ts", path, segment_dir, (time % 3600) / 10);
+                g_free (segment_dir);
                 if (glob (pattern, 0, NULL, &pglob) == 0) {
                         for (j = pglob.gl_pathc - 1; j >= 0; j--) {
-                                p = &(pglob.gl_pathv[j][strlen (path) + 1]);
+                                p = &(pglob.gl_pathv[j][strlen (path) + 12]);
                                 pp = g_strsplit (p, "_", 0);
-                                if (g_ascii_strtoull (pp[0], NULL, 10) <= time) {
+                                if ((g_ascii_strtoull (pp[0], NULL, 10) / 1000000) <= (shift_position % 3600)) {
                                         /* sequence: g_ascii_strtoull (pp[1], NULL, 10) */
                                         m3u8playlist = m3u8playlist_new (3, 3, g_ascii_strtoull (pp[1], NULL, 10));
                                         /* remove .ts */
                                         pp[2][strlen (pp[2]) - 3] = '\0';
+                                        p -= 11;
                                         m3u8playlist_add_entry (m3u8playlist, p, g_strtod ((pp[2]), NULL));
                                         g_strfreev (pp);
                                         break;
@@ -199,14 +206,18 @@ gchar * m3u8playlist_timeshift_get_playlist (gchar *path, gint64 offset)
 
         /* add entry */
         for (i = 0; i < 10; i++) {
-                pattern = g_strdup_printf ("%s/%lu*.ts", path, time / 10000000 + i);
+                time = shift_position + i * 10;
+                segment_dir = timestamp_to_segment_dir (time);
+                pattern = g_strdup_printf ("%s/%s/%03lu*.ts", path, segment_dir, (time % 3600) / 10);
+                g_free (segment_dir);
                 if (glob (pattern, 0, NULL, &pglob) == 0) {
                         for (j = 0; j < pglob.gl_pathc; j++) {
-                                p = &(pglob.gl_pathv[j][strlen (path) + 1]);
+                                p = &(pglob.gl_pathv[j][strlen (path) + 12]);
                                 pp = g_strsplit (p, "_", 0);
-                                if (g_ascii_strtoull (pp[0], NULL, 10) > time) {
+                                if ((g_ascii_strtoull (pp[0], NULL, 10) / 1000000) > (time % 3600)) {
                                         /* remove .ts */
                                         pp[2][strlen (pp[2]) - 3] = '\0';
+                                        p -= 11;
                                         m3u8playlist_add_entry (m3u8playlist, p, g_strtod ((pp[2]), NULL));
                                         if (m3u8playlist->entries->length == 3) {
                                                 g_strfreev (pp);

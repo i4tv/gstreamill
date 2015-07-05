@@ -5,6 +5,9 @@
  *  Copyright (C) Zhang Ping <dqzhangp@163.com>
  */
 
+#define _XOPEN_SOURCE
+#include <time.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -49,3 +52,30 @@ gushort get_port (struct sockaddr in_addr)
         addr = (struct sockaddr_in *)&in_addr;
         return ntohs (addr->sin_port);
 }
+
+/**
+ * timestamp_to_segment_dir:
+ * @timestamp: (in): timestamp to be converted segment dir
+ *
+ * Convert timestamp to segment dir: yyyymmddhh.
+ *
+ * Returns: char type of segment dir
+ */
+gchar *timestamp_to_segment_dir (time_t timestamp)
+{
+        struct tm tm;
+        gchar *seg_path;
+
+        if (NULL == localtime_r (&timestamp, &tm)) {
+                GST_ERROR ("timestamp to segment dir error: %lu", timestamp);
+                return NULL;
+        }
+        seg_path = g_strdup_printf ("%04d%02d%02d%02d",
+                                       tm.tm_year + 1900,
+                                       tm.tm_mon + 1,
+                                       tm.tm_mday,
+                                       tm.tm_hour);
+
+        return seg_path;
+}
+

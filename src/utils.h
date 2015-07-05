@@ -14,5 +14,6 @@
 gchar * unicode_file_name_2_shm_name (gchar *filename);
 gchar * get_address (struct sockaddr in_addr);
 gushort get_port (struct sockaddr in_addr);
+gchar *timestamp_to_segment_dir (time_t timestamp);
 
 #endif /* __UTILS_H__ */
