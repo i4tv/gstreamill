@@ -165,12 +165,12 @@ job name is the value of name of job description.
 
 * http progressive streaming
 
-        http://host.name.or.ip:20119/live/job name/encoder/encoder_index
+        http://host.name.or.ip:20119/job name/encoder/encoder_index
 
 * hls
 
-        http://host.name.or.ip:20119/live/job name/playlist.m3u8
-        http://host.name.or.ip:20119/live/job name/encoder/encoder_index/playlist.m3u8
+        http://host.name.or.ip:20119/job name/playlist.m3u8
+        http://host.name.or.ip:20119/job name/encoder/encoder_index/playlist.m3u8
 
 * udp
 
