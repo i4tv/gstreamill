@@ -1236,7 +1236,7 @@ gint gstreamill_job_number (Gstreamill *gstreamill)
 
 /**
  * gstreamill_get_encoder_output:
- * @uri: (in): access uri, e.g. /live/test/encoder/0
+ * @uri: (in): access uri, e.g. /test/encoder/0
  *
  * Get the EncoderOutput by access uri.
  *
