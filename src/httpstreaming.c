@@ -313,8 +313,7 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
         gsize buf_size;
         GError *err = NULL;
 
-        number = sscanf (request_data->uri,
-                         "/%*[^/]/%*[^/]/encoder/%*[^/]/%04lu%02lu%02lu%02lu/%lu_%lu_%lu.ts$",
+        number = sscanf (request_data->uri, "/%*[^/]/encoder/%*[^/]/%04lu%02lu%02lu%02lu/%lu_%lu_%lu.ts$",
                          &year, &month, &mday, &hour, &us, &sequence, &duration);
         if (number != 7) {
                 GST_WARNING ("uri not found: %s", request_data->uri);
@@ -362,7 +361,7 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
         }
         sem_post (encoder_output->semaphore);
 
-        /* buf_size == 0? segment not found in memory, read frome dvr */
+        /* buf_size == 0? segment not found in memory, read frome dvr directory */
         if (buf_size == 0) {
                 path = g_strdup_printf ("%s/%04lu%02lu%02lu%02lu/%010lu_%lu_%lu.ts",
                                          encoder_output->record_path,
@@ -401,7 +400,7 @@ static gboolean is_http_progress_play_url (RequestData *request_data)
         }
 
         index = -1;
-        regex = g_regex_new ("^/live/.*/encoder/(?<encoder>[0-9]+)$", G_REGEX_OPTIMIZE, 0, NULL);
+        regex = g_regex_new ("^/.*/encoder/(?<encoder>[0-9]+)$", G_REGEX_OPTIMIZE, 0, NULL);
         g_regex_match (regex, request_data->uri, 0, &match_info);
         if (g_match_info_matches (match_info)) {
                 e = g_match_info_fetch_named (match_info, "encoder");
@@ -523,23 +522,21 @@ static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encod
 {
         gchar *m3u8playlist = NULL;
 
+        /* time shift */
+        if (g_strrstr (request_data->parameters, "offset") != NULL) {
+                gint64 offset;
+
+                offset = get_gint64_parameter (request_data->parameters, "offset");
+                m3u8playlist = m3u8playlist_timeshift_get_playlist (encoder_output->record_path, offset);
+
+        /* callback */
+        } else if (g_strrstr (request_data->parameters, "start") && 
+                   g_strrstr (request_data->parameters, "end")) {
+                m3u8playlist = m3u8playlist_callback_get_playlist (encoder_output->record_path, request_data->parameters);
+
         /* live */
-        if (g_str_has_prefix (request_data->uri, "/live/") && (encoder_output->m3u8_playlist != NULL)) {
+        } else if (encoder_output->m3u8_playlist != NULL) {
                 m3u8playlist = m3u8playlist_live_get_playlist (encoder_output->m3u8_playlist);
-
-        } else if (g_str_has_prefix (request_data->uri, "/dvr/")) {
-                /* time shift */
-                if (g_strrstr (request_data->parameters, "offset") != NULL) {
-                        gint64 offset;
-
-                        offset = get_gint64_parameter (request_data->parameters, "offset");
-                        m3u8playlist = m3u8playlist_timeshift_get_playlist (encoder_output->record_path, offset);
-
-                /* dvr */
-                } else if (g_strrstr (request_data->parameters, "start") && 
-                           g_strrstr (request_data->parameters, "end")) {
-                        m3u8playlist = m3u8playlist_callback_get_playlist (encoder_output->record_path, request_data->parameters);
-                }
         }
 
         return m3u8playlist;

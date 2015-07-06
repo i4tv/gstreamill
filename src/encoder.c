@@ -309,7 +309,7 @@ static void send_msg (Encoder *encoder)
 {
         gchar *msg;
 
-        msg = g_strdup_printf ("/live/%s/encoder/%d:%lu", encoder->job_name, encoder->id, encoder->last_segment_duration);
+        msg = g_strdup_printf ("/%s/encoder/%d:%lu", encoder->job_name, encoder->id, encoder->last_segment_duration);
         if (sendto (encoder->msg_sock,
                     msg,
                     strlen (msg),

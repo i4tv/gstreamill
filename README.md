@@ -128,13 +128,13 @@ default management port is 20118, use curl to invoke test job via management int
 
 * access output via http progressive download:
     
-        http://host.name.or.ip:20119/live/test/encoder/0
+        http://host.name.or.ip:20119/test/encoder/0
 
 * access output use via m3u8:
     
-        http://host.name.or.ip:20119/live/test/playlist.m3u8 (live)
-        http://host.name.or.ip:20119/dvr/test/playlist.m3u8?offset=-3600 (time shift)
-        http://host.name.or.ip:20119/dvr/test/playlist.m3u8?start=1412069895&duration=3600 (dvr)
+        http://host.name.or.ip:20119/test/playlist.m3u8 (live)
+        http://host.name.or.ip:20119/test/playlist.m3u8?offset=3600 (time shift)
+        http://host.name.or.ip:20119/test/playlist.m3u8?start=201506060606&201506060706 (callback)
 
 ## Management interface
 

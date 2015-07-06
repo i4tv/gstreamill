@@ -1191,7 +1191,7 @@ gchar * gstreamill_job_stop (Gstreamill *gstreamill, gchar *name)
 
 /**
  * gstreamill_get_job:
- * @uri: (in): access uri, e.g. /live/test/encoder/0
+ * @uri: (in): access uri, e.g. /test/encoder/0
  *
  * Get the Job by access uri.
  *
@@ -1204,7 +1204,7 @@ Job *gstreamill_get_job (Gstreamill *gstreamill, gchar *uri)
         GMatchInfo *match_info;
         gchar *name = NULL;
 
-        regex = g_regex_new ("^/(live|dvr)/(?<name>[^/]*)/.*", G_REGEX_OPTIMIZE, 0, NULL);
+        regex = g_regex_new ("^/(?<name>[^/]*)/.*", G_REGEX_OPTIMIZE, 0, NULL);
         match_info = NULL;
         g_regex_match (regex, uri, 0, &match_info);
         g_regex_unref (regex);
@@ -1251,7 +1251,7 @@ EncoderOutput * gstreamill_get_encoder_output (Gstreamill *gstreamill, gchar *ur
         gchar *e;
 
         index = -1;
-        regex = g_regex_new ("^/(live|dvr)/.*/encoder/(?<encoder>[0-9]+).*", G_REGEX_OPTIMIZE, 0, NULL);
+        regex = g_regex_new ("^/.*/encoder/(?<encoder>[0-9]+).*", G_REGEX_OPTIMIZE, 0, NULL);
         g_regex_match (regex, uri, 0, &match_info);
         if (g_match_info_matches (match_info)) {
                 e = g_match_info_fetch_named (match_info, "encoder");
@@ -1301,7 +1301,7 @@ EncoderOutput * gstreamill_get_encoder_output (Gstreamill *gstreamill, gchar *ur
 gchar * gstreamill_get_master_m3u8playlist (Gstreamill *gstreamill, gchar *uri)
 {
         Job *job;
-        gchar *live_master, *dvr_master, *playlist;
+        gchar *master, *playlist;
 
         job = gstreamill_get_job (gstreamill, uri);
         if (job == NULL) {
@@ -1309,17 +1309,14 @@ gchar * gstreamill_get_master_m3u8playlist (Gstreamill *gstreamill, gchar *uri)
                 return NULL;
         }
 
-        live_master = g_strdup_printf ("/live/%s/playlist.m3u8", job->name);
-        dvr_master = g_strdup_printf ("/dvr/%s/playlist.m3u8", job->name);
-        if ((g_strcmp0 (live_master, uri) != 0) && (g_strcmp0 (dvr_master, uri) != 0)) {
+        master = g_strdup_printf ("/%s/playlist.m3u8", job->name);
+        if (g_strcmp0 (master, uri) != 0) {
                 GST_WARNING ("Get master playlist uri error: %s", uri);
-                g_free (live_master);
-                g_free (dvr_master);
+                g_free (master);
                 g_object_unref (job);
                 return NULL;
         }
-        g_free (live_master);
-        g_free (dvr_master);
+        g_free (master);
 
         if (job->output->master_m3u8_playlist == NULL) {
                 playlist = NULL;
