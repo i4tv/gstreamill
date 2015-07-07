@@ -528,9 +528,9 @@ static void job_check_func (gpointer data, gpointer user_data)
 static void dvr_clean (Gstreamill *gstreamill)
 {
         guint64 now, time;
-        gint i, j;
-        gchar *pattern;
-        glob_t pglob;
+        gint i, j, k;
+        gchar *pattern, *expire_dir, *dir;
+        glob_t pglob, fglob;
         GSList *list;
         Job *job;
 
@@ -551,18 +551,29 @@ static void dvr_clean (Gstreamill *gstreamill)
                         if (job->output->encoders[i].record_path == NULL) {
                                 continue;
                         }
-                        time = (now / 1000000 - job->output->encoders[i].dvr_duration) / 10;
-                        while (time > 11) {
-                                pattern = g_strdup_printf ("%s/%lu*.ts", job->output->encoders[i].record_path, time - 1);
-                                GST_DEBUG ("%s", pattern);
-                                glob (pattern, 0, NULL, &pglob);
-                                for (j = 0; j < pglob.gl_pathc; j++) {
+                        time = (now / 1000000 - job->output->encoders[i].dvr_duration); /* hours */
+                        expire_dir = timestamp_to_segment_dir (time);
+                        pattern = g_strdup_printf ("%s/*", job->output->encoders[i].record_path);
+                        glob (pattern, 0, NULL, &pglob);
+                        g_free (pattern);
+                        for (j = 0; j < pglob.gl_pathc; j++) {
+                                dir = &(pglob.gl_pathv[j][strlen (job->output->encoders[i].record_path) + 1]);
+                                if (g_strcmp0 (expire_dir, dir) > 0) {
+                                        pattern = g_strdup_printf ("%s/*", pglob.gl_pathv[j]);
+                                        glob (pattern, 0, NULL, &fglob);
+                                        g_free (pattern);
+                                        for (k = 0; k < fglob.gl_pathc; k++) {
+                                                g_remove (fglob.gl_pathv[k]);
+                                        }
+                                        globfree (&fglob);
                                         g_remove (pglob.gl_pathv[j]);
+
+                                } else {
+                                        break;
                                 }
-                                globfree (&pglob);
-                                g_free (pattern);
-                                time = time / 10;
                         }
+                        globfree (&pglob);
+                        g_free (expire_dir);
                 }
                 list = list->next;
         }
