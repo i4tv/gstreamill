@@ -1187,7 +1187,6 @@ static void segment_duration (TsSegment *tssegment, TSPacket *packet)
  * mpegts_parse_pes_header:
  * @data: data to parse (starting from, and including, the sync code)
  * @length: size of @data in bytes
- * @res: PESHeader to fill (only valid with #PES_PARSING_OK.
  *
  * Parses the mpeg-ts PES header located in @data into the @res.
  *
@@ -1216,6 +1215,10 @@ PESParsingResult mpegts_parse_pes_header (TsSegment *tssegment, const guint8 * d
         }
 
         stream_id = val32 & 0x000000ff;
+        if (stream_id != 0xE0) {
+                GST_WARNING ("Not H.264 video PES packet");
+                return PES_PARSING_BAD;
+        }
 
         packet_length = GST_READ_UINT16_BE (data);
         if (packet_length) {
