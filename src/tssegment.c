@@ -1195,19 +1195,14 @@ static void segment_duration (TsSegment *tssegment, TSPacket *packet)
  * #PES_PARSING_BAD if the header is invalid, or #PES_PARSING_NEED_MORE if more data
  * is needed to properly parse the header.
  */
-PESParsingResult
-mpegts_parse_pes_header (const guint8 * data, gsize length, PESHeader * res)
+PESParsingResult mpegts_parse_pes_header (TsSegment *tssegment, const guint8 * data, gsize length)
 {
         PESParsingResult ret = PES_PARSING_NEED_MORE;
-        gsize origlength = length;
-        guint32 val32;
-        guint8 val8, flags;
-
-        g_return_val_if_fail (res != NULL, PES_PARSING_BAD);
+        guint32 val32, packet_length;
+        guint8 val8, flags, stream_id;
 
         /* The smallest valid PES header is 6 bytes (prefix + stream_id + length) */
         if (G_UNLIKELY (length < 6)) {
-                //goto need_more_data;
                 GST_DEBUG ("Not enough data to parse PES header");
                 return ret;
         }
@@ -1216,42 +1211,20 @@ mpegts_parse_pes_header (const guint8 * data, gsize length, PESHeader * res)
         data += 4;
         length -= 4;
         if (G_UNLIKELY ((val32 & 0xffffff00) != 0x00000100)) {
-                //goto bad_start_code;
                 GST_WARNING ("Wrong packet start code 0x%x != 0x000001xx", val32);
                 return PES_PARSING_BAD;
         }
 
-        /* Clear the header */
-        memset (res, 0, sizeof (PESHeader));
-        res->PTS = -1;
-        res->DTS = -1;
-        res->ESCR = -1;
+        stream_id = val32 & 0x000000ff;
 
-        res->stream_id = val32 & 0x000000ff;
-
-        res->packet_length = GST_READ_UINT16_BE (data);
-        if (res->packet_length)
-                res->packet_length += 6;
+        packet_length = GST_READ_UINT16_BE (data);
+        if (packet_length) {
+                packet_length += 6;
+        }
         data += 2;
         length -= 2;
 
-        GST_LOG ("stream_id : 0x%08x , packet_length : %d", res->stream_id,
-                        res->packet_length);
-
-        /* Jump if we don't need to parse anything more */
-        if (G_UNLIKELY (res->stream_id == 0xbc || res->stream_id == 0xbe
-                                || res->stream_id == 0xbf || (res->stream_id >= 0xf0
-                                        && res->stream_id <= 0xf2) || res->stream_id == 0xff
-                                || res->stream_id == 0xf8)) {
-                //goto done_parsing;
-                GST_DEBUG ("origlength:%" G_GSIZE_FORMAT ", length:%" G_GSIZE_FORMAT,
-                                origlength, length);
-
-                res->header_size = origlength - length;
-                ret = PES_PARSING_OK;
-
-                return ret;
-        }
+        GST_LOG ("stream_id : 0x%08x , packet_length : %d", stream_id, packet_length);
 
         if (G_UNLIKELY (length < 3)) {
                 GST_DEBUG ("Not enough data to parse PES header");
@@ -1266,14 +1239,11 @@ mpegts_parse_pes_header (const guint8 * data, gsize length, PESHeader * res)
          * original_or_copy                 1 */
         val8 = *data++;
         if (G_UNLIKELY ((val8 & 0xc0) != 0x80)) {
-                GST_WARNING ("Wrong '0x10' marker before PES_scrambling_control (0x%02x)",
-                                val8);
+                GST_WARNING ("Wrong '0x10' marker before PES_scrambling_control (0x%02x)", val8);
                 return PES_PARSING_BAD;
         }
-        res->scrambling_control = (val8 >> 4) & 0x3;
-        res->flags = val8 & 0xf;
 
-        GST_LOG ("scrambling_control 0x%0x", res->scrambling_control);
+        GST_LOG ("scrambling_control 0x%0x", (val8 >> 4) & 0x3);
         GST_LOG ("flags_1: %s%s%s%s%s",
                         val8 & 0x08 ? "priority " : "",
                         val8 & 0x04 ? "data_alignment " : "",
@@ -1288,7 +1258,7 @@ mpegts_parse_pes_header (const guint8 * data, gsize length, PESHeader * res)
          * PES_CRC_flag                     1
          * PES_extension_flag               1*/
         flags = *data++;
-        GST_ERROR ("flags_2: %s%s%s%s%s%s%s%s%s",
+        GST_DEBUG ("flags_2: %s%s%s%s%s%s%s%s%s",
                         flags & 0x80 ? "PTS " : "",
                         flags & 0x40 ? "DTS " : "",
                         flags & 0x20 ? "ESCR" : "",
@@ -1299,18 +1269,11 @@ mpegts_parse_pes_header (const guint8 * data, gsize length, PESHeader * res)
                         flags & 0x01 ? "extension " : "", flags ? "" : "<none>");
 
         /* PES_header_data_length           8 */
-        res->header_size = *data++;
         length -= 3;
-        if (G_UNLIKELY (length < res->header_size)) {
+        if (G_UNLIKELY (length < *data++)) {
                 GST_DEBUG ("Not enough data to parse PES header");
                 return ret;
         }
-
-        res->header_size += 9;        /* We add 9 since that's the offset
-                                       * of the field in the header*/
-        GST_DEBUG ("header_size : %d", res->header_size);
-
-        /* PTS/DTS */
 
         /* PTS_DTS_flags == 0x01 is invalid */
         if (G_UNLIKELY ((flags >> 6) == 0x01)) {
@@ -1319,23 +1282,36 @@ mpegts_parse_pes_header (const guint8 * data, gsize length, PESHeader * res)
 
         if ((flags & 0x80) == 0x80) {
                 /* PTS */
+                guint64 PTS;
+
                 if (G_UNLIKELY (length < 5)) {
                         GST_DEBUG ("Not enough data to parse PES header");
                         return ret;
                 }
 
-                READ_TS (data, res->PTS, bad_PTS_value);
-                length -= 5;
+                if ((*data & 0x01) != 0x01) {
+                        GST_WARNING ("bad PTS value");
+                        return PES_PARSING_BAD;
+                }
+                PTS = ((guint64) (*data++ & 0x0E)) << 29;
+                PTS |= ((guint64) (*data++)) << 22;
+                if ((*data & 0x01) != 0x01) {
+                        GST_WARNING ("bad PTS value");
+                        return PES_PARSING_BAD;
+                }
+                PTS |= ((guint64) (*data++ & 0xFE)) << 14;
+                PTS |= ((guint64) (*data++)) << 7;
+                if ((*data & 0x01) != 0x01) {
+                        GST_WARNING ("bad PTS value");
+                        return PES_PARSING_BAD;
+                }
+                PTS |= ((guint64) (*data++ & 0xFE)) >> 1;
                 GST_DEBUG ("PTS %" G_GUINT64_FORMAT " %" GST_TIME_FORMAT,
-                                res->PTS, GST_TIME_ARGS (MPEGTIME_TO_GSTTIME (res->PTS)));
-
+                            PTS, GST_TIME_ARGS (MPEGTIME_TO_GSTTIME (PTS)));
+                tssegment->current_pts = PTS;
         }
 
         return ret;
-
-bad_PTS_value:
-        GST_WARNING ("bad PTS value");
-        return PES_PARSING_BAD;
 }
 
 static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuffer * buf)
@@ -1350,7 +1326,6 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
         adapter = tssegment->adapter;
         gst_adapter_push (adapter, buf);
 
-///GST_ERROR ("----*******************---");
         while (res == GST_FLOW_OK) {
                 ret = next_ts_packet (tssegment, &packet);
 
@@ -1358,73 +1333,43 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
                         break;
                 }
 
-///GST_ERROR ("------- end: %p start: %p", packet.data_end, packet.payload);
                 if (G_UNLIKELY (ret == PACKET_BAD)) {
                         /* bad header, skip the packet */
                         GST_WARNING ("bad packet, skipping");
-                        goto next;
+                        clear_packet (tssegment, &packet);
+                        continue;
                 }
-///GST_ERROR (">>>>>>>>>>>>>>>>>>>pcr %lu", packet.pcr);
-                //if (packet.pcr != GST_CLOCK_TIME_NONE) {
-                  //      tssegment->pts = packet.pcr;
-///GST_ERROR (">>>>>>>>>>>>>>>>>>pcr %lu", tssegment->pts);
-                //}
 
                 if (packet.payload && MPEGTS_BIT_IS_SET (tssegment->known_psi, packet.pid)) {
                         handle_psi (tssegment, &packet);
-                        /* base PSI data */
-//                        GList *others, *tmp;
-//                        GstMpegTsSection *section;
 
-#if 0
-                        section = push_section (tssegment, &packet, &others);
-                        if (section) {
-                                handle_psi (tssegment, section);
-
-                        }
-                        if (G_UNLIKELY (others)) {
-                                for (tmp = others; tmp; tmp = tmp->next) {
-                                        handle_psi (tssegment, (GstMpegTsSection *) tmp->data);
-                                }
-                                g_list_free (others);
-                        }
-                        if (tssegment->seen_key_frame) {
-                                pending_packet (tssegment, &packet);
-                        }
-#endif
                 } else if ((packet.pid == tssegment->video_pid) &&
                            G_LIKELY (packet.payload_unit_start_indicator) &&
                            FLAGS_HAS_PAYLOAD (packet.scram_afc_cc)) {
                         if (is_key_frame (tssegment, &packet)) {
-                                PESHeader res;
-                                mpegts_parse_pes_header (packet.payload, 184, &res);
-                                GST_ERROR ("PTS %" G_GUINT64_FORMAT " %" GST_TIME_FORMAT, res.PTS, GST_TIME_ARGS (MPEGTIME_TO_GSTTIME (res.PTS)));
-                                tssegment->current_pts = res.PTS;
+                                //PESHeader res;
+                                mpegts_parse_pes_header (tssegment, packet.payload, 184);
+                                //GST_DEBUG ("PTS %" GST_TIME_FORMAT, GST_TIME_ARGS (MPEGTIME_TO_GSTTIME (res.PTS)));
+                                //tssegment->current_pts = res.PTS;
                                 /* push a segment downstream */
                                 if (tssegment->seen_key_frame) {
                                         segment_duration (tssegment, &packet);
                                         pushing_data (tssegment);
-                                        tssegment->pre_pts = res.PTS;
+                                        tssegment->pre_pts = tssegment->current_pts;
 
                                 } else {
                                         tssegment->seen_key_frame = TRUE;
-                                        tssegment->pre_pts = res.PTS;
+                                        tssegment->pre_pts = tssegment->current_pts;
                                 }
 
                         }
                         /* push packet to segment */
                         pending_packet (tssegment, &packet);
 
-               } else if (tssegment->seen_key_frame) {
+                } else if (tssegment->seen_key_frame) {
                         /* push packet to segment if have seen key frame */
                         pending_packet (tssegment, &packet);
-
-                } else {
-                        /* discard packet before seen key frame */
-                        
                 }
-
-        next:
                 clear_packet (tssegment, &packet);
         }
 
