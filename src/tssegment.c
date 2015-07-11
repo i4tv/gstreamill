@@ -437,7 +437,7 @@ static gboolean parse_adaptation_field_control (TsSegment *tssegment, TSPacket *
                 packet->pcr = compute_pcr (data);
 ///GST_ERROR (">>>>>>>>>>>>>>>>>>>>>>>>>pcr %lu", packet->pcr);
                 data += 6;
-                GST_ERROR ("pcr 0x%04x %" G_GUINT64_FORMAT " (%" GST_TIME_FORMAT
+                GST_DEBUG ("pcr 0x%04x %" G_GUINT64_FORMAT " (%" GST_TIME_FORMAT
                            ") offset:%" G_GUINT64_FORMAT, packet->pid, packet->pcr,
                             GST_TIME_ARGS (PCRTIME_TO_GSTTIME (packet->pcr)), packet->offset);
 #if 0
@@ -1107,9 +1107,6 @@ static gboolean is_key_frame (TsSegment *tssegment, TSPacket *packet)
                                 GST_DEBUG ("Found keyframe at: %u",unit.sc_offset);
                                 is_key = TRUE;
                         }
-                        break;
-                default:
-                        break;
                 }
 
                 if (offset == unit.sc_offset + unit.size) {
@@ -1168,7 +1165,7 @@ static void pushing_data (TsSegment *tssegment)
         buffer = gst_buffer_new_wrapped (data, tssegment->current_size + 188*2);
         GST_BUFFER_PTS (buffer) = MPEGTIME_TO_GSTTIME (tssegment->pre_pts);
         GST_BUFFER_DURATION (buffer) = MPEGTIME_TO_GSTTIME (tssegment->duration);
-        GST_ERROR ("pushing %u data timestamp: %lu", tssegment->current_size, GST_BUFFER_PTS (buffer));
+        GST_ERROR ("pushing %u data timestamp: %lu, duration: %lu", tssegment->current_size, GST_BUFFER_PTS (buffer), MPEGTIME_TO_GSTTIME (tssegment->duration));
         gst_pad_push (tssegment->srcpad, buffer);
         tssegment->current_size = 0;
 }
@@ -1350,10 +1347,7 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
                            G_LIKELY (packet.payload_unit_start_indicator) &&
                            FLAGS_HAS_PAYLOAD (packet.scram_afc_cc)) {
                         if (is_key_frame (tssegment, &packet)) {
-                                //PESHeader res;
                                 mpegts_parse_pes_header (tssegment, packet.payload, 184);
-                                //GST_DEBUG ("PTS %" GST_TIME_FORMAT, GST_TIME_ARGS (MPEGTIME_TO_GSTTIME (res.PTS)));
-                                //tssegment->current_pts = res.PTS;
                                 /* push a segment downstream */
                                 if (tssegment->seen_key_frame) {
                                         segment_duration (tssegment, &packet);
@@ -1364,7 +1358,6 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
                                         tssegment->seen_key_frame = TRUE;
                                         tssegment->pre_pts = tssegment->current_pts;
                                 }
-
                         }
                         /* push packet to segment */
                         pending_packet (tssegment, &packet);

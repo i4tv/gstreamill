@@ -84,6 +84,8 @@ struct _Encoder {
 
         /* m3u8 playlist */
         gboolean has_video;
+        gboolean has_audio_only;
+        gboolean has_tssegment;
         gboolean has_m3u8_output;
         gboolean is_first_key;
         struct sockaddr_un msg_sock_addr;

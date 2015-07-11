@@ -345,14 +345,26 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
                 move_head (encoder);
         }
 
+        if (encoder->has_tssegment && encoder->has_m3u8_output) { 
+                if ((encoder->duration_accumulation >= encoder->segment_duration) ||
+                    ((encoder->segment_duration - encoder->duration_accumulation) < 500000000)) {
+                        encoder->last_segment_duration = encoder->duration_accumulation;
+                        encoder->last_running_time = GST_BUFFER_PTS (buffer);
+                        encoder->duration_accumulation = 0;
+
+                }
+                encoder->duration_accumulation += GST_BUFFER_DURATION (buffer);
+        }
+
+        /* 
+         * random access point found.
+         * 1. with video encoder and IDR found;
+         * 2. audio only encoder and current pts >= last_running_time;
+         * 3. tssegment out every buffer with random access point.
+         */
         if ((encoder->has_video && !GST_BUFFER_FLAG_IS_SET (buffer, GST_BUFFER_FLAG_DELTA_UNIT)) ||
-            (!encoder->has_video && (GST_BUFFER_PTS (buffer) >= encoder->last_running_time))){
-                /* 
-                 * random access point found.
-                 * write previous gop size to 4 bytes reservation,
-                 * write current gop timestamp,
-                 * reserve 4 bytes for size of current gop,
-                 */
+            (encoder->has_audio_only && (GST_BUFFER_PTS (buffer) >= encoder->last_running_time)) ||
+            (encoder->has_tssegment && (GST_BUFFER_PTS (buffer) >= encoder->last_running_time))) {
                 if (encoder->has_m3u8_output == FALSE) {
                         /* no m3u8 output */
                         move_last_rap (encoder, buffer);
@@ -393,6 +405,7 @@ static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data
         GstBuffer *buffer;
         GstPad *pad;
         GstEvent *event;
+        Encoder *encoder;
 
         current_position = (stream->current_position + 1) % SOURCE_RING_SIZE;
         for (;;) {
@@ -428,29 +441,32 @@ static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data
                         GST_TIME_ARGS (GST_BUFFER_PTS (buffer)),
                         stream->source->current_position);
 
-                /* force key unit? */
-                if ((stream->encoder != NULL) && (stream->encoder->segment_duration != 0)) {
-                        if (stream->encoder->duration_accumulation >= stream->encoder->segment_duration) {
+                encoder = stream->encoder;
+                /* segment_duration != 0? with m3u8playlist conf */
+                if ((encoder->segment_duration != 0) && !encoder->has_tssegment) {
+                        if (encoder->duration_accumulation >= encoder->segment_duration) {
                                 GstClockTime running_time;
 
-                                stream->encoder->last_segment_duration = stream->encoder->duration_accumulation;
+                                encoder->last_segment_duration = encoder->duration_accumulation;
+                                GST_ERROR ("last segment duration: %lu", encoder->last_segment_duration);
                                 running_time = GST_BUFFER_PTS (buffer);
-                                if (stream->encoder->has_video) {
+                                /* force key unit? */
+                                if (encoder->has_video) {
                                         pad = gst_element_get_static_pad ((GstElement *)src, "src");
                                         event = gst_video_event_new_downstream_force_key_unit (running_time,
                                                                                                running_time,
                                                                                                running_time,
                                                                                                TRUE,
-                                                                                               stream->encoder->force_key_count);
+                                                                                               encoder->force_key_count);
                                         gst_pad_push_event (pad, event);
 
                                 } else {
-                                        stream->encoder->last_running_time = running_time;
+                                        encoder->last_running_time = running_time;
                                 }
-                                stream->encoder->force_key_count++;
-                                stream->encoder->duration_accumulation = 0;
+                                encoder->force_key_count++;
+                                encoder->duration_accumulation = 0;
                         }
-                        stream->encoder->duration_accumulation += GST_BUFFER_DURATION (buffer);
+                        encoder->duration_accumulation += GST_BUFFER_DURATION (buffer);
                 }
 
                 /* push buffer */
@@ -600,22 +616,39 @@ static gint encoder_extract_streams (Encoder *encoder, gchar **bins)
                 g_regex_match (regex, bin, 0, &match_info);
                 g_regex_unref (regex);
                 if (g_match_info_matches (match_info)) {
+                        GST_INFO ("encoder stream %s found %s", stream->name, bin);
                         stream = (EncoderStream *)g_malloc (sizeof (EncoderStream));
                         stream->name = g_match_info_fetch_named (match_info, "name");
                         g_match_info_free (match_info);
                         g_array_append_val (encoder->streams, stream);
-                        if (g_str_has_prefix (stream->name, "video") &&
-                            strstr (bin, "x264enc") != NULL) {
+                        if (g_str_has_prefix (stream->name, "video") && strstr (bin, "x264enc") != NULL) {
                                 /* with video encoder */
                                 encoder->has_video = TRUE;
                         }
-                        GST_INFO ("encoder stream %s found %s", stream->name, bin);
+
+                        if (g_str_has_prefix (stream->name, "audio")) {
+                                encoder->has_audio_only = TRUE;
+                        }
 
                 } else if (g_str_has_prefix (bin, "appsrc")) {
                         GST_ERROR ("appsrc name property must be set");
                         return 1;
                 }
+
+                if (strstr (bin, "tssegment") != NULL) {
+                        /* has tssegment element */
+                        encoder->has_tssegment = TRUE;
+                }
                 p++;
+        }
+
+
+        if (encoder->has_tssegment) {
+                encoder->has_video = FALSE;
+                encoder->has_audio_only = FALSE;
+
+        } else if (encoder->has_video) {
+                encoder->has_audio_only = FALSE;
         }
 
         return 0;
@@ -705,6 +738,8 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
                 encoder->last_segment_duration = 0;
                 encoder->force_key_count = 0;
                 encoder->has_video = FALSE;
+                encoder->has_audio_only = FALSE;
+                encoder->has_tssegment = FALSE;
 
                 bins = jobdesc_bins (job, pipeline);
                 if (encoder_extract_streams (encoder, bins) != 0) {
@@ -720,21 +755,7 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
                         estream = g_array_index (encoder->streams, gpointer, j);
                         estream->state = &(encoders[i].streams[j]);
                         g_strlcpy (encoders[i].streams[j].name, estream->name, STREAM_NAME_LEN);
-                        if (encoder->has_video && g_str_has_prefix (estream->name, "video")) {
-                                /* have video */
-                                estream->encoder = encoder;
-
-                        } else if (!encoder->has_video && g_str_has_prefix (estream->name, "audio")) {
-                                /* audio only */
-                                estream->encoder = encoder;
-
-                        } else if (!encoder->has_video && g_str_has_prefix (estream->name, "mpegts")) {
-                                /* mpegts segment without video codec, bin name must be "mpegts" */
-                                estream->encoder = encoder;
-
-                        } else {
-                                estream->encoder = NULL;
-                        }
+                        estream->encoder = encoder;
                         estream->source = NULL;
                         for (k = 0; k < source->streams->len; k++) {
                                 sstream = g_array_index (source->streams, gpointer, k);
