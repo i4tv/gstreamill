@@ -14,14 +14,12 @@
 
 #define MPEGTS_NORMAL_PACKETSIZE 188
 #define MPEGTS_M2TS_PACKETSIZE 192
-#define MPEGTS_DVB_ASI_PACKETSIZE 204
-#define MPEGTS_ATSC_PACKETSIZE 208
 #define CONTINUITY_UNSET 255
 #define VERSION_NUMBER_UNSET 255
 #define TABLE_ID_UNSET 0xFF
 #define PACKET_SYNC_BYTE 0x47
 #define MPEGTS_MIN_PACKETSIZE MPEGTS_NORMAL_PACKETSIZE
-#define MPEGTS_MAX_PACKETSIZE MPEGTS_ATSC_PACKETSIZE
+#define MPEGTS_MAX_PACKETSIZE 208
 
 #define MPEGTS_BIT_SET(field, offs)    ((field)[(offs) >> 3] |=  (1 << ((offs) & 0x7)))
 #define MPEGTS_BIT_IS_SET(field, offs) ((field)[(offs) >> 3] &   (1 << ((offs) & 0x7)))
@@ -53,46 +51,6 @@
 
 #define CONTINUITY_UNSET 255
 #define MAX_CONTINUITY 15
-
-typedef enum
-{
-        PENDING_PACKET_EMPTY = 0,     /* No pending packet/buffer
-                                       * Push incoming buffers to the array */
-        PENDING_PACKET_HEADER,        /* PES header needs to be parsed
-                                       * Push incoming buffers to the array */
-        PENDING_PACKET_BUFFER,        /* Currently filling up output buffer
-                                       * Push incoming buffers to the bufferlist */
-        PENDING_PACKET_DISCONT        /* Discontinuity in incoming packets
-                                       * Drop all incoming buffers */
-} PendingPacketState;
-
-typedef struct
-{
-        guint16 pid;
-        guint   continuity_counter;
-
-        /* Section data (always newly allocated) */
-        guint8 *section_data;
-        /* Current offset in section_data */
-        guint16 section_offset;
-
-        /* Values for pending section */
-        /* table_id of the pending section_data */
-        guint8  table_id;
-        guint   section_length;
-        guint8  version_number;
-        guint16 subtable_extension;
-        guint8  section_number;
-        guint8  last_section_number;
-
-        GSList *subtables;
-
-        /* Upstream offset of the data contained in the section */
-        guint64 offset;
-
-        /* Output data */
-        PendingPacketState state;
-} TSPacketStream;
 
 /* PCR/offset structure */
 typedef struct _PCROffset
@@ -234,32 +192,6 @@ typedef struct {
         guint64 pcr;
         guint64 offset;
 } TSPacket;
-
-typedef struct
-{
-        guint8 table_id;
-        /* the spec says sub_table_extension is the fourth and fifth byte of a 
-         * section when the section_syntax_indicator is set to a value of "1". If 
-         * section_syntax_indicator is 0, sub_table_extension will be set to 0 */
-        guint16  subtable_extension;
-        guint8   version_number;
-        guint8   last_section_number;
-        /* table of bits, whether the section was seen or not.
-         * Use MPEGTS_BIT_* macros to check */
-        /* Size is 32, because there's a maximum of 256 (32*8) section_number */
-        guint8   seen_section[32];
-} TSPacketStreamSubtable;
-
-typedef struct _TSStream
-{
-        guint16             pid;
-        guint8              stream_type;
-
-        /* Content of the registration descriptor (if present) */
-        guint32             registration_id;
-
-        GstMpegTsPMTStream *stream;
-} TSStream;
 
 typedef enum {
   PES_PARSING_OK        = 0,    /* Header fully parsed and valid */

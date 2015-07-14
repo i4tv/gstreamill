@@ -94,49 +94,6 @@ static void ts_segment_get_property (GObject *obj, guint prop_id, GValue *value,
 {
 }
 
-static inline TSPacketStreamSubtable *find_subtable (GSList * subtables, guint8 table_id, guint16 subtable_extension)
-{
-        GSList *tmp;
-
-        /* FIXME: Make this an array ! */
-        for (tmp = subtables; tmp; tmp = tmp->next) {
-                TSPacketStreamSubtable *sub = (TSPacketStreamSubtable *) tmp->data;
-                if (sub->table_id == table_id && sub->subtable_extension == subtable_extension) {
-                        return sub;
-                }
-        }
-
-        return NULL;
-}
-
-static void clear_section (TSPacketStream * stream)
-{
-        stream->continuity_counter = CONTINUITY_UNSET;
-        stream->section_length = 0;
-        stream->section_offset = 0;
-        stream->table_id = TABLE_ID_UNSET;
-        if (stream->section_data) {
-                g_free (stream->section_data);
-        }
-        stream->section_data = NULL;
-}
-
-static void stream_subtable_free (TSPacketStreamSubtable *subtable)
-{
-        g_free (subtable);
-}
-
-static void stream_free (TSPacketStream * stream)
-{
-        clear_section (stream);
-        if (stream->section_data) {
-                g_free (stream->section_data);
-        }
-        g_slist_foreach (stream->subtables, (GFunc)stream_subtable_free, NULL);
-        g_slist_free (stream->subtables);
-        g_free (stream);
-}
-
 static void ts_segment_dispose (GObject * object)
 {
         TsSegment *tssegment;
@@ -203,9 +160,9 @@ static gboolean try_discover_packet_size (TsSegment *tssegment)
 
         static const guint psizes[] = {
                 MPEGTS_NORMAL_PACKETSIZE,
-                MPEGTS_M2TS_PACKETSIZE,
-                MPEGTS_DVB_ASI_PACKETSIZE,
-                MPEGTS_ATSC_PACKETSIZE
+                MPEGTS_M2TS_PACKETSIZE
+                //MPEGTS_DVB_ASI_PACKETSIZE,
+                //MPEGTS_ATSC_PACKETSIZE
         };
 
         tssegment->map_data = gst_adapter_map (tssegment->adapter, 4 * MPEGTS_MAX_PACKETSIZE);
