@@ -53,7 +53,6 @@ static void ts_segment_init (TsSegment *tssegment)
         tssegment->srcpad = gst_pad_new_from_static_template (&src_template, "src");
         gst_element_add_pad (GST_ELEMENT (tssegment), tssegment->srcpad);
 
-        tssegment->streams = g_new0 (TSPacketStream *, 8192);
         tssegment->is_pes = g_new0 (guint8, 1024);
         tssegment->known_psi = g_new0 (guint8, 1024);
         memset (tssegment->known_psi, 0, 1024);
@@ -110,57 +109,6 @@ static inline TSPacketStreamSubtable *find_subtable (GSList * subtables, guint8 
         return NULL;
 }
 
-static gboolean seen_section_before (TSPacketStream * stream, guint8 table_id,
-                guint16 subtable_extension, guint8 version_number, guint8 section_number,
-                guint8 last_section_number)
-{
-        TSPacketStreamSubtable *subtable;
-
-        /* Check if we've seen this table_id/subtable_extension first */
-        subtable = find_subtable (stream->subtables, table_id, subtable_extension);
-        if (!subtable) {
-                GST_DEBUG ("Haven't seen subtable");
-                return FALSE;
-        }
-        /* If we have, check it has the same version_number */
-        if (subtable->version_number != version_number) {
-                GST_DEBUG ("Different version number");
-                return FALSE;
-        }
-        /* Did the number of sections change ? */
-        if (subtable->last_section_number != last_section_number) {
-                GST_DEBUG ("Different last_section_number");
-                return FALSE;
-        }
-        /* Finally return whether we saw that section or not */
-        return MPEGTS_BIT_IS_SET (subtable->seen_section, section_number);
-}
-
-static TSPacketStreamSubtable *stream_subtable_new (guint8 table_id, guint16 subtable_extension, guint8 last_section_number)
-{
-        TSPacketStreamSubtable *subtable;
-
-        subtable = g_new0 (TSPacketStreamSubtable, 1);
-        subtable->version_number = VERSION_NUMBER_UNSET;
-        subtable->table_id = table_id;
-        subtable->subtable_extension = subtable_extension;
-        subtable->last_section_number = last_section_number;
-
-        return subtable;
-}
-
-static TSPacketStream *stream_new (guint16 pid)
-{
-        TSPacketStream *stream;
-
-        stream = (TSPacketStream *) g_new0 (TSPacketStream, 1);
-        stream->continuity_counter = CONTINUITY_UNSET;
-        stream->subtables = NULL;
-        stream->table_id = TABLE_ID_UNSET;
-        stream->pid = pid;
-        return stream;
-}
-
 static void clear_section (TSPacketStream * stream)
 {
         stream->continuity_counter = CONTINUITY_UNSET;
@@ -194,15 +142,6 @@ static void ts_segment_dispose (GObject * object)
         TsSegment *tssegment;
 
         tssegment = TS_SEGMENT (object);
-        if (tssegment->streams) {
-                int i;
-                for (i = 0; i < 8192; i++) {
-                        if (tssegment->streams[i]) {
-                                stream_free (tssegment->streams[i]);
-                        }
-                }
-                g_free (tssegment->streams);
-        }
         g_free (tssegment->known_psi);
         g_object_unref (tssegment);
 }
@@ -569,357 +508,20 @@ GST_ERROR ("====%u", packet_size);
         }
 }
 
-static GstMpegTsSection *parse_section_header (TsSegment *tssegment, TSPacketStream * stream)
-{
-        TSPacketStreamSubtable *subtable;
-        GstMpegTsSection *res;
-
-        subtable = find_subtable (stream->subtables, stream->table_id, stream->subtable_extension);
-        if (subtable) {
-                GST_DEBUG ("Found previous subtable_extension:0x%04x", stream->subtable_extension);
-                if (G_UNLIKELY (stream->version_number != subtable->version_number)) {
-                        /* If the version number changed, reset the subtable */
-                        subtable->version_number = stream->version_number;
-                        subtable->last_section_number = stream->last_section_number;
-                        memset (subtable->seen_section, 0, 32);
-                }
-
-        } else {
-                GST_DEBUG ("Appending new subtable_extension: 0x%04x", stream->subtable_extension);
-                subtable = stream_subtable_new (stream->table_id, stream->subtable_extension, stream->last_section_number);
-                subtable->version_number = stream->version_number;
-
-                stream->subtables = g_slist_prepend (stream->subtables, subtable);
-        }
-
-        GST_MEMDUMP ("Full section data", stream->section_data, stream->section_length);
-        /* TODO ? : Replace this by an efficient version (where we provide all
-         * pre-parsed header data) */
-        res = gst_mpegts_section_new (stream->pid, stream->section_data, stream->section_length);
-        stream->section_data = NULL;
-        clear_section (stream);
-
-        if (res) {
-                /* NOTE : Due to the new mpegts-si system, There is a insanely low probability
-                 * that we might have gotten a section that was corrupted (i.e. wrong crc)
-                 * and that we consider it as seen.
-                 *
-                 * The reason why we consider this as acceptable is because all the previous
-                 * checks were already done:
-                 * * transport layer checks (DVB)
-                 * * 0x47 validation
-                 * * continuity counter validation
-                 * * subtable validation
-                 * * section_number validation
-                 * * section_length validation
-                 *
-                 * The probability of this happening vs the overhead of doing CRC checks
-                 * on all sections (including those we would not use) is just not worth it.
-                 * */
-                MPEGTS_BIT_SET (subtable->seen_section, stream->section_number);
-                res->offset = stream->offset;
-        }
-
-        return res;
-}
-
-/*
- * Ideally it should just return a section if:
- * * The section is complete
- * * The section is valid (sanity checks for length for example)
- * * The section applies now (current_next_indicator)
- * * The section is an update or was never seen
- *
- * The section should be a new GstMpegtsSection:
- * * properly initialized
- * * With pid, table_id AND section_type set (move logic from mpegtsbase)
- * * With data copied into it (yes, minor overhead)
- *
- * In all other cases it should just return NULL
- *
- * If more than one section is available, the 'remaining' field will
- * be set to the beginning of a valid GList containing other sections.
- * */
-static GstMpegTsSection *push_section (TsSegment *tssegment, TSPacket *packet, GList **remaining)
+static GstMpegTsSection *push_section (TsSegment *tssegment, TSPacket *packet)
 {
         GstMpegTsSection *section;
-        GstMpegTsSection *res = NULL;
-        TSPacketStream *stream;
-        gboolean long_packet;
-        guint8 pointer = 0, table_id;
-        guint16 subtable_extension = 0;
-        gsize to_read;
+        const guint8 *data;
+        guint8 pointer = 0;
         guint section_length;
-        /* data points to the current read location
-         * data_start points to the beginning of the data to accumulate */
-        const guint8 *data, *data_start;
-        guint8 packet_cc;
-        GList *others = NULL;
-        guint8 version_number, section_number, last_section_number;
 
         data = packet->data;
-        packet_cc = FLAGS_CONTINUITY_COUNTER (packet->scram_afc_cc);
+        pointer = *data++;
+        data += pointer;
+        section_length = (GST_READ_UINT16_BE (data + 1) & 0xfff) + 3;
+        section = gst_mpegts_section_new (packet->pid, g_memdup (data, section_length), section_length);
 
-        /* Get our filter */
-        stream = tssegment->streams[packet->pid];
-        if (G_UNLIKELY (stream == NULL)) {
-                if (!packet->payload_unit_start_indicator) {
-                        /* Early exit (we need to start with a section start) */
-                        GST_DEBUG ("PID 0x%04x  waiting for section start", packet->pid);
-                        goto out;
-                }
-                stream = stream_new (packet->pid);
-                tssegment->streams[packet->pid] = stream;
-        }
-
-        GST_MEMDUMP ("Full packet data", packet->data, packet->data_end - packet->data);
-
-        /* This function is split into several parts:
-         *
-         * Pre checks (packet-wide). Determines where we go next
-         * accumulate_data: store data and check if section is complete
-         * section_start: handle beginning of a section, if needed loop back to
-         *                accumulate_data
-         *
-         * The trigger that makes the loop stop and return is if:
-         * 1) We do not have enough data for the current packet
-         * 2) There is remaining data after a packet which is only made
-         *    of stuffing bytes (0xff).
-         *
-         * Pre-loop checks, related to the whole incoming packet:
-         *
-         * If there is a CC-discont:
-         *  If it is a PUSI, skip the pointer and handle section_start
-         *  If not a PUSI, reset and return nothing
-         * If there is not a CC-discont:
-         *  If it is a PUSI
-         *    If pointer, accumulate that data and check for complete section
-         *    (loop)
-         *  If it is not a PUSI
-         *    Accumulate the expected data and check for complete section
-         *    (loop)
-         *    
-         **/
-
-        if (packet->payload_unit_start_indicator) {
-                pointer = *data++;
-                /* If the pointer is zero, we're guaranteed to be able to handle it */
-                if (pointer == 0) {
-                        GST_LOG ("PID 0x%04x PUSI and pointer == 0, skipping straight to section_start parsing", packet->pid);
-                        goto section_start;
-                }
-        }
-
-        if (stream->continuity_counter == CONTINUITY_UNSET || (stream->continuity_counter + 1) % 16 != packet_cc) {
-                if (stream->continuity_counter != CONTINUITY_UNSET)
-                        GST_WARNING ("PID 0x%04x section discontinuity (%d vs %d)", packet->pid,
-                                        stream->continuity_counter, packet_cc);
-                clear_section (stream);
-                /* If not a PUSI, not much we can do */
-                if (!packet->payload_unit_start_indicator) {
-                        GST_LOG ("PID 0x%04x continuity discont/unset and not PUSI, bailing out", packet->pid);
-                        goto out;
-                }
-                /* If PUSI, skip pointer data and carry on to section start */
-                data += pointer;
-                pointer = 0;
-                GST_LOG ("discont, but PUSI, skipped %d bytes and doing section start", pointer);
-                goto section_start;
-        }
-
-        GST_LOG ("Accumulating data from beginning of packet");
-
-        data_start = data;
-
-accumulate_data:
-        /* If not the beginning of a new section, accumulate what we have */
-        stream->continuity_counter = packet_cc;
-        to_read = MIN (stream->section_length - stream->section_offset, packet->data_end - data_start);
-        memcpy (stream->section_data + stream->section_offset, data_start, to_read);
-        stream->section_offset += to_read;
-        /* Point data to after the data we accumulated */
-        data = data_start + to_read;
-        GST_DEBUG ("Appending data (need %d, have %d)", stream->section_length, stream->section_offset);
-
-        /* Check if we have enough */
-        if (stream->section_offset < stream->section_length) {
-                GST_DEBUG ("PID 0x%04x, section not complete (Got %d, need %d)",
-                                stream->pid, stream->section_offset, stream->section_length);
-                goto out;
-        }
-
-        /* Small sanity check. We should have collected *exactly* the right amount */
-        if (G_UNLIKELY (stream->section_offset != stream->section_length)) {
-                GST_WARNING ("PID 0x%04x Accumulated too much data (%d vs %d) !",
-                                stream->pid, stream->section_offset, stream->section_length);
-        }
-        GST_DEBUG ("PID 0x%04x Section complete", stream->pid);
-
-        if ((section = parse_section_header (tssegment, stream))) {
-                if (res) {
-                        others = g_list_append (others, section);
-
-                } else {
-                        res = section;
-                }
-        }
-
-        /* FIXME : We need at least 8 bytes with current algorithm :(
-         * We might end up losing sections that start across two packets (srsl...) */
-        if (data > packet->data_end - 8 || *data == 0xff) {
-                /* flush stuffing bytes and leave */
-                clear_section (stream);
-                goto out;
-        }
-
-        /* We have more data to process ... */
-        GST_DEBUG ("PID 0x%04x, More section present in packet (remaining bytes:%"
-                        G_GSIZE_FORMAT ")", stream->pid, (gsize) (packet->data_end - data));
-
-section_start:
-        GST_MEMDUMP ("section_start", data, packet->data_end - data);
-        data_start = data;
-        /* Beginning of a new section */
-        /*
-         * section_syntax_indicator means that the header is of the following format:
-         * * table_id (8bit)
-         * * section_syntax_indicator (1bit) == 0
-         * * reserved/private fields (3bit)
-         * * section_length (12bit)
-         * * data (of size section_length)
-         * * NO CRC !
-         */
-        long_packet = data[1] & 0x80;
-
-        /* Fast path for short packets */
-        if (!long_packet) {
-                /* We can create the section now (function will check for size) */
-                GST_DEBUG ("Short packet");
-                section_length = (GST_READ_UINT16_BE (data + 1) & 0xfff) + 3;
-                /* Only do fast-path if we have enough byte */
-                if (section_length < packet->data_end - data) {
-                        if ((section = gst_mpegts_section_new (packet->pid, g_memdup (data, section_length), section_length))) {
-                                GST_DEBUG ("PID 0x%04x Short section complete !", packet->pid);
-                                section->offset = packet->offset;
-                                if (res) {
-                                        others = g_list_append (others, section);
-
-                                } else {
-                                        res = section;
-                                }
-                        }
-                        /* Advance reader and potentially read another section */
-                        data += section_length;
-                        if (data < packet->data_end && *data != 0xff) {
-                                goto section_start;
-                        }
-                        /* If not, exit */
-                        goto out;
-                }
-                /* We don't have enough bytes to do short section shortcut */
-        }
-
-        /* Beginning of a new section, do as much pre-parsing as possible */
-        /* table_id                        : 8  bit */
-        table_id = *data++;
-
-        /* section_syntax_indicator        : 1  bit
-         * other_fields (reserved)         : 3  bit
-         * section_length                  : 12 bit */
-        section_length = (GST_READ_UINT16_BE (data) & 0x0FFF) + 3;
-        data += 2;
-
-        if (long_packet) {
-                /* subtable_extension (always present, we are in a long section) */
-                /* subtable extension              : 16 bit */
-                subtable_extension = GST_READ_UINT16_BE (data);
-                data += 2;
-
-                /* reserved                      : 2  bit
-                 * version_number                : 5  bit
-                 * current_next_indicator        : 1  bit */
-                /* Bail out now if current_next_indicator == 0 */
-                if (G_UNLIKELY (!(*data & 0x01))) {
-                        GST_DEBUG ("PID 0x%04x table_id 0x%02x section does not apply (current_next_indicator == 0)",
-                                 packet->pid, table_id);
-                        goto out;
-                }
-
-                version_number = *data++ >> 1 & 0x1f;
-                /* section_number                : 8  bit */
-                section_number = *data++;
-                /* last_section_number                : 8  bit */
-                last_section_number = *data++;
-
-        } else {
-                subtable_extension = 0;
-                version_number = 0;
-                section_number = 0;
-                last_section_number = 0;
-        }
-        GST_DEBUG ("PID 0x%04x length:%d table_id:0x%02x subtable_extension:0x%04x version_number:%d section_number:%d(last:%d)",
-                 packet->pid, section_length, table_id, subtable_extension, version_number,
-                 section_number, last_section_number);
-
-        to_read = MIN (section_length, packet->data_end - data_start);
-
-        /* Check as early as possible whether we already saw this section
-         * i.e. that we saw a subtable with:
-         * * same subtable_extension (might be zero)
-         * * same version_number
-         * * same last_section_number
-         * * same section_number was seen
-         */
-        if (seen_section_before (stream, table_id, subtable_extension, version_number, section_number, last_section_number)) {
-                GST_DEBUG ("PID 0x%04x Already processed table_id:0x%02x subtable_extension:0x%04x, version_number:%d, section_number:%d",
-                         packet->pid, table_id, subtable_extension, version_number,
-                         section_number);
-                /* skip data and see if we have more sections after */
-                data = data_start + to_read;
-                if (data == packet->data_end || *data == 0xff) {
-                        goto out;
-                }
-                goto section_start;
-        }
-        if (G_UNLIKELY (section_number > last_section_number)) {
-                GST_WARNING ("PID 0x%04x corrupted packet (section_number:%d > last_section_number:%d)",
-                         packet->pid, section_number, last_section_number);
-                goto out;
-        }
-
-        /* Copy over already parsed values */
-        stream->table_id = table_id;
-        stream->section_length = section_length;
-        stream->version_number = version_number;
-        stream->subtable_extension = subtable_extension;
-        stream->section_number = section_number;
-        stream->last_section_number = last_section_number;
-        stream->offset = packet->offset;
-
-        /* Create enough room to store chunks of sections */
-        stream->section_data = g_malloc (stream->section_length);
-        stream->section_offset = 0;
-
-        /* Finally, accumulate and check if we parsed enough */
-        goto accumulate_data;
-
-out:
-        packet->data = data;
-        *remaining = others;
-
-        GST_DEBUG ("result: %p", res);
-
-        return res;
-}
-
-void remove_stream (TsSegment *tssegment, gint16 pid)
-{
-        TSPacketStream *stream = tssegment->streams[pid];
-        if (stream) {
-                GST_INFO ("Removing stream for PID 0x%04x", pid);
-                stream_free (stream);
-                tssegment->streams[pid] = NULL;
-        }
+        return section;
 }
 
 typedef struct
@@ -962,8 +564,6 @@ static gboolean apply_pmt (TsSegment *tssegment, GstMpegTsSection * section)
         /* FIXME : not so sure this is valid anymore */
         if (G_UNLIKELY (tssegment->seen_pat == FALSE)) {
                 GST_WARNING ("Got pmt without pat first. Returning");
-                /* remove the stream since we won't get another PMT otherwise */
-                remove_stream (tssegment, section->pid);
                 return TRUE;
         }
 
@@ -986,11 +586,10 @@ static gboolean apply_pmt (TsSegment *tssegment, GstMpegTsSection * section)
 
 static void handle_psi (TsSegment *tssegment, TSPacket *packet)
 {
-        GList *others;
         GstMpegTsSection *section;
         gboolean post_message = TRUE;
 
-        section = push_section (tssegment, packet, &others);
+        section = push_section (tssegment, packet);
         if (section == NULL) {
                 return;
         }
@@ -1024,12 +623,6 @@ static void handle_psi (TsSegment *tssegment, TSPacket *packet)
         }
 
         GST_ERROR ("Handling PSI (pid: 0x%04x , table_id: 0x%02x)", section->pid, section->table_id);
-        if (G_UNLIKELY (others)) {
-           //     for (tmp = others; tmp; tmp = tmp->next) {
-             //           handle_psi (tssegment, (GstMpegTsSection *) tmp->data);
-               // }
-                g_list_free (others);
-        }
 
         /* Finally post message (if it wasn't corrupted) */
         if (post_message) {

@@ -278,8 +278,6 @@ typedef struct _TsSegment {
         GstElement element;
         GstPad *sinkpad, *srcpad;
 
-        TSPacketStream **streams;
-
         /* Transport Stream segments MUST contain a single MPEG-2 Program;
          * playback of Multi-Program Transport Streams is not defined.  Each
          * Transport Stream segment SHOULD contain a PAT and a PMT at the start
