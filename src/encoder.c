@@ -616,7 +616,6 @@ static gint encoder_extract_streams (Encoder *encoder, gchar **bins)
                 g_regex_match (regex, bin, 0, &match_info);
                 g_regex_unref (regex);
                 if (g_match_info_matches (match_info)) {
-                        GST_INFO ("encoder stream %s found %s", stream->name, bin);
                         stream = (EncoderStream *)g_malloc (sizeof (EncoderStream));
                         stream->name = g_match_info_fetch_named (match_info, "name");
                         g_match_info_free (match_info);
@@ -625,6 +624,7 @@ static gint encoder_extract_streams (Encoder *encoder, gchar **bins)
                                 /* with video encoder */
                                 encoder->has_video = TRUE;
                         }
+                        GST_INFO ("encoder stream %s found %s", stream->name, bin);
 
                         if (g_str_has_prefix (stream->name, "audio")) {
                                 encoder->has_audio_only = TRUE;
