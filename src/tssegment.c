@@ -73,7 +73,6 @@ static void ts_segment_init (TsSegment *tssegment)
         tssegment->allocated_size = 1024000; /* 1M */
         tssegment->data = g_malloc (tssegment->allocated_size);
         tssegment->current_size = 0;
-        //tssegment->push_section = TRUE;
 
         tssegment->adapter = gst_adapter_new ();
         tssegment->offset = 0;
@@ -161,8 +160,6 @@ static gboolean try_discover_packet_size (TsSegment *tssegment)
         static const guint psizes[] = {
                 MPEGTS_NORMAL_PACKETSIZE,
                 MPEGTS_M2TS_PACKETSIZE
-                //MPEGTS_DVB_ASI_PACKETSIZE,
-                //MPEGTS_ATSC_PACKETSIZE
         };
 
         tssegment->map_data = gst_adapter_map (tssegment->adapter, 4 * MPEGTS_MAX_PACKETSIZE);
@@ -238,9 +235,8 @@ static gboolean ts_segment_sync (TsSegment *tssegment)
         } else {
                 sync_offset = 0;
         }
-///GST_ERROR ("====%u size %ld, map_size: %ld, map_offset: %ld", packet_size, size, tssegment->map_size, tssegment->map_offset);
+
         for (i = sync_offset; i + 2 * packet_size < size; i++) {
-///GST_ERROR ("====%u:%02x", packet_size, data[i]);
                 if (data[i] == PACKET_SYNC_BYTE &&
                     data[i + packet_size] == PACKET_SYNC_BYTE &&
                     data[i + 2 * packet_size] == PACKET_SYNC_BYTE) {
@@ -252,7 +248,6 @@ static gboolean ts_segment_sync (TsSegment *tssegment)
         tssegment->map_offset += i - sync_offset;
 
         if (!found) {
-///GST_ERROR ("====%u", packet_size);
                 flush_bytes (tssegment);
         }
 
@@ -329,9 +324,7 @@ static gboolean parse_adaptation_field_control (TsSegment *tssegment, TSPacket *
 
         /* PCR */
         if (afcflags & MPEGTS_AFC_PCR_FLAG) {
-                //MpegTSPCR *pcrtable = NULL;
                 packet->pcr = compute_pcr (data);
-///GST_ERROR (">>>>>>>>>>>>>>>>>>>>>>>>>pcr %lu", packet->pcr);
                 data += 6;
                 GST_DEBUG ("pcr 0x%04x %" G_GUINT64_FORMAT " (%" GST_TIME_FORMAT
                            ") offset:%" G_GUINT64_FORMAT, packet->pid, packet->pcr,
@@ -420,7 +413,6 @@ static TSPacketReturn next_ts_packet (TsSegment *tssegment, TSPacket *packet)
                 packet_size = tssegment->packet_size;
         }
 
-////GST_ERROR ("====%u", packet_size);
         /* M2TS packets don't start with the sync byte, all other variants do */
         if (packet_size == MPEGTS_M2TS_PACKETSIZE) {
                 sync_offset = 4;
@@ -432,14 +424,12 @@ static TSPacketReturn next_ts_packet (TsSegment *tssegment, TSPacket *packet)
         while (1) {
                 if (tssegment->need_sync) {
                         if (!ts_segment_sync (tssegment)) {
-////GST_ERROR ("====%u", packet_size);
                                 return PACKET_NEED_MORE;
                         }
                         tssegment->need_sync = FALSE;
                 }
 
                 if (!tssegment_map (tssegment, packet_size)) {
-GST_ERROR ("====%u", packet_size);
                         return PACKET_NEED_MORE;
                 }
 
@@ -491,7 +481,6 @@ static gboolean apply_pat (TsSegment *tssegment, GstMpegTsSection * section)
 {
         GPtrArray *pat;
         GstMpegTsPatProgram *patp;
-        //gint i;
 
         pat = gst_mpegts_section_get_pat (section);
         if (G_UNLIKELY (pat == NULL)) {
@@ -527,7 +516,6 @@ static gboolean apply_pmt (TsSegment *tssegment, GstMpegTsSection * section)
 
         /* activate program */
         /* Ownership of pmt_info is given to the program */
-        //activate_program (tssegment, program, section->pid, section, pmt, initial_program);
         tssegment->pmt = pmt;
         for (i = 0; i < pmt->streams->len; ++i) {
                 GstMpegTsPMTStream *stream = g_ptr_array_index (pmt->streams, i);
@@ -568,7 +556,6 @@ static void handle_psi (TsSegment *tssegment, TSPacket *packet)
                         post_message = apply_pat (tssegment, section);
                         memcpy (tssegment->pat_packet, packet->data_start, 188);
                         tssegment->seen_pat = TRUE;
-                        //GST_ERROR ("First PAT offset: %" G_GUINT64_FORMAT, section->offset);
                         break;
                 case GST_MPEGTS_SECTION_PMT:
                         post_message = apply_pmt (tssegment, section);
@@ -683,7 +670,6 @@ static void pending_packet (TsSegment *tssegment, TSPacket *packet)
                 } while (tssegment->current_size + size > tssegment->allocated_size);
                 tssegment->data = g_realloc (tssegment->data, tssegment->allocated_size);
         }
-////GST_ERROR ("size: %u current size: %u, allocated size : %u, data: %p, datastart: %p", size, tssegment->current_size, tssegment->allocated_size, tssegment->data, data);
         memcpy (tssegment->data + tssegment->current_size, data, size);
         tssegment->current_size += size;
 }
