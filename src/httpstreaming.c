@@ -324,6 +324,7 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
         sprintf (date, "%04lu-%02lu-%02lu %02lu:00:00", year, month, mday, hour);
         memset (&tm, 0, sizeof (struct tm));
         strptime (date, "%Y-%m-%d %H:%M:%S", &tm);
+        tm.tm_isdst = daylight;
         timestamp = mktime (&tm) * 1000000 + us;
 
         /* read from memory */
