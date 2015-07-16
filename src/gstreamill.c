@@ -1402,12 +1402,12 @@ gchar * gstreamill_stat (Gstreamill *gstreamill)
 }
 
 /**
- * gstreamill_list_nonlive_job:
- * @gstreamill: (bin): the gstreamill.
+ * gstreamill_list_jobs:
+ * @gstreamill: (in): the gstreamill.
  *
- * Returns: nonlive type job array, ["job1", ... "jobn"]
+ * Returns: jobs array, ["job1", ... "jobn"]
  */
-gchar * gstreamill_list_nonlive_job (Gstreamill *gstreamill)
+gchar * gstreamill_list_jobs (Gstreamill *gstreamill)
 {
         gchar *jobarray, *p;
         GSList *list;
@@ -1418,11 +1418,9 @@ gchar * gstreamill_list_nonlive_job (Gstreamill *gstreamill)
         list = gstreamill->job_list;
         while (list != NULL) {
                 job = list->data;
-                if (!job->is_live) {
-                    p = jobarray;
-                    jobarray = g_strdup_printf ("%s\"%s\",", p, job->name);
-                    g_free (p);
-                }
+                p = jobarray;
+                jobarray = g_strdup_printf ("%s\"%s\",", p, job->name);
+                g_free (p);
                 list = list->next;
         }
         g_mutex_unlock (&(gstreamill->job_list_mutex));

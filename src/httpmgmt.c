@@ -236,6 +236,11 @@ static gchar * request_gstreamill_stat (HTTPMgmt *httpmgmt, RequestData *request
                 buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "text/plain", strlen (p), NO_CACHE, p);
                 g_free (p);
 
+        } else if (g_strcmp0 (request_data->uri, "/stat/gstreamill/listjobs") == 0) {
+                p = gstreamill_list_jobs (httpmgmt->gstreamill);
+                buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+                g_free (p);
+
         } else if (g_str_has_prefix (request_data->uri, "/stat/gstreamill/job/")) {
                 p = gstreamill_job_stat (httpmgmt->gstreamill, request_data->uri);
                 buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
@@ -1034,11 +1039,6 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
 
         } else if (g_strcmp0 (request_data->uri, "/admin/listlivejob") == 0) {
                 p = list_devices (JOBS_DIR "/*.job", JOBS_DIR "/%[^.].job");
-                *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
-                g_free (p);
-
-        } else if (g_strcmp0 (request_data->uri, "/admin/listnonlivejob") == 0) {
-                p = gstreamill_list_nonlive_job (httpmgmt->gstreamill);
                 *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
                 g_free (p);
 
