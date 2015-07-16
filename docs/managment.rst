@@ -104,6 +104,23 @@ The following table defines the properties
     jobcount      number Current count of jobs
     ============= ====== =================================
 
+list jobs
+---------
+
+List jobs
+
+**Request**
+
+HTTP Request::
+
+    GET http://gstreamill.server.addr:20118/stat/gstreamill/listjobs
+
+**Response**
+
+On success, returns a response body with the following structure::
+
+    ["CCTV-1"]
+
 Job stat
 --------
 
@@ -487,23 +504,6 @@ HTTP Request::
 On success, returns a response body with the following structure::
 
     ["CCTV-1","CCTV-2","CCTV-3","CCTV-4","CCTV-5"]
-
-list nonlive jobs
------------------
-
-List nonlive jobs
-
-**Request**
-
-HTTP Request::
-
-    GET http://gstreamill.server.addr:20118/admin/listnonlivejob
-
-**Response**
-
-On success, returns a response body with the following structure::
-
-    ["Film"]
 
 new job
 -------
