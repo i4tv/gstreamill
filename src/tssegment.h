@@ -217,7 +217,7 @@ typedef struct _TsSegment {
          * the Media Playlist */
         guint program_number;
         guint16 pmt_pid;
-        const GstMpegTsPMT *pmt;
+        const GstMpegtsPMT *pmt;
 
         /* arrays that say whether a pid is a known psi pid or a pes pid */
         /* Use MPEGTS_BIT_* to set/unset/check the values */
