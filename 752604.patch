@@ -1,0 +1,53 @@
+--- a/gst/asfdemux/gstasfdemux.c
++++ b/gst/asfdemux/gstasfdemux.c
+@@ -2727,7 +2727,7 @@ gst_asf_demux_parse_stream_object (GstASFDemux * demux, guint8 * data,
+ {
+   AsfCorrectionType correction_type;
+   AsfStreamType stream_type;
+-  GstClockTime time_offset;
++  GstClockTime time_offset G_GNUC_UNUSED;
+   gboolean is_encrypted G_GNUC_UNUSED;
+   guint16 stream_id;
+   guint16 flags;
+@@ -2795,7 +2795,8 @@ gst_asf_demux_parse_stream_object (GstASFDemux * demux, guint8 * data,
+ 
+       switch (correction_type) {
+         case ASF_CORRECTION_ON:{
+-          guint span, packet_size, chunk_size, data_size, silence_data;
++          guint span, packet_size, chunk_size, data_size,
++              silence_data G_GNUC_UNUSED;
+ 
+           GST_INFO ("Using error correction");
+ 
+@@ -2860,7 +2861,7 @@ gst_asf_demux_parse_stream_object (GstASFDemux * demux, guint8 * data,
+     case ASF_STREAM_VIDEO:{
+       asf_stream_video_format video_format_object;
+       asf_stream_video video_object;
+-      guint16 vsize;
++      guint16 vsize G_GNUC_UNUSED;
+ 
+       if (!gst_asf_demux_get_stream_video (&video_object, &data, &size))
+         goto not_enough_data;
+@@ -3415,7 +3416,7 @@ gst_asf_demux_process_file (GstASFDemux * demux, guint8 * data, guint64 size)
+   guint64 creation_time G_GNUC_UNUSED;
+   guint64 file_size G_GNUC_UNUSED;
+   guint64 send_time G_GNUC_UNUSED;
+-  guint64 packets_count, play_time, preroll;
++  guint64 packets_count G_GNUC_UNUSED, play_time, preroll;
+   guint32 flags, min_pktsize, max_pktsize, min_bitrate G_GNUC_UNUSED;
+ 
+   if (size < (16 + 8 + 8 + 8 + 8 + 8 + 8 + 4 + 4 + 4 + 4))
+@@ -3824,8 +3825,8 @@ gst_asf_demux_process_ext_stream_props (GstASFDemux * demux, guint8 * data,
+   guint16 num_payload_ext;
+   guint64 len;
+   guint8 *stream_obj_data = NULL;
+-  guint8 *data_start;
+-  guint obj_size;
++  guint8 *data_start G_GNUC_UNUSED;
++  guint obj_size G_GNUC_UNUSED;
+   guint i, stream_num;
+ 
+   data_start = data;
+-- 
+1.9.1
+
