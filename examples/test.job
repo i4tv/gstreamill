@@ -51,8 +51,8 @@
             },
             "bins" : [
                 "appsrc name=video ! queue ! timeoverlay ! queue ! x264enc ! queue ! muxer.",
-                "appsrc name=audio ! audioconvert ! audioresample ! voaacenc ! muxer.",
-                "mpegtsmux name=muxer ! queue ! appsink"
+                "appsrc name=audio ! audioconvert ! audioresample ! voaacenc ! aacparse ! muxer.",
+                "mpegtsmux name=muxer ! queue ! tssegment ! queue ! appsink"
             ]
         }
     ],
@@ -60,6 +60,7 @@
         "version" : 3,
         "window-size" : 10,
         "segment-duration" : 3.00
-    }
+    },
+    "dvr_duration": 86400
 }
 
