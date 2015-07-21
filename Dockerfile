@@ -40,9 +40,11 @@ RUN git clone git://anongit.freedesktop.org/gstreamer/gst-plugins-bad && \
         make && \
         make install
 RUN apt-get install -y yasm
-RUN git clone git://anongit.freedesktop.org/gstreamer/gst-libav && \
-        cd gst-libav && \
+RUN git clone git://anongit.freedesktop.org/gstreamer/gst-libav
+ADD ./libav.patch /gst-libav/
+RUN     cd gst-libav && \
         git checkout 1.5.2 && \
+        patch -p1 < libav.patch && \
         ./autogen.sh --prefix=/usr --disable-gtk-doc-pdf --disable-gtk-doc --disable-gst-debug && \
         make && \
         make install
