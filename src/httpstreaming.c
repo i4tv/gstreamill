@@ -524,10 +524,10 @@ static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encod
         gchar *m3u8playlist = NULL;
 
         /* time shift */
-        if (g_strrstr (request_data->parameters, "offset") != NULL) {
+        if (g_strrstr (request_data->parameters, "timeshift") != NULL) {
                 gint64 offset;
 
-                offset = get_gint64_parameter (request_data->parameters, "offset");
+                offset = get_gint64_parameter (request_data->parameters, "timeshift");
                 m3u8playlist = m3u8playlist_timeshift_get_playlist (encoder_output->record_path, offset);
 
         /* callback */
