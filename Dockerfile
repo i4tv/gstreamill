@@ -25,14 +25,13 @@ RUN git clone git://anongit.freedesktop.org/gstreamer/gst-plugins-good && \
         make install
 RUN apt-get install -y libmpeg2-4-dev libmad-ocaml-dev libmp3lame-dev liba52-0.7.4-dev libx264-dev
 RUN git clone git://anongit.freedesktop.org/gstreamer/gst-plugins-ugly
-ADD ./752604.patch /gst-plugins-ugly/
 RUN cd gst-plugins-ugly && \
         git checkout 1.5.2 && \
-        patch -p1 < 752604.patch && \
-        ./autogen.sh --prefix=/usr --disable-gtk-doc-pdf --disable-gtk-doc && \
+        ./autogen.sh --prefix=/usr --disable-gtk-doc-pdf --disable-gtk-doc --disable-gst-debug --disable-fatal-warnings && \
         make && \
         make install
-RUN apt-get install -y libvoaacenc-ocaml-dev
+RUN apt-get update
+#RUN apt-get install -y libvoaacenc-ocaml-dev --fix-missing
 RUN git clone git://anongit.freedesktop.org/gstreamer/gst-plugins-bad && \
         cd gst-plugins-bad && \
         git checkout 1.5.2 && \
@@ -41,10 +40,8 @@ RUN git clone git://anongit.freedesktop.org/gstreamer/gst-plugins-bad && \
         make install
 RUN apt-get install -y yasm
 RUN git clone git://anongit.freedesktop.org/gstreamer/gst-libav
-ADD ./libav.patch /gst-libav/
 RUN     cd gst-libav && \
         git checkout 1.5.2 && \
-        patch -p1 < libav.patch && \
-        ./autogen.sh --prefix=/usr --disable-gtk-doc-pdf --disable-gtk-doc --disable-gst-debug && \
+        ./autogen.sh --prefix=/usr --disable-gtk-doc-pdf --disable-gtk-doc --disable-gst-debug --disable-fatal-warnings && \
         make && \
         make install
