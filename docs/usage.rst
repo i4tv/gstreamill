@@ -95,11 +95,11 @@ Accessing gstreamill output
 
 **hls time shift**
 
-    *http://gstreamill.server.addr:20119/job_name/playlist.m3u8?offset=-3600*
+    *http://gstreamill.server.addr:20119/job_name/playlist.m3u8?timeshift=3600*
 
 **hls catchup**
 
-   *http://gstreamill.server.addr:20119/job_name/playlist.m3u8?start=1412069895&duration=3600*
+   *http://gstreamill.server.addr:20119/job_name/playlist.m3u8?start=20150606060600&end=20150606070600*
 
 **udp**
 

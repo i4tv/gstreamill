@@ -37,8 +37,8 @@ gstreamill is an open source, GPL licensed "stream mill" based on gstreamer-1.0 
     IP >-----+ 
              |   +------------+   +----> UDP
     CVBS >---+   | gstreamill |   |                 +-- live
-             +---+  with dvr  +---+---> M3U8(HLS) --+-- time shift (?offset=-nnnn)
-    SDI >----+   +------+-----+   |                 +-- catch up (?start=unix_time&duration=nnnn)
+             +---+  with dvr  +---+---> M3U8(HLS) --+-- time shift (?timeshift=nnnn)
+    SDI >----+   +------+-----+   |                 +-- catch up (?start=yyyymmddhhmmss&end=yyyymmddhhmmss)
              |          |         +---> HTTP
     LIVE >---+          |
                         |
@@ -133,8 +133,8 @@ default management port is 20118, use curl to invoke test job via management int
 * access output use via m3u8:
     
         http://host.name.or.ip:20119/test/playlist.m3u8 (live)
-        http://host.name.or.ip:20119/test/playlist.m3u8?offset=3600 (time shift)
-        http://host.name.or.ip:20119/test/playlist.m3u8?start=201506060606&201506060706 (callback)
+        http://host.name.or.ip:20119/test/playlist.m3u8?timeshift=3600 (time shift)
+        http://host.name.or.ip:20119/test/playlist.m3u8?start=201506060606&end=20150606070600 (callback)
 
 ## Management interface
 
