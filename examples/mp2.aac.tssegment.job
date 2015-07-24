@@ -38,7 +38,7 @@
                 }
             },
             "bins" : [
-                "appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc name=voaacenc0! queue ! mpegts.",
+                "appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc name=voaacenc0 ! aacparse ! queue ! mpegts.",
                 "appsrc name=video ! queue ! h264parse ! queue ! mpegts.",
                 "mpegtsmux name=mpegts ! queue ! tssegment ! queue ! appsink sync=FALSE"
             ]
