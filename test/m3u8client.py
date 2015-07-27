@@ -7,8 +7,9 @@ import sys
 import m3u8
 import time
 import urllib2
+import os
 
-url = "http://localhost:20119/live/CCTV-1/encoder/0/playlist.m3u8"
+url = "http://localhost:20119/cctv21/encoder/0/playlist.m3u8"
 media_sequence = 0
 
 playlist = m3u8.load(url)
@@ -42,6 +43,8 @@ while True:
         try:
             response = urllib2.urlopen(seg_url)
             buf = response.read()
+            if not os.path.isdir(os.path.dirname(segment.uri)):
+                os.mkdir(os.path.dirname(segment.uri))
             f = open(segment.uri, "w")
             f.write(buf)
             f.close
