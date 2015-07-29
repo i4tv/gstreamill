@@ -378,9 +378,9 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
                         *buf = g_malloc (buf_size + strlen (header));
                         memcpy (*buf, header, strlen (header));
                         memcpy (*buf + strlen (header), file, buf_size);
+                        buf_size += strlen (header);
                         g_free (header);
                         g_free (file);
-                        buf_size += strlen (header);
                 }
                 g_free (path);
         }
