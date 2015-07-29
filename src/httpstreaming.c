@@ -536,7 +536,8 @@ static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encod
                 m3u8playlist = m3u8playlist_callback_get_playlist (encoder_output->record_path, request_data->parameters);
 
         /* live */
-        } else if (encoder_output->m3u8_playlist != NULL) {
+        } else if ((encoder_output->m3u8_playlist != NULL) &&
+                   (request_data->parameters[0] == '\0')) {
                 m3u8playlist = m3u8playlist_live_get_playlist (encoder_output->m3u8_playlist);
         }
 
