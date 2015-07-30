@@ -41,6 +41,7 @@ typedef struct _EncoderOutput {
 
         /* m3u8 streaming */
         M3U8Playlist *m3u8_playlist;
+        GstClockTime segment_duration;
         GstClockTime last_timestamp; /* last segment timestamp */
         GstClock *system_clock;
 

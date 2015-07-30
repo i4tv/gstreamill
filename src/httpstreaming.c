@@ -306,10 +306,10 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
 {
         GstClockTime timestamp;
         gint number;
-        guint64 year, month, mday, hour, sequence, duration, rap_addr;
+        guint64 year, month, mday, hour, sequence, duration, rap_addr, max_age;
         GstClockTime us; /* microseconds */
         struct tm tm;
-        gchar date[20], *header, *path, *file;
+        gchar date[20], *header, *path, *file, *cache_control;
         gsize buf_size;
         GError *err = NULL;
 
@@ -341,7 +341,9 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
                 gsize gop_size;
 
                 gop_size = encoder_output_gop_size (encoder_output, rap_addr);
-                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "video/mpeg", gop_size, CACHE_60s, "");
+                cache_control = g_strdup_printf ("max-age=%lu", encoder_output->dvr_duration);
+                header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "video/mpeg", gop_size, cache_control, "");
+                g_free (cache_control);
                 *buf = g_malloc (strlen (header) + gop_size);
                 memcpy (*buf, header, strlen(header));
                 if (rap_addr + gop_size + 12 < encoder_output->cache_size) {
@@ -374,7 +376,16 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
                         buf_size = strlen (*buf);
 
                 } else {
-                        header = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "video/mpeg", buf_size, CACHE_60s, "");
+                        max_age = encoder_output->dvr_duration - (g_get_real_time () - timestamp) / 1000000;
+                        cache_control = g_strdup_printf ("max-age=%lu", max_age);
+                        header = g_strdup_printf (http_200,
+                                                  PACKAGE_NAME,
+                                                  PACKAGE_VERSION,
+                                                  "video/mpeg",
+                                                  buf_size,
+                                                  cache_control,
+                                                  "");
+                        g_free (cache_control);
                         *buf = g_malloc (buf_size + strlen (header));
                         memcpy (*buf, header, strlen (header));
                         memcpy (*buf + strlen (header), file, buf_size);
@@ -478,13 +489,14 @@ static gchar * request_master_m3u8_playlist (HTTPStreaming *httpstreaming, Reque
         }
         g_free (buf);
         g_regex_unref (regex);
+
         if (master_m3u8_playlist != NULL) {
                 buf = g_strdup_printf (http_200,
                                PACKAGE_NAME,
                                PACKAGE_VERSION,
                                "application/vnd.apple.mpegurl",
                                strlen (master_m3u8_playlist),
-                               CACHE_60s,
+                               CACHE_3600s,
                                master_m3u8_playlist);
                 g_free (master_m3u8_playlist);
 
@@ -578,20 +590,22 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
 
         } else if (g_str_has_suffix (request_data->uri, "playlist.m3u8")) {
                 /* get m3u8 playlist */
-                gchar *m3u8playlist;
+                gchar *m3u8playlist, *cache_control;
 
                 m3u8playlist = get_m3u8playlist (request_data, encoder_output);
                 if (m3u8playlist == NULL) {
                         buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
 
                 } else {
+                        cache_control = g_strdup_printf ("max-age=%lu", encoder_output->segment_duration / GST_SECOND);
                         buf = g_strdup_printf (http_200,
                                        PACKAGE_NAME,
                                        PACKAGE_VERSION,
                                        "application/vnd.apple.mpegurl",
                                        strlen (m3u8playlist),
-                                       CACHE_60s,
+                                       cache_control,
                                        m3u8playlist);
+                        g_free (cache_control);
                         g_free (m3u8playlist);
                 }
                 buf_size = strlen (buf);

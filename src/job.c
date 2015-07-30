@@ -514,6 +514,7 @@ gint job_output_initialize (Job *job)
         /* initialize m3u8 and dvr parameters */
         for (i = 0; i < output->encoder_count; i++) {
                 output->encoders[i].m3u8_playlist = NULL;
+                output->encoders[i].segment_duration = jobdesc_m3u8streaming_segment_duration (job->description);
                 output->encoders[i].system_clock = job->system_clock;
                 /* timeshift and dvr */
                 output->encoders[i].record_path = NULL;

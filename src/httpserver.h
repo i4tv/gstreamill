@@ -47,6 +47,7 @@
 
 #define NO_CACHE "no-cache"
 #define CACHE_60s "max-age=60"
+#define CACHE_3600s "max-age=3600"
 
 #define http_chunked "HTTP/1.1 200 OK\r\n" \
                      "Content-Type: video/mpeg\r\n" \
