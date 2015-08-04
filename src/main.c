@@ -240,6 +240,33 @@ static void stop_gstreamill (gint number)
         }
 }
 
+
+static int isrunning_gstreamill()
+{
+    int ret = 0;
+
+    if (g_file_test (PID_FILE, G_FILE_TEST_EXISTS)) {
+        gchar* cmd = g_malloc(512);
+        g_sprintf(cmd, "cat %s | head -n 1 | xargs -i ps {}", PID_FILE);
+        ret = WEXITSTATUS(system(cmd));
+
+        //exist daemon
+        if(ret == 0){
+            ret = 1;
+        }else{
+            g_sprintf(cmd, "rm -f %s", PID_FILE);
+            system(cmd);
+            ret = 0;
+        }
+
+        g_free (cmd);
+    }else{
+        //do nothing
+    }
+
+    return ret;
+}
+
 int main (int argc, char *argv[])
 {
         HTTPMgmt *httpmgmt;
@@ -432,10 +459,16 @@ int main (int argc, char *argv[])
         if (!foreground) {
                 gchar *path;
                 gint ret;
-
+#if 0
                 /* pid file exist? */
                 if (g_file_test (PID_FILE, G_FILE_TEST_EXISTS)) {
                         g_print ("file %s found, gstreamill already running !!!\n", PID_FILE);
+                        exit (10);
+                }
+#endif
+                /* gstreamill is running? */
+                if(isrunning_gstreamill()){
+                        g_print ("gstreamill already running !!!\n", PID_FILE);
                         exit (10);
                 }
 

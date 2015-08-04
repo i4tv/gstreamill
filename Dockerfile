@@ -53,5 +53,9 @@ RUN     cd gstreamill && \
         make && \
         make install
 
+
+RUN echo "# UNCONFIGURED FSTAB FOR BASE SYSTEM" >/etc/fstab
+RUN echo "tmpfs                   /dev/shm                tmpfs   defaults,size=1024M        0 0" >>/etc/fstab
+
 EXPOSE 20118
 EXPOSE 20119
