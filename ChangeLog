@@ -1,7 +1,13 @@
 releases are sorted from youngest to oldest.
 
-v-0.6.4 2015-
-- add tssegment
+v-0.7.0 2015-08-04
+- add tssegment element
+- timeshift parameter: timeshift=nnnn
+- callback parameter: start=yyyymmddhhmmss&end=yyyymmddhhmmss
+- segment store path: /path/to/dvr/channel_name/encoder_id/yyyymmddhh/
+- live hls segment name: yyyymmddhh/us_sequenc_duration.ts
+- Dockerfile for container image
+- update parson
 
 v-0.6.3 2015-03-04
 - bugfix #51
