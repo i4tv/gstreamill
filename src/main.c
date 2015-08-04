@@ -247,7 +247,7 @@ static int isrunning_gstreamill()
 
     if (g_file_test (PID_FILE, G_FILE_TEST_EXISTS)) {
         gchar* cmd = g_malloc(512);
-        g_sprintf(cmd, "cat %s | head -n 1 | xargs -i ps {}", PID_FILE);
+        g_sprintf(cmd, "cat %s | head -n 1 | xargs -i ps {} 2>&1 >/dev/null", PID_FILE);
         ret = WEXITSTATUS(system(cmd));
 
         //exist daemon
