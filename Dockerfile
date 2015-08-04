@@ -53,9 +53,13 @@ RUN     cd gstreamill && \
         make && \
         make install
 
+#RUN echo "# UNCONFIGURED FSTAB FOR BASE SYSTEM" >/etc/fstab
+#RUN echo "tmpfs                   /dev/shm                tmpfs   defaults,size=1024M        0 0" >>/etc/fstab
+#RUN mount -o remount /dev/shm
 
-RUN echo "# UNCONFIGURED FSTAB FOR BASE SYSTEM" >/etc/fstab
-RUN echo "tmpfs                   /dev/shm                tmpfs   defaults,size=1024M        0 0" >>/etc/fstab
+RUN touch /tmp/gstreamill
+
+CMD mount -o remount -o size=2048M /dev/shm && gstreamill && tail -f /tmp/gstreamill
 
 EXPOSE 20118
 EXPOSE 20119
