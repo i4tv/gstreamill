@@ -255,7 +255,7 @@ static int isrunning_gstreamill()
             ret = 1;
         }else{
             g_sprintf(cmd, "rm -f %s", PID_FILE);
-            system(cmd);
+            ret = system(cmd);
             ret = 0;
         }
 
@@ -468,7 +468,7 @@ int main (int argc, char *argv[])
 #endif
                 /* gstreamill is running? */
                 if(isrunning_gstreamill()){
-                        g_print ("gstreamill already running !!!\n", PID_FILE);
+                        g_print ("gstreamill already running !!!\n");
                         exit (10);
                 }
 
