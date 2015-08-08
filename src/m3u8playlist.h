@@ -19,19 +19,19 @@
 
 typedef struct _M3U8Entry
 {
-        GstClockTime duration;
-        gchar *url;
+    GstClockTime duration;
+    gchar *url;
 } M3U8Entry;
 
 typedef struct _M3U8Playlist
 {
-        GRWLock lock;
-        guint version;
-        gint window_size;
-        guint64 sequence_number;
+    GRWLock lock;
+    guint version;
+    gint window_size;
+    guint64 sequence_number;
 
-        GQueue *entries;
-        gchar *playlist_str;
+    GQueue *entries;
+    gchar *playlist_str;
 } M3U8Playlist;
 
 M3U8Playlist * m3u8playlist_new (guint version, guint window_size, guint64 sequence);
