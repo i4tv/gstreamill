@@ -27,62 +27,62 @@ typedef struct _JobClass JobClass;
  * JOB_STATE_STOPED: stoped state, subprocess finished.
  */
 typedef enum {
-        JOB_STATE_VOID_PENDING = 0,
-        JOB_STATE_READY = 1,
-        JOB_STATE_PLAYING = 2,
-        JOB_STATE_START_FAILURE = 3,
-        JOB_STATE_STOPING = 4,
-        JOB_STATE_STOPED = 5
+    JOB_STATE_VOID_PENDING = 0,
+    JOB_STATE_READY = 1,
+    JOB_STATE_PLAYING = 2,
+    JOB_STATE_START_FAILURE = 3,
+    JOB_STATE_STOPING = 4,
+    JOB_STATE_STOPED = 5
 } JobState;
 
 typedef struct _JobOutput {
-        gchar *job_description;
-        gchar *semaphore_name;
-        sem_t *semaphore; /* access of job output should be exclusive */
-        guint64 *state;
-        SourceState source;
-        guint64 sequence;
-        gint64 encoder_count;
-        EncoderOutput *encoders;
+    gchar *job_description;
+    gchar *semaphore_name;
+    sem_t *semaphore; /* access of job output should be exclusive */
+    guint64 *state;
+    SourceState source;
+    guint64 sequence;
+    gint64 encoder_count;
+    EncoderOutput *encoders;
 
-        gchar *master_m3u8_playlist;
+    gchar *master_m3u8_playlist;
 } JobOutput;
 
 struct _Job {
-        GObject parent;
+    GObject parent;
 
-        gchar *description;
-        gchar *exe_path;
-        gchar *name; /* same as the name in job config file */
-        gboolean is_live;
-        gboolean eos;
-        gint id;
-        gchar *log_dir;
-        GstClock *system_clock;
-        gsize output_size;
-        gint output_fd;
-        JobOutput *output; /* Interface for producing */
-        gint64 age; /* (re)start times of the job */
-        gchar *last_start_time; /* last start up time */
-        pid_t worker_pid;
+    gchar *description;
+    gchar *exe_path;
+    gchar *name; /* same as the name in job config file */
+    gboolean is_live;
+    gboolean eos;
+    gint id;
+    gchar *log_dir;
+    GstClock *system_clock;
+    gsize output_size;
+    gint output_fd;
+    JobOutput *output; /* Interface for producing */
+    gint64 age; /* (re)start times of the job */
+    gchar *last_start_time; /* last start up time */
+    pid_t worker_pid;
 
-        GMutex access_mutex; /* current_access access should be mutex */
-        gint current_access; /* number of current access client */
+    GMutex access_mutex; /* current_access access should be mutex */
+    gint current_access; /* number of current access client */
 
-        guint64 last_utime; /* last process user time */
-        guint64 last_stime; /* last process system time */
-        guint64 last_ctime; /* last process cpu time */
-        guint64 start_ctime; /* cpu time at process start */
-        gint cpu_average;
-        gint cpu_current;
-        guint64 memory;
+    guint64 last_utime; /* last process user time */
+    guint64 last_stime; /* last process system time */
+    guint64 last_ctime; /* last process cpu time */
+    guint64 start_ctime; /* cpu time at process start */
+    gint cpu_average;
+    gint cpu_current;
+    guint64 memory;
 
-        Source *source; 
-        GArray *encoder_array;
+    Source *source; 
+    GArray *encoder_array;
 };
 
 struct _JobClass {
-        GObjectClass parent;
+    GObjectClass parent;
 };
 
 #define TYPE_JOB           (job_get_type())
