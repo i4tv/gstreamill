@@ -25,23 +25,23 @@ typedef struct _Gstreamill      Gstreamill;
 typedef struct _GstreamillClass GstreamillClass;
 
 struct _Gstreamill {
-        GObject parent;
+    GObject parent;
 
-        gchar *exe_path;
-        gboolean stop; /* gstreamill exit if stop == TURE */
-        gboolean daemon; /* run as daemon? */
-        GstClock *system_clock;
-        gchar *start_time;
-        GThread *msg_thread;
-        gchar *log_dir;
-        guint64 last_dvr_clean_time;
+    gchar *exe_path;
+    gboolean stop; /* gstreamill exit if stop == TURE */
+    gboolean daemon; /* run as daemon? */
+    GstClock *system_clock;
+    gchar *start_time;
+    GThread *msg_thread;
+    gchar *log_dir;
+    guint64 last_dvr_clean_time;
 
-        GMutex job_list_mutex;
-        GSList *job_list;
+    GMutex job_list_mutex;
+    GSList *job_list;
 };
 
 struct _GstreamillClass {
-        GObjectClass parent;
+    GObjectClass parent;
 };
 
 #define TYPE_GSTREAMILL           (gstreamill_get_type())
