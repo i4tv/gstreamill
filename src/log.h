@@ -15,15 +15,15 @@ typedef struct _Log      Log;
 typedef struct _LogClass LogClass;
 
 struct _Log {
-        GObject parent;
+    GObject parent;
 
-        gchar *log_path;
-        FILE *log_hd;
-        GstLogFunction func;
+    gchar *log_path;
+    FILE *log_hd;
+    GstLogFunction func;
 };
 
 struct _LogClass {
-        GObjectClass parent;
+    GObjectClass parent;
 };
 
 #define TYPE_LOG           (log_get_type())

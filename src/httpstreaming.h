@@ -15,32 +15,32 @@
 #include "gstreamill.h"
 
 typedef struct _HTTPStreamingPrivateData {
-        Job *job;
-        gint64 livejob_age;
-        gint64 rap_addr;
-        gint64 send_position;
-        gint chunk_size;
-        gchar *chunk_size_str;
-        gint chunk_size_str_len;
-        gint send_count;
-        gpointer encoder_output;
-        gchar *buf;
-        gsize buf_size;
+    Job *job;
+    gint64 livejob_age;
+    gint64 rap_addr;
+    gint64 send_position;
+    gint chunk_size;
+    gchar *chunk_size_str;
+    gint chunk_size_str_len;
+    gint send_count;
+    gpointer encoder_output;
+    gchar *buf;
+    gsize buf_size;
 } HTTPStreamingPrivateData;
 
 typedef struct _HTTPStreaming      HTTPStreaming;
 typedef struct _HTTPStreamingClass HTTPStreamingClass;
 
 struct _HTTPStreaming {
-        GObject parent;
-    
-        gchar *address;
-        Gstreamill *gstreamill;
-        HTTPServer *httpserver; /* streaming via http */
+    GObject parent;
+
+    gchar *address;
+    Gstreamill *gstreamill;
+    HTTPServer *httpserver; /* streaming via http */
 };
 
 struct _HTTPStreamingClass {
-        GObjectClass parent;
+    GObjectClass parent;
 };
 
 #define TYPE_HTTPSTREAMING           (httpstreaming_get_type())
