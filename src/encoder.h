@@ -16,87 +16,87 @@ typedef struct _Encoder Encoder;
 typedef struct _EncoderClass EncoderClass;
 
 typedef struct _EncoderStreamState {
-        gchar name[STREAM_NAME_LEN];
-        GstClockTime current_timestamp;
-        GstClockTime last_heartbeat;
+    gchar name[STREAM_NAME_LEN];
+    GstClockTime current_timestamp;
+    GstClockTime last_heartbeat;
 } EncoderStreamState;
 
 typedef struct _EncoderOutput {
-        gchar name[STREAM_NAME_LEN];
-        sem_t *semaphore; /* pointer to job semaphore */
-        GstClockTime *heartbeat;
-        gboolean *eos;
-        gchar *cache_addr;
-        guint64 cache_size;
-        guint64 *total_count; /* total output packet counts */
-        guint64 *head_addr;
-        guint64 *tail_addr;
-        guint64 *last_rap_addr; /* last random access point address */
-        gint64 stream_count;
-        EncoderStreamState *streams;
+    gchar name[STREAM_NAME_LEN];
+    sem_t *semaphore; /* pointer to job semaphore */
+    GstClockTime *heartbeat;
+    gboolean *eos;
+    gchar *cache_addr;
+    guint64 cache_size;
+    guint64 *total_count; /* total output packet counts */
+    guint64 *head_addr;
+    guint64 *tail_addr;
+    guint64 *last_rap_addr; /* last random access point address */
+    gint64 stream_count;
+    EncoderStreamState *streams;
 
-        /* buffer time, buffer time = base_time + pts, base_time = clock[first buffer] - pts[first buffer] */
-        gint64 base_time;
-        gboolean is_first_buffer;
+    /* buffer time, buffer time = base_time + pts, base_time = clock[first buffer] - pts[first buffer] */
+    gint64 base_time;
+    gboolean is_first_buffer;
 
-        /* m3u8 streaming */
-        M3U8Playlist *m3u8_playlist;
-        GstClockTime segment_duration;
-        GstClockTime last_timestamp; /* last segment timestamp */
-        GstClock *system_clock;
+    /* m3u8 streaming */
+    M3U8Playlist *m3u8_playlist;
+    GstClockTime segment_duration;
+    GstClockTime last_timestamp; /* last segment timestamp */
+    GstClock *system_clock;
 
-        /* timeshift and dvr */
-        gchar *record_path;
-        guint64 sequence;
-        guint64 dvr_duration;
+    /* timeshift and dvr */
+    gchar *record_path;
+    guint64 sequence;
+    guint64 dvr_duration;
 } EncoderOutput;
 
 typedef struct _EncoderStream {
-        gchar *name;
-        SourceStream *source;
-        GstClock *system_clock;
-        gint current_position; /* encoder position */
-        EncoderStreamState *state;
-        Encoder *encoder;
+    gchar *name;
+    SourceStream *source;
+    GstClock *system_clock;
+    gint current_position; /* encoder position */
+    EncoderStreamState *state;
+    Encoder *encoder;
 } EncoderStream;
 
 struct _Encoder {
-        GObject parent;
+    GObject parent;
 
-        gchar *job_name;
-        gchar *name;
-        gint id;
-        GstClock *system_clock;
-        GSList *bins;
-        GstElement *pipeline;
-        GArray *streams;
-        EncoderOutput *output;
+    gchar *job_name;
+    gchar *name;
+    gint id;
+    GstClock *system_clock;
+    GSList *bins;
+    GstElement *pipeline;
+    GArray *streams;
+    EncoderOutput *output;
 
-        /* udp streaming */
-        GstElement *udpstreaming;
-        GstElement *appsrc;
-        GstBuffer *cache_7x188;
-        gsize cache_size;
+    /* udp streaming */
+    GstElement *udpstreaming;
+    GstElement *appsrc;
+    GstBuffer *cache_7x188;
+    gsize cache_size;
 
-        /* gop size */
-        guint force_key_count; /* downstream force key unit count */
-        GstClockTime segment_duration; /* force key interval */
-        GstClockTime duration_accumulation; /* current segment duration accumulation */
+    /* gop size */
+    guint force_key_count; /* downstream force key unit count */
+    GstClockTime segment_duration; /* force key interval */
+    GstClockTime duration_accumulation; /* current segment duration accumulation */
 
-        /* m3u8 playlist */
-        gboolean has_video;
-        gboolean has_audio_only;
-        gboolean has_tssegment;
-        gboolean has_m3u8_output;
-        gboolean is_first_key;
-        struct sockaddr_un msg_sock_addr;
-        gint msg_sock;
-        GstClockTime last_segment_duration;
-        GstClockTime last_running_time;
+    /* m3u8 playlist */
+    gboolean has_video;
+    gboolean has_audio_only;
+    gboolean has_tssegment;
+    gboolean has_m3u8_output;
+    gboolean is_first_key;
+    struct sockaddr_un msg_sock_addr;
+    gint msg_sock;
+    GstClockTime last_segment_duration;
+    GstClockTime last_running_time;
 };
 
 struct _EncoderClass {
-        GObjectClass parent;
+    GObjectClass parent;
 };
 
 #define TYPE_ENCODER           (encoder_get_type())

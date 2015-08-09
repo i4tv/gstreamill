@@ -19,69 +19,69 @@ typedef struct _Source Source;
 typedef struct _SourceClass SourceClass;
 
 typedef struct _Link {
-        GstElement *src;
-        GstElement *sink;
-        gchar *src_name;
-        gchar *sink_name;
-        gchar *src_pad_name;
-        gchar *sink_pad_name;
-        gchar *caps;
+    GstElement *src;
+    GstElement *sink;
+    gchar *src_name;
+    gchar *sink_name;
+    gchar *src_pad_name;
+    gchar *sink_pad_name;
+    gchar *caps;
 } Link;
 
 typedef struct _Bin {
-        gchar *name;
-        GSList *elements;
-        GstElement *first;
-        GstElement *last;
-        GSList *links;
-        Link *previous;
-        Link *next;
-        gulong signal_id;
+    gchar *name;
+    GSList *elements;
+    GstElement *first;
+    GstElement *last;
+    GSList *links;
+    Link *previous;
+    Link *next;
+    gulong signal_id;
 } Bin;
 
 typedef struct _SourceStreamState {
-        gchar name[STREAM_NAME_LEN];
-        GstClockTime current_timestamp;
-        GstClockTime last_heartbeat;
+    gchar name[STREAM_NAME_LEN];
+    GstClockTime current_timestamp;
+    GstClockTime last_heartbeat;
 } SourceStreamState;
 
 typedef struct _SourceState {
-        /*
-         *  sync error cause sync_error_times inc, 
-         *  sync normal cause sync_error_times reset to zero,
-         *  sync_error_times == 5 cause the livejob restart.
-         */
-        gint64 *duration;
-        guint64 sync_error_times;
-        gint64 stream_count;
-        SourceStreamState *streams;
+    /*
+     *  sync error cause sync_error_times inc, 
+     *  sync normal cause sync_error_times reset to zero,
+     *  sync_error_times == 5 cause the livejob restart.
+     */
+    gint64 *duration;
+    guint64 sync_error_times;
+    gint64 stream_count;
+    SourceStreamState *streams;
 } SourceState;
 
 typedef struct _SourceStream {
-        gchar *name;
-        gboolean is_live;
-        gboolean eos;
-        GstSample *ring[SOURCE_RING_SIZE];
-        gint current_position; /* current source output position */
-        GstClock *system_clock;
-        GArray *encoders;
+    gchar *name;
+    gboolean is_live;
+    gboolean eos;
+    GstSample *ring[SOURCE_RING_SIZE];
+    gint current_position; /* current source output position */
+    GstClock *system_clock;
+    GArray *encoders;
 
-        SourceStreamState *state;
+    SourceStreamState *state;
 } SourceStream;
 
 struct _Source {
-        GObject parent;
+    GObject parent;
 
-        gchar *name;
-        GstClock *system_clock;
-        GSList *bins;
-        GstElement *pipeline;
+    gchar *name;
+    GstClock *system_clock;
+    GSList *bins;
+    GstElement *pipeline;
 
-        GArray *streams;
+    GArray *streams;
 };
 
 struct _SourceClass {
-        GObjectClass parent;
+    GObjectClass parent;
 };
 
 #define TYPE_SOURCE           (source_get_type())
