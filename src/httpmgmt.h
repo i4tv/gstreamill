@@ -19,27 +19,27 @@
 #define ADMIN_LOCATION "/usr/share/gstreamill"
 
 typedef struct _HTTPMgmtPrivateData {
-        gint fd;
-        gchar *p;
-        gchar *buf;
-        gsize buf_size;
-        gint64 send_position;
+    gint fd;
+    gchar *p;
+    gchar *buf;
+    gsize buf_size;
+    gint64 send_position;
 } HTTPMgmtPrivateData;
 
 typedef struct _HTTPMgmt      HTTPMgmt;
 typedef struct _HTTPMgmtClass HTTPMgmtClass;
 
 struct _HTTPMgmt {
-        GObject parent;
+    GObject parent;
 
-        gchar *address;
-        GstClock *system_clock;
-        Gstreamill *gstreamill;
-        HTTPServer *httpserver; /* management via http */
+    gchar *address;
+    GstClock *system_clock;
+    Gstreamill *gstreamill;
+    HTTPServer *httpserver; /* management via http */
 };
 
 struct _HTTPMgmtClass {
-        GObjectClass parent;
+    GObjectClass parent;
 };
 
 #define TYPE_HTTPMGMT           (httpmgmt_get_type())
