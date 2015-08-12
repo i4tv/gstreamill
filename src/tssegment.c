@@ -699,21 +699,22 @@ static void pushing_data (TsSegment *tssegment)
         memcpy (data + 188, tssegment->pmt_packet, 188);
         memcpy (data + 188*2, tssegment->data, tssegment->current_size);
         buffer = gst_buffer_new_wrapped (data, tssegment->current_size + 188*2);
-        GST_BUFFER_PTS (buffer) = MPEGTIME_TO_GSTTIME (tssegment->pre_pts);
+        GST_BUFFER_PTS (buffer) = MPEGTIME_TO_GSTTIME (tssegment->PTS);
         GST_BUFFER_DURATION (buffer) = MPEGTIME_TO_GSTTIME (tssegment->duration);
-        GST_ERROR ("pushing %u data timestamp: %lu, duration: %lu", tssegment->current_size, GST_BUFFER_PTS (buffer), MPEGTIME_TO_GSTTIME (tssegment->duration));
         gst_pad_push (tssegment->srcpad, buffer);
         tssegment->current_size = 0;
 }
 
-static void segment_duration (TsSegment *tssegment, TSPacket *packet)
+static void calculate_PTS_duration (TsSegment *tssegment, TSPacket *packet)
 {
-        if (tssegment->pre_pts < tssegment->current_pts) {
+        if (tssegment->pre_pts <= tssegment->current_pts) {
                 tssegment->duration = tssegment->current_pts - tssegment->pre_pts;
 
         } else {
                 tssegment->duration = MAX_MPEGTIME - tssegment->pre_pts + tssegment->current_pts;
         }
+        tssegment->PTS += tssegment->duration;
+        GST_WARNING ("PTS: %lu, duration: %lu, pre pts: %lu : current pts: %lu", tssegment->PTS, tssegment->duration, tssegment->pre_pts, tssegment->current_pts);
 }
 
 /**
@@ -886,13 +887,14 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
                                 mpegts_parse_pes_header (tssegment, packet.payload, 184);
                                 /* push a segment downstream */
                                 if (tssegment->seen_key_frame) {
-                                        segment_duration (tssegment, &packet);
+                                        calculate_PTS_duration (tssegment, &packet);
                                         pushing_data (tssegment);
                                         tssegment->pre_pts = tssegment->current_pts;
 
                                 } else {
                                         tssegment->seen_key_frame = TRUE;
                                         tssegment->pre_pts = tssegment->current_pts;
+                                        tssegment->PTS = tssegment->current_pts;
                                 }
                         }
                         /* push packet to segment */

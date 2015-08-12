@@ -240,6 +240,7 @@ typedef struct _TsSegment {
         guint current_size;
         /* Size of ->data */
         guint allocated_size;
+        GstClockTime PTS;
         /* Current PTS for the stream (in running time) */
         GstClockTime pre_pts;
         GstClockTime current_pts;
