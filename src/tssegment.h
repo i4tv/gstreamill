@@ -53,13 +53,12 @@
 #define MAX_CONTINUITY 15
 
 /* PCR/offset structure */
-typedef struct _PCROffset
-{
-        /* PCR value (units: 1/27MHz) */
-        guint64 pcr;
+typedef struct _PCROffset {
+    /* PCR value (units: 1/27MHz) */
+    guint64 pcr;
 
-        /* The offset (units: bytes) */
-        guint64 offset;
+    /* The offset (units: bytes) */
+    guint64 offset;
 } PCROffset;
 
 /* PCROffsetGroup: A group of PCR observations.
@@ -67,37 +66,36 @@ typedef struct _PCROffset
  * byte offset (first_pcr/first_offset).
  */
 #define DEFAULT_ALLOCATED_OFFSET 16
-typedef struct _PCROffsetGroup
-{
-        /* Flags (see PCR_GROUP_FLAG_* above) */
-        guint flags;
+typedef struct _PCROffsetGroup {
+    /* Flags (see PCR_GROUP_FLAG_* above) */
+    guint flags;
 
-        /* First raw PCR of this group. Units: 1/27MHz.
-         * All values[].pcr are differences against first_pcr */
-        guint64 first_pcr;
-        /* Offset of this group in bytes.
-         * All values[].offset are differences against first_offset */
-        guint64 first_offset;
+    /* First raw PCR of this group. Units: 1/27MHz.
+     * All values[].pcr are differences against first_pcr */
+    guint64 first_pcr;
+    /* Offset of this group in bytes.
+     * All values[].offset are differences against first_offset */
+    guint64 first_offset;
 
-        /* Dynamically allocated table of PCROffset */
-        PCROffset *values;
-        /* number of PCROffset allocated in values */
-        guint nb_allocated;
-        /* number of *actual* PCROffset contained in values */
-        guint last_value;
+    /* Dynamically allocated table of PCROffset */
+    PCROffset *values;
+    /* number of PCROffset allocated in values */
+    guint nb_allocated;
+    /* number of *actual* PCROffset contained in values */
+    guint last_value;
 
-        /* Offset since the very first PCR value observed in the whole
-         * stream. Units: 1/27MHz.
-         * This will take into account gaps/wraparounds/resets/... and is
-         * used to determine running times.
-         * The value is only guaranteed to be 100% accurate if the group
-         * does not have the ESTIMATED flag.
-         * If the value is estimated, the pcr_offset shall be recalculated
-         * (based on previous groups) whenever it is accessed.
-         */
-        guint64 pcr_offset;
+    /* Offset since the very first PCR value observed in the whole
+     * stream. Units: 1/27MHz.
+     * This will take into account gaps/wraparounds/resets/... and is
+     * used to determine running times.
+     * The value is only guaranteed to be 100% accurate if the group
+     * does not have the ESTIMATED flag.
+     * If the value is estimated, the pcr_offset shall be recalculated
+     * (based on previous groups) whenever it is accessed.
+     */
+    guint64 pcr_offset;
 
-        /* FIXME : Cache group bitrate ? */
+    /* FIXME : Cache group bitrate ? */
 } PCROffsetGroup;
 
 /* Number of PCRs needed before bitrate estimation can start */
@@ -109,94 +107,92 @@ typedef struct _PCROffsetGroup
 /* PCROffsetCurrent: The PCR/Offset window iterator
  * This is used to estimate/observe incoming PCR/offset values
  * Points to a group (which it is filling) */
-typedef struct _PCROffsetCurrent
-{
-        /* The PCROffsetGroup we are filling.
-         * If NULL, a group needs to be identified */
-        PCROffsetGroup *group;
+typedef struct _PCROffsetCurrent {
+    /* The PCROffsetGroup we are filling.
+     * If NULL, a group needs to be identified */
+    PCROffsetGroup *group;
 
-        /* Table of pending values we are iterating over */
-        PCROffset pending[PCR_BITRATE_NEEDED];
+    /* Table of pending values we are iterating over */
+    PCROffset pending[PCR_BITRATE_NEEDED];
 
-        /* base offset/pcr from the group */
-        guint64 first_pcr;
-        guint64 first_offset;
+    /* base offset/pcr from the group */
+    guint64 first_pcr;
+    guint64 first_offset;
 
-        /* The previous reference PCROffset
-         * This corresponds to the last entry of the group we are filling
-         * and is used to calculate prev_bitrate */
-        PCROffset prev;
+    /* The previous reference PCROffset
+     * This corresponds to the last entry of the group we are filling
+     * and is used to calculate prev_bitrate */
+    PCROffset prev;
 
-        /* The last PCROffset in pending[] */
-        PCROffset last_value;
+    /* The last PCROffset in pending[] */
+    PCROffset last_value;
 
-        /* Location of first pending PCR/offset observation in pending */
-        guint first;
-        /* Location of last pending PCR/offset observation in pending */
-        guint last;
-        /* Location of next write in pending */
-        guint write;
+    /* Location of first pending PCR/offset observation in pending */
+    guint first;
+    /* Location of last pending PCR/offset observation in pending */
+    guint last;
+    /* Location of next write in pending */
+    guint write;
 
-        /* bitrate is always in bytes per second */
+    /* bitrate is always in bytes per second */
 
-        /* cur_bitrate is the bitrate of the pending values: d(last-first) */
-        guint64 cur_bitrate;
+    /* cur_bitrate is the bitrate of the pending values: d(last-first) */
+    guint64 cur_bitrate;
 
-        /* prev_bitrate is the bitrate between reference PCROffset
-         * and the first pending value. Used to detect changes
-         * in bitrate */
-        guint64 prev_bitrate;
+    /* prev_bitrate is the bitrate between reference PCROffset
+     * and the first pending value. Used to detect changes
+     * in bitrate */
+    guint64 prev_bitrate;
 } PCROffsetCurrent;
 
 #define MAX_WINDOW 512
 
-typedef struct _MpegTSPCR
-{
-        guint16 pid;
+typedef struct _MpegTSPCR {
+    guint16 pid;
 
-        /* Following variables are only active/used when
-         * calculate_skew is TRUE */
-        GstClockTime base_time;
-        GstClockTime base_pcrtime;
-        GstClockTime prev_out_time;
-        GstClockTime prev_in_time;
-        GstClockTime last_pcrtime;
-        gint64 window[MAX_WINDOW];
-        guint window_pos;
-        guint window_size;
-        gboolean window_filling;
-        gint64 window_min;
-        gint64 skew;
-        gint64 prev_send_diff;
+    /* Following variables are only active/used when
+     * calculate_skew is TRUE */
+    GstClockTime base_time;
+    GstClockTime base_pcrtime;
+    GstClockTime prev_out_time;
+    GstClockTime prev_in_time;
+    GstClockTime last_pcrtime;
+    gint64 window[MAX_WINDOW];
+    guint window_pos;
+    guint window_size;
+    gboolean window_filling;
+    gint64 window_min;
+    gint64 skew;
+    gint64 prev_send_diff;
 
-        /* Offset to apply to PCR to handle wraparounds */
-        guint64 pcroffset;
+    /* Offset to apply to PCR to handle wraparounds */
+    guint64 pcroffset;
 
-        /* Used for bitrate calculation */
-        /* List of PCR/offset observations */
-        GList *groups;
+    /* Used for bitrate calculation */
+    /* List of PCR/offset observations */
+    GList *groups;
 
-        /* Current PCR/offset observations (used to update pcroffsets) */
-        PCROffsetCurrent *current;
+    /* Current PCR/offset observations (used to update pcroffsets) */
+    PCROffsetCurrent *current;
 } MpegTSPCR;
 
 typedef struct {
-        gint16 pid;
-        guint8 payload_unit_start_indicator;
-        guint8 scram_afc_cc;
-        const guint8 *payload;
-        const guint8 *data_start;
-        const guint8 *data_end;
-        const guint8 *data;
-        guint8 afc_flags;
-        guint64 pcr;
-        guint64 offset;
+    gint16 pid;
+    guint8 payload_unit_start_indicator;
+    guint8 scram_afc_cc;
+    const guint8 *payload;
+    const guint8 *data_start;
+    const guint8 *data_end;
+    const guint8 *data;
+    guint8 afc_flags;
+    guint64 pcr;
+    guint64 offset;
 } TSPacket;
 
 typedef enum {
-  PES_PARSING_OK        = 0,    /* Header fully parsed and valid */
-  PES_PARSING_BAD       = 1,    /* Header invalid (CRC error for ex) */
-  PES_PARSING_NEED_MORE = 2     /* Not enough data to parse header */
+    PES_PARSING_OK        = 0,    /* Header fully parsed and valid */
+    PES_PARSING_BAD       = 1,    /* Header invalid (CRC error for ex) */
+    PES_PARSING_NEED_MORE = 2     /* Not enough data to parse header */
 } PESParsingResult;
 
 /* MPEG_TO_GST calculation requires at least 17 extra bits (100000)
@@ -205,63 +201,63 @@ typedef enum {
 #define MPEGTIME_TO_GSTTIME(t) ((t) * (guint64)100000 / 9)
 
 typedef struct _TsSegment {
-        GObject parent;
+    GObject parent;
 
-        GstElement element;
-        GstPad *sinkpad, *srcpad;
+    GstElement element;
+    GstPad *sinkpad, *srcpad;
 
-        /* Transport Stream segments MUST contain a single MPEG-2 Program;
-         * playback of Multi-Program Transport Streams is not defined.  Each
-         * Transport Stream segment SHOULD contain a PAT and a PMT at the start
-         * of the segment - or have a Media Initialization Section declared in
-         * the Media Playlist */
-        guint program_number;
-        guint16 pmt_pid;
-        const GstMpegtsPMT *pmt;
+    /* Transport Stream segments MUST contain a single MPEG-2 Program;
+     * playback of Multi-Program Transport Streams is not defined.  Each
+     * Transport Stream segment SHOULD contain a PAT and a PMT at the start
+     * of the segment - or have a Media Initialization Section declared in
+     * the Media Playlist */
+    guint program_number;
+    guint16 pmt_pid;
+    const GstMpegtsPMT *pmt;
 
-        /* arrays that say whether a pid is a known psi pid or a pes pid */
-        /* Use MPEGTS_BIT_* to set/unset/check the values */
-        guint8 *known_psi;
-        guint8 *is_pes;
-        /* Whether we saw a PAT yet */
-        gboolean seen_pat;
-        gboolean seen_pmt;
-        guint16 video_pid;
-        /* Reference offset */
-        //guint64 refoffset;
-        GPtrArray *pat;
-        /* whether we saw a key frame */
-        gboolean seen_key_frame;
-        guint8 pat_packet[188];
-        guint8 pmt_packet[188];
+    /* arrays that say whether a pid is a known psi pid or a pes pid */
+    /* Use MPEGTS_BIT_* to set/unset/check the values */
+    guint8 *known_psi;
+    guint8 *is_pes;
+    /* Whether we saw a PAT yet */
+    gboolean seen_pat;
+    gboolean seen_pmt;
+    guint16 video_pid;
+    /* Reference offset */
+    //guint64 refoffset;
+    GPtrArray *pat;
+    /* whether we saw a key frame */
+    gboolean seen_key_frame;
+    guint8 pat_packet[188];
+    guint8 pmt_packet[188];
 
-        guint8 *data;
-        /* Amount of bytes in current ->data */
-        guint current_size;
-        /* Size of ->data */
-        guint allocated_size;
-        GstClockTime PTS;
-        /* Current PTS for the stream (in running time) */
-        GstClockTime pre_pts;
-        GstClockTime current_pts;
-        GstClockTime duration;
+    guint8 *data;
+    /* Amount of bytes in current ->data */
+    guint current_size;
+    /* Size of ->data */
+    guint allocated_size;
+    GstClockTime PTS;
+    /* Current PTS for the stream (in running time) */
+    GstClockTime pre_pts;
+    GstClockTime current_pts;
+    GstClockTime duration;
 
-        //gboolean push_section;
+    //gboolean push_section;
 
-        /* current offset of the tip of the adapter */
-        GstAdapter *adapter;
-        guint64 offset;
-        guint16 packet_size;
-        const guint8 *map_data;
-        gsize map_offset;
-        gsize map_size;
-        gboolean need_sync;
+    /* current offset of the tip of the adapter */
+    GstAdapter *adapter;
+    guint64 offset;
+    guint16 packet_size;
+    const guint8 *map_data;
+    gsize map_offset;
+    gsize map_size;
+    gboolean need_sync;
 
-        GstH264NalParser *h264parser;
+    GstH264NalParser *h264parser;
 } TsSegment;
 
 typedef struct _TsSegmentClass {
-        GstElementClass parent_class;
+    GstElementClass parent_class;
 } TsSegmentClass;
 
 #define TYPE_TS_SEGMENT            (ts_segment_get_type())
