@@ -245,21 +245,15 @@ gchar * m3u8playlist_timeshift_get_playlist (gchar *path, gint64 offset)
     return playlist;
 }
 
-gchar * m3u8playlist_callback_get_playlist (gchar *path, gchar *parameters)
+gchar * m3u8playlist_callback_get_playlist (gchar *path, gchar *start, gchar *end)
 {
-    gchar start[15], end[15], start_dir[11], end_dir[11];
+    gchar start_dir[11], end_dir[11];
     gint number, i;
     time_t start_time, end_time, time;
     guint64 start_min, start_sec, end_min, end_sec, start_us, end_us, us;
     gchar *segments_dir, *pattern, *format, *p, **pp;
     glob_t pglob;
     M3U8Playlist *m3u8playlist;
-
-    number = sscanf (parameters, "start=%14s&end=%14s", start, end);
-    if ((number != 2) || (strlen (start) != 14) || (strlen (end) != 14)) {
-        GST_ERROR ("bad callback parameters: %s", parameters);
-        return NULL;
-    }
 
     number = sscanf (start, "%10s%02lu%02lu", start_dir, &start_min, &start_sec);
     if (number != 3) {

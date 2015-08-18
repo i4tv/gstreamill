@@ -531,9 +531,33 @@ static guint64 get_gint64_parameter (gchar *parameters, gchar *parameter)
     return value;
 }
 
+static gchar * get_str_parameter (gchar *parameters, gchar *parameter)
+{
+    gchar **pp1, **pp2, *format, value[256];
+
+    pp1 = pp2 = g_strsplit (parameters, "&", 0);
+    while (*pp1 != NULL) {
+        if (g_str_has_prefix (*pp1, parameter)) {
+            format = g_strdup_printf ("%s=%%s", parameter);
+            if (sscanf (*pp1, format, value) == 1) {
+                break;
+            }
+            g_free (format);
+        }
+        pp1++;
+    }
+    if (*pp1 == NULL) {
+        value[0] = '\0';
+    }
+    g_strfreev (pp2);
+
+    return g_strdup_printf ("%s", value);
+}
+
 static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encoder_output)
 {
     gchar *m3u8playlist = NULL;
+    gchar *start, *end;
 
     /* time shift */
     if (g_strrstr (request_data->parameters, "timeshift") != NULL) {
@@ -543,9 +567,18 @@ static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encod
         m3u8playlist = m3u8playlist_timeshift_get_playlist (encoder_output->record_path, offset);
 
         /* callback */
-    } else if (g_strrstr (request_data->parameters, "start") && 
-            g_strrstr (request_data->parameters, "end")) {
-        m3u8playlist = m3u8playlist_callback_get_playlist (encoder_output->record_path, request_data->parameters);
+    } else if (g_strrstr (request_data->parameters, "start") && g_strrstr (request_data->parameters, "end")) {
+        start = get_str_parameter (request_data->parameters, "start");
+        end = get_str_parameter (request_data->parameters, "end");
+        if ((start != NULL) && (end != NULL)) {
+            m3u8playlist = m3u8playlist_callback_get_playlist (encoder_output->record_path, start, end);
+        }
+        if (start != NULL) {
+            g_free (start);
+        }
+        if (end != NULL) {
+            g_free (end);
+        }
 
         /* live */
     } else if (encoder_output->m3u8_playlist != NULL) {
