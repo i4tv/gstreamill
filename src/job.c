@@ -528,7 +528,6 @@ gint job_output_initialize (Job *job)
             GST_ERROR ("Can't open or create %s directory", output->encoders[i].record_path);
         }
     }
-    output->sequence = get_dvr_sequence (output);
 
     return 0;
 }
@@ -647,6 +646,7 @@ void job_reset (Job *job)
     EncoderOutput *encoder;
     guint version, window_size;
 
+    job->output->sequence = get_dvr_sequence (job->output);
     *(job->output->state) = JOB_STATE_VOID_PENDING;
     g_file_get_contents ("/proc/stat", &stat, NULL, NULL);
     stats = g_strsplit (stat, "\n", 10);
