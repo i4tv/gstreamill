@@ -60,8 +60,7 @@ RUN     cd gstreamill && \
 #RUN mount -o remount /dev/shm
 
 #Time zone control
-# RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime 
-# ntpdate cn.pool.ntp.org
+#RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime 
 
 RUN touch /tmp/gstreamill
 
