@@ -48,6 +48,8 @@ RUN     cd gst-libav && \
 RUN apt-get install -y libaugeas-dev
 RUN git clone https://github.com/i4tv/gstreamill.git
 RUN     cd gstreamill && \
+        git pull && \
+        git checkout v0.7.2 && \
         ./autogen.sh && \
         ./configure --prefix=/usr && \
         make && \
@@ -56,6 +58,9 @@ RUN     cd gstreamill && \
 #RUN echo "# UNCONFIGURED FSTAB FOR BASE SYSTEM" >/etc/fstab
 #RUN echo "tmpfs                   /dev/shm                tmpfs   defaults,size=1024M        0 0" >>/etc/fstab
 #RUN mount -o remount /dev/shm
+
+#Time zone control
+#RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime 
 
 RUN touch /tmp/gstreamill
 
