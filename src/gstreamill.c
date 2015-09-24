@@ -667,21 +667,8 @@ static void dvr_record_segment (EncoderOutput *encoder_output, gchar *seg_path, 
     gsize segment_size;
     gchar *buf;
     GError *err = NULL;
-    struct timespec ts;
 
     /* seek gop it's timestamp is m3u8_push_request->timestamp */
-    if (clock_gettime (CLOCK_REALTIME, &ts) == -1) {
-        GST_ERROR ("dvr_record_segment clock_gettime error: %s", g_strerror (errno));
-        return;
-    }
-    ts.tv_sec += 2;
-    while (sem_timedwait (encoder_output->semaphore, &ts) == -1) {
-        if (errno == EINTR) {
-            continue;
-        }
-        GST_ERROR ("dvr_record_segment sem_timedwait failure: %s", g_strerror (errno));
-        return;
-    }
     rap_addr = encoder_output_gop_seek (encoder_output, encoder_output->last_timestamp);
 
     /* gop not found? */
@@ -708,7 +695,6 @@ static void dvr_record_segment (EncoderOutput *encoder_output, gchar *seg_path, 
         p += n;
         memcpy (p, encoder_output->cache_addr, segment_size - n);
     }
-    sem_post (encoder_output->semaphore);
 
     realtime = g_get_real_time ();
     if (encoder_output->last_timestamp > realtime) {
@@ -797,6 +783,7 @@ static gpointer msg_thread (gpointer data)
         gchar uri[128], *seg_dir, *seg_path;
         EncoderOutput *encoder_output;
         GstClockTime duration;
+        struct timespec ts;
 
         n = epoll_wait (epoll_fd, event_list, 32, -1);
         if (n == -1) {
@@ -820,6 +807,19 @@ static gpointer msg_thread (gpointer data)
                 GST_ERROR ("Encoder not found: %s", uri);
                 continue;
             }
+
+            if (clock_gettime (CLOCK_REALTIME, &ts) == -1) {
+                GST_ERROR ("dvr_record_segment clock_gettime error: %s", g_strerror (errno));
+                goto semaphore_failure;
+            }
+            ts.tv_sec += 2;
+            while (sem_timedwait (encoder_output->semaphore, &ts) == -1) {
+                if (errno == EINTR) {
+                    continue;
+                }
+                GST_ERROR ("dvr_record_segment sem_timedwait failure: %s", g_strerror (errno));
+                goto semaphore_failure;
+            }
             if (!encoder_output->is_first_buffer) {
                 seg_dir = segment_dir (encoder_output);
                 seg_path = g_strdup_printf ("%s/%010lu_%lu_%lu.ts",
@@ -838,6 +838,8 @@ static gpointer msg_thread (gpointer data)
                 encoder_output->is_first_buffer = FALSE;
             }
             encoder_output->last_timestamp = encoder_output_rap_timestamp (encoder_output, *(encoder_output->last_rap_addr));
+            sem_post (encoder_output->semaphore);
+semaphore_failure:
             gstreamill_unaccess (gstreamill, uri);
         }
     }
