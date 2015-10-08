@@ -52,7 +52,7 @@
             "bins" : [
                 "appsrc name=video ! queue ! clockoverlay ! queue ! x264enc ! queue ! muxer.",
                 "appsrc name=audio ! audioconvert ! audioresample ! voaacenc ! aacparse ! muxer.",
-                "mpegtsmux name=muxer ! queue ! tssegment ! queue ! appsink"
+                "mpegtsmux name=muxer ! queue ! appsink"
             ]
         }
     ],
