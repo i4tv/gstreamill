@@ -53,6 +53,7 @@ typedef struct _EncoderOutput {
 
 typedef struct _EncoderStream {
     gchar *name;
+    gboolean is_segment_reference;
     SourceStream *source;
     GstClock *system_clock;
     gint current_position; /* encoder position */

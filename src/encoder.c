@@ -369,7 +369,7 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
             /* no m3u8 output */
             move_last_rap (encoder, buffer);
 
-        } else if (GST_BUFFER_PTS (buffer) >= encoder->last_running_time) {
+        } else if (GST_BUFFER_PTS (buffer) + 90000000 >= encoder->last_running_time) {
             move_last_rap (encoder, buffer);
             send_msg (encoder);
 
@@ -443,12 +443,11 @@ static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data
 
         encoder = stream->encoder;
         /* segment_duration != 0? with m3u8playlist conf */
-        if ((encoder->segment_duration != 0) && !encoder->has_tssegment) {
+        if (stream->is_segment_reference) {
             if (encoder->duration_accumulation >= encoder->segment_duration) {
                 GstClockTime running_time;
 
                 encoder->last_segment_duration = encoder->duration_accumulation;
-                GST_ERROR ("last segment duration: %lu", encoder->last_segment_duration);
                 running_time = GST_BUFFER_PTS (buffer);
                 /* force key unit? */
                 if (encoder->has_video) {
@@ -606,7 +605,7 @@ static gint encoder_extract_streams (Encoder *encoder, gchar **bins)
 {
     GRegex *regex;
     GMatchInfo *match_info;
-    EncoderStream *stream;
+    EncoderStream *stream, *segment_reference_stream = NULL;
     gchar *bin, **p;
 
     p = bins;
@@ -620,14 +619,22 @@ static gint encoder_extract_streams (Encoder *encoder, gchar **bins)
             stream->name = g_match_info_fetch_named (match_info, "name");
             g_match_info_free (match_info);
             g_array_append_val (encoder->streams, stream);
+            stream->is_segment_reference = FALSE;
             if (g_str_has_prefix (stream->name, "video") && strstr (bin, "x264enc") != NULL) {
                 /* with video encoder */
                 encoder->has_video = TRUE;
+                if (!encoder->has_tssegment) {
+                    segment_reference_stream = stream;
+                    encoder->has_audio_only = FALSE;
+                }
             }
             GST_INFO ("encoder stream %s found %s", stream->name, bin);
 
             if (g_str_has_prefix (stream->name, "audio")) {
-                encoder->has_audio_only = TRUE;
+                if (!(encoder->has_tssegment || encoder->has_video)) {
+                    encoder->has_audio_only = TRUE;
+                    segment_reference_stream = stream;
+                }
             }
 
         } else if (g_str_has_prefix (bin, "appsrc")) {
@@ -638,17 +645,15 @@ static gint encoder_extract_streams (Encoder *encoder, gchar **bins)
         if (strstr (bin, "tssegment") != NULL) {
             /* has tssegment element */
             encoder->has_tssegment = TRUE;
+            encoder->has_video = FALSE;
+            encoder->has_audio_only = FALSE;
+            segment_reference_stream = NULL;
         }
         p++;
     }
 
-
-    if (encoder->has_tssegment) {
-        encoder->has_video = FALSE;
-        encoder->has_audio_only = FALSE;
-
-    } else if (encoder->has_video) {
-        encoder->has_audio_only = FALSE;
+    if (segment_reference_stream != NULL) {
+        segment_reference_stream->is_segment_reference = TRUE;
     }
 
     return 0;
