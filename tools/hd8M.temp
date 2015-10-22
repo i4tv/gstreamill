@@ -1,0 +1,154 @@
+{
+    "name" : "%s",
+    "debug" : "gstreamill:4",
+    "source": {
+        "elements": {
+            "appsink": {
+                "property": {
+                    "drop": "true", 
+                    "sync": "false"
+                }
+            }, 
+            "udpsrc": {
+                "property": {
+                    "uri": "%s"
+                }
+            }
+        }, 
+        "bins": [
+            "udpsrc ! queue ! tsdemux name=demuxer", 
+            "demuxer.video ! queue ! h264parse ! queue ! avdec_h264 ! queue ! appsink name = video", 
+            "demuxer.audio ! queue ! mpegaudioparse ! queue ! mad ! queue ! appsink name = audio"
+        ]
+    },
+    "encoders" : [
+        {
+            "elements" : {
+                "appsrc" : {
+                    "property" : {
+                        "is-live" : true,
+                        "format" : 3
+                    }
+                },
+                "x264enc" : {
+                    "property" : {
+                        "name" : "x264enc",
+                        "bitrate" : 8000,
+                        "bframes" : 3,
+                        "threads" : 4,
+                        "byte-stream" : "TRUE",
+                        "rc-lookahead" : 25,
+                        "key-int-max" : 100,
+                        "pass" : 17,
+                        "mb-tree" : true,
+                        "option-string" : ":ref=3:me=hex:subme=8:merange=16:nf=1:deblock=1,-2:weightp=1:scenecut=0:b-pyramid=2:direct=spatial"
+                    }
+                },
+                "voaacenc": {
+                    "property": {
+                        "bitrate": 64000
+                    }
+                },
+                "appsink": {
+                    "property": {
+                        "sync": false
+                    }
+                }
+            },
+            "bins" : [
+                "appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc name=voaacenc0 ! queue ! aacparse ! queue ! muxer.",
+                "appsrc name=video ! queue ! x264enc ! queue ! muxer.",
+                "mpegtsmux name=muxer ! queue ! appsink"
+            ]
+        },
+        {
+            "elements" : {
+                "appsrc" : {
+                    "property" : {
+                        "is-live" : true,
+                        "format" : 3
+                    }
+                },
+                "videoscale" : {
+                    "caps" : "video/x-raw-yuv,width=1280,height=720"
+                },
+                "x264enc" : {
+                    "property" : {
+                        "name" : "x264enc",
+                        "bitrate" : 4000,
+                        "bframes" : 3,
+                        "byte-stream" : "TRUE",
+                        "rc-lookahead" : 25,
+                        "key-int-max" : 100,
+                        "pass" : 17,
+                        "mb-tree" : true,
+                        "option-string" : ":ref=3:me=hex:subme=8:merange=16:nf=1:deblock=1,-2:weightp=1:scenecut=0:b-pyramid=2:direct=spatial"
+                    }
+                },
+                "voaacenc": {
+                    "property": {
+                        "bitrate": 64000
+                    }
+                },
+                "appsink": {
+                    "property": {
+                        "sync": false
+                    }
+                }
+            },
+            "bins" : [
+                "appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc ! queue ! aacparse ! queue ! muxer.",
+                "appsrc name=video ! queue ! videoconvert ! queue ! x264enc ! queue ! muxer.",
+                "mpegtsmux name=muxer ! queue ! appsink"
+            ]
+        },
+        {
+            "elements" : {
+                "appsrc" : {
+                    "property" : {
+                        "is-live" : true,
+                        "format" : 3
+                    }
+                },
+                "videoscale" : {
+                    "caps" : "video/x-raw-yuv,width=720,height=576"
+                },
+                "x264enc" : {
+                    "property" : {
+                        "name" : "x264enc",
+                        "bitrate" : 2500,
+                        "bframes" : 3,
+                        "byte-stream" : "TRUE",
+                        "rc-lookahead" : 25,
+                        "key-int-max" : 100,
+                        "pass" : 17,
+                        "mb-tree" : true,
+                        "option-string" : ":ref=3:me=hex:subme=8:merange=16:nf=1:deblock=1,-2:weightp=1:scenecut=0:b-pyramid=2:direct=spatial"
+                    }
+                },
+                "voaacenc": {
+                    "property": {
+                        "bitrate": 64000
+                    }
+                },
+                "appsink": {
+                    "property": {
+                        "sync": false
+                    }
+                }
+            },
+            "bins" : [
+                "appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc ! queue ! aacparse ! queue ! muxer.",
+                "appsrc name=video ! queue ! videoconvert ! queue ! x264enc ! queue ! muxer.",
+                "mpegtsmux name=muxer ! queue ! appsink"
+            ]
+        }
+    ],
+    "m3u8streaming": {
+        "version" : 3,
+ 	"window-size": 10,
+        "segment-duration": 5.00
+    },
+    "dvr_duration": 86400
+}
+
