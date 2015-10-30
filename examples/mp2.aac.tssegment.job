@@ -35,6 +35,11 @@
                     "property": {
                         "sync": false
                     }
+                },
+                "tssegment": {
+                    "property": {
+                        "bitrate": 1200
+                    }
                 }
             },
             "bins" : [

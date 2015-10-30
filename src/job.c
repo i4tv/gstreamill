@@ -438,7 +438,15 @@ static gchar * render_master_m3u8_playlist (Job *job)
     for (i = 0; i < job->output->encoder_count; i++) {
         p = g_strdup_printf ("encoder.%d.elements.x264enc.property.bitrate", i);
         value = jobdesc_element_property_value (job->description, p);
-        /* value == NULL, audio only? */
+
+        /* value == NULL? no video encoder */
+        if (value == NULL) {
+            g_free (p);
+            p = g_strdup_printf ("encoder.%d.elements.tssegment.property.bitrate", i);
+            value = jobdesc_element_property_value (job->description, p);
+        }
+
+        /* value == NUL? audio only? */
         if (value != NULL) {
             g_string_append_printf (master_m3u8_playlist, M3U8_STREAM_INF_TAG, 1, value);
             g_free (value);
