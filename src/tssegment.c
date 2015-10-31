@@ -10,6 +10,11 @@
 
 G_DEFINE_TYPE (TsSegment, ts_segment, GST_TYPE_ELEMENT);
 
+enum {
+    TSSEGMENT_PROP_0,
+    TSSEGMENT_PROP_BITRATE,
+};
+
 static GstStaticPadTemplate sink_template = GST_STATIC_PAD_TEMPLATE ("sink",
         GST_PAD_SINK,
         GST_PAD_ALWAYS,
@@ -29,10 +34,22 @@ static void ts_segment_class_init (TsSegmentClass * klass)
 {
     GObjectClass *g_object_class = G_OBJECT_CLASS (klass);
     GstElementClass *element_class = GST_ELEMENT_CLASS (klass);
+    GParamSpec *param;
 
     g_object_class->set_property = ts_segment_set_property;
     g_object_class->get_property = ts_segment_get_property;
     g_object_class->dispose = ts_segment_dispose;
+
+    param = g_param_spec_int (
+            "bitrate",
+            "bitratef",
+            "stream bitrate",
+            1,
+            256,
+            10,
+            G_PARAM_WRITABLE | G_PARAM_READABLE
+            );
+    g_object_class_install_property (g_object_class, TSSEGMENT_PROP_BITRATE, param);
 
     gst_element_class_set_static_metadata (element_class,
             "MPEGTS Segment plugin",
@@ -87,10 +104,32 @@ static void ts_segment_init (TsSegment *tssegment)
 
 static void ts_segment_set_property (GObject *obj, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
+    g_return_if_fail (IS_TS_SEGMENT (obj));
+
+    switch (prop_id) {
+        case TSSEGMENT_PROP_BITRATE:
+            TS_SEGMENT (obj)->bitrate = g_value_get_uint64 (value);
+            break;
+
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
+            break;
+    }
 }
 
 static void ts_segment_get_property (GObject *obj, guint prop_id, GValue *value, GParamSpec *pspec)
 {
+    TsSegment *tssegment = TS_SEGMENT (obj);
+
+    switch (prop_id) {
+        case TSSEGMENT_PROP_BITRATE:
+            g_value_set_uint64 (value, tssegment->bitrate);
+            break;
+
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID (obj, prop_id, pspec);
+            break;
+    }
 }
 
 static void ts_segment_dispose (GObject * object)
