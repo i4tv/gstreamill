@@ -206,7 +206,7 @@ typedef struct _TsSegment {
     GstElement element;
     GstPad *sinkpad, *srcpad;
 
-    guint64 bitrate;
+    gint64 bitrate;
 
     /* Transport Stream segments MUST contain a single MPEG-2 Program;
      * playback of Multi-Program Transport Streams is not defined.  Each

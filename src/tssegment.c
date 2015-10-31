@@ -40,7 +40,7 @@ static void ts_segment_class_init (TsSegmentClass * klass)
     g_object_class->get_property = ts_segment_get_property;
     g_object_class->dispose = ts_segment_dispose;
 
-    param = g_param_spec_int (
+    param = g_param_spec_int64 (
             "bitrate",
             "bitratef",
             "stream bitrate",
@@ -108,7 +108,7 @@ static void ts_segment_set_property (GObject *obj, guint prop_id, const GValue *
 
     switch (prop_id) {
         case TSSEGMENT_PROP_BITRATE:
-            TS_SEGMENT (obj)->bitrate = g_value_get_uint64 (value);
+            TS_SEGMENT (obj)->bitrate = g_value_get_int64 (value);
             break;
 
         default:
@@ -123,7 +123,7 @@ static void ts_segment_get_property (GObject *obj, guint prop_id, GValue *value,
 
     switch (prop_id) {
         case TSSEGMENT_PROP_BITRATE:
-            g_value_set_uint64 (value, tssegment->bitrate);
+            g_value_set_int64 (value, tssegment->bitrate);
             break;
 
         default:
