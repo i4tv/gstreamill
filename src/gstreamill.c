@@ -29,7 +29,7 @@ enum {
     GSTREAMILL_PROP_0,
     GSTREAMILL_PROP_LOGDIR,
     GSTREAMILL_PROP_EXEPATH,
-    GSTREAMILL_PROP_DAEMON,
+    GSTREAMILL_PROP_MODE,
 };
 
 static GObject *gstreamill_constructor (GType type, guint n_construct_properties, GObjectConstructParam *construct_properties);
@@ -49,14 +49,16 @@ static void gstreamill_class_init (GstreamillClass *gstreamillclass)
     g_object_class->dispose = gstreamill_dispose;
     g_object_class->finalize = gstreamill_finalize;
 
-    param = g_param_spec_boolean (
-            "daemon",
-            "daemon",
-            "run in background",
-            TRUE,
+    param = g_param_spec_int (
+            "mode",
+            "modee",
+            "running mode",
+            DAEMON_MODE,
+            SINGLE_JOB_MODE,
+            DAEMON_MODE,
             G_PARAM_WRITABLE | G_PARAM_READABLE
             );
-    g_object_class_install_property (g_object_class, GSTREAMILL_PROP_DAEMON, param);
+    g_object_class_install_property (g_object_class, GSTREAMILL_PROP_MODE, param);
 
     param = g_param_spec_string (
             "log_dir",
@@ -107,8 +109,8 @@ static void gstreamill_set_property (GObject *obj, guint prop_id, const GValue *
     g_return_if_fail (IS_GSTREAMILL (obj));
 
     switch (prop_id) {
-        case GSTREAMILL_PROP_DAEMON:
-            GSTREAMILL (obj)->daemon = g_value_get_boolean (value);
+        case GSTREAMILL_PROP_MODE:
+            GSTREAMILL (obj)->mode = g_value_get_int (value);
             break;
 
         case GSTREAMILL_PROP_LOGDIR:
@@ -130,8 +132,8 @@ static void gstreamill_get_property (GObject *obj, guint prop_id, GValue *value,
     Gstreamill  *gstreamill = GSTREAMILL (obj);
 
     switch (prop_id) {
-        case GSTREAMILL_PROP_DAEMON:
-            g_value_set_boolean (value, gstreamill->daemon);
+        case GSTREAMILL_PROP_MODE:
+            g_value_set_int (value, gstreamill->mode);
             break;
 
         case GSTREAMILL_PROP_LOGDIR:
@@ -314,8 +316,8 @@ static void source_check (Gstreamill *gstreamill, Job *job)
 
         now = gst_clock_get_time (gstreamill->system_clock);
         time_diff = GST_CLOCK_DIFF (job->output->source.streams[i].last_heartbeat, now);
-        if (((time_diff > HEARTBEAT_THRESHHOLD) && gstreamill->daemon && job->is_live) ||
-                ((time_diff > NONLIVE_HEARTBEAT_THRESHHOLD) && gstreamill->daemon && !job->is_live)) {
+        if (((time_diff > HEARTBEAT_THRESHHOLD) && (gstreamill->mode != SINGLE_JOB_MODE) && job->is_live) ||
+                ((time_diff > NONLIVE_HEARTBEAT_THRESHHOLD) && (gstreamill->mode != SINGLE_JOB_MODE) && !job->is_live)) {
             GST_WARNING ("%s heart beat error %lu, restart job.",
                     job->output->source.streams[i].name,
                     time_diff);
@@ -362,7 +364,7 @@ static void encoders_check (Gstreamill *gstreamill, Job *job)
 
             now = gst_clock_get_time (gstreamill->system_clock);
             time_diff = GST_CLOCK_DIFF (job->output->encoders[j].streams[k].last_heartbeat, now);
-            if ((time_diff > HEARTBEAT_THRESHHOLD) && gstreamill->daemon) {
+            if ((time_diff > HEARTBEAT_THRESHHOLD) && (gstreamill->mode != SINGLE_JOB_MODE)) {
                 GST_WARNING ("%s.%s heartbeat error %lu, restart",
                         job->output->encoders[j].name,
                         job->output->encoders[j].streams[k].name,
@@ -384,7 +386,7 @@ static void encoders_check (Gstreamill *gstreamill, Job *job)
     for (j = 0; j < job->output->encoder_count; j++) {
         now = gst_clock_get_time (gstreamill->system_clock);
         time_diff = GST_CLOCK_DIFF (*(job->output->encoders[j].heartbeat), now);
-        if ((time_diff > ENCODER_OUTPUT_HEARTBEAT_THRESHHOLD) && gstreamill->daemon) {
+        if ((time_diff > ENCODER_OUTPUT_HEARTBEAT_THRESHHOLD) && (gstreamill->mode != SINGLE_JOB_MODE)) {
             GST_WARNING ("%s job->output heart beat error %lu, restart",
                     job->output->encoders[j].name,
                     time_diff);
@@ -423,7 +425,7 @@ static void sync_check (Gstreamill *gstreamill, Job *job)
         }
     }
     time_diff = GST_CLOCK_DIFF (min, max);
-    if ((time_diff > SYNC_THRESHHOLD) && gstreamill->daemon){
+    if ((time_diff > SYNC_THRESHHOLD) && (gstreamill->mode != SINGLE_JOB_MODE)){
         GST_WARNING ("%s sync error %lu", job->name, time_diff);
         job->output->source.sync_error_times += 1;
         if (job->output->source.sync_error_times == 3) {
@@ -452,7 +454,7 @@ static void job_check_func (gpointer data, gpointer user_data)
     g_mutex_lock (&(job->access_mutex));
 
     /* stat report. */
-    if (gstreamill->daemon && (job->worker_pid != 0)) {
+    if ((gstreamill->mode != SINGLE_JOB_MODE) && (job->worker_pid != 0)) {
         if (job_stat_update (job) != 0) {
             g_mutex_unlock (&(job->access_mutex));
             return;
@@ -619,7 +621,7 @@ static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClock
     }
 
     /* log rotate. */
-    if (gstreamill->daemon) {
+    if (gstreamill->mode == DAEMON_MODE) {
         log_rotate (gstreamill);
         dvr_clean (gstreamill);
     }
@@ -903,7 +905,7 @@ void gstreamill_stop (Gstreamill *gstreamill)
     list = gstreamill->job_list;
     while (list != NULL) {
         job = list->data;
-        if (gstreamill->daemon) {
+        if (gstreamill->mode != SINGLE_JOB_MODE) {
             job_stop (job, SIGTERM);
 
         } else {
@@ -1134,7 +1136,7 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
     job->current_access = 0;
     job->age = 0;
     job->last_start_time = NULL;
-    if (job_initialize (job, gstreamill->daemon) != 0) {
+    if (job_initialize (job, gstreamill->mode) != 0) {
         p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"initialize job failure\"\n}");
         g_object_unref (job);
         return p;
@@ -1148,7 +1150,7 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
 
     /* reset and start job */
     job_reset (job);
-    if (gstreamill->daemon) {
+    if (gstreamill->mode != SINGLE_JOB_MODE) {
         guint64 stat;
 
         stat = create_job_process (job);

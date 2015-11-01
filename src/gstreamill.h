@@ -29,7 +29,7 @@ struct _Gstreamill {
 
     gchar *exe_path;
     gboolean stop; /* gstreamill exit if stop == TURE */
-    gboolean daemon; /* run as daemon? */
+    gint mode; /* running mode */
     GstClock *system_clock;
     gchar *start_time;
     GThread *msg_thread;

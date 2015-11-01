@@ -295,14 +295,14 @@ gchar * job_state_get_name (guint64 state)
 /**
  * job_initialize:
  * @job: (in): the job to be initialized.
- * @daemon: (in): is gstreamill run in background.
+ * @mode: (in): running mode.
  *
  * Initialize the output of the job, the output of the job include the status of source and encoders and
  * the output stream.
  *
  * Returns: 0 on success.
  */
-gint job_initialize (Job *job, gboolean daemon)
+gint job_initialize (Job *job, gint mode)
 {
     gint i, fd;
     JobOutput *output;
@@ -333,8 +333,8 @@ gint job_initialize (Job *job, gboolean daemon)
         g_free (semaphore_name);
         return 1;
     }
-    if (daemon) {
-        /* daemon, use share memory */
+    if (mode != SINGLE_JOB_MODE) {
+        /* not single job mode, use share memory */
         fd = shm_open (name_hexstr, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
         if (fd == -1) {
             GST_ERROR ("shm_open %s failure: %s", name_hexstr, g_strerror (errno));

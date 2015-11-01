@@ -180,6 +180,7 @@ static gint init_log (gchar *log_path)
 }
 
 static gboolean stop = FALSE;
+static gboolean debug = FALSE;
 static gboolean version = FALSE;
 static gchar *job_file = NULL;
 static gchar *log_dir = "/var/log/gstreamill";
@@ -195,6 +196,7 @@ static GOptionEntry options[] = {
     {"name", 'n', G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &shm_name, NULL, NULL},
     {"joblength", 'q', G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_INT, &job_length, NULL, NULL},
     {"stop", 's', 0, G_OPTION_ARG_NONE, &stop, ("Stop gstreamill."), NULL},
+    {"debug", 'd', 0, G_OPTION_ARG_NONE, &debug, ("Debug mode, run in foreground."), NULL},
     {"version", 'v', 0, G_OPTION_ARG_NONE, &version, ("display version information and exit."), NULL},
     {NULL}
 };
@@ -227,8 +229,8 @@ Gstreamill *gstreamill;
 
 static void stop_gstreamill (gint number)
 {
-    /* run in foreground? just exit */
-    if (!gstreamill->daemon) {
+    /* run in SINGLE_JOB_MODE? just exit */
+    if (gstreamill->mode == SINGLE_JOB_MODE) {
         g_printf ("Interrupt signal received\n");
         exit (0);
     }
@@ -274,7 +276,7 @@ int main (int argc, char *argv[])
     GMainLoop *loop;
     GOptionContext *ctx;
     GError *err = NULL;
-    gboolean foreground;
+    gint mode;
     struct rlimit rlim;
     GDateTime *datetime;
     gchar exe_path[512], *date;
@@ -328,13 +330,15 @@ int main (int argc, char *argv[])
        exit (4);
        }
      */
-    if (job_file != NULL) {
-        /* gstreamill command with job, run in foreground */
-        foreground = TRUE;
 
-    } else {
+    mode = DAEMON_MODE;
+    if (job_file != NULL) {
+        /* gstreamill command with job, running in single job mode */
+        mode = SINGLE_JOB_MODE;
+
+    } else if (debug) {
         /* gstreamill command without job, run in background */
-        foreground = FALSE;
+        mode = DEBUG_MODE;
     }
 
     if (gst_debug_get_default_threshold () < GST_LEVEL_WARNING) {
@@ -456,7 +460,7 @@ int main (int argc, char *argv[])
     }
 
     /* run in background? */
-    if (!foreground) {
+    if (mode != SINGLE_JOB_MODE) {
         gchar *path;
         gint ret;
 #if 0
@@ -467,7 +471,7 @@ int main (int argc, char *argv[])
         }
 #endif
         /* gstreamill is running? */
-        if(isrunning_gstreamill()){
+        if (isrunning_gstreamill()) {
             g_print ("gstreamill already running !!!\n");
             exit (10);
         }
@@ -498,25 +502,28 @@ int main (int argc, char *argv[])
         }
         g_free (path);
 
-        /* log to file */
-        path = g_build_filename (log_dir, "gstreamill.log", NULL);
-        ret = init_log (path);
-        g_free (path);
-        if (ret != 0) {
-            g_print ("Init log error, ret %d.\n", ret);
-            exit (11);
-        }
+        /* if DAEMON_MODE then daemonize */
+        if (mode == DAEMON_MODE) {
+            /* log to file */
+            path = g_build_filename (log_dir, "gstreamill.log", NULL);
+            ret = init_log (path);
+            g_free (path);
+            if (ret != 0) {
+                g_print ("Init log error, ret %d.\n", ret);
+                exit (11);
+            }
 
-        /* daemonize */
-        if (daemon (0, 0) != 0) {
-            fprintf (_log->log_hd, "Failed to daemonize");
-            remove_pid_file ();
-            exit (1);
-        }
+            /* daemonize */
+            if (daemon (0, 0) != 0) {
+                fprintf (_log->log_hd, "Failed to daemonize");
+                remove_pid_file ();
+                exit (1);
+            }
 
-        /* create pid file */
-        if (create_pid_file () != 0) {
-            exit (1);
+            /* create pid file */
+            if (create_pid_file () != 0) {
+                exit (1);
+            }
         }
 
         /* customize signal */
@@ -525,7 +532,7 @@ int main (int argc, char *argv[])
 
         datetime = g_date_time_new_now_local ();
         date = g_date_time_format (datetime, "%b %d %H:%M:%S");
-        fprintf (_log->log_hd, "\n*** %s : gstreamill started ***\n\n", date);
+        GST_WARNING ("\n*** %s : gstreamill started ***\n\n", date);
         g_free (date);
         g_date_time_unref (datetime);
     }
@@ -536,7 +543,7 @@ int main (int argc, char *argv[])
     loop = g_main_loop_new (NULL, FALSE);
 
     /* gstreamill */
-    gstreamill = gstreamill_new ("daemon", !foreground, "log_dir", log_dir, "exe_path", exe_path, NULL);
+    gstreamill = gstreamill_new ("mode", mode, "log_dir", log_dir, "exe_path", exe_path, NULL);
     if (gstreamill_start (gstreamill) != 0) {
         GST_ERROR ("start gstreamill error, exit.");
         remove_pid_file ();
@@ -551,7 +558,7 @@ int main (int argc, char *argv[])
         exit (13);
     }
 
-    if (!foreground) {
+    if (mode != SINGLE_JOB_MODE) {
         /* run in background, management via http */
         httpmgmt = httpmgmt_new ("gstreamill", gstreamill, "address", http_mgmt, NULL);
         if (httpmgmt_start (httpmgmt) != 0) {
