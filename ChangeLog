@@ -1,5 +1,9 @@
 releases are sorted from youngest to oldest.
 
+v-0.7.5 2015-11-02
+- segment only bandwidth parameter in master m3u8 playlist
+- add -d command line option, run in foreground for docker compliance
+
 v-0.7.4 2015-10-08
 - multi bitrate support
 
