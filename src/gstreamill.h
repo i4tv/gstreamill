@@ -36,6 +36,9 @@ struct _Gstreamill {
     gchar *log_dir;
     guint64 last_dvr_clean_time;
 
+    gdouble cpu_average;
+    gdouble cpu_current;
+
     GMutex job_list_mutex;
     GSList *job_list;
 };

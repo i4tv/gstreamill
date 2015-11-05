@@ -459,10 +459,12 @@ static void job_check_func (gpointer data, gpointer user_data)
             g_mutex_unlock (&(job->access_mutex));
             return;
         }
-        GST_DEBUG ("Job %s's average cpu: %d%%, cpu: %d%%, rss: %lu",
+        gstreamill->cpu_average += job->cpu_average;
+        gstreamill->cpu_current += job->cpu_current;
+        GST_DEBUG ("Job %s's average cpu: %f%%, cpu: %f%%, rss: %lu",
                 job->name,
-                job->cpu_average,
-                job->cpu_current,
+                job->cpu_average / 100,
+                job->cpu_current / 100,
                 job->memory);
     }
     if (clock_gettime (CLOCK_REALTIME, &ts) == -1) {
@@ -617,6 +619,8 @@ static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClock
     /* check job stat */
     if (!gstreamill->stop) {
         list = gstreamill->job_list;
+        gstreamill->cpu_current = 0;
+        gstreamill->cpu_average = 0;
         g_slist_foreach (list, job_check_func, gstreamill);
     }
 
@@ -1388,19 +1392,21 @@ gchar * gstreamill_stat (Gstreamill *gstreamill)
 {
     JSON_Value *value;
     JSON_Object *object;
-    guint jobcount;
     gchar *stat;
 
+    g_mutex_lock (&(gstreamill->job_list_mutex));
     value = json_value_init_object ();
     object = json_value_get_object (value);
     json_object_set_string (object, "version", VERSION);
     json_object_set_string (object, "builddate", __DATE__);
     json_object_set_string (object, "buildtime", __TIME__);
     json_object_set_string (object, "starttime", gstreamill->start_time);
-    jobcount = gstreamill_job_number (gstreamill);
-    json_object_set_number (object, "jobcount", jobcount);
+    json_object_set_number (object, "jobcount", g_slist_length (gstreamill->job_list));
+    json_object_set_number (object, "cpu_average", gstreamill->cpu_average / 100);
+    json_object_set_number (object, "cpu_current", gstreamill->cpu_current / 100);
     stat = json_serialize_to_string (value);
     json_value_free (value);
+    g_mutex_unlock (&(gstreamill->job_list_mutex));
 
     return stat;
 }
@@ -1644,8 +1650,8 @@ gchar * gstreamill_job_stat (Gstreamill *gstreamill, gchar *uri)
     json_object_set_string (object_job, "state", job_state_get_name (*(job->output->state)));
     if (*(job->output->state) == JOB_STATE_PLAYING) {
         json_object_set_number (object_job, "current_access", job->current_access);
-        json_object_set_number (object_job, "cpu_average", job->cpu_average);
-        json_object_set_number (object_job, "cpu_current", job->cpu_current);
+        json_object_set_number (object_job, "cpu_average", job->cpu_average / 100);
+        json_object_set_number (object_job, "cpu_current", job->cpu_current / 100);
         json_object_set_number (object_job, "memory", job->memory);
         value_source = source_stat (job);
         json_object_set_value (object_job, "source", value_source);

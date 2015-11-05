@@ -630,8 +630,8 @@ gint job_stat_update (Job *job)
     g_free (stat);
     g_strfreev (stats);
     g_strfreev (cpustats);
-    job->cpu_average = ((utime + stime) * 100) / (ctime - job->start_ctime);
-    job->cpu_current = ((utime - job->last_utime + stime - job->last_stime) * 100) / (ctime - job->last_ctime);
+    job->cpu_average = ((utime + stime) * 10000) / (ctime - job->start_ctime);
+    job->cpu_current = ((utime - job->last_utime + stime - job->last_stime) * 10000) / (ctime - job->last_ctime);
     job->last_ctime = ctime;
     job->last_utime = utime;
     job->last_stime = stime;
