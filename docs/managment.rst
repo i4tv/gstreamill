@@ -89,7 +89,9 @@ On success, returns a response body with the following structure::
         "builddate": "Nov 20 2014",
         "buildtime": "13:27:11",
         "starttime": "2014-11-20T13:30:13+0800",
-        "jobcount": 5
+        "jobcount": 5,
+        "cpu_average":9.610000,
+        "cpu_current":9.800000
     }
 
 The following table defines the properties
@@ -102,6 +104,8 @@ The following table defines the properties
     buildtime     string The build time of the gstreamill
     starttime     string Start time of the gstreamill
     jobcount      number Current count of jobs
+    cpu_average   number Average cpu usage
+    cpu_current   number Current cpu usage
     ============= ====== =================================
 
 list jobs
@@ -146,8 +150,8 @@ On success, returns a response body with the following structure::
             "last_start_time": "2014-11-20T13:30:14+0800",
             "state": "JOB_STATE_PLAYING",
             "current_access": 0,
-            "cpu_average": 9,
-            "cpu_current": 8,
+            "cpu_average": 9.000,
+            "cpu_current": 8.000,
             "memory": 545214464,
             "source": {
                 "duration": 0,
