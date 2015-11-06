@@ -999,68 +999,57 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
         GST_WARNING ("Job %s normaly exit, status is %d", job->name, WEXITSTATUS (status));
         *(job->output->state) = JOB_STATE_STOPED;
         job->eos = TRUE;
-        goto end;
-    }
 
-    if (*(job->output->state) == JOB_STATE_STOPING) {
-        GST_WARNING ("Job %s's state is STOPING", job->name);
-        *(job->output->state) = JOB_STATE_STOPED;
-        job->eos = TRUE;
-        goto end;
-    }
-
-    if (WIFEXITED (status) && (WEXITSTATUS (status) != 0)) {
+    } else if (WIFEXITED (status) && (WEXITSTATUS (status) != 0)) {
         if (WEXITSTATUS (status) < 100) {
             GST_WARNING ("Start job failure: subprocess return %d and don't restart it.", WEXITSTATUS (status));
-            goto end;
 
         } else {
             if (!job->is_live) {
                 GST_WARNING ("Nonlive job %s exit on critical error return %d.", job->name, WEXITSTATUS (status));
                 *(job->output->state) = JOB_STATE_STOPED;
                 job->eos = TRUE;
-                goto end;
-            }
 
-            GST_WARNING ("Job %s exit on critical error return %d, restart ...", job->name, WEXITSTATUS (status));
+            } else {
+
+                GST_WARNING ("Job %s exit on critical error return %d, restart ...", job->name, WEXITSTATUS (status));
+                job_reset (job);
+                job_state = create_job_process (job);
+                if (job_state == JOB_STATE_PLAYING) {
+                    GST_INFO ("Restart job %s success", job->name);
+
+                } else if (job_state == JOB_STATE_STOPING) {
+                    GST_WARNING ("Restart a stoping job: %s", job->name);
+
+                } else if (job_state == JOB_STATE_START_FAILURE) {
+                    /* create process failure, clean from job list */
+                    GST_WARNING ("Restart job %s failure", job->name);
+                    *(job->output->state) = JOB_STATE_STOPED;
+                }
+            }
+        }
+
+    } else if (WIFSIGNALED (status)) {
+        if (!job->is_live) {
+            GST_INFO ("Nonlive job %s exit on an unhandled signal.", job->name);
+            *(job->output->state) = JOB_STATE_STOPED;
+            job->eos = TRUE;
+
+        } else {
+            GST_INFO ("Live job %s exit on an unhandled signal, restart.", job->name);
             job_reset (job);
-            job_state = create_job_process (job);
-            if (job_state == JOB_STATE_PLAYING) {
+            if (create_job_process (job) == JOB_STATE_PLAYING) {
                 GST_INFO ("Restart job %s success", job->name);
 
-            } else if (job_state == JOB_STATE_STOPING) {
-                GST_WARNING ("Restart a stoping job: %s", job->name);
-
-            } else if (job_state == JOB_STATE_START_FAILURE) {
+            } else {
                 /* create process failure, clean from job list */
                 GST_WARNING ("Restart job %s failure", job->name);
                 *(job->output->state) = JOB_STATE_STOPED;
             }
         }
     }
-
-    if (WIFSIGNALED (status)) {
-        if (!job->is_live) {
-            GST_INFO ("Nonlive job %s exit on an unhandled signal.", job->name);
-            *(job->output->state) = JOB_STATE_STOPED;
-            job->eos = TRUE;
-            goto end;
-        }
-
-        GST_INFO ("Live job %s exit on an unhandled signal, restart.", job->name);
-        job_reset (job);
-        if (create_job_process (job) == JOB_STATE_PLAYING) {
-            GST_INFO ("Restart job %s success", job->name);
-
-        } else {
-            /* create process failure, clean from job list */
-            GST_WARNING ("Restart job %s failure", job->name);
-            *(job->output->state) = JOB_STATE_STOPED;
-        }
-    }
-
-end:
     g_mutex_unlock (&(job->access_mutex));
+
     return;
 }
 
