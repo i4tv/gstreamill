@@ -1189,7 +1189,6 @@ gchar * gstreamill_job_stop (Gstreamill *gstreamill, gchar *name)
     job = get_job (gstreamill, name);
     if (job != NULL) {
         job_stop (job, SIGTERM);
-        g_object_unref (job);
         return g_strdup_printf ("{\n    \"name\": \"%s\",\n    \"result\": \"success\"\n}", name);
 
     } else {
