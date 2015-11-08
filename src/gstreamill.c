@@ -826,7 +826,8 @@ static gpointer msg_thread (gpointer data)
                 GST_ERROR ("dvr_record_segment sem_timedwait failure: %s", g_strerror (errno));
                 goto semaphore_failure;
             }
-            if (!encoder_output->is_first_buffer) {
+            /* last_timestamp==0 means it's first segment */
+            if (encoder_output->last_timestamp != 0) {
                 seg_dir = segment_dir (encoder_output);
                 seg_path = g_strdup_printf ("%s/%010lu_%lu_%lu.ts",
                         seg_dir,
@@ -839,12 +840,10 @@ static gpointer msg_thread (gpointer data)
                     dvr_record_segment (encoder_output, seg_dir, duration);
                 }
                 g_free (seg_dir);
-
-            } else {
-                encoder_output->is_first_buffer = FALSE;
             }
             encoder_output->last_timestamp = encoder_output_rap_timestamp (encoder_output, *(encoder_output->last_rap_addr));
             sem_post (encoder_output->semaphore);
+
 semaphore_failure:
             gstreamill_unaccess (gstreamill, uri);
         }
