@@ -1,5 +1,10 @@
 releases are sorted from youngest to oldest.
 
+v-0.7.7 2015-11-09
+- unref job problem
+- access job->output->stat in child_watch_cb, cause main crash problem
+- -j mode, 0 size segment problem
+
 v-0.7.6 2015-11-05
 - increase precision of cpu usage in job stat
 - add gstreamill cpu usage in gstreamill stat
