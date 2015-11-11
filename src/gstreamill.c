@@ -625,7 +625,7 @@ static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClock
     }
 
     /* log rotate. */
-    if (gstreamill->mode == DAEMON_MODE) {
+    if ((gstreamill->mode == DAEMON_MODE) || (gstreamill->mode == DEBUG_MODE)) {
         log_rotate (gstreamill);
         dvr_clean (gstreamill);
     }
