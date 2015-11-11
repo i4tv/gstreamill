@@ -503,7 +503,7 @@ int main (int argc, char *argv[])
         g_free (path);
 
         /* if DAEMON_MODE then daemonize */
-        if (mode == DAEMON_MODE) {
+        if ((mode == DAEMON_MODE) || (mode == DEBUG_MODE)) {
             /* log to file */
             path = g_build_filename (log_dir, "gstreamill.log", NULL);
             ret = init_log (path);
@@ -512,7 +512,10 @@ int main (int argc, char *argv[])
                 g_print ("Init log error, ret %d.\n", ret);
                 exit (11);
             }
+        }
 
+        /* if DAEMON_MODE then daemonize */
+        if (mode == DAEMON_MODE) {
             /* daemonize */
             if (daemon (0, 0) != 0) {
                 fprintf (_log->log_hd, "Failed to daemonize");
