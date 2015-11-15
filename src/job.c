@@ -404,7 +404,6 @@ gint job_initialize (Job *job, gint mode)
         }
 
         output->encoders[i].is_first_buffer = TRUE;
-        output->encoders[i].last_timestamp = 0;
         output->encoders[i].cache_addr = p;
         p += SHM_SIZE;
         output->encoders[i].cache_size = SHM_SIZE;
@@ -699,6 +698,8 @@ void job_reset (Job *job)
             m3u8playlist_free (encoder->m3u8_playlist);
         }
         encoder->m3u8_playlist = m3u8playlist_new (version, window_size, 0);
+        /* reset last segment timestamp 0 */
+        encoder->last_timestamp = 0;
     }
 }
 
