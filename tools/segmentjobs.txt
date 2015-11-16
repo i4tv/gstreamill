@@ -14,7 +14,7 @@ CCTV13 udp://238.123.45.13:8048 segment
 CCTV14 udp://238.123.45.60:8236 segment
 CCTV15 udp://238.123.45.14:8052 segment
 CCTV16 udp://238.123.45.15:8056 segment
-DFWS udp://238.123.45.49:8129 segment
+DFWS udp://238.123.45.49:8192 segment
 JSWS udp://238.123.45.70:8276 segment
 BJWS udp://238.123.45.61:8240 segment
 ZJWS udp://238.123.45.72:8284 segment
@@ -34,7 +34,7 @@ JXWS udp://238.123.45.71:8280 segment
 HEBWS udp://238.123.45.35:8136 segment
 JLWS udp://238.123.45.51:8200 segment
 HLJWS udp://238.123.45.50:8196 segment
-SAXWS udp://238.123.45.44:8196 segment
+SAXWS udp://238.123.45.44:8172 segment
 GZWS udp://238.123.45.31:8120 segment
 QHWS udp://238.123.45.47:8184 segment
 YNWS udp://238.123.45.28:8108 segment
