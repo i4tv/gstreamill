@@ -1,5 +1,8 @@
 releases are sorted from youngest to oldest.
 
+v-0.7.9 2015-11-16
+- zero size segment
+
 v-0.7.8 2015-11-11
 - log rotate in debug mode
 - main process log to file in debug mode
