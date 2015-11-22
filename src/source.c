@@ -514,7 +514,7 @@ static void delay_sometimes_pad_link (Source *source, gchar *name)
                     source->bins,
                     (GClosureNotify)free_bin,
                     (GConnectFlags) 0);
-            GST_DEBUG ("delay sometimes pad linkage %s", bin->name);
+            GST_INFO ("delay sometimes pad linkage %s:%s", bin->name, gst_element_get_name (element));
             elements = elements->next;
         }
         bins = bins->next;
@@ -527,7 +527,7 @@ static gchar * get_bin_name (gchar *bin)
     GMatchInfo *match_info;
     gchar *name;
 
-    /* bin->name, same as appsrc or appsink. */
+    /* bin->name, value of name property of appsrc or appsink. */
     regex = g_regex_new ("appsrc *name=(?<name>[^ ]*)", G_REGEX_OPTIMIZE, 0, NULL);
     g_regex_match (regex, bin, 0, &match_info);
     g_regex_unref (regex);
