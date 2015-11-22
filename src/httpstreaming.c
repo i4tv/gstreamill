@@ -354,8 +354,10 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
 
             n = encoder_output->cache_size - rap_addr - 12;
             if (n > 0) {
-                GST_WARNING ("nnnnn: n < 0 %d", n);
                 memcpy (*buf + strlen (header), encoder_output->cache_addr + rap_addr + 12, n);
+
+            } else {
+                GST_WARNING ("nnnnn: n < 0 %d", n);
             }
             memcpy (*buf + strlen (header) + n, encoder_output->cache_addr, gop_size - n);
         }
@@ -630,6 +632,7 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
 
         m3u8playlist = get_m3u8playlist (request_data, encoder_output);
         if (m3u8playlist == NULL) {
+            GST_WARNING ("Get %s's playlist failure: not found", request_data->uri);
             buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
 
         } else {
