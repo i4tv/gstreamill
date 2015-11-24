@@ -309,7 +309,7 @@ static gint parse_request (RequestData *request_data)
         buf += 4;
 
     } else {
-        return 2; /* Bad request */
+        return 2; /* Not Implemented */
     }
 
     while (*buf == ' ') {
@@ -923,6 +923,16 @@ static void thread_pool_func (gpointer data, gpointer user_data)
             g_queue_push_head (http_server->block_queue, request_data_pointer);
             g_mutex_unlock (&(http_server->block_queue_mutex));
             return;
+
+        } else if (ret == 2) {
+            /* Not Implemented */
+            GST_WARNING ("Not Implemented, return is %d, sock is %d", ret, request_data->sock);
+            gchar *buf = g_strdup_printf (http_501, PACKAGE_NAME, PACKAGE_VERSION);
+            if (httpserver_write (request_data->sock, buf, strlen (buf)) != strlen (buf)) {
+                GST_ERROR ("write sock %d error.", request_data->sock);
+            }
+            g_free (buf);
+            request_data_release (http_server, request_data_pointer);
 
         } else {
             /* Bad Request */
