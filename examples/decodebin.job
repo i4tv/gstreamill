@@ -1,6 +1,6 @@
 {
     "name" : "CCTV",
-    "debug" : "decodebin:5",
+    "debug" : "3",
     "is-live" : true,
     "source": {
         "elements": {
