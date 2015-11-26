@@ -9,48 +9,68 @@ import time
 import urllib2
 import os
 
-url = "http://localhost:20119/cctv21/encoder/0/playlist.m3u8"
-media_sequence = 0
-
-playlist = m3u8.load(url)
-while playlist.is_variant:
-    url = playlist.base_uri + "/" + playlist.playlists[0].uri
-    playlist = m3u8.load(url)
-
-current_sequence = media_sequence = playlist.media_sequence
-for segment in playlist.segments:
-    print current_sequence, segment.uri
-    current_sequence += 1
-
-while True:
-    playlist = m3u8.load(url)
-    if playlist.media_sequence == media_sequence:
-        time.sleep(1)
-        continue
-    media_sequence = playlist.media_sequence
-    target_duration = playlist.target_duration
-
-    if current_sequence < media_sequence:
-        print "ERROR : missing segment"
-        current_sequence = media_sequence
-
-    index = -1
-    for segment in playlist.segments:
-        index += 1
-        if media_sequence + index < current_sequence:
-            continue
-        seg_url = "%s/%s" % (playlist.base_uri, segment.uri)
+class Player:
+    def __init__(self, url):
+        self.url = url
         try:
-            response = urllib2.urlopen(seg_url)
-            buf = response.read()
-            if not os.path.isdir(os.path.dirname(segment.uri)):
-                os.mkdir(os.path.dirname(segment.uri))
-            f = open(segment.uri, "w")
-            f.write(buf)
-            f.close
-            print "index: ", media_sequence + index, ", uri: ", segment.uri, ", size ", len(buf)
-            current_sequence += 1
+            playlist = m3u8.load(url)
+            while playlist.is_variant: # multiple bitrates videos
+                self.url = playlist.base_uri + playlist.playlists[0].uri
+                playlist = m3u8.load(self.url)
         except:
-            print "url: ", seg_url, sys.exc_info()
+            raise NameError("OpenError")
+        else:
+            self.media_seq = playlist.media_sequence
+            self.current_seq = playlist.media_sequence
+            for segment in playlist.segments:
+                print self.current_seq, segment.uri
+                self.current_seq += 1
 
-    time.sleep(target_duration - 1)
+    def play(self):
+        try:
+            while True:
+                playlist = m3u8.load(self.url)
+                if playlist.media_sequence == self.media_seq:
+                    time.sleep(1)
+                    continue
+                self.media_seq = playlist.media_sequence
+                target_duration = playlist.target_duration
+
+                if self.current_seq < self.media_seq:
+                    print "ERROR : missing segment"
+                    self.current_seq = self.media_seq
+
+                index = -1
+                for segment in playlist.segments:
+                    index += 1
+                    if self.media_seq + index < self.current_seq:
+                        continue
+                    seg_url = "%s%s" % (playlist.base_uri, segment.uri)
+                    response = urllib2.urlopen(seg_url)
+                    buf = response.read()
+                    if not os.path.isdir(os.path.dirname(segment.uri)):
+                        os.mkdir(os.path.dirname(segment.uri))
+                    f = open(segment.uri, "w")
+                    f.write(buf)
+                    f.close
+                    print "index: ", self.media_seq + index, ", uri: ", segment.uri, ", size ", len(buf)
+                    self.current_seq += 1
+
+                time.sleep(target_duration - 1)
+        except:
+            print "Error load m3u8 playlist: %s" % self.url
+
+if __name__ == "__main__":
+    url = sys.argv[1]
+    n = 0
+    while True:
+        n += 1
+        print "replay %d times" % n
+        try:
+            player = Player(url)
+        except:
+            print "Open %s error" % url
+            time.sleep(5)
+            continue
+        player.play()
+        time.sleep(1)
