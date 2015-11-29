@@ -606,15 +606,16 @@ gint job_stat_update (Job *job)
 
     stat_file = g_strdup_printf ("/proc/%d/stat", job->worker_pid);
     if (!g_file_get_contents (stat_file, &stat, NULL, NULL)) {
+        g_free (stat_file);
         GST_ERROR ("Read job %s's stat failure.", job->name);
         return 1;
     }
+    g_free (stat_file);
     stats = g_strsplit (stat, " ", 44);
     utime = g_ascii_strtoull (stats[13],  NULL, 10); /* seconds */
     stime = g_ascii_strtoull (stats[14], NULL, 10);
     /* Resident Set Size */
     job->memory = g_ascii_strtoull (stats[23], NULL, 10) * sysconf (_SC_PAGESIZE);
-    g_free (stat_file);
     g_free (stat);
     g_strfreev (stats);
     if (!g_file_get_contents ("/proc/stat", &stat, NULL, NULL)) {
