@@ -38,16 +38,15 @@
                         "bframes" : 3,
                         "threads" : 4,
                         "byte-stream" : "TRUE",
-                        "rc-lookahead" : 25,
                         "key-int-max" : 100,
-                        "pass" : 17,
-                        "mb-tree" : true,
+                        "pass" : 0,
+                        "mb-tree" : false,
                         "option-string" : ":ref=3:me=hex:subme=8:merange=16:nf=1:deblock=1,-2:weightp=1:scenecut=0:b-pyramid=2:direct=spatial"
                     }
                 }
             },
             "bins" : [
-                "appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc name=voaacenc0! queue ! muxer.",
+                "appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc name=voaacenc0 ! queue ! muxer.",
                 "appsrc name=video ! queue ! x264enc ! queue ! muxer.",
                 "mpegtsmux name=muxer ! queue ! appsink sync=FALSE"
             ]
@@ -67,10 +66,9 @@
                         "bframes" : 3,
                         "threads" : 4,
                         "byte-stream" : "TRUE",
-                        "rc-lookahead" : 25,
                         "key-int-max" : 100,
-                        "pass" : 17,
-                        "mb-tree" : true,
+                        "pass" : 0,
+                        "mb-tree" : false,
                         "option-string" : ":ref=3:me=hex:subme=8:merange=16:nf=1:deblock=1,-2:weightp=1:scenecut=0:b-pyramid=2:direct=spatial"
                     }
                 }
