@@ -944,6 +944,7 @@ static guint64 create_job_process (Job *job)
     gchar *argv[16], *p;
     GPid pid;
     gint i, j;
+    gchar *stat_file, *stat, state;
 
     i = 0;
     argv[i++] = g_strdup (job->exe_path);
@@ -980,6 +981,21 @@ static guint64 create_job_process (Job *job)
 
     while ((*(job->output->state) == JOB_STATE_READY) || (*(job->output->state) == JOB_STATE_VOID_PENDING)) {
         GST_DEBUG ("waiting job process creating ... state: %s", job_state_get_name (*(job->output->state)));
+        stat_file = g_strdup_printf ("/proc/%d/stat", pid);
+        if (!g_file_get_contents (stat_file, &stat, NULL, NULL)) {
+            g_free (stat_file);
+            GST_WARNING ("Read job %s's stat failure.", job->name);
+            *(job->output->state) = JOB_STATE_START_FAILURE;
+            break;
+        }
+        g_free (stat_file);
+        sscanf (stat, "%*[^ ]%*[ ]%*[^ ]%*[ ]%c", &state);
+        g_free (stat);
+        if (state == 'Z') {
+            GST_WARNING ("Restart job %s failure, process terminated", job->name);
+            *(job->output->state) = JOB_STATE_START_FAILURE;
+            break;
+        }
         g_usleep (50000);
     }
 
@@ -1012,7 +1028,6 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
                 job->eos = TRUE;
 
             } else {
-
                 GST_WARNING ("Job %s exit on critical error return %d, restart ...", job->name, WEXITSTATUS (status));
                 job_reset (job);
                 job_state = create_job_process (job);
