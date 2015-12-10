@@ -29,6 +29,11 @@
                         "format" : 3
                     }
                 },
+                "tssegment": {
+                    "property": {
+                        "bitrate": 1200
+                    }
+                },
                 "appsink": {
                     "property": {
                         "sync": false
