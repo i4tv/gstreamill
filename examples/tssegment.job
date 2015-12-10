@@ -1,12 +1,12 @@
 {
-    "name" : "cctv2",
+    "name" : "cctv88",
     "debug" : "3",
     "is-live" : true,
     "source" : {
         "elements" : {
             "udpsrc" : {
                 "property" : {
-                    "uri" : "udp://238.123.45.49:8192"
+                    "uri" : "udp://238.123.45.204:4120"
                 }
             },
             "appsink" : {
@@ -17,7 +17,7 @@
             }
         },
         "bins" : [
-            "udpsrc ! queue ! tssegment ! queue ! appsink name = mpegts"
+            "udpsrc ! queue ! appsink name = mpegts"
         ]
     },
     "encoders" : [
@@ -36,7 +36,7 @@
                 }
             },
             "bins" : [
-                "appsrc name=mpegts ! queue ! appsink"
+                "appsrc name=mpegts ! queue ! tssegment ! queue ! appsink"
             ]
         }
     ],
