@@ -1111,7 +1111,7 @@ static Job * get_job (Gstreamill *gstreamill, gchar *name)
  */
 gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
 {
-    gchar *p, *name;
+    gchar *p, *name, *name_hexstr, *semaphore_name;
     Job *job;
 
     if (!jobdesc_is_valid (job_desc)) {
@@ -1147,6 +1147,15 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
     job->current_access = 0;
     job->age = 0;
     job->last_start_time = NULL;
+
+    name_hexstr = unicode_file_name_2_shm_name (job->name);
+    semaphore_name = g_strdup_printf ("/%s", name_hexstr);
+    g_free (name_hexstr);
+    if (sem_unlink (semaphore_name) == -1) {
+        GST_ERROR ("sem_unlink %s error: %s", job->name, g_strerror (errno));
+    }
+    g_free (semaphore_name);
+
     if (job_initialize (job, gstreamill->mode) != 0) {
         p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"initialize job failure\"\n}");
         g_object_unref (job);
