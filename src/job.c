@@ -316,11 +316,13 @@ gint job_initialize (Job *job, gint mode)
     semaphore = sem_open (semaphore_name, O_CREAT, 0644, 1);
     if (semaphore == SEM_FAILED) {
         GST_ERROR ("open semaphore failed: %s", g_strerror (errno));
+        g_free (name_hexstr);
         g_free (semaphore_name);
         return 1;
     }
     if (clock_gettime (CLOCK_REALTIME, &ts) == -1) {
         GST_ERROR ("clock_gettime error: %s", g_strerror (errno));
+        g_free (name_hexstr);
         g_free (semaphore_name);
         return 1;
     }
@@ -330,6 +332,7 @@ gint job_initialize (Job *job, gint mode)
             continue;
         }
         GST_ERROR ("sem_timedwait failure: %s", g_strerror (errno));
+        g_free (name_hexstr);
         g_free (semaphore_name);
         return 1;
     }
@@ -340,13 +343,15 @@ gint job_initialize (Job *job, gint mode)
             GST_ERROR ("shm_open %s failure: %s", name_hexstr, g_strerror (errno));
             job->output = NULL;
             g_free (name_hexstr);
+            g_free (semaphore_name);
             sem_post (semaphore);
             return 1;
         }
-        g_free (name_hexstr);
         if (ftruncate (fd, job->output_size) == -1) {
             GST_ERROR ("ftruncate error: %s", g_strerror (errno));
             job->output = NULL;
+            g_free (name_hexstr);
+            g_free (semaphore_name);
             sem_post (semaphore);
             return 1;
         }
@@ -357,6 +362,7 @@ gint job_initialize (Job *job, gint mode)
         p = g_malloc (job->output_size);
         job->output_fd = -1;
     }
+    g_free (name_hexstr);
     output = (JobOutput *)g_malloc (sizeof (JobOutput));
     output->job_description = (gchar *)p;
     output->semaphore = semaphore;
