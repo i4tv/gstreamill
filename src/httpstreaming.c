@@ -355,11 +355,12 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
             n = encoder_output->cache_size - rap_addr - 12;
             if (n > 0) {
                 memcpy (*buf + strlen (header), encoder_output->cache_addr + rap_addr + 12, n);
+                memcpy (*buf + strlen (header) + n, encoder_output->cache_addr, gop_size - n);
 
             } else {
                 GST_WARNING ("nnnnn: n < 0 %d", n);
+                memcpy (*buf + strlen (header), encoder_output->cache_addr - n, gop_size);
             }
-            memcpy (*buf + strlen (header) + n, encoder_output->cache_addr, gop_size - n);
         }
         buf_size = strlen (header) + gop_size;
         g_free (header);

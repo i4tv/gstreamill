@@ -697,11 +697,12 @@ static void dvr_record_segment (EncoderOutput *encoder_output, gchar *seg_path, 
         n = encoder_output->cache_size - rap_addr - 12;
         if (n > 0) {
             memcpy (buf, encoder_output->cache_addr + rap_addr + 12, n);
+            memcpy (buf + n, encoder_output->cache_addr, segment_size - n);
 
         } else {
             GST_WARNING ("nnnnn: n < 0 %d", n);
+            memcpy (buf, encoder_output->cache_addr - n, segment_size);
         }
-        memcpy (buf + n, encoder_output->cache_addr, segment_size - n);
     }
 
     realtime = g_get_real_time ();
