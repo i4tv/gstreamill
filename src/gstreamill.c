@@ -1019,7 +1019,8 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
         job->eos = TRUE;
 
     } else if (WIFEXITED (status) && (WEXITSTATUS (status) != 0)) {
-        if (WEXITSTATUS (status) < 100) {
+        /* Is job start first time(not restart) failure? then don't restart it */
+        if ((WEXITSTATUS (status) < 100) && (*(job->output->state) != JOB_STATE_PLAYING)) {
             GST_WARNING ("Start job failure: subprocess return %d and don't restart it.", WEXITSTATUS (status));
 
         } else {
