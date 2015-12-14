@@ -1,5 +1,12 @@
 releases are sorted from youngest to oldest.
 
+v-0.7.11 2015-12-14
+- endless loop problem fix: 21bb0df
+- remove x264_2pass.log.temp and x264_2pass.log.mbtree.temp file: 892966f5c
+- decodebin source example: a91a5f2a0
+- response 501 for not impletmented method, for example HEAD
+- start job failure bug, due to job semaphore
+
 v-0.7.10 2015-11-20
 - segment fault bug fix
 
