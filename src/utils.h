@@ -16,5 +16,6 @@ gchar * get_address (struct sockaddr in_addr);
 gushort get_port (struct sockaddr in_addr);
 gchar *timestamp_to_segment_dir (time_t timestamp);
 gint segment_dir_to_timestamp (gchar *dir, time_t *timestamp);
+gint remove_dir (gchar *dir);
 
 #endif /* __UTILS_H__ */

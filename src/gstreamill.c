@@ -532,9 +532,9 @@ static void job_check_func (gpointer data, gpointer user_data)
 static void dvr_clean (Gstreamill *gstreamill)
 {
     guint64 now, time;
-    gint i, j, k;
+    gint i, j;
     gchar *pattern, *expire_dir, *dir;
-    glob_t pglob, fglob;
+    glob_t pglob;
     GSList *list;
     Job *job;
 
@@ -563,14 +563,7 @@ static void dvr_clean (Gstreamill *gstreamill)
             for (j = 0; j < pglob.gl_pathc; j++) {
                 dir = &(pglob.gl_pathv[j][strlen (job->output->encoders[i].record_path) + 1]);
                 if (g_strcmp0 (expire_dir, dir) > 0) {
-                    pattern = g_strdup_printf ("%s/*", pglob.gl_pathv[j]);
-                    glob (pattern, 0, NULL, &fglob);
-                    g_free (pattern);
-                    for (k = 0; k < fglob.gl_pathc; k++) {
-                        g_remove (fglob.gl_pathv[k]);
-                    }
-                    globfree (&fglob);
-                    g_remove (pglob.gl_pathv[j]);
+                    remove_dir (pglob.gl_pathv[j]);
 
                 } else {
                     break;

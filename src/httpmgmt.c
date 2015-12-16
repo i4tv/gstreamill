@@ -26,6 +26,7 @@
 #include "httpmgmt.h"
 #include "gstreamill.h"
 #include "mediaman.h"
+#include "utils.h"
 
 GST_DEBUG_CATEGORY_EXTERN (GSTREAMILL);
 #define GST_CAT_DEFAULT GSTREAMILL
@@ -982,6 +983,62 @@ static gchar * rm_job (gchar *uri)
     return result;
 }
 
+static gchar * dvr_directory (gchar *uri)
+{
+    gchar *action, *dvr_path, *pattern, *result, *p;
+
+    dvr_path = g_strdup_printf ("%s/dvr/", MEDIA_LOCATION);
+    action = uri + 14; /* /admin/dvrdir/, length 14 */
+    result = g_strdup_printf ("[");
+    if ((strlen (action) == 4) && (g_strcmp0 (action, "list") == 0)) {
+        glob_t pglob;
+        gint i;
+
+        pattern = g_strdup_printf ("%s/*", dvr_path);
+        glob (pattern, 0, NULL, &pglob);
+        for (i = 0; i < pglob.gl_pathc; i++) {
+            p = result;
+            result = g_strdup_printf ("%s\"%s\",", p, pglob.gl_pathv[i] + strlen (dvr_path) + 1);
+            g_free (p);
+        }
+        g_free (pattern);
+
+    } else if (g_str_has_prefix (action, "rmdir/")) {
+        gchar *dvr_dir;
+
+        p = uri + 20; /* /admin/dvrdir/rmdir/, length 20 */
+        dvr_dir = g_strdup_printf ("%s%s", dvr_path, p);
+        if (strlen (p) == 0) {
+            GST_WARNING ("Can't remove null dvr directory");
+            result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"Can't remove null dvr directory\"\n}");
+
+        } else if (remove_dir (dvr_dir) == 0) {
+            result = g_strdup ("{\n    \"result\": \"success\"\n}");
+
+        } else {
+            GST_WARNING ("remove dvr directory %s failure: %s", dvr_dir, g_strerror (errno));
+            result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"%s\"\n}", g_strerror (errno));
+        }
+        g_free (dvr_dir);
+
+    } else {
+        GST_WARNING ("dvrdir request not found %s", action);
+        result = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"Bad request %s\"\n}", action);
+    }
+    g_free (dvr_path);
+
+    if ((result[0] == '[') && (strlen (result) == 1)) {
+        p = result;
+        result = g_strdup_printf ("%s]", p);
+        g_free (p);
+
+    } else if (result[0] == '[') {
+        result[strlen (result) - 1] = ']';
+    }
+
+    return result;
+}
+
 static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_data, gchar **buf)
 {
     gchar *path, *http_header, *p = NULL;
@@ -1064,6 +1121,11 @@ static gsize request_gstreamill_admin (HTTPMgmt *httpmgmt, RequestData *request_
 
     } else if ((request_data->method == HTTP_POST) && (g_str_has_prefix (request_data->uri, "/admin/setjob/"))) {
         p = put_job (request_data, FALSE);
+        *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
+        g_free (p);
+
+    } else if (g_str_has_prefix (request_data->uri, "/admin/dvrdir/")) {
+        p = dvr_directory (request_data->uri);
         *buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
         g_free (p);
 

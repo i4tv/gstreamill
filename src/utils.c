@@ -12,6 +12,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <glob.h>
+#include <glib/gstdio.h>
 
 #include "utils.h"
 
@@ -97,4 +99,39 @@ gint segment_dir_to_timestamp (gchar *dir, time_t *timestamp)
     *timestamp = mktime (&tm);
 
     return 0;
+}
+
+gint remove_dir (gchar *dir)
+{
+    gint ret = 0, i;
+    glob_t pglob;
+    gchar *pattern;
+
+    if (g_file_test (dir, G_FILE_TEST_IS_DIR)) {
+        pattern = g_strdup_printf ("%s/*", dir);
+        glob (pattern, 0, NULL, &pglob);
+        g_free (pattern);
+        if (pglob.gl_pathc == 0) {
+            ret = g_remove (dir);
+
+        } else {
+            /* remove subdirectory */
+            for (i = 0; i < pglob.gl_pathc; i++) {
+                ret = remove_dir (pglob.gl_pathv[i]);
+
+                if (ret != 0) {
+                    break;
+                }
+            }
+            if (ret == 0) {
+                ret = g_remove (dir);
+            }
+        }
+        globfree (&pglob);
+
+    } else {
+        ret = g_remove (dir);
+    }
+
+    return ret;
 }
