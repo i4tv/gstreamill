@@ -266,8 +266,12 @@ gchar * m3u8playlist_callback_get_playlist (gchar *path, guint64 dvr_duration, g
         GST_ERROR ("segment_dir_to_timestamp error, start_dir: %s", start_dir);
         return NULL;
     }
+    if ((start_min > 60) || (start_sec > 60)) {
+        GST_ERROR ("Error start_min: %ld or start_sec: %ld", start_min, start_sec);
+        return NULL;
+    }
     if (((time - dvr_duration) > start_time) || (start_time > time)) {
-        GST_WARNING ("callback request exceed dvr duration, start_time: %ld", start_time);
+        GST_ERROR ("callback request exceed dvr duration, start_time: %ld", start_time);
         return NULL;
     }
 
@@ -280,8 +284,12 @@ gchar * m3u8playlist_callback_get_playlist (gchar *path, guint64 dvr_duration, g
         GST_ERROR ("segment_dir_to_timestamp error, end_dir: %s", end_dir);
         return NULL;
     }
+    if ((end_min > 60) || (end_sec > 60)) {
+        GST_ERROR ("Error end_min: %ld or end_sec: %ld", end_min, end_sec);
+        return NULL;
+    }
     if (((time - dvr_duration) > end_time) || (end_time > time)) {
-        GST_WARNING ("callback request exceed dvr duration, end_time: %ld", end_time);
+        GST_ERROR ("callback request exceed dvr duration, end_time: %ld", end_time);
         return NULL;
     }
 
