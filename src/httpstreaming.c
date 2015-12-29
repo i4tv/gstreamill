@@ -577,7 +577,7 @@ static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encod
         start = get_str_parameter (request_data->parameters, "start");
         end = get_str_parameter (request_data->parameters, "end");
         if ((start != NULL) && (end != NULL)) {
-            m3u8playlist = m3u8playlist_callback_get_playlist (encoder_output->record_path, start, end);
+            m3u8playlist = m3u8playlist_callback_get_playlist (encoder_output->record_path, encoder_output->dvr_duration, start, end);
         }
         if (start != NULL) {
             g_free (start);

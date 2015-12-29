@@ -245,7 +245,7 @@ gchar * m3u8playlist_timeshift_get_playlist (gchar *path, gint64 offset)
     return playlist;
 }
 
-gchar * m3u8playlist_callback_get_playlist (gchar *path, gchar *start, gchar *end)
+gchar * m3u8playlist_callback_get_playlist (gchar *path, guint64 dvr_duration, gchar *start, gchar *end)
 {
     gchar start_dir[11], end_dir[11];
     gint number, i;
@@ -253,8 +253,10 @@ gchar * m3u8playlist_callback_get_playlist (gchar *path, gchar *start, gchar *en
     guint64 start_min, start_sec, end_min, end_sec, start_us, end_us, us;
     gchar *segments_dir, *pattern, *format, *p, **pp;
     glob_t pglob;
-    M3U8Playlist *m3u8playlist;
+    gfloat target_duration = 0, duration;
+    GString *gstring;
 
+    time = g_get_real_time () / 1000000;
     number = sscanf (start, "%10s%02lu%02lu", start_dir, &start_min, &start_sec);
     if (number != 3) {
         GST_ERROR ("bad callback parameters: start=%s", start);
@@ -262,6 +264,10 @@ gchar * m3u8playlist_callback_get_playlist (gchar *path, gchar *start, gchar *en
     }
     if (segment_dir_to_timestamp (start_dir, &start_time) != 0) {
         GST_ERROR ("segment_dir_to_timestamp error, start_dir: %s", start_dir);
+        return NULL;
+    }
+    if (((time - dvr_duration) > start_time) || (start_time > time)) {
+        GST_WARNING ("callback request exceed dvr duration, start_time: %ld", start_time);
         return NULL;
     }
 
@@ -274,8 +280,12 @@ gchar * m3u8playlist_callback_get_playlist (gchar *path, gchar *start, gchar *en
         GST_ERROR ("segment_dir_to_timestamp error, end_dir: %s", end_dir);
         return NULL;
     }
+    if (((time - dvr_duration) > end_time) || (end_time > time)) {
+        GST_WARNING ("callback request exceed dvr duration, end_time: %ld", end_time);
+        return NULL;
+    }
 
-    m3u8playlist = m3u8playlist_new (3, 0, 0);
+    gstring = g_string_new ("");
     for (time = start_time; time <= end_time; time += 3600) {
         if (time == start_time) {
             start_us = start_min * 60000000 + start_sec * 1000000;
@@ -308,15 +318,35 @@ gchar * m3u8playlist_callback_get_playlist (gchar *path, gchar *start, gchar *en
                     pp = g_strsplit (p, "_", 0);
                     /* remove .ts */
                     pp[2][strlen (pp[2]) - 3] = '\0';
-                    m3u8playlist_add_entry (m3u8playlist, p, g_strtod ((pp[2]), NULL));
+                    duration = g_strtod ((pp[2]), NULL);
+                    if (target_duration < duration) {
+                        target_duration = duration;
+                    }
+                    g_string_append_printf (gstring, M3U8_INF_TAG, duration / GST_SECOND, p);
                 }
             }
             g_free (format);
         }
         globfree (&pglob);
     }
-    p = g_strdup (m3u8playlist->playlist_str);
-    m3u8playlist_free (m3u8playlist);
+    if (g_strcmp0 (gstring->str, "") == 0) {
+        GST_WARNING ("callback: no segment found");
+        g_string_free (gstring, TRUE);
+        return NULL;
+    }
+    p = gstring->str;
+    g_string_free (gstring, FALSE);
+    gstring = g_string_new ("");
+    g_string_append_printf (gstring, M3U8_HEADER_TAG);
+    g_string_append_printf (gstring, M3U8_VERSION_TAG, 3);
+    g_string_append_printf (gstring, M3U8_ALLOW_CACHE_TAG, "YES");
+    g_string_append_printf (gstring, M3U8_TARGETDURATION_TAG, (guint)((target_duration + 500 * GST_MSECOND) / GST_SECOND));
+    g_string_append_printf (gstring, "\n");
+    g_string_append_printf (gstring, "%s", p);
+    g_free (p);
+    g_string_append_printf (gstring, M3U8_X_ENDLIST_TAG);
+    p = gstring->str;
+    g_string_free (gstring, FALSE);
 
     return p;
 }
