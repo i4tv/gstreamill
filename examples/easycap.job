@@ -36,7 +36,6 @@
                     "property" : {
                         "bitrate" : 100,
                         "byte-stream" : true,
-                        "threads" : 4,
                         "bframes" :3
                     }
                 },

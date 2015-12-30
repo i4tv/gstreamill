@@ -38,14 +38,13 @@
                     "property" : {
                         "bitrate" : 1200,
                         "byte-stream" : true,
-                        "threads" : 4,
                         "bframes" :3,
                         "qp-min" : 1,
                         "qp-max" : 51,
                         "qp-step" : 10,
                         "vbv-buf-capacity" : 5000,
                         "rc-lookahead" : 50,
-                        "mb-tree" : true,
+                        "mb-tree" : false,
                         "dct8x8" : true,
                         "speed-preset" : 0,
                         "option-string" : ":ref=3:me=umh:subme=16:merange=64:nf=1:deblock=1,-2:weightp=1:b-pyramid=2:direct=spatial:nal-hrd=vbr"

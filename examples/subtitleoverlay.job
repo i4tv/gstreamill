@@ -34,11 +34,10 @@
                         "bitrate" : 1500,
                         "bframes" : 3,
                         "profile" : "high",
-                        "threads" : 4,
                         "byte-stream" : "TRUE",
                         "rc-lookahead" : 25,
-                        "pass" : 17,
-                        "mb-tree" : true,
+                        "pass" : 0,
+                        "mb-tree" : false,
                         "stats-file" : "/tmp/x264.log",
                         "option-string" : ":ref=3:me=hex:subme=8:merange=16:nf=1:deblock=1,-2:weightp=1:scenecut=0:lookahead-threads=4:sliced-threads=false:b-pyramid=2:direct=spatial"
                     }
