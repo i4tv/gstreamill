@@ -35,12 +35,11 @@
                     "property" : {
                         "name" : "x264enc",
                         "bitrate" : 1500,
-                        "bframes" : 3,
                         "byte-stream" : "TRUE",
                         "key-int-max" : 100,
                         "pass" : 0,
                         "mb-tree" : false,
-                        "option-string" : ":ref=3:me=hex:subme=8:merange=16:nf=1:deblock=1,-2:weightp=1:scenecut=0:b-pyramid=2:direct=spatial"
+                        "option-string" : ":ref=1:me=dia:merange=8:deblock=1,-2:weightp=1:scenecut=0:b-pyramid=2:direct=spatial"
                     }
                 }
             },
@@ -62,12 +61,11 @@
                     "property" : {
                         "name" : "x264enc",
                         "bitrate" : 700,
-                        "bframes" : 3,
                         "byte-stream" : "TRUE",
                         "key-int-max" : 100,
                         "pass" : 0,
                         "mb-tree" : false,
-                        "option-string" : ":ref=3:me=hex:subme=8:merange=16:nf=1:deblock=1,-2:weightp=1:scenecut=0:b-pyramid=2:direct=spatial"
+                        "option-string" : ":ref=1:me=dia:merange=8:deblock=1,-2:weightp=1:scenecut=0:b-pyramid=2:direct=spatial"
                     }
                 }
             },
