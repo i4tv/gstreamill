@@ -177,7 +177,7 @@ static void move_head (Encoder *encoder)
 
     gop_size = encoder_output_gop_size (encoder->output, *(encoder->output->head_addr));
     /* move head. */
-    if (*(encoder->output->head_addr) + gop_size < encoder->output->cache_size) {
+    if (*(encoder->output->head_addr) + gop_size + 12 < encoder->output->cache_size) {
         *(encoder->output->head_addr) += gop_size + 12;
 
     } else {
