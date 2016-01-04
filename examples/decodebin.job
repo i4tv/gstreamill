@@ -33,13 +33,10 @@
                 },
                 "x264enc" : {
                     "property" : {
-                        "name" : "x264enc",
-                        "bitrate" : 1500,
+                        "speed-preset": "superfast",
                         "byte-stream" : "TRUE",
-                        "key-int-max" : 100,
                         "pass" : 0,
-                        "mb-tree" : false,
-                        "option-string" : ":ref=1:me=dia:merange=8:deblock=1,-2:weightp=1:scenecut=0:b-pyramid=2:direct=spatial"
+                        "bitrate" : 1500
                     }
                 }
             },
@@ -59,13 +56,10 @@
                 },
                 "x264enc" : {
                     "property" : {
-                        "name" : "x264enc",
-                        "bitrate" : 700,
+                        "speed-preset": "superfast",
                         "byte-stream" : "TRUE",
-                        "key-int-max" : 100,
                         "pass" : 0,
-                        "mb-tree" : false,
-                        "option-string" : ":ref=1:me=dia:merange=8:deblock=1,-2:weightp=1:scenecut=0:b-pyramid=2:direct=spatial"
+                        "bitrate" : 700
                     }
                 }
             },
