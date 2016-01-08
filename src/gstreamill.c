@@ -673,7 +673,7 @@ static void dvr_record_segment (EncoderOutput *encoder_output, gchar *seg_path, 
     /* gop not found? */
     if (rap_addr == G_MAXUINT64) {
         GST_WARNING ("%s: record segment, but segment not found!", encoder_output->name);
-        sem_post (encoder_output->semaphore);
+        //sem_post (encoder_output->semaphore);
         return;
     }
 
@@ -693,7 +693,7 @@ static void dvr_record_segment (EncoderOutput *encoder_output, gchar *seg_path, 
             memcpy (buf + n, encoder_output->cache_addr, segment_size - n);
 
         } else {
-            GST_WARNING ("nnnnn: n < 0 %d", n);
+            GST_WARNING ("nnnnn: n (%d) < 0, cache_size: %lu, rap_addr: %lu", n, encoder_output->cache_size, rap_addr);
             memcpy (buf, encoder_output->cache_addr - n, segment_size);
         }
     }
