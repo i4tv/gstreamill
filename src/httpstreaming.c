@@ -5,7 +5,7 @@
  *
  */
 
-#define _XOPEN_SOURCE
+#define _XOPEN_SOURCE 600
 #include <unistd.h>
 #include <gst/gst.h>
 #include <string.h>
@@ -204,12 +204,20 @@ static GstClockTime send_chunk (EncoderOutput *encoder_output, RequestData *requ
     HTTPStreamingPrivateData *priv_data;
     gint64 current_gop_end_addr, tail_addr;
     gint32 ret;
+    struct timespec ts;
 
     priv_data = request_data->priv_data;
 
-    if (sem_wait (encoder_output->semaphore) == -1) {
-        GST_WARNING ("send_chunk sem_wait failure: %s", g_strerror (errno));
-        /* sem_wait failure, wait a while. */
+    if (clock_gettime (CLOCK_REALTIME, &ts) == -1) {
+        GST_ERROR ("send_chunk clock_gettime error: %s", g_strerror (errno));
+        return 100 * GST_MSECOND + g_random_int_range (1, 1000000);
+    }
+    ts.tv_sec += 2;
+    while (sem_timedwait (encoder_output->semaphore, &ts) == -1) {
+        if (errno == EINTR) {
+            continue;
+        }
+        GST_ERROR ("send_chunk sem_timedwait failure: %s", g_strerror (errno));
         return 100 * GST_MSECOND + g_random_int_range (1, 1000000);
     }
     tail_addr = *(encoder_output->tail_addr);
@@ -312,6 +320,7 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
     gchar date[20], *header, *path, *file, *cache_control;
     gsize buf_size;
     GError *err = NULL;
+    struct timespec ts;
 
     number = sscanf (request_data->uri, "/%*[^/]/encoder/%*[^/]/%04lu%02lu%02lu%02lu/%lu_%lu_%lu.ts$",
             &year, &month, &mday, &hour, &us, &sequence, &duration);
@@ -328,8 +337,18 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
     timestamp = mktime (&tm) * 1000000 + us;
 
     /* read from memory */
-    if (sem_wait (encoder_output->semaphore) == -1) {
-        GST_WARNING ("get_mpeg2ts_segment sem_wait failure: %s", g_strerror (errno));
+    if (clock_gettime (CLOCK_REALTIME, &ts) == -1) {
+        GST_ERROR ("get_mpeg2ts_segment clock_gettime error: %s", g_strerror (errno));
+        *buf = g_strdup_printf (http_500, PACKAGE_NAME, PACKAGE_VERSION);
+        buf_size = strlen (*buf);
+        return buf_size;
+    }
+    ts.tv_sec += 2;
+    while (sem_timedwait (encoder_output->semaphore, &ts) == -1) {
+        if (errno == EINTR) {
+            continue;
+        }
+        GST_ERROR ("get_mpeg2ts_segment sem_timedwait failure: %s", g_strerror (errno));
         *buf = g_strdup_printf (http_500, PACKAGE_NAME, PACKAGE_VERSION);
         buf_size = strlen (*buf);
         return buf_size;

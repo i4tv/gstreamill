@@ -328,13 +328,21 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
     GstBuffer *buffer;
     GstSample *sample;
     Encoder *encoder = (Encoder *)user_data;
+    struct timespec ts;
 
     *(encoder->output->heartbeat) = gst_clock_get_time (encoder->system_clock);
     sample = gst_app_sink_pull_sample (GST_APP_SINK (sink));
     buffer = gst_sample_get_buffer (sample);
-    if (sem_wait (encoder->output->semaphore) == -1) {
-        GST_ERROR ("new_sample_callback sem_wait failure: %s", g_strerror (errno));
-        gst_sample_unref (sample);
+    if (clock_gettime (CLOCK_REALTIME, &ts) == -1) {
+        GST_ERROR ("new_sample_callback clock_gettime error: %s", g_strerror (errno));
+        return GST_FLOW_OK;
+    }
+    ts.tv_sec += 2;
+    while (sem_timedwait (encoder->output->semaphore, &ts) == -1) {
+        if (errno == EINTR) {
+            continue;
+        }
+        GST_ERROR ("new_sample_callback sem_timedwait failure: %s", g_strerror (errno));
         return GST_FLOW_OK;
     }
 
@@ -852,9 +860,18 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
 gboolean is_encoder_output_ready (EncoderOutput *encoder_output)
 {
     gboolean ready;
+    struct timespec ts;
 
-    if (sem_wait (encoder_output->semaphore) == -1) {
-        GST_ERROR ("is_encoder_output_ready sem_wait failure: %s", g_strerror (errno));
+    if (clock_gettime (CLOCK_REALTIME, &ts) == -1) {
+        GST_ERROR ("is_encoder_output_ready clock_gettime error: %s", g_strerror (errno));
+        return 1;
+    }
+    ts.tv_sec += 2;
+    while (sem_timedwait (encoder_output->semaphore, &ts) == -1) {
+        if (errno == EINTR) {
+            continue;
+        }
+        GST_ERROR ("is_encoder_output_ready sem_timedwait failure: %s", g_strerror (errno));
         return FALSE;
     }
     if (*(encoder_output->head_addr) == *(encoder_output->tail_addr)) {
