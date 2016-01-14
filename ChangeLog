@@ -3,6 +3,7 @@ releases are sorted from youngest to oldest.
 v-0.7.12 2016-01-
 - Add DVR directory managment API
 - Deny streaming service bug fix, #76
+- Check callback parameters: start & end
 
 v-0.7.11 2015-12-14
 - endless loop problem fix: 21bb0df
