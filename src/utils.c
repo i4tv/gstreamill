@@ -89,14 +89,21 @@ gint segment_dir_to_timestamp (gchar *dir, time_t *timestamp)
 
     number = sscanf (dir, "%04d%02d%02d%02d", &year, &month, &mday, &hour);
     if (number != 4) {
-        GST_WARNING ("segment dir to timestamp error: %s", dir);
+        GST_WARNING ("segment dir to timestamp sscanf error: %s", dir);
         return -1;
     }
 
     sprintf (date, "%04d-%02d-%02d %02d:00:00", year, month, mday, hour);
     memset (&tm, 0, sizeof (struct tm));
-    strptime (date, "%Y-%m-%d %H:%M:%S", &tm);
+    if (strptime (date, "%Y-%m-%d %H:%M:%S", &tm) == NULL) {
+        GST_WARNING ("segment dir to timestamp strptime error: %s", dir);
+        return -2;
+    }
     *timestamp = mktime (&tm);
+    if (*timestamp == -1) {
+        GST_WARNING ("segment dir to timestamp mktime error: %s", dir);
+        return -3;
+    }
 
     return 0;
 }
