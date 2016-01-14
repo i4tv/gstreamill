@@ -266,7 +266,7 @@ gchar * m3u8playlist_callback_get_playlist (gchar *path, guint64 dvr_duration, g
         GST_ERROR ("segment_dir_to_timestamp error, start_dir: %s", start_dir);
         return NULL;
     }
-    if ((start_min > 60) || (start_sec > 60)) {
+    if ((start_min > 59) || (start_sec > 59)) {
         GST_ERROR ("Error start_min: %ld or start_sec: %ld", start_min, start_sec);
         return NULL;
     }
@@ -284,7 +284,7 @@ gchar * m3u8playlist_callback_get_playlist (gchar *path, guint64 dvr_duration, g
         GST_ERROR ("segment_dir_to_timestamp error, end_dir: %s", end_dir);
         return NULL;
     }
-    if ((end_min > 60) || (end_sec > 60)) {
+    if ((end_min > 59) || (end_sec > 59)) {
         GST_ERROR ("Error end_min: %ld or end_sec: %ld", end_min, end_sec);
         return NULL;
     }
