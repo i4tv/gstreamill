@@ -308,15 +308,20 @@ static void udp_streaming (Encoder *encoder, GstBuffer *buffer)
 static void send_msg (Encoder *encoder)
 {
     gchar *msg;
+    struct sockaddr *addr;
+    gsize len, ret;
 
     msg = g_strdup_printf ("/%s/encoder/%d:%lu", encoder->job_name, encoder->id, encoder->last_segment_duration);
-    if (sendto (encoder->msg_sock,
-                msg,
-                strlen (msg),
-                0,
-                (struct sockaddr *)&(encoder->msg_sock_addr),
-                sizeof (struct sockaddr)) == -1) {
-        GST_ERROR ("sendto segment msg error: %s", g_strerror (errno));
+    addr = (struct sockaddr *)&(encoder->msg_sock_addr);
+    len = strlen (msg);
+    for (;;) {
+        ret = sendto (encoder->msg_sock, msg, len, 0, addr, sizeof (struct sockaddr));
+        if (ret == len) {
+            break;
+
+        } else if (len == -1) {
+            GST_ERROR ("sendto segment msg error: %s", g_strerror (errno));
+        }
     }
     g_free (msg);
 
