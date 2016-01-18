@@ -318,7 +318,7 @@ static void send_msg (Encoder *encoder)
     if (ret == -1) {
         GST_WARNING ("sendto segment msg error: %s", g_strerror (errno));
 
-    } else {
+    } else if (ret != len) {
         GST_WARNING ("sendto segment msg return : %ld, but length: %ld", ret, len);
     }
     g_free (msg);
