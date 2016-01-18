@@ -314,14 +314,12 @@ static void send_msg (Encoder *encoder)
     msg = g_strdup_printf ("/%s/encoder/%d:%lu", encoder->job_name, encoder->id, encoder->last_segment_duration);
     addr = (struct sockaddr *)&(encoder->msg_sock_addr);
     len = strlen (msg);
-    for (;;) {
-        ret = sendto (encoder->msg_sock, msg, len, 0, addr, sizeof (struct sockaddr));
-        if (ret == len) {
-            break;
+    ret = sendto (encoder->msg_sock, msg, len, 0, addr, sizeof (struct sockaddr));
+    if (ret == -1) {
+        GST_WARNING ("sendto segment msg error: %s", g_strerror (errno));
 
-        } else if (len == -1) {
-            GST_ERROR ("sendto segment msg error: %s", g_strerror (errno));
-        }
+    } else {
+        GST_WARNING ("sendto segment msg return : %ld, but length: %ld", ret, len);
     }
     g_free (msg);
 
