@@ -612,6 +612,42 @@ On failure, returns a response body with the following structure::
         "reason": "No such file or directory"
     }
 
+DVR Managment Interface
+=======================
+
+List dvr directories
+
+HTTP Request::
+
+    GET http://gstreamill.server.addr:20118/admin/dvrdir/list
+
+**Response**
+
+    ["CCTV-1", "CCTV-2"]
+
+Remove dvr directory
+
+HTTP Request::
+
+    GET http://gstreamill.server.addr:20118/admin/dvrdir/rmdir/CCTV-1
+
+CCTV-1 is the name of the dvr directory to be removed
+
+**Response**
+
+On success, returns a response body with the following structure::
+
+    {
+        "result": "success"
+    }
+
+On failure, returns a response body with the following structure::
+
+    {
+        "result": "failure",
+        "reason": "No such file or directory"
+    }
+
 Media Managment Interface
 =========================
 
