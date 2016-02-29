@@ -309,6 +309,7 @@ static gint parse_request (RequestData *request_data)
         buf += 4;
 
     } else {
+        GST_WARNING ("Method %s not implemented", buf);
         return 2; /* Not Implemented */
     }
 

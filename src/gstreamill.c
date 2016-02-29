@@ -1144,7 +1144,7 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
     semaphore_name = g_strdup_printf ("/%s", name_hexstr);
     g_free (name_hexstr);
     if (sem_unlink (semaphore_name) == -1) {
-        GST_ERROR ("sem_unlink %s error: %s", job->name, g_strerror (errno));
+        GST_DEBUG ("sem_unlink %s error: %s", job->name, g_strerror (errno));
     }
     g_free (semaphore_name);
 
@@ -1167,7 +1167,7 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
 
         stat = create_job_process (job);
         if (stat == JOB_STATE_PLAYING) {
-            GST_INFO ("Start job %s success", job->name);
+            GST_WARNING ("Start job %s success", job->name);
             g_mutex_lock (&(gstreamill->job_list_mutex));
             gstreamill->job_list = g_slist_append (gstreamill->job_list, job);
             g_mutex_unlock (&(gstreamill->job_list_mutex));

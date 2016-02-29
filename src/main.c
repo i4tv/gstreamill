@@ -433,7 +433,7 @@ int main (int argc, char *argv[])
 
         GST_INFO ("Starting job ...");
         if (job_start (job) != 0) {
-            GST_ERROR ("start livejob failure, exit");
+            GST_WARNING ("start livejob failure, exit");
             exit (9);
         }
         datetime = g_date_time_new_now_local ();

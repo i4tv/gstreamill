@@ -223,11 +223,13 @@ static gchar * request_gstreamill_stat (HTTPMgmt *httpmgmt, RequestData *request
     gchar *buf, *p;
 
     if ((request_data->method == HTTP_GET) && g_strcmp0 (request_data->uri, "/stat/gstreamill") == 0) {
+        GST_WARNING ("Gstreamill stat request from %s", get_address (request_data->client_addr));
         p = gstreamill_stat (httpmgmt->gstreamill);
         buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
         g_free (p);
 
     } else if ((request_data->method == HTTP_GET) && g_strcmp0 (request_data->uri, "/stat/system") == 0) {
+        GST_WARNING ("System stat request from %s", get_address (request_data->client_addr));
         p = system_stat ();
         buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
         g_free (p);
@@ -238,11 +240,13 @@ static gchar * request_gstreamill_stat (HTTPMgmt *httpmgmt, RequestData *request
         g_free (p);
 
     } else if ((request_data->method == HTTP_GET) && g_strcmp0 (request_data->uri, "/stat/gstreamill/listjobs") == 0) {
+        GST_WARNING ("Listjobs request from %s", get_address (request_data->client_addr));
         p = gstreamill_list_jobs (httpmgmt->gstreamill);
         buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
         g_free (p);
 
     } else if ((request_data->method == HTTP_GET) && g_str_has_prefix (request_data->uri, "/stat/gstreamill/job/")) {
+        GST_WARNING ("Job %s stat request from %s", request_data->uri, get_address (request_data->client_addr));
         p = gstreamill_job_stat (httpmgmt->gstreamill, request_data->uri);
         buf = g_strdup_printf (http_200, PACKAGE_NAME, PACKAGE_VERSION, "application/json", strlen (p), NO_CACHE, p);
         g_free (p);
@@ -835,9 +839,11 @@ static gchar * start_job (HTTPMgmt *httpmgmt, RequestData *request_data)
     if (request_data->method == HTTP_POST) {
         /* start a job. */
         job_description = request_data->raw_request + request_data->header_size;
+        GST_WARNING ("Start job request from %s with description:\n %s\n", get_address (request_data->client_addr), job_description);
         buf = gstreamill_job_start (httpmgmt->gstreamill, job_description);
 
     } else {
+        GST_WARNING ("Must use POST request to start a job");
         buf = g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"must be post request\"\n}");
     }
 
@@ -857,12 +863,13 @@ static gchar * stop_job (HTTPMgmt *httpmgmt, RequestData *request_data)
         if (g_match_info_matches (match_info)) {
             p = g_match_info_fetch_named (match_info, "name");
             g_match_info_free (match_info);
-            GST_WARNING ("stop job request, job name is %s", p);
+            GST_WARNING ("Stop job %s request from %s", p, get_address (request_data->client_addr));
             buf = gstreamill_job_stop (httpmgmt->gstreamill, p);
             g_free (p);
             return buf;
         }
     }
+    GST_WARNING ("Must use GET request to start a job");
     buf = g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"must be get request\"\n}");
 
     return buf;
@@ -1419,7 +1426,7 @@ static GstClockTime httpmgmt_dispatcher (gpointer data, gpointer user_data)
 
     switch (request_data->status) {
         case HTTP_REQUEST:
-            GST_INFO ("new request arrived, socket is %d, uri is %s", request_data->sock, request_data->uri);
+            GST_WARNING ("Request from %s, uri is %s", get_address (request_data->client_addr), request_data->uri);
 
             if (g_str_has_prefix (request_data->uri, "/stat/gstreamer")) {
                 buf = request_gstreamer_stat (httpmgmt, request_data);
