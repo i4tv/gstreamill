@@ -14,6 +14,7 @@
 #include <time.h>
 
 #include "httpstreaming.h"
+#include "utils.h"
 
 GST_DEBUG_CATEGORY_EXTERN (GSTREAMILL);
 #define GST_CAT_DEFAULT GSTREAMILL
@@ -792,7 +793,7 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
 
     switch (request_data->status) {
         case HTTP_REQUEST:
-            GST_INFO ("new request arrived, socket is %d, uri is %s", request_data->sock, request_data->uri);
+            GST_WARNING ("request from %s, uri is %s", get_address (request_data->client_addr), request_data->uri);
             return http_request_process (httpstreaming, request_data);
 
         case HTTP_CONTINUE:
