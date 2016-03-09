@@ -318,7 +318,8 @@ static void source_check (Gstreamill *gstreamill, Job *job)
         time_diff = GST_CLOCK_DIFF (job->output->source.streams[i].last_heartbeat, now);
         if (((time_diff > HEARTBEAT_THRESHHOLD) && (gstreamill->mode != SINGLE_JOB_MODE) && job->is_live) ||
                 ((time_diff > NONLIVE_HEARTBEAT_THRESHHOLD) && (gstreamill->mode != SINGLE_JOB_MODE) && !job->is_live)) {
-            GST_WARNING ("%s heart beat error %lu, restart job.",
+            GST_WARNING ("Job %s's %s heart beat error %lu, restart it.",
+                    job->name,
                     job->output->source.streams[i].name,
                     time_diff);
             /* restart job. */
