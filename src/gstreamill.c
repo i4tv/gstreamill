@@ -1053,7 +1053,7 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
                 GST_INFO ("Restart job %s success", job->name);
 
             } else {
-                /* create process failure, clean from job list */
+                /* create process failure, restart again */
                 GST_WARNING ("Restart job %s failure, should be restarted again.", job->name);
             }
         }
