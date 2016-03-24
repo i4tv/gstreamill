@@ -1014,8 +1014,8 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
 
     } else if (WIFEXITED (status) && (WEXITSTATUS (status) != 0)) {
         /* Is job start first time(not restart) failure? then don't restart it */
-        if (job->age == 1) {
-            GST_WARNING ("Start job first time, job process return %d and don't restart it.", WEXITSTATUS (status));
+        if ((job->age == 1) && (*(job->output->state) != JOB_STATE_PLAYING)) {
+            GST_WARNING ("Start job %s failure, return %d and don't restart it.", job->name, WEXITSTATUS (status));
 
         } else {
             if (!job->is_live) {
