@@ -1028,7 +1028,7 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
                 job_reset (job);
                 job_state = create_job_process (job);
                 if (job_state == JOB_STATE_PLAYING) {
-                    GST_INFO ("Restart job %s success", job->name);
+                    GST_WARNING ("Restart job %s success", job->name);
 
                 } else if (job_state == JOB_STATE_STOPING) {
                     GST_WARNING ("Restart a stoping job: %s", job->name);
@@ -1050,7 +1050,7 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
             GST_INFO ("Live job %s exit on an unhandled signal, restart.", job->name);
             job_reset (job);
             if (create_job_process (job) == JOB_STATE_PLAYING) {
-                GST_INFO ("Restart job %s success", job->name);
+                GST_WARNING ("Restart job %s success", job->name);
 
             } else {
                 /* create process failure, restart again */
