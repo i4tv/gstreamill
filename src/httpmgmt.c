@@ -867,10 +867,16 @@ static gchar * stop_job (HTTPMgmt *httpmgmt, RequestData *request_data)
             buf = gstreamill_job_stop (httpmgmt->gstreamill, p);
             g_free (p);
             return buf;
+
+        } else {
+            GST_WARNING ("Bad request uri: %s", request_data->uri);
+            buf = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": Bad request: %s\"", request_data->uri);
         }
+
+    } else {
+        GST_WARNING ("Must use GET request to start a job");
+        buf = g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"must be get request\"\n}");
     }
-    GST_WARNING ("Must use GET request to start a job");
-    buf = g_strdup ("{\n    \"result\": \"failure\",\n    \"reason\": \"must be get request\"\n}");
 
     return buf;
 }
