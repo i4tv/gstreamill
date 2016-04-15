@@ -703,13 +703,17 @@ static void dvr_record_segment (EncoderOutput *encoder_output, gchar *seg_path, 
     if (encoder_output->last_timestamp > realtime) {
         diff = encoder_output->last_timestamp - realtime;
         if (diff > 1000000000 /*1s*/) {
-            GST_WARNING ("%s stream time diff %ldus from realtime", encoder_output->name, diff);
+            GST_WARNING ("%s stream time diff %" GST_TIME_FORMAT " from realtime",
+                    encoder_output->name,
+                    GST_TIME_ARGS (diff));
         }
 
     } else {
         diff = realtime - encoder_output->last_timestamp;
         if (diff > 1000000000 /*1s*/) {
-            GST_WARNING ("%s stream time diff -%ldus from realtime", encoder_output->name, diff);
+            GST_WARNING ("%s stream time diff -%" GST_TIME_FORMAT " from realtime",
+                    encoder_output->name,
+                    GST_TIME_ARGS (diff));
         }
     }
 
