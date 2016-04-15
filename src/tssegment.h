@@ -190,10 +190,84 @@ typedef struct {
 } TSPacket;
 
 typedef enum {
+    PES_FIELD_ID_TOP_ONLY  = 0x00, /* Display from top field only */
+    PES_FIELD_ID_BOTTOM_ONLY = 0x01, /* Display from bottom field only */
+    PES_FIELD_ID_COMPLETE_FRAME = 0x10, /* Display complete frame */
+    PES_FIELD_ID_INVALID  = 0x11 /* Reserved/Invalid */
+} PESFieldID;
+
+typedef enum {
+    PES_FLAG_PRIORITY  = 1 << 3, /* PES_priority (present: high-priority) */
+    PES_FLAG_DATA_ALIGNMENT = 1 << 2, /* data_alignment_indicator */
+    PES_FLAG_COPYRIGHT  = 1 << 1, /* copyright */
+    PES_FLAG_ORIGINAL_OR_COPY = 1 << 0 /* original_or_copy */
+} PESHeaderFlags;
+
+typedef enum {
     PES_PARSING_OK        = 0,    /* Header fully parsed and valid */
     PES_PARSING_BAD       = 1,    /* Header invalid (CRC error for ex) */
     PES_PARSING_NEED_MORE = 2     /* Not enough data to parse header */
 } PESParsingResult;
+
+typedef enum {
+    H264_NALU_DELIMITER = 2,
+    H264_NALU_SEI = 4,
+    H264_NALU_SPS = 8,
+    H264_NALU_PPS = 16,
+    H264_NALU_PIC = 32,
+    H264_NALU_FRAME = 64,
+    H264_NALU_IDR = 128
+} H264NaluParsingResult;
+
+typedef struct {
+    guint8 stream_id; /* See ID_* above */
+    guint32 packet_length; /* The size of the PES header and PES data
+                             * (if 0 => unbounded packet) */
+    guint16 header_size; /* The complete size of the PES header */
+
+    /* All remaining entries in this structure are optional */
+    guint8 scrambling_control; /* 0x00  : Not scrambled/unspecified,
+                                 * The following are according to ETSI TS 101 154
+                                 * 0x01  : reserved for future DVB use
+                                 * 0x10  : PES packet scrambled with Even key
+                                 * 0x11  : PES packet scrambled with Odd key
+                                 */
+    PESHeaderFlags flags;
+
+    guint64 PTS;  /* PTS (-1 if not present or invalid) */
+    guint64 DTS;  /* DTS (-1 if not present or invalid) */
+    guint64 ESCR;  /* ESCR (-1 if not present or invalid) */
+
+    guint32 ES_rate; /* in bytes/seconds (0 if not present or invalid) */
+
+    /* Only valid for _FAST_FORWARD, _FAST_REVERSE and _FREEZE_FRAME */
+    PESFieldID field_id;
+    /* Only valid for _FAST_FORWARD and _FAST_REVERSE */
+    gboolean intra_slice_refresh;
+    guint8 frequency_truncation;
+    /* Only valid for _SLOW_FORWARD and _SLOW_REVERSE */
+    guint8 rep_cntrl;
+
+    guint8 additional_copy_info; /* Private data */
+    guint16 previous_PES_packet_CRC;
+
+    /* Extension fields */
+    const guint8* private_data;   /* PES_private_data, 16 bytes long */
+    guint8 pack_header_size;  /* Size of pack_header in bytes */
+    const guint8* pack_header;
+    gint8 program_packet_sequence_counter; /* -1 if not present or invalid */
+    gboolean MPEG1_MPEG2_identifier;
+    guint8 original_stuff_length;
+
+    guint32 P_STD_buffer_size; /* P-STD buffer size in bytes (0 if invalid
+                                * or not present */
+
+    guint8 stream_id_extension; /* Public range (0x00 - 0x3f) only valid if stream_id == ID_EXTENDED_STREAM_ID
+                                  * Private range (0x40 - 0xff) can be present in any stream type */
+
+    gsize extension_field_length;   /* Length of remaining extension field data */
+    const guint8* stream_id_extension_data; /* Valid if extension_field_length != 0 */
+} PESHeader;
 
 /* MPEG_TO_GST calculation requires at least 17 extra bits (100000)
  * Since maximum PTS/DTS value is coded with 33bits, we are
@@ -230,21 +304,31 @@ typedef struct _TsSegment {
     GPtrArray *pat;
     /* whether we saw a key frame */
     gboolean seen_key_frame;
-    guint8 pat_packet[188];
-    guint8 pmt_packet[188];
-
+    //guint8 pat_packet[188];
+    //guint8 pmt_packet[188];
+    PESHeader pes_header;
     guint8 *data;
     /* Amount of bytes in current ->data */
     guint current_size;
     /* Size of ->data */
     guint allocated_size;
+
     GstClockTime PTS;
     /* Current PTS for the stream (in running time) */
     GstClockTime pre_pts;
     GstClockTime current_pts;
     GstClockTime duration;
-
-    //gboolean push_section;
+    GstH264SPS sps;
+    GstH264SEIMessage sei;
+    GstH264SliceHdr slice_hdr, pre_slice_hdr;
+    GstH264NalUnit nalu, pre_nalu;
+    guint field_pic_flag;
+    guint pic_struct;
+    gint fps_num;
+    gint fps_den;
+    GstClockTime frame_duration;
+    gint numclockts;
+    GstClockTime frames_accumulate;
 
     /* current offset of the tip of the adapter */
     GstAdapter *adapter;
@@ -255,6 +339,9 @@ typedef struct _TsSegment {
     gsize map_size;
     gboolean need_sync;
 
+    gsize pes_packet_size;
+    guint8 *pes_packet;
+    GstClockTime pes_packet_duration;
     GstH264NalParser *h264parser;
 } TsSegment;
 
