@@ -407,7 +407,6 @@ gint job_initialize (Job *job, gint mode)
             continue;
         }
 
-        output->encoders[i].is_first_buffer = TRUE;
         output->encoders[i].cache_addr = p;
         p += SHM_SIZE;
         output->encoders[i].cache_size = SHM_SIZE;

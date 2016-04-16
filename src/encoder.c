@@ -218,14 +218,7 @@ static void move_last_rap (Encoder *encoder, GstBuffer *buffer)
 
     /* new gop timestamp, 4bytes reservation for gop size. */
     *(encoder->output->last_rap_addr) = *(encoder->output->tail_addr);
-    if (encoder->output->is_first_buffer) {
-        buffer_time = g_get_real_time ();
-        encoder->output->is_first_buffer = FALSE;
-        encoder->output->base_time = buffer_time - GST_BUFFER_PTS (buffer) / 1000;
-
-    } else {
-        buffer_time = encoder->output->base_time + GST_BUFFER_PTS (buffer) / 1000;
-    }
+    buffer_time = g_get_real_time ();
     memcpy (buf, &buffer_time, 8);
     size = 0;
     memcpy (buf + 8, &size, 4);
