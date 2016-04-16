@@ -447,6 +447,16 @@ static void job_check_func (gpointer data, gpointer user_data)
     Gstreamill *gstreamill = (Gstreamill *)user_data;
     struct timespec ts;
 
+    if (G_UNLIKELY (gstreamill == NULL)) {
+        GST_ERROR ("gstreamill == NULL error");
+        return;
+    }
+
+    if (G_UNLIKELY (job == NULL)) {
+        GST_ERROR ("job == NULL error");
+        return;
+    }
+
     if (gstreamill->stop) {
         GST_WARNING ("waitting %s stopped", job->name);
         return;
@@ -589,6 +599,11 @@ static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClock
     GSList *list;
 
     gstreamill = (Gstreamill *)user_data;
+
+    if (G_UNLIKELY (gstreamill == NULL)) {
+        GST_ERROR ("gstreamill == NULL error");
+        return FALSE;
+    }
 
     g_mutex_lock (&(gstreamill->job_list_mutex));
 
