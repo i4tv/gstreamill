@@ -263,8 +263,8 @@ static void clean_job_list (Gstreamill *gstreamill)
         list = gstreamill->job_list;
         while (list != NULL) {
             job = list->data;
-            if (job->is_live && (*(job->output->state) == JOB_STATE_STOPING)) {
-                GST_WARNING ("%s state is JOB_STATE_STOPING, stop it", job->name);
+            if (job->is_live && job->stoping) {
+                GST_WARNING ("stoping %s ...", job->name);
                 job_stop (job, SIGTERM);
             }
 
@@ -1008,6 +1008,13 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
     g_mutex_lock (&(job->access_mutex));
     /* Close pid */
     g_spawn_close_pid (pid);
+
+    if (job->stoping) {
+        *(job->output->state) = JOB_STATE_STOPED;
+        g_mutex_unlock (&(job->access_mutex));
+        return;
+    }
+
     job->age += 1;
     job->worker_pid = 0;
 
@@ -1033,9 +1040,6 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
                 job_state = create_job_process (job);
                 if (job_state == JOB_STATE_PLAYING) {
                     GST_WARNING ("Restart job %s success", job->name);
-
-                } else if (job_state == JOB_STATE_STOPING) {
-                    GST_WARNING ("Restart a stoping job: %s", job->name);
 
                 } else if (job_state == JOB_STATE_START_FAILURE) {
                     /* restart job failure, would be restarted again */

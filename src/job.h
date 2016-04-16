@@ -36,8 +36,7 @@ typedef enum {
     JOB_STATE_READY = 1,
     JOB_STATE_PLAYING = 2,
     JOB_STATE_START_FAILURE = 3,
-    JOB_STATE_STOPING = 4,
-    JOB_STATE_STOPED = 5
+    JOB_STATE_STOPED = 4
 } JobState;
 
 typedef struct _JobOutput {
@@ -60,6 +59,7 @@ struct _Job {
     gchar *exe_path;
     gchar *name; /* same as the name in job config file */
     gboolean is_live;
+    gboolean stoping;
     gboolean eos;
     gint id;
     gchar *log_dir;

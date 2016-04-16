@@ -283,8 +283,6 @@ gchar * job_state_get_name (guint64 state)
             return ("JOB_STATE_PLAYING");
         case JOB_STATE_START_FAILURE:
             return ("JOB_STATE_START_FAILURE");
-        case JOB_STATE_STOPING:
-            return ("JOB_STATE_STOPING");
         case JOB_STATE_STOPED:
             return ("JOB_STATE_STOPED");
     }
@@ -662,6 +660,7 @@ void job_reset (Job *job)
     guint version, window_size;
 
     job->output->sequence = get_dvr_sequence (job->output);
+    job->stoping = FALSE;
     *(job->output->state) = JOB_STATE_VOID_PENDING;
     g_file_get_contents ("/proc/stat", &stat, NULL, NULL);
     stats = g_strsplit (stat, "\n", 10);
@@ -798,7 +797,7 @@ gint job_stop (Job *job, gint sig)
     if (sig == SIGTERM) {
         /* normally stop */
         if (*(job->output->state) != JOB_STATE_STOPED) {
-            *(job->output->state) = JOB_STATE_STOPING;
+            job->stoping = TRUE;
         }
         GST_WARNING ("Stop job %s, pid %d.", job->name, job->worker_pid);
 
