@@ -1,6 +1,11 @@
 releases are sorted from youngest to oldest.
 
-v-0.7.12 2016-01-
+v-0.8-RC1
+- More meaningful log message
+- Calculate segment duration use frame accumulate
+- Stop job failure fix
+
+v-0.7.12 2016-01-26
 - Add DVR directory managment API
 - Deny streaming service bug fix, #76
 - Check callback parameters: start & end
