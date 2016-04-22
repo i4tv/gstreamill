@@ -327,7 +327,6 @@ typedef struct _TsSegment {
     gint fps_num;
     gint fps_den;
     GstClockTime frame_duration;
-    gint numclockts;
     GstClockTime frames_accumulate;
 
     /* current offset of the tip of the adapter */
@@ -339,6 +338,7 @@ typedef struct _TsSegment {
     gsize map_size;
     gboolean need_sync;
 
+    gboolean is_idr_found;
     gsize pes_packet_size;
     guint8 *pes_packet;
     GstClockTime pes_packet_duration;

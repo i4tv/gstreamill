@@ -103,6 +103,7 @@ static void ts_segment_init (TsSegment *tssegment)
     tssegment->map_offset = 0;
     tssegment->need_sync = TRUE;
 
+    tssegment->is_idr_found = FALSE;
     tssegment->pes_packet = g_malloc (4096000);
     tssegment->pes_packet_size = 0;
     tssegment->pes_packet_duration = 0;
@@ -772,7 +773,7 @@ H264NaluParsingResult h264_parse_nalu (TsSegment *tssegment)
     GstH264SPS *sps;
     GArray *messages;
     GstH264SEIMessage sei;
-    gint i, mmmm = 0;
+    gint i;
 
     size = tssegment->pes_packet_size;
     data = tssegment->pes_packet;
@@ -782,9 +783,11 @@ H264NaluParsingResult h264_parse_nalu (TsSegment *tssegment)
     sps = &(tssegment->sps);
 
     while (res == GST_H264_PARSER_OK) {
+        if (size - offset < 4) {
+            break;
+        }
         res = gst_h264_parser_identify_nalu (parser, data, offset, size, nalu);
-        if (res != GST_H264_PARSER_OK && res != GST_H264_PARSER_NO_NAL_END && mmmm == 0) {
-            GST_WARNING ("Error identifying nalu: %i", res);
+        if (res != GST_H264_PARSER_OK && res != GST_H264_PARSER_NO_NAL_END) {
             if (res == GST_H264_PARSER_BROKEN_DATA) {
                 GST_WARNING ("GST_H264_PARSER_BROKEN_DATA");
             }else if (res == GST_H264_PARSER_BROKEN_LINK) {
@@ -796,7 +799,6 @@ H264NaluParsingResult h264_parse_nalu (TsSegment *tssegment)
             }
             break;
         }
-        mmmm++;
 
         res = gst_h264_parser_parse_nal (parser, nalu);
         if (res != GST_H264_PARSER_OK) {
@@ -806,15 +808,17 @@ H264NaluParsingResult h264_parse_nalu (TsSegment *tssegment)
 
         switch (nalu->type) {
             case GST_H264_NAL_AU_DELIMITER:
-                //tssegment->frames_accumulate++;
                 GST_DEBUG ("Found Delimiter");
                 type |= H264_NALU_DELIMITER;
                 break;
             case GST_H264_NAL_SEI:
                 GST_DEBUG ("Found SEI");
+                if (G_UNLIKELY (!(parser->last_sps))) {
+                    break;
+                }
                 res = gst_h264_parser_parse_sei (parser, nalu, &messages);
                 if (res != GST_H264_PARSER_OK) {
-                    GST_WARNING ("failed to parse SEI message");
+                    GST_WARNING ("failed to parse SEI message, return %d", res);
                     break;
                 }
                 for (i = 0; i < messages->len; i++) {
@@ -827,6 +831,7 @@ H264NaluParsingResult h264_parse_nalu (TsSegment *tssegment)
                             tssegment->pic_struct = 0;
                         }
                     }
+#if 0
                     switch (tssegment->pic_struct) {
                         case GST_H264_SEI_PIC_STRUCT_FRAME:
                         case GST_H264_SEI_PIC_STRUCT_TOP_FIELD:
@@ -843,6 +848,7 @@ H264NaluParsingResult h264_parse_nalu (TsSegment *tssegment)
                         case GST_H264_SEI_PIC_STRUCT_FRAME_TRIPLING:
                             tssegment->numclockts = 3;
                     }
+#endif
                 }
                 g_array_free (messages, TRUE);
                 //GST_WARNING ("frames : %d", tssegment->numclockts);
@@ -859,17 +865,6 @@ H264NaluParsingResult h264_parse_nalu (TsSegment *tssegment)
                     GST_WARNING ("Error parse sps");
 
                 } else {
-                    gst_h264_video_calculate_framerate (sps,
-                                                        slice_hdr->field_pic_flag,
-                                                        tssegment->pic_struct,
-                                                        &(tssegment->fps_num),
-                                                        &(tssegment->fps_den));
-                    tssegment->frame_duration = GST_SECOND * tssegment->fps_den / tssegment->fps_num;
-                    GST_DEBUG ("field_pic_flag: %d, pic_struct: %d, fps_num: %d, fps_den: %d",
-                            slice_hdr->field_pic_flag,
-                            tssegment->pic_struct,
-                            tssegment->fps_num,
-                            tssegment->fps_den);
                 }
                 type |= H264_NALU_SPS;
                 break;
@@ -880,7 +875,21 @@ H264NaluParsingResult h264_parse_nalu (TsSegment *tssegment)
             case GST_H264_NAL_SLICE_DPC:
             case GST_H264_NAL_SLICE_IDR:
                 GST_DEBUG ("Found slice");
+                if (G_UNLIKELY (!(parser->last_sps))) {
+                    break;
+                }
                 res = gst_h264_parser_parse_slice_hdr (parser, nalu, slice_hdr, FALSE, FALSE);
+                    gst_h264_video_calculate_framerate (parser->last_sps,
+                                                        slice_hdr->field_pic_flag,
+                                                        tssegment->pic_struct,
+                                                        &(tssegment->fps_num),
+                                                        &(tssegment->fps_den));
+                    tssegment->frame_duration = GST_SECOND * tssegment->fps_den / tssegment->fps_num;
+                    GST_DEBUG ("field_pic_flag: %d, pic_struct: %d, fps_num: %d, fps_den: %d",
+                            slice_hdr->field_pic_flag,
+                            tssegment->pic_struct,
+                            tssegment->fps_num,
+                            tssegment->fps_den);
                 type |= h264_parse_slice (tssegment);
                 tssegment->pre_slice_hdr = tssegment->slice_hdr;
                 tssegment->pre_nalu = tssegment->nalu;
@@ -1159,7 +1168,12 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
                     GST_DEBUG ("PTS %" GST_TIME_FORMAT ", duration: %" GST_TIME_FORMAT,
                             GST_TIME_ARGS (tssegment->PTS),
                             GST_TIME_ARGS (tssegment->pes_packet_duration));
-                    gst_pad_push (tssegment->srcpad, buffer);
+                    if (G_LIKELY (tssegment->is_idr_found)) {
+                        gst_pad_push (tssegment->srcpad, buffer);
+
+                    } else if (h264res & H264_NALU_IDR) {
+                        tssegment->is_idr_found = TRUE;
+                    }
                     tssegment->current_size = 0;
                     tssegment->pre_pts = tssegment->current_pts;
                     tssegment->pes_packet_duration = 0;
@@ -1171,7 +1185,10 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
             memcpy (tssegment->pes_packet + tssegment->pes_packet_size, packet.payload, packet.data_end - packet.payload);
             tssegment->pes_packet_size += (packet.data_end - packet.payload);
         }
-        pending_tspacket (tssegment, &packet);
+
+        if (G_LIKELY (tssegment->is_idr_found)) {
+            pending_tspacket (tssegment, &packet);
+        }
         clear_packet (tssegment, &packet);
     }
 
