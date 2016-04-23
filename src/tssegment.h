@@ -52,130 +52,6 @@
 #define CONTINUITY_UNSET 255
 #define MAX_CONTINUITY 15
 
-/* PCR/offset structure */
-typedef struct _PCROffset {
-    /* PCR value (units: 1/27MHz) */
-    guint64 pcr;
-
-    /* The offset (units: bytes) */
-    guint64 offset;
-} PCROffset;
-
-/* PCROffsetGroup: A group of PCR observations.
- * All values in a group have got the same reference pcr and
- * byte offset (first_pcr/first_offset).
- */
-#define DEFAULT_ALLOCATED_OFFSET 16
-typedef struct _PCROffsetGroup {
-    /* Flags (see PCR_GROUP_FLAG_* above) */
-    guint flags;
-
-    /* First raw PCR of this group. Units: 1/27MHz.
-     * All values[].pcr are differences against first_pcr */
-    guint64 first_pcr;
-    /* Offset of this group in bytes.
-     * All values[].offset are differences against first_offset */
-    guint64 first_offset;
-
-    /* Dynamically allocated table of PCROffset */
-    PCROffset *values;
-    /* number of PCROffset allocated in values */
-    guint nb_allocated;
-    /* number of *actual* PCROffset contained in values */
-    guint last_value;
-
-    /* Offset since the very first PCR value observed in the whole
-     * stream. Units: 1/27MHz.
-     * This will take into account gaps/wraparounds/resets/... and is
-     * used to determine running times.
-     * The value is only guaranteed to be 100% accurate if the group
-     * does not have the ESTIMATED flag.
-     * If the value is estimated, the pcr_offset shall be recalculated
-     * (based on previous groups) whenever it is accessed.
-     */
-    guint64 pcr_offset;
-
-    /* FIXME : Cache group bitrate ? */
-} PCROffsetGroup;
-
-/* Number of PCRs needed before bitrate estimation can start */
-/* Note: the reason we use 10 is because PCR should normally be
- * received at least every 100ms so this gives us close to
- * a 1s moving window to calculate bitrate */
-#define PCR_BITRATE_NEEDED 10
-
-/* PCROffsetCurrent: The PCR/Offset window iterator
- * This is used to estimate/observe incoming PCR/offset values
- * Points to a group (which it is filling) */
-typedef struct _PCROffsetCurrent {
-    /* The PCROffsetGroup we are filling.
-     * If NULL, a group needs to be identified */
-    PCROffsetGroup *group;
-
-    /* Table of pending values we are iterating over */
-    PCROffset pending[PCR_BITRATE_NEEDED];
-
-    /* base offset/pcr from the group */
-    guint64 first_pcr;
-    guint64 first_offset;
-
-    /* The previous reference PCROffset
-     * This corresponds to the last entry of the group we are filling
-     * and is used to calculate prev_bitrate */
-    PCROffset prev;
-
-    /* The last PCROffset in pending[] */
-    PCROffset last_value;
-
-    /* Location of first pending PCR/offset observation in pending */
-    guint first;
-    /* Location of last pending PCR/offset observation in pending */
-    guint last;
-    /* Location of next write in pending */
-    guint write;
-
-    /* bitrate is always in bytes per second */
-
-    /* cur_bitrate is the bitrate of the pending values: d(last-first) */
-    guint64 cur_bitrate;
-
-    /* prev_bitrate is the bitrate between reference PCROffset
-     * and the first pending value. Used to detect changes
-     * in bitrate */
-    guint64 prev_bitrate;
-} PCROffsetCurrent;
-
-#define MAX_WINDOW 512
-
-typedef struct _MpegTSPCR {
-    guint16 pid;
-
-    /* Following variables are only active/used when
-     * calculate_skew is TRUE */
-    GstClockTime base_time;
-    GstClockTime base_pcrtime;
-    GstClockTime prev_out_time;
-    GstClockTime prev_in_time;
-    GstClockTime last_pcrtime;
-    gint64 window[MAX_WINDOW];
-    guint window_pos;
-    guint window_size;
-    gboolean window_filling;
-    gint64 window_min;
-    gint64 skew;
-    gint64 prev_send_diff;
-
-    /* Offset to apply to PCR to handle wraparounds */
-    guint64 pcroffset;
-
-    /* Used for bitrate calculation */
-    /* List of PCR/offset observations */
-    GList *groups;
-
-    /* Current PCR/offset observations (used to update pcroffsets) */
-    PCROffsetCurrent *current;
-} MpegTSPCR;
-
 typedef struct {
     gint16 pid;
     guint8 payload_unit_start_indicator;
@@ -185,7 +61,6 @@ typedef struct {
     const guint8 *data_end;
     const guint8 *data;
     guint8 afc_flags;
-    guint64 pcr;
     guint64 offset;
 } TSPacket;
 

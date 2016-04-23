@@ -193,8 +193,6 @@ static gboolean tssegment_map (TsSegment *tssegment, gsize size)
     tssegment->map_size = available;
     tssegment->map_offset = 0;
 
-    //GST_ERROR ("mapped %" G_GSIZE_FORMAT " bytes from adapter", available);
-
     return TRUE;
 }
 
@@ -300,28 +298,12 @@ static gboolean ts_segment_sync (TsSegment *tssegment)
     return found;
 }
 
-static inline guint64 compute_pcr (const guint8 * data)
-{
-    guint32 pcr1;
-    guint16 pcr2;
-    guint64 pcr, pcr_ext;
-
-    pcr1 = GST_READ_UINT32_BE (data);
-    pcr2 = GST_READ_UINT16_BE (data + 4);
-    pcr = ((guint64) pcr1) << 1;
-    pcr |= (pcr2 & 0x8000) >> 15;
-    pcr_ext = (pcr2 & 0x01ff);
-    return pcr * 300 + pcr_ext % 300;
-}
-
 static gboolean parse_adaptation_field_control (TsSegment *tssegment, TSPacket *packet)
 {
-    guint8 length, afcflags;
-    const guint8 *data;
+    guint8 length;
 
     length = *packet->data++;
 
-    GST_DEBUG ("adaptation length: %d", length);
     /* an adaptation field with length 0 is valid and
      * can be used to insert a single stuffing byte */
     if (!length) {
@@ -348,51 +330,13 @@ static gboolean parse_adaptation_field_control (TsSegment *tssegment, TSPacket *
     }
 
     if (packet->data + length > packet->data_end) {
-        GST_DEBUG ("PID 0x%04x afc length %d overflows the buffer current %d max %d",
+        GST_WARNING ("PID 0x%04x afc length %d overflows the buffer current %d max %d",
                 packet->pid, length, (gint) (packet->data - packet->data_start),
                 (gint) (packet->data_end - packet->data_start));
         return FALSE;
     }
 
-    data = packet->data;
     packet->data += length;
-
-    afcflags = packet->afc_flags = *data++;
-
-    GST_DEBUG ("flags: %s%s%s%s%s%s%s%s%s",
-            afcflags & 0x80 ? "discontinuity " : "",
-            afcflags & 0x40 ? "random_access " : "",
-            afcflags & 0x20 ? "elementary_stream_priority " : "",
-            afcflags & 0x10 ? "PCR " : "",
-            afcflags & 0x08 ? "OPCR " : "",
-            afcflags & 0x04 ? "splicing_point " : "",
-            afcflags & 0x02 ? "transport_private_data " : "",
-            afcflags & 0x01 ? "extension " : "", afcflags == 0x00 ? "<none>" : "");
-
-    /* PCR */
-    if (afcflags & MPEGTS_AFC_PCR_FLAG) {
-        packet->pcr = compute_pcr (data);
-        data += 6;
-        GST_DEBUG ("pcr 0x%04x %" G_GUINT64_FORMAT " (%" GST_TIME_FORMAT
-                ") offset:%" G_GUINT64_FORMAT, packet->pid, packet->pcr,
-                GST_TIME_ARGS (PCRTIME_TO_GSTTIME (packet->pcr)), packet->offset);
-#if 0
-        PACKETIZER_GROUP_LOCK (packetizer);
-        if (packetizer->calculate_skew && GST_CLOCK_TIME_IS_VALID (packetizer->last_in_time)) {
-            pcrtable = get_pcr_table (packetizer, packet->pid);
-            calculate_skew (packetizer, pcrtable, packet->pcr, packetizer->last_in_time);
-        }
-        if (packetizer->calculate_offset) {
-            if (!pcrtable)
-                pcrtable = get_pcr_table (packetizer, packet->pid);
-            record_pcr (packetizer, pcrtable, packet->pcr, packet->offset);
-        }
-        PACKETIZER_GROUP_UNLOCK (packetizer);
-#endif
-
-    } else {
-        packet->pcr = GST_CLOCK_TIME_NONE;
-    }
 
     return TRUE;
 }
@@ -426,9 +370,7 @@ static TSPacketReturn parse_packet (TsSegment *tssegment, TSPacket *packet)
     }
 
     packet->data = data;
-
     packet->afc_flags = 0;
-    packet->pcr = G_MAXUINT64;
 
     if (FLAGS_HAS_AFC (tmp)) {
         if (!parse_adaptation_field_control (tssegment, packet)) {
@@ -910,14 +852,13 @@ static void pending_tspacket (TsSegment *tssegment, TSPacket *packet)
 
 /**
  * mpegts_parse_pes_header:
- * @data: data to parse (starting from, and including, the sync code)
- * @length: size of @data in bytes
  *
  * Parses the mpeg-ts PES header located in @data into the @res.
  *
- * Returns: #PES_PARSING_OK if the header was fully parsed and valid,
- * #PES_PARSING_BAD if the header is invalid, or #PES_PARSING_NEED_MORE if more data
- * is needed to properly parse the header.
+ * Returns:
+ * #PES_PARSING_OK if the header was fully parsed and valid,
+ * #PES_PARSING_BAD if the header is invalid,
+ * #PES_PARSING_NEED_MORE if more data is needed to properly parse the header.
  */
 PESParsingResult mpegts_parse_pes_header (TsSegment *tssegment)
 {
