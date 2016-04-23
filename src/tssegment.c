@@ -460,13 +460,7 @@ static GstMpegtsSection *push_section (TsSegment *tssegment, TSPacket *packet)
 
     return section;
 }
-#if 0
-typedef struct
-{
-    gboolean res;
-    guint16 pid;
-} PIDLookup;
-#endif
+
 static gboolean apply_pat (TsSegment *tssegment, GstMpegtsSection * section)
 {
     GPtrArray *pat;
