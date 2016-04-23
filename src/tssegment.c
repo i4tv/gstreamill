@@ -73,7 +73,6 @@ static void ts_segment_init (TsSegment *tssegment)
     tssegment->srcpad = gst_pad_new_from_static_template (&src_template, "src");
     gst_element_add_pad (GST_ELEMENT (tssegment), tssegment->srcpad);
 
-    tssegment->is_pes = g_new0 (guint8, 1024);
     tssegment->known_psi = g_new0 (guint8, 1024);
     memset (tssegment->known_psi, 0, 1024);
     /* Known PIDs : PAT, TSDT, IPMP CIT */
@@ -504,7 +503,6 @@ static gboolean apply_pmt (TsSegment *tssegment, GstMpegtsSection * section)
     for (i = 0; i < pmt->streams->len; ++i) {
         GstMpegtsPMTStream *stream = g_ptr_array_index (pmt->streams, i);
         if (stream->stream_type == GST_MPEGTS_STREAM_TYPE_VIDEO_H264) {
-            MPEGTS_BIT_SET (tssegment->is_pes, stream->pid);
             tssegment->video_pid = stream->pid;
             GST_ERROR ("264: %d, stream pid: %d", stream->pid, tssegment->video_pid);
         }
@@ -860,6 +858,7 @@ PESParsingResult mpegts_parse_pes_header (TsSegment *tssegment)
     guint8 val8, flags, *data;
     gsize length;
     PESHeader *pes_header;
+    guint16 header_data_length; /* The complete size of the PES header */
 
     pes_header = &(tssegment->pes_header);
     data = tssegment->pes_packet;
@@ -913,13 +912,6 @@ PESParsingResult mpegts_parse_pes_header (TsSegment *tssegment)
         return PES_PARSING_BAD;
     }
 
-    GST_LOG ("scrambling_control 0x%0x", (val8 >> 4) & 0x3);
-    GST_LOG ("flags_1: %s%s%s%s%s",
-            val8 & 0x08 ? "priority " : "",
-            val8 & 0x04 ? "data_alignment " : "",
-            val8 & 0x02 ? "copyright " : "",
-            val8 & 0x01 ? "original_or_copy " : "", val8 & 0x0f ? "" : "<none>");
-
     /* PTS_DTS_flags                    2
      * ESCR_flag                        1
      * ES_rate_flag                     1
@@ -928,24 +920,14 @@ PESParsingResult mpegts_parse_pes_header (TsSegment *tssegment)
      * PES_CRC_flag                     1
      * PES_extension_flag               1*/
     flags = *data++;
-    GST_DEBUG ("flags_2: %s%s%s%s%s%s%s%s%s",
-            flags & 0x80 ? "PTS " : "",
-            flags & 0x40 ? "DTS " : "",
-            flags & 0x20 ? "ESCR" : "",
-            flags & 0x10 ? "ES_rate " : "",
-            flags & 0x08 ? "DSM_trick_mode " : "",
-            flags & 0x04 ? "additional_copy_info " : "",
-            flags & 0x02 ? "CRC " : "",
-            flags & 0x01 ? "extension " : "", flags ? "" : "<none>");
 
-    /* PES_header_data_length           8 */
-    pes_header->header_size = *data++;
+    /* PES_header_data_length 8 */
+    header_data_length = *data++;
     length -= 3;
-    if (G_UNLIKELY (length < pes_header->header_size)) {
+    if (G_UNLIKELY (length < header_data_length)) {
         GST_WARNING ("Not enough data to parse PES header");
         return ret;
     }
-    pes_header->header_size += 9;
 
     /* PTS_DTS_flags == 0x01 is invalid */
     if (G_UNLIKELY ((flags >> 6) == 0x01)) {
