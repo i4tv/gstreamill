@@ -460,13 +460,13 @@ static GstMpegtsSection *push_section (TsSegment *tssegment, TSPacket *packet)
 
     return section;
 }
-
+#if 0
 typedef struct
 {
     gboolean res;
     guint16 pid;
 } PIDLookup;
-
+#endif
 static gboolean apply_pat (TsSegment *tssegment, GstMpegtsSection * section)
 {
     GPtrArray *pat;
@@ -544,12 +544,10 @@ static void handle_psi (TsSegment *tssegment, TSPacket *packet)
     switch (section->section_type) {
         case GST_MPEGTS_SECTION_PAT:
             post_message = apply_pat (tssegment, section);
-            //memcpy (tssegment->pat_packet, packet->data_start, 188);
             tssegment->seen_pat = TRUE;
             break;
         case GST_MPEGTS_SECTION_PMT:
             post_message = apply_pmt (tssegment, section);
-            //memcpy (tssegment->pmt_packet, packet->data_start, 188);
             tssegment->seen_pmt = TRUE;
             break;
         default:
@@ -560,7 +558,8 @@ static void handle_psi (TsSegment *tssegment, TSPacket *packet)
 
     /* Finally post message (if it wasn't corrupted) */
     if (post_message) {
-        gst_element_post_message (GST_ELEMENT_CAST (tssegment), gst_message_new_mpegts_section (GST_OBJECT (tssegment), section));
+        gst_element_post_message (GST_ELEMENT_CAST (tssegment),
+                gst_message_new_mpegts_section (GST_OBJECT (tssegment), section));
     }
 
     gst_mpegts_section_unref (section);
