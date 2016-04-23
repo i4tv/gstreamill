@@ -302,10 +302,6 @@ typedef struct _TsSegment {
     /* Reference offset */
     //guint64 refoffset;
     GPtrArray *pat;
-    /* whether we saw a key frame */
-    gboolean seen_key_frame;
-    //guint8 pat_packet[188];
-    //guint8 pmt_packet[188];
     PESHeader pes_header;
     guint8 *data;
     /* Amount of bytes in current ->data */
@@ -338,7 +334,8 @@ typedef struct _TsSegment {
     gsize map_size;
     gboolean need_sync;
 
-    gboolean is_idr_found;
+    /* whether we saw a idr */
+    gboolean seen_idr;
     gsize pes_packet_size;
     guint8 *pes_packet;
     GstClockTime pes_packet_duration;
