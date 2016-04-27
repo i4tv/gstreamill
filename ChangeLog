@@ -1,5 +1,8 @@
 releases are sorted from youngest to oldest.
 
+v-0.8.0
+- version 0.8.0 release
+
 v-0.8-rc2
 - segment only process start failure on gstreamer 1.8.1 fix
 
