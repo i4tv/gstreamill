@@ -1,5 +1,8 @@
 releases are sorted from youngest to oldest.
 
+v-0.8.1
+- tssegment can't segment sichuan local channels
+
 v-0.8.0
 - version 0.8.0 release
 

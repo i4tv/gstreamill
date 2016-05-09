@@ -714,7 +714,7 @@ H264NaluParsingResult h264_parse_nalu (TsSegment *tssegment)
     slice_hdr = &(tssegment->slice_hdr);
     sps = &(tssegment->sps);
 
-    while (res == GST_H264_PARSER_OK) {
+    while (1) {
         if (size - offset < 4) {
             break;
         }
@@ -745,13 +745,9 @@ H264NaluParsingResult h264_parse_nalu (TsSegment *tssegment)
                 break;
             case GST_H264_NAL_SEI:
                 GST_DEBUG ("Found SEI");
-                if (G_UNLIKELY (!(parser->last_sps))) {
-                    break;
-                }
                 res = gst_h264_parser_parse_sei (parser, nalu, &messages);
                 if (res != GST_H264_PARSER_OK) {
                     GST_WARNING ("failed to parse SEI message, return %d", res);
-                    break;
                 }
                 for (i = 0; i < messages->len; i++) {
                     sei = g_array_index (messages, GstH264SEIMessage, i);
