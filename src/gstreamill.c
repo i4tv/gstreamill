@@ -991,7 +991,6 @@ static guint64 create_job_process (Job *job)
         }
     }
     job->worker_pid = pid;
-    g_child_watch_add (pid, (GChildWatchFunc)child_watch_cb, job);
 
     while ((*(job->output->state) == JOB_STATE_READY) || (*(job->output->state) == JOB_STATE_VOID_PENDING)) {
         GST_DEBUG ("waiting job process creating ... state: %s", job_state_get_name (*(job->output->state)));
@@ -1011,6 +1010,11 @@ static guint64 create_job_process (Job *job)
             break;
         }
         g_usleep (50000);
+    }
+
+    /* add watch on start success, or restart failure */
+    if ((*(job->output->state) == JOB_STATE_PLAYING) || (job->age > 0)) {
+        g_child_watch_add (pid, (GChildWatchFunc)child_watch_cb, job);
     }
 
     return *(job->output->state);
@@ -1039,27 +1043,21 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
         job->eos = TRUE;
 
     } else if (WIFEXITED (status) && (WEXITSTATUS (status) != 0)) {
-        /* Is job start first time(not restart) failure? then don't restart it */
-        if ((job->age == 1) && (*(job->output->state) != JOB_STATE_PLAYING)) {
-            GST_WARNING ("Start job %s failure, return %d and don't restart it.", job->name, WEXITSTATUS (status));
+        if (!job->is_live) {
+            GST_WARNING ("Nonlive job %s exit on critical error return %d.", job->name, WEXITSTATUS (status));
+            *(job->output->state) = JOB_STATE_STOPED;
+            job->eos = TRUE;
 
         } else {
-            if (!job->is_live) {
-                GST_WARNING ("Nonlive job %s exit on critical error return %d.", job->name, WEXITSTATUS (status));
-                *(job->output->state) = JOB_STATE_STOPED;
-                job->eos = TRUE;
+            GST_WARNING ("Job %s exit on critical error return %d, restart ...", job->name, WEXITSTATUS (status));
+            job_reset (job);
+            job_state = create_job_process (job);
+            if (job_state == JOB_STATE_PLAYING) {
+                GST_WARNING ("Restart job %s success", job->name);
 
-            } else {
-                GST_WARNING ("Job %s exit on critical error return %d, restart ...", job->name, WEXITSTATUS (status));
-                job_reset (job);
-                job_state = create_job_process (job);
-                if (job_state == JOB_STATE_PLAYING) {
-                    GST_WARNING ("Restart job %s success", job->name);
-
-                } else if (job_state == JOB_STATE_START_FAILURE) {
-                    /* restart job failure, would be restarted again */
-                    GST_WARNING ("Restart job %s failure, restart it again", job->name);
-                }
+            } else if (job_state == JOB_STATE_START_FAILURE) {
+                /* restart job failure, would be restarted again */
+                GST_WARNING ("Restart job %s failure, restart it again", job->name);
             }
         }
 
