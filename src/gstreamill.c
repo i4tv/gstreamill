@@ -1012,7 +1012,7 @@ static guint64 create_job_process (Job *job)
         g_usleep (50000);
     }
 
-    /* add watch on start success, or restart failure */
+    /* add watch on (re)start success, or restart failure */
     if ((*(job->output->state) == JOB_STATE_PLAYING) || (job->age > 0)) {
         g_child_watch_add (pid, (GChildWatchFunc)child_watch_cb, job);
     }
