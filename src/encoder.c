@@ -307,12 +307,23 @@ static void send_msg (Encoder *encoder)
     msg = g_strdup_printf ("/%s/encoder/%d:%lu", encoder->job_name, encoder->id, encoder->last_segment_duration);
     addr = (struct sockaddr *)&(encoder->msg_sock_addr);
     len = strlen (msg);
-    ret = sendto (encoder->msg_sock, msg, len, 0, addr, sizeof (struct sockaddr));
-    if (ret == -1) {
-        GST_WARNING ("sendto segment msg error: %s", g_strerror (errno));
+    while (1) {
+        ret = sendto (encoder->msg_sock, msg, len, 0, addr, sizeof (struct sockaddr));
+        if (ret == -1) {
+            if (errno == EINTR) {
+                GST_WARNING ("sendto segment msg error: EINTR: %s", g_strerror (errno));
+                continue;
 
-    } else if (ret != len) {
-        GST_WARNING ("sendto segment msg return : %ld, but length: %ld", ret, len);
+            } else if (errno == EAGAIN) {
+                GST_WARNING ("sendto segment msg error: EAGAIN: %s", g_strerror (errno));
+                usleep (100);
+                continue;
+            }
+
+        } else if (ret != len) {
+            GST_WARNING ("FATAL sendto segment msg return : %ld, but length: %ld", ret, len);
+        }
+        break;
     }
     g_free (msg);
 
@@ -325,6 +336,7 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
     GstSample *sample;
     Encoder *encoder = (Encoder *)user_data;
     struct timespec ts;
+    gboolean segment_found = FALSE;
 
     *(encoder->output->heartbeat) = gst_clock_get_time (encoder->system_clock);
     sample = gst_app_sink_pull_sample (GST_APP_SINK (sink));
@@ -375,12 +387,12 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
 
         } else if (GST_BUFFER_PTS (buffer) + 90000000 >= encoder->last_running_time) {
             move_last_rap (encoder, buffer);
-            send_msg (encoder);
+            segment_found = TRUE;
 
         } else if (encoder->is_first_key) {
             /* move_last_rap if its first key even if has m3u8 output */
             move_last_rap (encoder, buffer);
-            send_msg (encoder);
+            segment_found = TRUE;
             encoder->is_first_key = FALSE;
         }
     }
@@ -397,6 +409,11 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
     copy_buffer (encoder, buffer);
 
     sem_post (encoder->output->semaphore);
+
+    if (segment_found) {
+        send_msg (encoder);
+    }
+
     gst_sample_unref (sample);
 
     return GST_FLOW_OK;
