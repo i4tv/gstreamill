@@ -721,13 +721,13 @@ H264NaluParsingResult h264_parse_nalu (TsSegment *tssegment)
         res = gst_h264_parser_identify_nalu (parser, data, offset, size, nalu);
         if (res != GST_H264_PARSER_OK && res != GST_H264_PARSER_NO_NAL_END) {
             if (res == GST_H264_PARSER_BROKEN_DATA) {
-                GST_WARNING ("GST_H264_PARSER_BROKEN_DATA");
+                GST_DEBUG ("GST_H264_PARSER_BROKEN_DATA");
             }else if (res == GST_H264_PARSER_BROKEN_LINK) {
-                GST_WARNING ("GST_H264_PARSER_BROKEN_LINK");
+                GST_DEBUG ("GST_H264_PARSER_BROKEN_LINK");
             }else if (res == GST_H264_PARSER_ERROR) {
-                GST_WARNING ("GST_H264_PARSER_ERROR");
+                GST_DEBUG ("GST_H264_PARSER_ERROR");
             }else if (res == GST_H264_PARSER_NO_NAL) {
-                GST_WARNING ("GST_H264_PARSER_NO_NAL");
+                GST_DEBUG ("GST_H264_PARSER_NO_NAL");
             }
             break;
         }
