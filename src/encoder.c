@@ -316,7 +316,7 @@ static void send_msg (Encoder *encoder)
 
             } else if (errno == EAGAIN) {
                 GST_WARNING ("sendto segment msg error: EAGAIN: %s", g_strerror (errno));
-                usleep (100);
+                g_usleep (50000);
                 continue;
             }
 
