@@ -1015,6 +1015,9 @@ static guint64 create_job_process (Job *job)
     /* add watch on (re)start success, or restart failure */
     if ((*(job->output->state) == JOB_STATE_PLAYING) || (job->age > 0)) {
         g_child_watch_add (pid, (GChildWatchFunc)child_watch_cb, job);
+
+    } else {
+        g_spawn_close_pid (pid);
     }
 
     return *(job->output->state);
