@@ -990,7 +990,6 @@ static guint64 create_job_process (Job *job)
             g_free (argv[j]);
         }
     }
-    job->worker_pid = pid;
 
     while ((*(job->output->state) == JOB_STATE_READY) || (*(job->output->state) == JOB_STATE_VOID_PENDING)) {
         GST_DEBUG ("waiting job process creating ... state: %s", job_state_get_name (*(job->output->state)));
@@ -1012,12 +1011,9 @@ static guint64 create_job_process (Job *job)
         g_usleep (50000);
     }
 
-    /* add watch on (re)start success, or restart failure */
-    if ((*(job->output->state) == JOB_STATE_PLAYING) || (job->age > 0)) {
+    job->worker_pid = pid;
+    if (job->age > 0) {
         g_child_watch_add (pid, (GChildWatchFunc)child_watch_cb, job);
-
-    } else {
-        g_spawn_close_pid (pid);
     }
 
     return *(job->output->state);
@@ -1028,19 +1024,21 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
     JobState job_state;
 
     g_mutex_lock (&(job->access_mutex));
+
     /* Close pid */
     g_spawn_close_pid (pid);
-
-    if (job->stoping) {
-        *(job->output->state) = JOB_STATE_STOPED;
-        g_mutex_unlock (&(job->access_mutex));
-        return;
-    }
 
     job->age += 1;
     job->worker_pid = 0;
 
-    if (WIFEXITED (status) && (WEXITSTATUS (status) == 0)) {
+    if ((job->age == 1) && (*(job->output->state) == JOB_STATE_START_FAILURE)) {
+        GST_WARNING ("Start job %s failure, don't restart it", job->name);
+        g_object_unref (job);
+
+    } else if (job->stoping) {
+        *(job->output->state) = JOB_STATE_STOPED;
+
+    } else if (WIFEXITED (status) && (WEXITSTATUS (status) == 0)) {
         GST_WARNING ("Job %s normaly exit, status is %d", job->name, WEXITSTATUS (status));
         *(job->output->state) = JOB_STATE_STOPED;
         job->eos = TRUE;
@@ -1066,12 +1064,12 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
 
     } else if (WIFSIGNALED (status)) {
         if (!job->is_live) {
-            GST_INFO ("Nonlive job %s exit on an unhandled signal.", job->name);
+            GST_WARNING ("Nonlive job %s exit on an unhandled signal.", job->name);
             *(job->output->state) = JOB_STATE_STOPED;
             job->eos = TRUE;
 
         } else {
-            GST_INFO ("Live job %s exit on an unhandled signal, restart.", job->name);
+            GST_WARNING ("Live job %s exit on an unhandled signal, restart.", job->name);
             job_reset (job);
             if (create_job_process (job) == JOB_STATE_PLAYING) {
                 GST_WARNING ("Restart job %s success", job->name);
@@ -1199,9 +1197,9 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
 
         } else {
             GST_WARNING ("Start job %s failure, return stat: %s", job->name, job_state_get_name (stat));
-            g_object_unref (job);
             p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"create process failure\"\n}");
         }
+        g_child_watch_add (job->worker_pid, (GChildWatchFunc)child_watch_cb, job);
 
     } else {
         job_encoders_output_initialize (job);
