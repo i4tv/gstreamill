@@ -101,7 +101,7 @@ struct _JobClass {
 GType job_get_type (void);
 
 gchar * job_state_get_name (guint64 state);
-gint job_initialize (Job *job, gint mode);
+gint job_initialize (Job *job, gint mode, gint shm_fd, gchar *shm_p);
 gint job_output_initialize (Job *job);
 gint job_encoders_output_initialize (Job *job);
 void job_reset (Job *job);

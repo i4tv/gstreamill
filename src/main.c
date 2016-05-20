@@ -188,6 +188,7 @@ static gchar *http_mgmt = "0.0.0.0:20118";
 static gchar *http_streaming = "0.0.0.0:20119";
 static gchar *shm_name = NULL;
 static gint job_length = -1;
+static gint shm_length = -1;
 static GOptionEntry options[] = {
     {"job", 'j', 0, G_OPTION_ARG_FILENAME, &job_file, ("-j /full/path/to/job.file: Specify a job file, full path is must."), NULL},
     {"log", 'l', 0, G_OPTION_ARG_FILENAME, &log_dir, ("-l /full/path/to/log: Specify log path, full path is must."), NULL},
@@ -195,6 +196,7 @@ static GOptionEntry options[] = {
     {"httpstreaming", 'a', 0, G_OPTION_ARG_STRING, &http_streaming, ("-a http streaming address, default is 0.0.0.0:20119."), NULL},
     {"name", 'n', G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &shm_name, NULL, NULL},
     {"joblength", 'q', G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_INT, &job_length, NULL, NULL},
+    {"shmlength", 't', G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_INT, &shm_length, NULL, NULL},
     {"stop", 's', 0, G_OPTION_ARG_NONE, &stop, ("Stop gstreamill."), NULL},
     {"debug", 'd', 0, G_OPTION_ARG_NONE, &debug, ("Debug mode, run in foreground."), NULL},
     {"version", 'v', 0, G_OPTION_ARG_NONE, &version, ("display version information and exit."), NULL},
@@ -378,11 +380,11 @@ int main (int argc, char *argv[])
         /* read job description from share memory */
         job_desc = NULL;
         fd = shm_open (shm_name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
-        if (ftruncate (fd, job_length) == -1) {
+        if (ftruncate (fd, shm_length) == -1) {
             exit (5);
         }
-        p = mmap (NULL, job_length, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-        job_desc = g_strdup (p);
+        p = mmap (NULL, shm_length, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+        job_desc = g_strndup (p, job_length);
 
         if ((job_desc != NULL) && (!jobdesc_is_valid (job_desc))) {
             exit (6);
@@ -391,11 +393,11 @@ int main (int argc, char *argv[])
         /* initialize log */
         name = (gchar *)jobdesc_get_name (job_desc);
         if (!jobdesc_is_live (job_desc)) {
-            gchar *p;
+            gchar *path;
 
-            p = jobdesc_get_log_path (job_desc);
-            log_path = g_build_filename (p, "gstreamill.log", NULL);
-            g_free (p);
+            path = jobdesc_get_log_path (job_desc);
+            log_path = g_build_filename (path, "gstreamill.log", NULL);
+            g_free (path);
 
         } else {
             log_path = g_build_filename (log_dir, name, "gstreamill.log", NULL);
@@ -418,7 +420,7 @@ int main (int argc, char *argv[])
         loop = g_main_loop_new (NULL, FALSE);
 
         GST_INFO ("Initializing job ...");
-        if (job_initialize (job, TRUE) != 0) {
+        if (job_initialize (job, TRUE, fd, p) != 0) {
             GST_ERROR ("initialize job failure, exit");
             exit (8);
         }

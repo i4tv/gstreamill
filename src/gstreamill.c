@@ -968,6 +968,8 @@ static guint64 create_job_process (Job *job)
     argv[i++] = unicode_file_name_2_shm_name (job->name);
     argv[i++] = g_strdup ("-q");
     argv[i++] = g_strdup_printf ("%ld", strlen (job->description));
+    argv[i++] = g_strdup ("-t");
+    argv[i++] = g_strdup_printf ("%ld", job->output_size);
     p = jobdesc_get_debug (job->description);
     if (p != NULL) {
         argv[i++] = g_strdup_printf ("--gst-debug=%s", p);
@@ -1170,7 +1172,7 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
     }
     g_free (semaphore_name);
 
-    if (job_initialize (job, gstreamill->mode) != 0) {
+    if (job_initialize (job, gstreamill->mode, -1, NULL) != 0) {
         p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"initialize job failure\"\n}");
         g_object_unref (job);
         return p;
