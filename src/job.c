@@ -144,9 +144,11 @@ static void job_dispose (GObject *obj)
 
     /* free semaphore */
     if (output->semaphore != NULL) {
+        GST_WARNING ("sem_close job %s's semaphore", job->name);
         if (sem_close (output->semaphore) == -1) {
             GST_ERROR ("sem_close failure: %s", g_strerror (errno));
         }
+        GST_WARNING ("sem_unlink job %s's semaphore", job->name);
         if (sem_unlink (output->semaphore_name) == -1) {
             GST_ERROR ("sem_unlink %s error: %s", job->name, g_strerror (errno));
         }
@@ -170,10 +172,12 @@ static void job_dispose (GObject *obj)
     /* free share memory */
     if (job->output_fd != -1) {
         g_close (job->output_fd, NULL);
+        GST_WARNING ("munmap job %s's shm", job->name);
         if (munmap (output->job_description, job->output_size) == -1) {
             GST_ERROR ("munmap %s error: %s", job->name, g_strerror (errno));
         }
         name_hexstr = unicode_file_name_2_shm_name (job->name);
+        GST_WARNING ("shm_unlink job %s's shm", job->name);
         if (shm_unlink (name_hexstr) == -1) {
             GST_ERROR ("shm_unlink %s error: %s", job->name, g_strerror (errno));
         }
