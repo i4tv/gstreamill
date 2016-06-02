@@ -1,0 +1,43 @@
+{
+    "name" : "aac.only",
+    "source" : {
+        "elements" : {
+            "souphttpsrc" : {
+                "property" : {
+                    "is-live" : true,
+                    "location" : "http://ys.vtings.com/live128_1.aac"
+                }
+            }
+        },
+        "bins" : [
+            "souphttpsrc ! decodebin name=decodebin",
+            "decodebin.src ! appsink name=audio"
+        ]
+    },
+    "encoders" : [
+        {
+            "elements": {
+                "appsrc" : {
+                    "property" : {
+                        "format" : 3,
+                        "is-live" : true
+                    }
+                },
+                "appsink" : {
+                    "property" : {
+                        "sync" : false
+                    }
+                }
+            },
+            "bins" : [
+                "appsrc name=audio ! audioconvert ! voaacenc ! aacparse ! mpegtsmux ! appsink"
+            ]
+        }
+    ],
+    "m3u8streaming" : {
+        "version" : 3,
+        "window-size" : 10,
+        "segment-duration" : 3.00
+    }
+}
+
