@@ -92,6 +92,10 @@ static void gstreamill_init (Gstreamill *gstreamill)
     gstreamill->last_dvr_clean_time = g_get_real_time ();
     g_mutex_init (&(gstreamill->job_list_mutex));
     gstreamill->job_list = NULL;
+
+    g_mutex_init (&(gstreamill->record_queue_mutex));
+    g_cond_init (&(gstreamill->record_queue_cond));
+    gstreamill->record_queue = g_queue_new ();
 }
 
 static GObject * gstreamill_constructor (GType type, guint n_construct_properties, GObjectConstructParam *construct_properties)
@@ -674,13 +678,70 @@ static gchar *segment_dir (EncoderOutput *encoder_output)
     return seg_path;
 }
 
-static void dvr_record_segment (EncoderOutput *encoder_output, gchar *seg_path, GstClockTime duration)
+static void free_record_data (RecordData *record_data)
 {
-    gchar *path, *record_dir, *seg_dir, *buf;
+    g_free (record_data->buf);
+    g_free (record_data->dir);
+    g_free (record_data->file);
+    g_free (record_data);
+}
+
+static void write_segment (RecordData *record_data)
+{
+    gchar *path;
+    GError *err = NULL;
+
+    if (!g_file_test (record_data->dir, G_FILE_TEST_EXISTS)) {
+        if (g_mkdir_with_parents (record_data->dir, 0755) != 0) {
+            GST_ERROR ("Create record directory failure: %s", record_data->dir);
+            free_record_data (record_data);
+            return;
+        }
+    }
+
+    path = g_strdup_printf ("%s/%s", record_data->dir, record_data->file);
+    if (!g_file_set_contents (path, record_data->buf, record_data->segment_size, &err)) {
+        GST_ERROR ("write segment %s failure: %s", path, err->message);
+        g_error_free (err);
+
+    } else {
+        GST_INFO ("write segment %s success", path);
+    }
+    g_free (path);
+
+    free_record_data (record_data);
+}
+
+static gpointer record_thread (gpointer data)
+{
+    Gstreamill *gstreamill = (Gstreamill *)data;
+    RecordData *record_data;
+
+    for (;;) {
+        g_mutex_lock (&(gstreamill->record_queue_mutex));
+        while (g_queue_get_length (gstreamill->record_queue) > 0) {
+            if (g_queue_get_length (gstreamill->record_queue) > 10) {
+                GST_WARNING ("record_queue length: %u", g_queue_get_length (gstreamill->record_queue));
+            }
+            record_data = (RecordData *)g_queue_pop_tail (gstreamill->record_queue);
+            g_mutex_unlock (&(gstreamill->record_queue_mutex));
+            write_segment (record_data);
+            g_mutex_lock (&(gstreamill->record_queue_mutex));
+        }
+        g_cond_wait (&(gstreamill->record_queue_cond), &(gstreamill->record_queue_mutex));
+        g_mutex_unlock (&(gstreamill->record_queue_mutex));
+    }
+
+    return NULL;
+}
+
+static void dvr_record_segment (Gstreamill *gstreamill, EncoderOutput *encoder_output, gchar *seg_path, GstClockTime duration)
+{
+    gchar *seg_dir, *buf;
     gint64 realtime;
     guint64 rap_addr, diff;
     gsize segment_size;
-    GError *err = NULL;
+    RecordData *record_data;
 
     /* seek gop it's timestamp is m3u8_push_request->timestamp */
     rap_addr = encoder_output_gop_seek (encoder_output, encoder_output->last_timestamp);
@@ -731,35 +792,21 @@ static void dvr_record_segment (EncoderOutput *encoder_output, gchar *seg_path, 
         }
     }
 
+    record_data = (RecordData *)g_malloc (sizeof (RecordData));
     seg_dir = segment_dir (encoder_output);
-    record_dir = g_strdup_printf ("%s/%s", encoder_output->record_path, seg_dir);
+    record_data->dir = g_strdup_printf ("%s/%s", encoder_output->record_path, seg_dir);
     g_free (seg_dir);
-    if (!g_file_test (record_dir, G_FILE_TEST_EXISTS)) {
-        if (g_mkdir_with_parents (record_dir, 0755) != 0) {
-            GST_ERROR ("Create record directory failure: %s", record_dir);
-            g_free (record_dir);
-            g_free (buf);
-            return;
-        }
-    }
-    path = g_strdup_printf ("%s/%010lu_%lu_%lu.ts",
-            record_dir,
+    record_data->file = g_strdup_printf ("%010lu_%lu_%lu.ts",
             encoder_output->last_timestamp % 3600000000,
             encoder_output->sequence,
             duration);
-    g_free (record_dir);
+    record_data->buf = buf;
+    record_data->segment_size = segment_size;
+    g_mutex_lock (&(gstreamill->record_queue_mutex));
+    g_queue_push_head (gstreamill->record_queue, record_data);
+    g_cond_signal (&(gstreamill->record_queue_cond));
+    g_mutex_unlock (&(gstreamill->record_queue_mutex));
     encoder_output->sequence += 1;
-
-    if (!g_file_set_contents (path, buf, segment_size, &err)) {
-        GST_ERROR ("write segment %s failure: %s", path, err->message);
-        g_error_free (err);
-
-    } else {
-        GST_INFO ("write segment %s success", path);
-    }
-
-    g_free (path);
-    g_free (buf);
 }
 
 static gpointer msg_thread (gpointer data)
@@ -853,7 +900,7 @@ static gpointer msg_thread (gpointer data)
                 m3u8playlist_add_entry (encoder_output->m3u8_playlist, seg_path, duration);
                 g_free (seg_path);
                 if (encoder_output->dvr_duration != 0) {
-                    dvr_record_segment (encoder_output, seg_dir, duration);
+                    dvr_record_segment (gstreamill, encoder_output, seg_dir, duration);
                 }
                 g_free (seg_dir);
             }
@@ -884,6 +931,7 @@ gint gstreamill_start (Gstreamill *gstreamill)
 
     /* message process thread */
     gstreamill->msg_thread = g_thread_new ("msg_thread", msg_thread, gstreamill);
+    gstreamill->record_thread = g_thread_new ("record_thread", record_thread, gstreamill);
 
     /* regist gstreamill monitor */
     t = gst_clock_get_time (gstreamill->system_clock)  + 5000 * GST_MSECOND;

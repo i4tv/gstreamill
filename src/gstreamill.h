@@ -24,6 +24,11 @@
 typedef struct _Gstreamill      Gstreamill;
 typedef struct _GstreamillClass GstreamillClass;
 
+typedef struct _RecordData {
+    gchar *dir, *file, *buf;
+    gsize segment_size;
+} RecordData;
+
 struct _Gstreamill {
     GObject parent;
 
@@ -32,9 +37,17 @@ struct _Gstreamill {
     gint mode; /* running mode */
     GstClock *system_clock;
     gchar *start_time;
+
+    /* message receive thread */
     GThread *msg_thread;
     gchar *log_dir;
     guint64 last_dvr_clean_time;
+
+    /* segment record thread */
+    GMutex record_queue_mutex;
+    GCond record_queue_cond;
+    GQueue *record_queue;
+    GThread *record_thread;
 
     gdouble cpu_average;
     gdouble cpu_current;
