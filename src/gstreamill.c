@@ -154,10 +154,19 @@ static void gstreamill_get_property (GObject *obj, guint prop_id, GValue *value,
     }
 }
 
+static void free_record_data (RecordData *record_data)
+{
+    g_free (record_data->buf);
+    g_free (record_data->dir);
+    g_free (record_data->file);
+    g_free (record_data);
+}
+
 static void gstreamill_dispose (GObject *obj)
 {
     Gstreamill *gstreamill = GSTREAMILL (obj);
     GObjectClass *parent_class = g_type_class_peek (G_TYPE_OBJECT);
+    RecordData *record_data;
 
     if (gstreamill->log_dir != NULL) {
         g_free (gstreamill->log_dir);
@@ -169,6 +178,12 @@ static void gstreamill_dispose (GObject *obj)
         gstreamill->exe_path = NULL;
     }
 
+    while (g_queue_get_length (gstreamill->record_queue) > 0) {
+        record_data = (RecordData *)g_queue_pop_tail (gstreamill->record_queue);
+        free_record_data (record_data);
+    }
+    g_queue_free (gstreamill->record_queue);
+
     G_OBJECT_CLASS (parent_class)->dispose (obj);
 }
 
@@ -176,7 +191,9 @@ static void gstreamill_finalize (GObject *obj)
 {
     Gstreamill *gstreamill = GSTREAMILL (obj);
     GObjectClass *parent_class = g_type_class_peek (G_TYPE_OBJECT);
+
     g_slist_free (gstreamill->job_list);
+
     G_OBJECT_CLASS (parent_class)->finalize (obj);
 }
 
@@ -676,14 +693,6 @@ static gchar *segment_dir (EncoderOutput *encoder_output)
             tm.tm_hour);
 
     return seg_path;
-}
-
-static void free_record_data (RecordData *record_data)
-{
-    g_free (record_data->buf);
-    g_free (record_data->dir);
-    g_free (record_data->file);
-    g_free (record_data);
 }
 
 static void write_segment (RecordData *record_data)
