@@ -676,11 +676,10 @@ static gchar *segment_dir (EncoderOutput *encoder_output)
 
 static void dvr_record_segment (EncoderOutput *encoder_output, gchar *seg_path, GstClockTime duration)
 {
-    gchar *path, *record_dir, *seg_dir;
+    gchar *path, *record_dir, *seg_dir, *buf;
     gint64 realtime;
     guint64 rap_addr, diff;
     gsize segment_size;
-    gchar *buf;
     GError *err = NULL;
 
     /* seek gop it's timestamp is m3u8_push_request->timestamp */
@@ -759,6 +758,7 @@ static void dvr_record_segment (EncoderOutput *encoder_output, gchar *seg_path, 
         GST_INFO ("write segment %s success", path);
     }
 
+    g_free (path);
     g_free (buf);
 }
 
