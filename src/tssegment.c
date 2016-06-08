@@ -503,8 +503,8 @@ static gboolean apply_pmt (TsSegment *tssegment, GstMpegtsSection * section)
     for (i = 0; i < pmt->streams->len; ++i) {
         GstMpegtsPMTStream *stream = g_ptr_array_index (pmt->streams, i);
         if (stream->stream_type == GST_MPEGTS_STREAM_TYPE_VIDEO_H264) {
+            GST_WARNING ("H.264 video, pid %d", stream->pid);
             tssegment->video_pid = stream->pid;
-            GST_ERROR ("264: %d, stream pid: %d", stream->pid, tssegment->video_pid);
         }
     }
 
