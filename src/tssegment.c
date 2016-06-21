@@ -106,6 +106,7 @@ static void ts_segment_init (TsSegment *tssegment)
     tssegment->pes_packet_size = 0;
     tssegment->pes_packet_duration = 0;
     tssegment->h264parser = gst_h264_nal_parser_new ();
+    tssegment->h265parser = gst_h265_parser_new ();
 }
 
 static void ts_segment_set_property (GObject *obj, guint prop_id, const GValue *value, GParamSpec *pspec)
@@ -247,7 +248,7 @@ out:
         return FALSE;
     }
 
-    GST_ERROR ("have packetsize detected: %u bytes", tssegment->packet_size);
+    GST_WARNING ("have packetsize detected: %u bytes", tssegment->packet_size);
 
     if (tssegment->packet_size == MPEGTS_M2TS_PACKETSIZE && tssegment->map_offset >= 4) {
         tssegment->map_offset -= 4;
@@ -503,7 +504,13 @@ static gboolean apply_pmt (TsSegment *tssegment, GstMpegtsSection * section)
     for (i = 0; i < pmt->streams->len; ++i) {
         GstMpegtsPMTStream *stream = g_ptr_array_index (pmt->streams, i);
         if (stream->stream_type == GST_MPEGTS_STREAM_TYPE_VIDEO_H264) {
-            GST_WARNING ("H.264 video, pid %d", stream->pid);
+            GST_INFO ("H.264 video, pid %d", stream->pid);
+            tssegment->video_stream_type = GST_MPEGTS_STREAM_TYPE_VIDEO_H264;
+            tssegment->video_pid = stream->pid;
+
+        } else if (stream->stream_type == GST_MPEGTS_STREAM_TYPE_VIDEO_HEVC) {
+            GST_INFO ("H.265 video, pid %d", stream->pid);
+            tssegment->video_stream_type = GST_MPEGTS_STREAM_TYPE_VIDEO_HEVC;
             tssegment->video_pid = stream->pid;
         }
     }
@@ -531,7 +538,7 @@ static void handle_psi (TsSegment *tssegment, TSPacket *packet)
         return;
     }
 
-    GST_ERROR ("Handling PSI (pid: 0x%04x , table_id: 0x%02x)", section->pid, section->table_id);
+    GST_WARNING ("Handling PSI (pid: 0x%04x , table_id: 0x%02x)", section->pid, section->table_id);
 
     switch (section->section_type) {
         case GST_MPEGTS_SECTION_PAT:
@@ -545,8 +552,6 @@ static void handle_psi (TsSegment *tssegment, TSPacket *packet)
         default:
             break;
     }
-
-    GST_ERROR ("Handling PSI (pid: 0x%04x , table_id: 0x%02x)", section->pid, section->table_id);
 
     /* Finally post message (if it wasn't corrupted) */
     if (post_message) {
@@ -569,15 +574,15 @@ static void clear_packet (TsSegment *tssegment, TSPacket *packet)
     }
 }
 
-H264NaluParsingResult h264_parse_slice (TsSegment *tssegment)
+NaluParsingResult h264_parse_slice (TsSegment *tssegment)
 {
     GstH264NalUnit *nalu, *pre_nalu;
     GstH264SliceHdr *slice_hdr, *pre_slice_hdr;
     GstH264SPS *sps;
-    H264NaluParsingResult ret = 0;
+    NaluParsingResult ret = 0;
 
-    nalu = &(tssegment->nalu);
-    pre_nalu = &(tssegment->pre_nalu);
+    nalu = &(tssegment->h264_nalu);
+    pre_nalu = &(tssegment->h264_pre_nalu);
     slice_hdr = &(tssegment->slice_hdr);
     pre_slice_hdr = &(tssegment->pre_slice_hdr);
     sps = &(tssegment->sps);
@@ -590,8 +595,8 @@ H264NaluParsingResult h264_parse_slice (TsSegment *tssegment)
     /* frame_num differs in value. */
     if (slice_hdr->frame_num != pre_slice_hdr->frame_num) {
         GST_DEBUG ("new pic");
-        ret |= H264_NALU_PIC;
-        ret |= H264_NALU_FRAME;
+        ret |= NALU_PIC;
+        ret |= NALU_FRAME;
         tssegment->frames_accumulate++;
         tssegment->pes_packet_duration += tssegment->frame_duration;
 
@@ -599,18 +604,18 @@ H264NaluParsingResult h264_parse_slice (TsSegment *tssegment)
     /* field_pic_flag differs in value. */
     } else if (slice_hdr->field_pic_flag != pre_slice_hdr->field_pic_flag) {
         GST_DEBUG ("new pic");
-        ret |= H264_NALU_PIC;
-        ret |= H264_NALU_FRAME;
+        ret |= NALU_PIC;
+        ret |= NALU_FRAME;
         tssegment->frames_accumulate++;
         tssegment->pes_packet_duration += tssegment->frame_duration;
 
     /* bottom_field_flag is present in both and differs in value. */
     } else if (slice_hdr->field_pic_flag && pre_slice_hdr->field_pic_flag) {
         if (slice_hdr->bottom_field_flag != pre_slice_hdr->bottom_field_flag) {
-            ret |= H264_NALU_PIC;
+            ret |= NALU_PIC;
             if (!(slice_hdr->bottom_field_flag)) {
                 GST_DEBUG ("new pic");
-                ret |= H264_NALU_FRAME;
+                ret |= NALU_FRAME;
                 tssegment->frames_accumulate++;
                 tssegment->pes_packet_duration += tssegment->frame_duration;
             }
@@ -619,8 +624,8 @@ H264NaluParsingResult h264_parse_slice (TsSegment *tssegment)
     /* nal_ref_idc differs in value with one of the nal_ref_idc values being equal to 0. */
     } else if ((nalu->ref_idc != pre_nalu->ref_idc) && ((nalu->ref_idc == 0) || (pre_nalu->ref_idc == 0))) {
         GST_DEBUG ("new pic");
-        ret |= H264_NALU_PIC;
-        ret |= H264_NALU_FRAME;
+        ret |= NALU_PIC;
+        ret |= NALU_FRAME;
         tssegment->frames_accumulate++;
         tssegment->pes_packet_duration += tssegment->frame_duration;
 
@@ -630,15 +635,15 @@ H264NaluParsingResult h264_parse_slice (TsSegment *tssegment)
     } else if (sps->pic_order_cnt_type == 0) {
         if (slice_hdr->pic_order_cnt_lsb != pre_slice_hdr->pic_order_cnt_lsb) {
             GST_DEBUG ("new pic");
-            ret |= H264_NALU_PIC;
-            ret |= H264_NALU_FRAME;
+            ret |= NALU_PIC;
+            ret |= NALU_FRAME;
             tssegment->frames_accumulate++;
             tssegment->pes_packet_duration += tssegment->frame_duration;
         }
         if (slice_hdr->delta_pic_order_cnt_bottom != pre_slice_hdr->delta_pic_order_cnt_bottom) {
             GST_DEBUG ("new pic");
-            ret |= H264_NALU_PIC;
-            ret |= H264_NALU_FRAME;
+            ret |= NALU_PIC;
+            ret |= NALU_FRAME;
             tssegment->frames_accumulate++;
             tssegment->pes_packet_duration += tssegment->frame_duration;
         }
@@ -649,15 +654,15 @@ H264NaluParsingResult h264_parse_slice (TsSegment *tssegment)
     } else if (sps->pic_order_cnt_type == 1) {
         if (slice_hdr->delta_pic_order_cnt[0] != pre_slice_hdr->delta_pic_order_cnt[0]) {
             GST_DEBUG ("new pic");
-            ret |= H264_NALU_PIC;
-            ret |= H264_NALU_FRAME;
+            ret |= NALU_PIC;
+            ret |= NALU_FRAME;
             tssegment->frames_accumulate++;
             tssegment->pes_packet_duration += tssegment->frame_duration;
         }
         if (slice_hdr->delta_pic_order_cnt[1] != pre_slice_hdr->delta_pic_order_cnt[1]) {
             GST_WARNING ("new pic");
-            ret |= H264_NALU_PIC;
-            ret |= H264_NALU_FRAME;
+            ret |= NALU_PIC;
+            ret |= NALU_FRAME;
             tssegment->frames_accumulate++;
             tssegment->pes_packet_duration += tssegment->frame_duration;
         }
@@ -665,8 +670,8 @@ H264NaluParsingResult h264_parse_slice (TsSegment *tssegment)
     /* IdrPicFlag differs in value. */
     } else if (nalu->idr_pic_flag != pre_nalu->idr_pic_flag) {
         GST_DEBUG ("new pic");
-        ret |= H264_NALU_PIC;
-        ret |= H264_NALU_FRAME;
+        ret |= NALU_PIC;
+        ret |= NALU_FRAME;
         tssegment->frames_accumulate++;
         tssegment->pes_packet_duration += tssegment->frame_duration;
 
@@ -674,8 +679,8 @@ H264NaluParsingResult h264_parse_slice (TsSegment *tssegment)
     } else if (nalu->idr_pic_flag == 1 && pre_nalu->idr_pic_flag == 1 &&
             (slice_hdr->idr_pic_id != pre_slice_hdr->idr_pic_id)) {
         GST_DEBUG ("new pic");
-        ret |= H264_NALU_PIC;
-        ret |= H264_NALU_FRAME;
+        ret |= NALU_PIC;
+        ret |= NALU_FRAME;
         tssegment->frames_accumulate++;
         tssegment->pes_packet_duration += tssegment->frame_duration;
     }
@@ -686,17 +691,17 @@ H264NaluParsingResult h264_parse_slice (TsSegment *tssegment)
         /* real frame data */
         GST_DEBUG ("I frames accumulate: %lu", tssegment->frames_accumulate);
         //GST_WARNING ("Found keyframe at: %u",nalu->sc_offset);
-        ret |= H264_NALU_IDR;
+        ret |= NALU_IDR;
     }
 
     return ret;
 }
 
-H264NaluParsingResult h264_parse_nalu (TsSegment *tssegment)
+NaluParsingResult h264_parse_nalu (TsSegment *tssegment)
 {
     GstH264ParserResult res = GST_H264_PARSER_OK;
     GstH264NalParser *parser = tssegment->h264parser;
-    H264NaluParsingResult type = 0;
+    NaluParsingResult type = 0;
     guint8 *data;
     gsize size;
     gint offset = 0;
@@ -710,7 +715,7 @@ H264NaluParsingResult h264_parse_nalu (TsSegment *tssegment)
     size = tssegment->pes_packet_size;
     data = tssegment->pes_packet;
 
-    nalu = &(tssegment->nalu);
+    nalu = &(tssegment->h264_nalu);
     slice_hdr = &(tssegment->slice_hdr);
     sps = &(tssegment->sps);
 
@@ -741,7 +746,7 @@ H264NaluParsingResult h264_parse_nalu (TsSegment *tssegment)
         switch (nalu->type) {
             case GST_H264_NAL_AU_DELIMITER:
                 GST_DEBUG ("Found Delimiter");
-                type |= H264_NALU_DELIMITER;
+                type |= NALU_DELIMITER;
                 break;
             case GST_H264_NAL_SEI:
                 GST_DEBUG ("Found SEI");
@@ -761,11 +766,11 @@ H264NaluParsingResult h264_parse_nalu (TsSegment *tssegment)
                     }
                 }
                 g_array_free (messages, TRUE);
-                type |= H264_NALU_SEI;
+                type |= NALU_SEI;
                 break;
             case GST_H264_NAL_PPS:
                 GST_DEBUG ("Found PPS");
-                type |= H264_NALU_PPS;
+                type |= NALU_PPS;
                 break;
             case GST_H264_NAL_SPS:
                 GST_DEBUG ("Found SPS");
@@ -775,7 +780,7 @@ H264NaluParsingResult h264_parse_nalu (TsSegment *tssegment)
 
                 } else {
                 }
-                type |= H264_NALU_SPS;
+                type |= NALU_SPS;
                 break;
             /* these units are considered keyframes in h264parse */
             case GST_H264_NAL_SLICE:
@@ -801,7 +806,7 @@ H264NaluParsingResult h264_parse_nalu (TsSegment *tssegment)
                             tssegment->fps_den);
                 type |= h264_parse_slice (tssegment);
                 tssegment->pre_slice_hdr = tssegment->slice_hdr;
-                tssegment->pre_nalu = tssegment->nalu;
+                tssegment->h264_pre_nalu = tssegment->h264_nalu;
                 break;
             default:
                 GST_DEBUG ("Found default %d", nalu->type);
@@ -812,7 +817,132 @@ H264NaluParsingResult h264_parse_nalu (TsSegment *tssegment)
             break;
         }
 
-        offset = tssegment->nalu.sc_offset + tssegment->nalu.size;
+        offset = tssegment->h264_nalu.sc_offset + tssegment->h264_nalu.size;
+    }
+
+    return type;
+}
+
+static NaluParsingResult h265_parse_nalu (TsSegment *tssegment)
+{
+    GstH265ParserResult res = GST_H265_PARSER_OK;
+    GstH265Parser *parser = tssegment->h265parser;
+    GstH265NalUnit *nalu;
+    GstH265SliceHdr slice;
+    NaluParsingResult type = 0;
+    guint8 *data;
+    gsize size;
+    gint offset = 0;
+    GstH265VPS vps;
+    GstH265SPS sps;
+    GstH265PPS pps;
+    GArray *messages;
+    //GstH265SEIMessage sei;
+    //gint i;
+
+    size = tssegment->pes_packet_size - 19;
+    data = tssegment->pes_packet + 19;
+    nalu = &(tssegment->h265_nalu);
+
+    while (1) {
+        if (size - offset < 4) {
+            break;
+        }
+        res = gst_h265_parser_identify_nalu (parser, data, offset, size, nalu);
+        if (res != GST_H265_PARSER_OK && res != GST_H265_PARSER_NO_NAL_END) {
+            GST_WARNING ("h265 parse identify nal, Error identifying nal: %i", res);
+            break;
+        }
+
+        switch (nalu->type) {
+            case GST_H265_NAL_AUD:
+                GST_DEBUG ("Found Delimiter");
+                type |= NALU_DELIMITER;
+                break;
+            case GST_H265_NAL_PREFIX_SEI:
+            case GST_H265_NAL_SUFFIX_SEI:    
+                GST_DEBUG ("Found SEI");
+                res = gst_h265_parser_parse_sei (parser, nalu, &messages);
+                if (res != GST_H265_PARSER_OK) {
+                    GST_WARNING ("failed to parse SEI message, return %d", res);
+                }
+#if 0
+                for (i = 0; i < messages->len; i++) {
+                    sei = g_array_index (messages, GstH265SEIMessage, i);
+                    if (sei.payloadType == GST_H265_SEI_PIC_TIMING) {
+                        if (sei.payload.pic_timing.pic_struct_present_flag) {
+                            tssegment->pic_struct = sei.payload.pic_timing.pic_struct;
+
+                        } else {
+                            tssegment->pic_struct = 0;
+                        }
+                    }
+                }
+#endif
+                g_array_free (messages, TRUE);
+                type |= NALU_SEI;
+                break;
+            case GST_H265_NAL_VPS:
+                GST_DEBUG ("Found VPS");
+                res = gst_h265_parser_parse_vps (parser, nalu, &vps);
+                type |= NALU_VPS;
+                break;
+            case GST_H265_NAL_PPS:
+                GST_DEBUG ("Found PPS");
+                res = gst_h265_parser_parse_pps (parser, nalu, &pps);
+                type |= NALU_PPS;
+                break;
+            case GST_H265_NAL_SPS:
+                GST_DEBUG ("Found SPS");
+                res = gst_h265_parser_parse_sps (parser, nalu, &sps, TRUE);
+                tssegment->fps_num = sps.fps_num;
+                tssegment->fps_den = sps.fps_den;
+                tssegment->frame_duration = GST_SECOND * tssegment->fps_den / tssegment->fps_num;
+                GST_INFO ("frame rate: %d %d", sps.fps_num, sps.fps_den);
+                type |= NALU_SPS;
+                break;
+            case GST_H265_NAL_SLICE_TRAIL_N:
+            case GST_H265_NAL_SLICE_TRAIL_R:
+            case GST_H265_NAL_SLICE_TSA_N:
+            case GST_H265_NAL_SLICE_TSA_R:
+            case GST_H265_NAL_SLICE_STSA_N:
+            case GST_H265_NAL_SLICE_STSA_R:
+            case GST_H265_NAL_SLICE_RADL_N:
+            case GST_H265_NAL_SLICE_RADL_R:
+            case GST_H265_NAL_SLICE_RASL_N:
+            case GST_H265_NAL_SLICE_RASL_R:
+            case GST_H265_NAL_SLICE_BLA_W_LP:
+            case GST_H265_NAL_SLICE_BLA_W_RADL:
+            case GST_H265_NAL_SLICE_BLA_N_LP:
+            case GST_H265_NAL_SLICE_IDR_W_RADL:
+            case GST_H265_NAL_SLICE_IDR_N_LP:
+            case GST_H265_NAL_SLICE_CRA_NUT:
+                GST_DEBUG ("Found SLICE");
+                if (G_UNLIKELY (!(parser->last_sps))) {
+                    break;
+                }
+                res = gst_h265_parser_parse_slice_hdr (parser, nalu, &slice);
+                type |= NALU_FRAME;
+                tssegment->frames_accumulate++;
+                tssegment->pes_packet_duration += tssegment->frame_duration;
+                if (res == GST_H265_PARSER_OK) {
+                    if (GST_H265_IS_I_SLICE (&slice)) {
+                        GST_WARNING ("Key Frame");
+                        type |= NALU_IDR;
+                    }
+                }
+                break;
+            default:
+                GST_DEBUG ("Found default %d", nalu->type);
+                gst_h265_parser_parse_nal (parser, nalu);
+        }
+
+        if (offset == nalu->sc_offset + nalu->size) {
+            GST_DEBUG ("Found offset == nalu->sc_offset + nalu->size");
+            break;
+        }
+
+        offset = tssegment->h265_nalu.sc_offset + tssegment->h265_nalu.size;
     }
 
     return type;
@@ -838,7 +968,7 @@ static void pending_tspacket (TsSegment *tssegment, TSPacket *packet)
 }
 
 /**
- * mpegts_parse_pes_header:
+ * parse_pes_header:
  *
  * Parses the mpeg-ts PES header located in @data into the @res.
  *
@@ -847,9 +977,8 @@ static void pending_tspacket (TsSegment *tssegment, TSPacket *packet)
  * #PES_PARSING_BAD if the header is invalid,
  * #PES_PARSING_NEED_MORE if more data is needed to properly parse the header.
  */
-PESParsingResult mpegts_parse_pes_header (TsSegment *tssegment)
+static PESParsingResult parse_pes_header (TsSegment *tssegment)
 {
-    PESParsingResult ret = PES_PARSING_NEED_MORE;
     guint32 val32;
     guint8 val8, flags, *data;
     gsize length;
@@ -862,7 +991,7 @@ PESParsingResult mpegts_parse_pes_header (TsSegment *tssegment)
     /* The smallest valid PES header is 6 bytes (prefix + stream_id + length) */
     if (G_UNLIKELY (length < 6)) {
         GST_DEBUG ("Not enough data to parse PES header");
-        return ret;
+        return PES_PARSING_NEED_MORE;
     }
 
     val32 = GST_READ_UINT32_BE (data);
@@ -893,7 +1022,7 @@ PESParsingResult mpegts_parse_pes_header (TsSegment *tssegment)
 
     if (G_UNLIKELY (length < 3)) {
         GST_WARNING ("Not enough data to parse PES header");
-        return ret;
+        return PES_PARSING_NEED_MORE;
     }
 
     /* '10'                             2
@@ -922,7 +1051,7 @@ PESParsingResult mpegts_parse_pes_header (TsSegment *tssegment)
     length -= 3;
     if (G_UNLIKELY (length < header_data_length)) {
         GST_WARNING ("Not enough data to parse PES header");
-        return ret;
+        return PES_PARSING_NEED_MORE;
     }
 
     /* PTS_DTS_flags == 0x01 is invalid */
@@ -933,7 +1062,7 @@ PESParsingResult mpegts_parse_pes_header (TsSegment *tssegment)
     if ((flags & 0x80) == 0x80) {
         if (G_UNLIKELY (length < 5)) {
             GST_DEBUG ("Not enough data to parse PES header");
-            return ret;
+            return PES_PARSING_NEED_MORE;
         }
 
         if ((*data & 0x01) != 0x01) {
@@ -955,10 +1084,10 @@ PESParsingResult mpegts_parse_pes_header (TsSegment *tssegment)
         pes_header->PTS |= ((guint64) (*data++ & 0xFE)) >> 1;
         //GST_WARNING ("PTS %" G_GUINT64_FORMAT " %" GST_TIME_FORMAT,
           //      pes_header->PTS, GST_TIME_ARGS (MPEGTIME_TO_GSTTIME (pes_header->PTS)));
-        tssegment->current_pts = pes_header->PTS;
+        //tssegment->current_pts = pes_header->PTS;
     }
 
-    return ret;
+    return PES_PARSING_OK;
 }
 
 static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuffer * buf)
@@ -968,7 +1097,7 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
     GstFlowReturn res = GST_FLOW_OK;
     TSPacket packet;
     TSPacketReturn ret;
-    H264NaluParsingResult h264res;
+    NaluParsingResult nalu_parsing_result = 0;
     guint8 *data;
     GstBuffer *buffer;
 
@@ -995,16 +1124,23 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
 
         } else if ((packet.pid == tssegment->video_pid) && FLAGS_HAS_PAYLOAD (packet.scram_afc_cc)) {
             if (G_LIKELY (packet.payload_unit_start_indicator)) {
-                mpegts_parse_pes_header (tssegment);
-                h264res = h264_parse_nalu (tssegment);
+                if (parse_pes_header (tssegment) != PES_PARSING_OK) {
+                    GST_WARNING ("parsing pes header failure");
+                }
+                if (tssegment->video_stream_type == GST_MPEGTS_STREAM_TYPE_VIDEO_H264) {
+                    nalu_parsing_result = h264_parse_nalu (tssegment);
+
+                } else if (tssegment->video_stream_type == GST_MPEGTS_STREAM_TYPE_VIDEO_HEVC) {
+                    nalu_parsing_result = h265_parse_nalu (tssegment);
+                }
                 /* if new frame found, push a segment downstream */
-                if (h264res & H264_NALU_FRAME) {
+                if (nalu_parsing_result & NALU_FRAME) {
                     data = g_malloc (tssegment->current_size);
                     memcpy (data, tssegment->data, tssegment->current_size);
                     buffer = gst_buffer_new_wrapped (data, tssegment->current_size);
                     GST_BUFFER_PTS (buffer) = tssegment->PTS;
                     GST_BUFFER_DURATION (buffer) = tssegment->pes_packet_duration;
-                    if (h264res & H264_NALU_IDR) {
+                    if (nalu_parsing_result & NALU_IDR) {
                         GST_MINI_OBJECT_FLAG_UNSET (buffer, GST_BUFFER_FLAG_DELTA_UNIT);
 
                     } else {
@@ -1016,11 +1152,10 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
                     if (G_LIKELY (tssegment->seen_idr)) {
                         gst_pad_push (tssegment->srcpad, buffer);
 
-                    } else if (h264res & H264_NALU_IDR) {
+                    } else if (nalu_parsing_result & NALU_IDR) {
                         tssegment->seen_idr = TRUE;
                     }
                     tssegment->current_size = 0;
-                    tssegment->pre_pts = tssegment->current_pts;
                     tssegment->pes_packet_duration = 0;
                     tssegment->PTS = (tssegment->frames_accumulate * tssegment->fps_den * GST_SECOND ) / tssegment->fps_num;
                 }

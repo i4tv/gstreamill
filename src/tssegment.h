@@ -11,6 +11,7 @@
 #include <gst/base/gstadapter.h>
 #include <gst/mpegts/mpegts.h>
 #include <gst/codecparsers/gsth264parser.h>
+#include <gst/codecparsers/gsth265parser.h>
 
 #define MPEGTS_NORMAL_PACKETSIZE 188
 #define MPEGTS_M2TS_PACKETSIZE 192
@@ -63,14 +64,15 @@ typedef enum {
 } PESParsingResult;
 
 typedef enum {
-    H264_NALU_DELIMITER = 2,
-    H264_NALU_SEI = 4,
-    H264_NALU_SPS = 8,
-    H264_NALU_PPS = 16,
-    H264_NALU_PIC = 32,
-    H264_NALU_FRAME = 64,
-    H264_NALU_IDR = 128
-} H264NaluParsingResult;
+    NALU_DELIMITER = 2,
+    NALU_SEI = 4,
+    NALU_VPS = 8,
+    NALU_SPS = 16,
+    NALU_PPS = 32,
+    NALU_PIC = 64,
+    NALU_FRAME = 128,
+    NALU_IDR = 256
+} NaluParsingResult;
 
 typedef struct {
     guint8 stream_id; /* See ID_* above */
@@ -101,6 +103,7 @@ typedef struct _TsSegment {
     gboolean seen_pat;
     gboolean seen_pmt;
     guint16 video_pid;
+    guint8 video_stream_type;
     /* Reference offset */
     GPtrArray *pat;
     guint8 *data;
@@ -122,15 +125,20 @@ typedef struct _TsSegment {
     GstClockTime PTS;
     /* Current PTS for the stream (in running time) */
     GstClockTime pre_pts;
-    GstClockTime current_pts;
+    //GstClockTime current_pts;
     GstClockTime duration;
 
+    GstH264NalParser *h264parser;
     GstH264SPS sps;
     GstH264SEIMessage sei;
     GstH264SliceHdr slice_hdr, pre_slice_hdr;
-    GstH264NalUnit nalu, pre_nalu;
+    GstH264NalUnit h264_nalu, h264_pre_nalu;
     guint field_pic_flag;
     guint pic_struct;
+
+    GstH265Parser *h265parser;
+    GstH265NalUnit h265_nalu, h265_pre_nalu;
+
     gint fps_num;
     gint fps_den;
     GstClockTime frame_duration;
@@ -140,7 +148,6 @@ typedef struct _TsSegment {
     gsize pes_packet_size;
     guint8 *pes_packet;
     GstClockTime pes_packet_duration;
-    GstH264NalParser *h264parser;
 } TsSegment;
 
 typedef struct _TsSegmentClass {
