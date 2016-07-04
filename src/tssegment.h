@@ -103,6 +103,7 @@ typedef struct _TsSegment {
     gboolean seen_pat;
     gboolean seen_pmt;
     guint16 video_pid;
+    guint8 video_cc;
     guint8 video_stream_type;
     /* Reference offset */
     GPtrArray *pat;

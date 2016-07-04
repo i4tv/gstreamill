@@ -823,6 +823,58 @@ NaluParsingResult h264_parse_nalu (TsSegment *tssegment)
     return type;
 }
 
+static const gchar *nal_names[] = {
+  "Slice_TRAIL_N",
+  "Slice_TRAIL_R",
+  "Slice_TSA_N",
+  "Slice_TSA_R",
+  "Slice_STSA_N",
+  "Slice_STSA_R",
+  "Slice_RADL_N",
+  "Slice_RADL_R",
+  "SLICE_RASL_N",
+  "SLICE_RASL_R",
+  "Invalid (10)",
+  "Invalid (11)",
+  "Invalid (12)",
+  "Invalid (13)",
+  "Invalid (14)",
+  "Invalid (15)",
+  "SLICE_BLA_W_LP",
+  "SLICE_BLA_W_RADL",
+  "SLICE_BLA_N_LP",
+  "SLICE_IDR_W_RADL",
+  "SLICE_IDR_N_LP",
+  "SLICE_CRA_NUT",
+  "Invalid (22)",
+  "Invalid (23)",
+  "Invalid (24)",
+  "Invalid (25)",
+  "Invalid (26)",
+  "Invalid (27)",
+  "Invalid (28)",
+  "Invalid (29)",
+  "Invalid (30)",
+  "Invalid (31)",
+  "VPS",
+  "SPS",
+  "PPS",
+  "AUD",
+  "EOS",
+  "EOB",
+  "FD",
+  "PREFIX_SEI",
+  "SUFFIX_SEI"
+};
+
+static const gchar *
+_nal_name (GstH265NalUnitType nal_type)
+{
+  if (nal_type <= GST_H265_NAL_SUFFIX_SEI)
+    return nal_names[nal_type];
+  return "Invalid";
+}
+
 static NaluParsingResult h265_parse_nalu (TsSegment *tssegment)
 {
     GstH265ParserResult res = GST_H265_PARSER_OK;
@@ -844,16 +896,26 @@ static NaluParsingResult h265_parse_nalu (TsSegment *tssegment)
     data = tssegment->pes_packet + 19;
     nalu = &(tssegment->h265_nalu);
 
+    if (G_UNLIKELY (tssegment->pes_packet_size < 4 + 19)) {
+        GST_WARNING ("-------------------");
+        return type;
+    }
+
     while (1) {
         if (size - offset < 4) {
             break;
         }
         res = gst_h265_parser_identify_nalu (parser, data, offset, size, nalu);
         if (res != GST_H265_PARSER_OK && res != GST_H265_PARSER_NO_NAL_END) {
-            GST_WARNING ("h265 parse identify nal, Error identifying nal: %i", res);
+            GST_WARNING ("h265 parse identify nal, Error identifying nal: %i, offset: %d, size: %ld %02x:%02x:%02x:%02x", res, offset, size, data[offset], data[offset+1], data[offset+2], data[offset+3]);
             break;
         }
 
+                if (nalu->type == GST_H265_NAL_SLICE_IDR_W_RADL) {
+                    GST_WARNING ("Key Slice type: %s, nalu size: %u", _nal_name (nalu->type), nalu->size);
+                } else {
+                    GST_WARNING ("Slice nalu type: %s, nalu size: %u", _nal_name (nalu->type), nalu->size);
+                }
         switch (nalu->type) {
             case GST_H265_NAL_AUD:
                 GST_DEBUG ("Found Delimiter");
@@ -917,7 +979,7 @@ static NaluParsingResult h265_parse_nalu (TsSegment *tssegment)
             case GST_H265_NAL_SLICE_IDR_W_RADL:
             case GST_H265_NAL_SLICE_IDR_N_LP:
             case GST_H265_NAL_SLICE_CRA_NUT:
-                GST_DEBUG ("Found SLICE");
+                //GST_DEBUG ("Found SLICE");
                 if (G_UNLIKELY (!(parser->last_sps))) {
                     break;
                 }
@@ -1123,6 +1185,10 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
             handle_psi (tssegment, &packet);
 
         } else if ((packet.pid == tssegment->video_pid) && FLAGS_HAS_PAYLOAD (packet.scram_afc_cc)) {
+            if (tssegment->video_cc != FLAGS_CONTINUITY_COUNTER (packet.scram_afc_cc)) {
+                GST_WARNING ("expect video cc %d, but %d found", tssegment->video_cc, FLAGS_CONTINUITY_COUNTER (packet.scram_afc_cc));
+            }
+            tssegment->video_cc = (FLAGS_CONTINUITY_COUNTER (packet.scram_afc_cc) + 1) % 16;
             if (G_LIKELY (packet.payload_unit_start_indicator)) {
                 if (parse_pes_header (tssegment) != PES_PARSING_OK) {
                     GST_WARNING ("parsing pes header failure");
