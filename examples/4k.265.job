@@ -1,0 +1,55 @@
+{
+    "name" : "265",
+    "debug" : "gstreamill:3",
+    "is-live" : true,
+    "source" : {
+        "elements" : {
+            "udpsrc" : {
+                "property" : {
+                    "uri": "udp://238.123.43.80:2000"
+                }
+            },
+            "appsink" : {
+                "property" : {
+                   "sync" : false,
+                   "drop" : true
+                }
+            }
+        },
+        "bins" : [
+            "udpsrc ! queue ! appsink name = mpegts"
+        ]
+    },
+    "encoders" : [
+        {
+            "elements" : {
+                "appsrc" : {
+                    "property" : {
+                        "is-live" : true,
+                        "format" : 3
+                    }
+                },
+                "tssegment": {
+                    "property": {
+                        "bitrate": 1200
+                    }
+                },
+                "appsink": {
+                    "property": {
+                        "sync": false
+                    }
+                }
+            },
+            "bins" : [
+                "appsrc name=mpegts ! queue ! tssegment ! queue ! appsink"
+            ]
+        }
+    ],
+    "m3u8streaming" : {
+        "version" : 3,
+        "window-size" : 4,
+        "segment-duration" : 10.00
+    },
+    "dvr_duration": 86400
+}
+
