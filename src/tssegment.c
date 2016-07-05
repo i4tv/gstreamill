@@ -793,17 +793,21 @@ NaluParsingResult h264_parse_nalu (TsSegment *tssegment)
                     break;
                 }
                 res = gst_h264_parser_parse_slice_hdr (parser, nalu, slice_hdr, FALSE, FALSE);
-                    gst_h264_video_calculate_framerate (parser->last_sps,
-                                                        slice_hdr->field_pic_flag,
-                                                        tssegment->pic_struct,
-                                                        &(tssegment->fps_num),
-                                                        &(tssegment->fps_den));
-                    tssegment->frame_duration = GST_SECOND * tssegment->fps_den / tssegment->fps_num;
-                    GST_DEBUG ("field_pic_flag: %d, pic_struct: %d, fps_num: %d, fps_den: %d",
-                            slice_hdr->field_pic_flag,
-                            tssegment->pic_struct,
-                            tssegment->fps_num,
-                            tssegment->fps_den);
+                gst_h264_video_calculate_framerate (parser->last_sps,
+                                                    slice_hdr->field_pic_flag,
+                                                    tssegment->pic_struct,
+                                                    &(tssegment->fps_num),
+                                                    &(tssegment->fps_den));
+                if (tssegment->fps_num == 0) {
+                    GST_WARNING ("fps_num is 0!!!");
+                    break;
+                }
+                tssegment->frame_duration = GST_SECOND * tssegment->fps_den / tssegment->fps_num;
+                GST_DEBUG ("field_pic_flag: %d, pic_struct: %d, fps_num: %d, fps_den: %d",
+                        slice_hdr->field_pic_flag,
+                        tssegment->pic_struct,
+                        tssegment->fps_num,
+                        tssegment->fps_den);
                 type |= h264_parse_slice (tssegment);
                 tssegment->pre_slice_hdr = tssegment->slice_hdr;
                 tssegment->h264_pre_nalu = tssegment->h264_nalu;
