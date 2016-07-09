@@ -990,7 +990,7 @@ static NaluParsingResult h265_parse_nalu (TsSegment *tssegment)
                 tssegment->pes_packet_duration += tssegment->frame_duration;
                 if (res == GST_H265_PARSER_OK) {
                     if (GST_H265_IS_I_SLICE (&slice)) {
-                        GST_WARNING ("Key Frame");
+                        GST_DEBUG ("Key Frame");
                         type |= NALU_IDR;
                     }
                 }
