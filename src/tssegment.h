@@ -123,9 +123,14 @@ typedef struct _TsSegment {
     gboolean need_sync;
 
     PESHeader pes_header;
-    GstClockTime PTS;
     /* Current PTS for the stream (in running time) */
+    GstClockTime PTS;
     GstClockTime pre_pts;
+    /* Current DTS for the stream (in running time) */
+    GstClockTime DTS;
+    gsize pes_packet_size, pes_payload_size;
+    guint8 *pes_packet, *pes_payload;
+    GstClockTime pes_packet_duration;
     //GstClockTime current_pts;
     GstClockTime duration;
 
@@ -146,9 +151,6 @@ typedef struct _TsSegment {
     GstClockTime frames_accumulate;
     /* whether we saw a idr */
     gboolean seen_idr;
-    gsize pes_packet_size;
-    guint8 *pes_packet;
-    GstClockTime pes_packet_duration;
 } TsSegment;
 
 typedef struct _TsSegmentClass {

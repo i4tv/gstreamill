@@ -712,8 +712,8 @@ NaluParsingResult h264_parse_nalu (TsSegment *tssegment)
     GstH264SEIMessage sei;
     gint i;
 
-    size = tssegment->pes_packet_size;
-    data = tssegment->pes_packet;
+    size = tssegment->pes_payload_size;
+    data = tssegment->pes_payload;
 
     nalu = &(tssegment->h264_nalu);
     slice_hdr = &(tssegment->slice_hdr);
@@ -827,6 +827,7 @@ NaluParsingResult h264_parse_nalu (TsSegment *tssegment)
     return type;
 }
 
+#if 0
 static const gchar *nal_names[] = {
   "Slice_TRAIL_N",
   "Slice_TRAIL_R",
@@ -878,6 +879,7 @@ _nal_name (GstH265NalUnitType nal_type)
     return nal_names[nal_type];
   return "Invalid";
 }
+#endif
 
 static NaluParsingResult h265_parse_nalu (TsSegment *tssegment)
 {
@@ -896,30 +898,25 @@ static NaluParsingResult h265_parse_nalu (TsSegment *tssegment)
     //GstH265SEIMessage sei;
     //gint i;
 
-    size = tssegment->pes_packet_size - 19;
-    data = tssegment->pes_packet + 19;
+    size = tssegment->pes_payload_size;
+    data = tssegment->pes_payload;
     nalu = &(tssegment->h265_nalu);
 
-    if (G_UNLIKELY (tssegment->pes_packet_size < 4 + 19)) {
-        GST_WARNING ("-------------------");
+    if (G_UNLIKELY (tssegment->pes_payload_size < 4)) {
+        GST_WARNING ("pes data insufficient");
         return type;
     }
 
     while (1) {
-        if (size - offset < 4) {
+        if (size - offset <= 4) {
             break;
         }
         res = gst_h265_parser_identify_nalu (parser, data, offset, size, nalu);
         if (res != GST_H265_PARSER_OK && res != GST_H265_PARSER_NO_NAL_END) {
-            GST_WARNING ("h265 parse identify nal, Error identifying nal: %i, offset: %d, size: %ld %02x:%02x:%02x:%02x", res, offset, size, data[offset], data[offset+1], data[offset+2], data[offset+3]);
+            GST_WARNING ("gst_h265_parser_identify_nalu return %i, offset: %d, size: %ld", res, offset, size);
             break;
         }
 
-                if (nalu->type == GST_H265_NAL_SLICE_IDR_W_RADL) {
-                    GST_WARNING ("Key Slice type: %s, nalu size: %u", _nal_name (nalu->type), nalu->size);
-                } else {
-                    GST_WARNING ("Slice nalu type: %s, nalu size: %u", _nal_name (nalu->type), nalu->size);
-                }
         switch (nalu->type) {
             case GST_H265_NAL_AUD:
                 GST_DEBUG ("Found Delimiter");
@@ -983,7 +980,7 @@ static NaluParsingResult h265_parse_nalu (TsSegment *tssegment)
             case GST_H265_NAL_SLICE_IDR_W_RADL:
             case GST_H265_NAL_SLICE_IDR_N_LP:
             case GST_H265_NAL_SLICE_CRA_NUT:
-                //GST_DEBUG ("Found SLICE");
+                GST_DEBUG ("Found SLICE");
                 if (G_UNLIKELY (!(parser->last_sps))) {
                     break;
                 }
@@ -1125,9 +1122,10 @@ static PESParsingResult parse_pes_header (TsSegment *tssegment)
         GST_WARNING ("Invalid PTS_DTS_flag (0x01 is forbidden)");
     }
 
+    /* PTS */
     if ((flags & 0x80) == 0x80) {
         if (G_UNLIKELY (length < 5)) {
-            GST_DEBUG ("Not enough data to parse PES header");
+            GST_WARNING ("Not enough data to parse PES header");
             return PES_PARSING_NEED_MORE;
         }
 
@@ -1148,10 +1146,42 @@ static PESParsingResult parse_pes_header (TsSegment *tssegment)
             return PES_PARSING_BAD;
         }
         pes_header->PTS |= ((guint64) (*data++ & 0xFE)) >> 1;
-        //GST_WARNING ("PTS %" G_GUINT64_FORMAT " %" GST_TIME_FORMAT,
-          //      pes_header->PTS, GST_TIME_ARGS (MPEGTIME_TO_GSTTIME (pes_header->PTS)));
-        //tssegment->current_pts = pes_header->PTS;
+        GST_DEBUG ("PTS %" G_GUINT64_FORMAT " %" GST_TIME_FORMAT,
+                pes_header->PTS, GST_TIME_ARGS (MPEGTIME_TO_GSTTIME (pes_header->PTS)));
+        length -= 5;
     }
+
+    /* DTS */
+    if ((flags & 0x40) == 0x40) {
+        if (G_UNLIKELY (length < 5)) {
+            GST_WARNING ("Not enough data to parse PES header");
+            return PES_PARSING_NEED_MORE;
+        }
+
+        if ((*data & 0x01) != 0x01) {
+            GST_WARNING ("bad DTS value");
+            return PES_PARSING_BAD;
+        }
+        pes_header->DTS = ((guint64) (*data++ & 0x0E)) << 29;
+        pes_header->DTS |= ((guint64) (*data++)) << 22;
+        if ((*data & 0x01) != 0x01) {
+            GST_WARNING ("bad DTS value");
+            return PES_PARSING_BAD;
+        }
+        pes_header->DTS |= ((guint64) (*data++ & 0xFE)) << 14;
+        pes_header->DTS |= ((guint64) (*data++)) << 7;
+        if ((*data & 0x01) != 0x01) {
+            GST_WARNING ("bad DTS value");
+            return PES_PARSING_BAD;
+        }
+        pes_header->DTS |= ((guint64) (*data++ & 0xFE)) >> 1;
+        GST_DEBUG ("DTS %" G_GUINT64_FORMAT " %" GST_TIME_FORMAT,
+                pes_header->DTS, GST_TIME_ARGS (MPEGTIME_TO_GSTTIME (pes_header->DTS)));
+        length -= 5;
+    }
+
+    tssegment->pes_payload = data;
+    tssegment->pes_payload_size = length;
 
     return PES_PARSING_OK;
 }
