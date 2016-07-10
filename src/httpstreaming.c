@@ -504,6 +504,8 @@ static gchar * request_master_m3u8_playlist (HTTPStreaming *httpstreaming, Reque
     if (buf == NULL) {
         return buf;
     }
+
+    /* channel request uri should inherit parameters of master request uri */
     regex = g_regex_new ("(<%parameters%>)", 0, 0, NULL);
     if (g_strcmp0 (request_data->parameters, "") == 0) {
         master_m3u8_playlist = g_regex_replace (regex, buf, -1, 0, "", 0, NULL);
