@@ -461,7 +461,13 @@ int main (int argc, char *argv[])
         }
     }
 
-    /* run in background? */
+    /* gstreamill is running? */
+    if (isrunning_gstreamill()) {
+        g_print ("gstreamill already running !!!\n");
+        exit (10);
+    }
+
+    /* not SINGLE_JOB_MODE and DEAMON_MODE or DEBUG_MODE? */
     if (mode != SINGLE_JOB_MODE) {
         gchar *path;
         gint ret;
@@ -472,12 +478,6 @@ int main (int argc, char *argv[])
             exit (10);
         }
 #endif
-        /* gstreamill is running? */
-        if (isrunning_gstreamill()) {
-            g_print ("gstreamill already running !!!\n");
-            exit (10);
-        }
-
         /* media directory */
         path = g_strdup_printf ("%s/dvr", MEDIA_LOCATION);
         if (!g_file_test (path, G_FILE_TEST_EXISTS)) {
@@ -504,7 +504,7 @@ int main (int argc, char *argv[])
         }
         g_free (path);
 
-        /* if DAEMON_MODE then daemonize */
+        /* if DAEMON_MODE or DEBUG_MODE then initialize log */
         if ((mode == DAEMON_MODE) || (mode == DEBUG_MODE)) {
             /* log to file */
             path = g_build_filename (log_dir, "gstreamill.log", NULL);
