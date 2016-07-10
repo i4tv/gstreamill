@@ -580,10 +580,32 @@ static gchar * get_str_parameter (gchar *parameters, gchar *parameter)
     return g_strdup_printf ("%s", value);
 }
 
+static gboolean is_channel_playlist_url_valid (RequestData *request_data)
+{
+    GRegex *regex;
+    gboolean result;
+
+    regex = g_regex_new ("^/[^/]*/encoder/[0-9]/playlist.m3u8$", G_REGEX_OPTIMIZE, 0, NULL);
+    if (g_regex_match (regex, request_data->uri, 0, NULL)) {
+        result = TRUE;
+
+    } else {
+        result = FALSE;
+    }
+    g_regex_unref (regex);
+
+    return result;
+}
+
 static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encoder_output)
 {
     gchar *m3u8playlist = NULL;
     gchar *start, *end;
+
+    if (!is_channel_playlist_url_valid (request_data)) {
+        GST_WARNING ("bad request url: %s", request_data->uri);
+        return NULL;
+    }
 
     /* time shift */
     if (g_strrstr (request_data->parameters, "timeshift") != NULL) {
@@ -678,6 +700,7 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
         is_http_progress_play_request = TRUE;
 
     } else {
+        GST_WARNING ("rquest uri %s not found", request_data->uri);
         buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
         buf_size = strlen (buf);
     }
