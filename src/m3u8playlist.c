@@ -15,6 +15,9 @@
 #include "utils.h"
 #include "m3u8playlist.h"
 
+GST_DEBUG_CATEGORY_EXTERN (GSTREAMILL);
+#define GST_CAT_DEFAULT GSTREAMILL
+
 M3U8Playlist * m3u8playlist_new (guint version, guint window_size, guint64 sequence)
 {
     M3U8Playlist *playlist;
