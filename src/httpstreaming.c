@@ -438,7 +438,7 @@ static gboolean is_http_progress_play_url (RequestData *request_data)
     }
 
     index = -1;
-    regex = g_regex_new ("^/.*/encoder/(?<encoder>[0-9]+)$", G_REGEX_OPTIMIZE, 0, NULL);
+    regex = g_regex_new ("^/[^/]*/encoder/(?<encoder>[0-9]+)$", G_REGEX_OPTIMIZE, 0, NULL);
     g_regex_match (regex, request_data->uri, 0, &match_info);
     if (g_match_info_matches (match_info)) {
         e = g_match_info_fetch_named (match_info, "encoder");
