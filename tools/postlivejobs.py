@@ -1,4 +1,6 @@
 
+# python postlivejobs.py http://localhost:20118/admin/start segmentjobs.txt
+
 import sys
 import fileinput
 import requests
