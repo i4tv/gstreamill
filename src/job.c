@@ -664,10 +664,11 @@ void job_reset (Job *job)
 {
     gchar *stat, **stats, **cpustats;
     GstDateTime *start_time;
-    gint i;
+    gint i, sval;
     EncoderOutput *encoder;
     guint version, window_size;
 
+    GST_WARNING ("reset job %s", job->name);
     job->output->sequence = get_dvr_sequence (job->output);
     job->stoping = FALSE;
     *(job->output->state) = JOB_STATE_VOID_PENDING;
@@ -690,6 +691,13 @@ void job_reset (Job *job)
     }
     job->last_start_time = gst_date_time_to_iso8601_string (start_time);
     gst_date_time_unref (start_time);
+
+    /* unlock semaphore if it's locked by crash subprocess */
+    sem_getvalue (job->output->semaphore, &sval);
+    if (sval == 0) {
+        GST_WARNING ("sval: %d, unlock job %s's semaphore", sval, job->name);
+        sem_post (job->output->semaphore);
+    }
 
     /* is live job with m3u8streaming? */
     if (!(job->is_live) || !(jobdesc_m3u8streaming (job->description))) {
