@@ -483,7 +483,10 @@ static void job_check_func (gpointer data, gpointer user_data)
         return;
     }
 
-    g_mutex_lock (&(job->access_mutex));
+    if (!g_mutex_trylock (&(job->access_mutex))) {
+        GST_WARNING ("try lock job %s's access_mutex for job check failure", job->name);
+        return;
+    }
 
     /* stat report. */
     if ((gstreamill->mode != SINGLE_JOB_MODE) && (job->worker_pid != 0)) {
