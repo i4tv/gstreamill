@@ -92,6 +92,7 @@ static void ts_segment_init (TsSegment *tssegment)
     tssegment->data = g_malloc (tssegment->allocated_size);
     tssegment->current_size = 0;
     tssegment->frames_accumulate = 0;
+    tssegment->frame_duration = 40000000; /* 40000000ns */
 
     tssegment->adapter = gst_adapter_new ();
     tssegment->offset = 0;
@@ -958,9 +959,19 @@ static NaluParsingResult h265_parse_nalu (TsSegment *tssegment)
             case GST_H265_NAL_SPS:
                 GST_DEBUG ("Found SPS");
                 res = gst_h265_parser_parse_sps (parser, nalu, &sps, TRUE);
-                tssegment->fps_num = sps.fps_num;
-                tssegment->fps_den = sps.fps_den;
-                tssegment->frame_duration = GST_SECOND * tssegment->fps_den / tssegment->fps_num;
+                if (res == GST_H265_PARSER_OK) {
+                    if (sps.fps_num != 0) {
+                        tssegment->frame_duration = GST_SECOND * sps.fps_den / sps.fps_num;
+                        GST_WARNING ("fps_num is 0, nal sps error! %ld", tssegment->frame_duration);
+
+                    } else {
+                        GST_WARNING ("fps_num is 0, nal sps error!");
+                    }
+
+                } else {
+                    GST_WARNING ("gst_h265_parser_parse_sps error, return %d", res);
+                }
+
                 GST_INFO ("frame rate: %d %d", sps.fps_num, sps.fps_den);
                 type |= NALU_SPS;
                 break;
@@ -1257,7 +1268,7 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
                     }
                     tssegment->current_size = 0;
                     tssegment->pes_packet_duration = 0;
-                    tssegment->PTS = (tssegment->frames_accumulate * tssegment->fps_den * GST_SECOND ) / tssegment->fps_num;
+                    tssegment->PTS = tssegment->frames_accumulate * tssegment->frame_duration;
                 }
 
                 tssegment->pes_packet_size = 0;
