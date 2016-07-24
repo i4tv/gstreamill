@@ -996,12 +996,12 @@ static NaluParsingResult h265_parse_nalu (TsSegment *tssegment)
                     break;
                 }
                 res = gst_h265_parser_parse_slice_hdr (parser, nalu, &slice);
-                type |= NALU_FRAME;
-                tssegment->frames_accumulate++;
-                tssegment->pes_packet_duration += tssegment->frame_duration;
-                if (res == GST_H265_PARSER_OK) {
+                if ((res == GST_H265_PARSER_OK) && slice.first_slice_segment_in_pic_flag) {
+                    type |= NALU_FRAME;
+                    tssegment->frames_accumulate++;
+                    tssegment->pes_packet_duration += tssegment->frame_duration;
                     if (GST_H265_IS_I_SLICE (&slice)) {
-                        GST_DEBUG ("Key Frame");
+                        GST_DEBUG ("Found Key Frame");
                         type |= NALU_IDR;
                     }
                 }
