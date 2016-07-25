@@ -3,6 +3,7 @@ releases are sorted from youngest to oldest.
 v-0.8.2
 - check uri
 - h.265 segment support
+- record segment in another thread, avoid send segment message fail
 
 v-0.8.1
 - tssegment can't segment sichuan local channels
