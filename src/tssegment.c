@@ -962,7 +962,6 @@ static NaluParsingResult h265_parse_nalu (TsSegment *tssegment)
                 if (res == GST_H265_PARSER_OK) {
                     if (sps.fps_num != 0) {
                         tssegment->frame_duration = GST_SECOND * sps.fps_den / sps.fps_num;
-                        GST_WARNING ("fps_num is 0, nal sps error! %ld", tssegment->frame_duration);
 
                     } else {
                         GST_WARNING ("fps_num is 0, nal sps error!");
