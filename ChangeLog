@@ -1,5 +1,11 @@
 releases are sorted from youngest to oldest.
 
+v-0.8.3
+- check first slice of a picture
+- check fps_num zero
+- gstreamill -s bug fix
+- semaphore deadlock problem
+
 v-0.8.2
 - check uri
 - h.265 segment support
