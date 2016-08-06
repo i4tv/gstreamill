@@ -1,5 +1,8 @@
 releases are sorted from youngest to oldest.
 
+v-0.8.4
+- add web style access log file
+
 v-0.8.3
 - check first slice of a picture
 - check fps_num zero
