@@ -16,6 +16,8 @@
 #include "httpstreaming.h"
 #include "utils.h"
 
+GST_DEBUG_CATEGORY_EXTERN (ACCESS);
+
 GST_DEBUG_CATEGORY_EXTERN (GSTREAMILL);
 #define GST_CAT_DEFAULT GSTREAMILL
 
@@ -638,6 +640,11 @@ static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encod
     return m3u8playlist;
 }
 
+static void access_log (RequestData *request_data)
+{
+    GST_CAT_WARNING (ACCESS, "%s - - [%%s] \"GET %s\"\n", get_address (request_data->client_addr), request_data->uri);
+}
+
 static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestData *request_data)
 {
     EncoderOutput *encoder_output;
@@ -741,9 +748,13 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
         request_data->priv_data = priv_data;
         return gst_clock_get_time (system_clock);
     }
+
+    access_log (request_data);
+
     if (encoder_output != NULL) {
         gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
     }
+
     return 0;
 }
 
@@ -756,6 +767,7 @@ static GstClockTime http_continue_process (HTTPStreaming *httpstreaming, Request
 
     priv_data = request_data->priv_data;
     encoder_output = priv_data->encoder_output;
+
     if (priv_data->buf != NULL) {
         ret = write (request_data->sock,
                 priv_data->buf + priv_data->send_position,
@@ -768,20 +780,24 @@ static GstClockTime http_continue_process (HTTPStreaming *httpstreaming, Request
             }
             g_free (priv_data->buf);
             priv_data->buf = NULL;
+
             /* progressive play? continue */
             if (is_http_progress_play_url (request_data)) {
                 priv_data->send_position = *(encoder_output->last_rap_addr) + 12;
                 priv_data->buf = NULL;
                 return gst_clock_get_time (system_clock);
             }
+
             if (encoder_output != NULL) {
                 gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
             }
+
             if (priv_data->job != NULL) {
                 g_object_unref (priv_data->job);
             }
             g_free (priv_data);
             request_data->priv_data = NULL;
+            access_log (request_data);
             return 0;
 
         } else if ((ret > 0) || ((ret == -1) && (errno == EAGAIN))) {
@@ -790,6 +806,7 @@ static GstClockTime http_continue_process (HTTPStreaming *httpstreaming, Request
             return ret > 0? 10 * GST_MSECOND + g_random_int_range (1, 1000000) : GST_CLOCK_TIME_NONE;
         }
     }
+
     if ((priv_data->livejob_age != priv_data->job->age) ||
             (*(priv_data->job->output->state) != JOB_STATE_PLAYING)) {
         if (priv_data->encoder_output != NULL) {
@@ -800,13 +817,16 @@ static GstClockTime http_continue_process (HTTPStreaming *httpstreaming, Request
         }
         g_free (request_data->priv_data);
         request_data->priv_data = NULL;
+        access_log (request_data);
         return 0;
     }
+
     if (priv_data->send_position == *(encoder_output->tail_addr)) {
         /* no more stream, wait 10ms */
         GST_DEBUG ("current:%lu == tail:%lu", priv_data->send_position, *(encoder_output->tail_addr));
         return gst_clock_get_time (system_clock) + 500 * GST_MSECOND + g_random_int_range (1, 1000000);
     }
+
     return send_chunk (encoder_output, request_data) + gst_clock_get_time (system_clock);
 }
 
@@ -818,7 +838,6 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
 
     switch (request_data->status) {
         case HTTP_REQUEST:
-            GST_WARNING ("request from %s, uri is %s", get_address (request_data->client_addr), request_data->uri);
             return http_request_process (httpstreaming, request_data);
 
         case HTTP_CONTINUE:

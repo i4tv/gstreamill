@@ -18,7 +18,9 @@ struct _Log {
     GObject parent;
 
     gchar *log_path;
+    gchar *access_path;
     FILE *log_hd;
+    FILE *access_hd;
     GstLogFunction func;
 };
 

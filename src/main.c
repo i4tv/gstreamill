@@ -33,6 +33,8 @@
 #define GSTREAMILL_GROUP "gstreamill"
 #define PID_FILE "/run/gstreamill/gstreamill.pid"
 
+GST_DEBUG_CATEGORY(ACCESS);
+
 GST_DEBUG_CATEGORY(GSTREAMILL);
 #define GST_CAT_DEFAULT GSTREAMILL
 
@@ -162,11 +164,11 @@ static gint prepare_gstreamill_run_dir ()
     return 0;
 }
 
-static gint init_log (gchar *log_path)
+static gint init_log (gchar *log_path, gchar *access_path)
 {
     gint ret;
 
-    _log = log_new ("log_path", log_path, NULL);
+    _log = log_new ("log_path", log_path, "access_path", access_path, NULL);
 
     ret = log_set_log_handler (_log);
     if (ret != 0) {
@@ -291,6 +293,7 @@ int main (int argc, char *argv[])
         exit (1);
     }
     g_option_context_free (ctx);
+    GST_DEBUG_CATEGORY_INIT (ACCESS, "access", 0, "gstreamill access");
     GST_DEBUG_CATEGORY_INIT (GSTREAMILL, "gstreamill", 0, "gstreamill log");
 
     if (version) {
@@ -402,7 +405,7 @@ int main (int argc, char *argv[])
         } else {
             log_path = g_build_filename (log_dir, name, "gstreamill.log", NULL);
         }
-        ret = init_log (log_path);
+        ret = init_log (log_path, NULL);
         g_free (log_path);
         if (ret != 0) {
             exit (7);
@@ -469,7 +472,7 @@ int main (int argc, char *argv[])
 
     /* not SINGLE_JOB_MODE and DEAMON_MODE or DEBUG_MODE? */
     if (mode != SINGLE_JOB_MODE) {
-        gchar *path;
+        gchar *path, *log_path, *access_path;
         gint ret;
 #if 0
         /* pid file exist? */
@@ -507,9 +510,11 @@ int main (int argc, char *argv[])
         /* if DAEMON_MODE or DEBUG_MODE then initialize log */
         if ((mode == DAEMON_MODE) || (mode == DEBUG_MODE)) {
             /* log to file */
-            path = g_build_filename (log_dir, "gstreamill.log", NULL);
-            ret = init_log (path);
-            g_free (path);
+            log_path = g_build_filename (log_dir, "gstreamill.log", NULL);
+            access_path = g_build_filename (log_dir, "access.log", NULL);
+            ret = init_log (log_path, access_path);
+            g_free (log_path);
+            g_free (access_path);
             if (ret != 0) {
                 g_print ("Init log error, ret %d.\n", ret);
                 exit (11);
