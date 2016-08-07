@@ -168,22 +168,24 @@ static void log_func (GstDebugCategory *category,
 
     cat = gst_debug_category_get_name (category);
     datetime = g_date_time_new_now_local ();
-    date = g_date_time_format (datetime, "%b %d %H:%M:%S");
     if (g_strcmp0 (cat, "access") == 0) {
+        date = g_date_time_format (datetime, "%b/%d/%Y:%H:%M:%S %z");
         fprintf (log->access_hd, gst_debug_message_get (message), date);
+        g_free (date);
         fflush (log->access_hd);
 
     } else {
+        date = g_date_time_format (datetime, "%b %d %H:%M:%S");
         fprintf (log->log_hd, "%s.%d %s" CAT_FMT "%s\n",
             date,
             g_date_time_get_microsecond (datetime),
             gst_debug_level_get_name (level),
             cat, file, line,
             gst_debug_message_get (message));
+        g_free (date);
         fflush (log->log_hd);
     }
     g_date_time_unref (datetime);
-    g_free (date);
 }
 
 gint log_set_log_handler (Log *log)

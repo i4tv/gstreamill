@@ -28,6 +28,7 @@ GST_DEBUG_CATEGORY_EXTERN (GSTREAMILL);
 enum {
     GSTREAMILL_PROP_0,
     GSTREAMILL_PROP_LOGDIR,
+    GSTREAMILL_PROP_LOG,
     GSTREAMILL_PROP_EXEPATH,
     GSTREAMILL_PROP_MODE,
 };
@@ -68,6 +69,14 @@ static void gstreamill_class_init (GstreamillClass *gstreamillclass)
             G_PARAM_WRITABLE | G_PARAM_READABLE
             );
     g_object_class_install_property (g_object_class, GSTREAMILL_PROP_LOGDIR, param);
+
+    param = g_param_spec_pointer (
+            "log",
+            "log",
+            NULL,
+            G_PARAM_WRITABLE | G_PARAM_READABLE
+            );
+    g_object_class_install_property (g_object_class, GSTREAMILL_PROP_LOG, param);
 
     param = g_param_spec_string (
             "exe_path",
@@ -121,6 +130,10 @@ static void gstreamill_set_property (GObject *obj, guint prop_id, const GValue *
             GSTREAMILL (obj)->log_dir = (gchar *)g_value_dup_string (value);
             break;
 
+        case GSTREAMILL_PROP_LOG:
+            GSTREAMILL (obj)->log = (Log *)g_value_get_pointer (value);
+            break;
+
         case GSTREAMILL_PROP_EXEPATH:
             GSTREAMILL (obj)->exe_path = (gchar *)g_value_dup_string (value);
             break;
@@ -142,6 +155,10 @@ static void gstreamill_get_property (GObject *obj, guint prop_id, GValue *value,
 
         case GSTREAMILL_PROP_LOGDIR:
             g_value_set_string (value, gstreamill->log_dir);
+            break;
+
+        case GSTREAMILL_PROP_LOG:
+            g_value_set_pointer (value, gstreamill->log);
             break;
 
         case GSTREAMILL_PROP_EXEPATH:
@@ -253,9 +270,8 @@ log_rotate (Gstreamill *gstreamill)
     GSList *list;
 
     /* gstreamill log rotate. */
-    log_path = g_build_filename (gstreamill->log_dir, "gstreamill.log", NULL);
-    rotate_log (gstreamill, log_path, getpid ());
-    g_free (log_path);
+    rotate_log (gstreamill, gstreamill->log->log_path, getpid ());
+    rotate_log (gstreamill, gstreamill->log->access_path, getpid ());
 
     /* jobs log rotate. */
     list = gstreamill->job_list;
@@ -612,8 +628,6 @@ static void dvr_clean (Gstreamill *gstreamill)
     gstreamill->last_dvr_clean_time = now;
 }
 
-extern Log *_log;
-
 static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClockID id, gpointer user_data)
 {
     GstClockID nextid;
@@ -641,8 +655,9 @@ static gboolean gstreamill_monitor (GstClock *clock, GstClockTime time, GstClock
 
         datetime = g_date_time_new_now_local ();
         date = g_date_time_format (datetime, "%b %d %H:%M:%S");
-        fprintf (_log->log_hd, "\n*** %s : gstreamill stoped ***\n\n", date);
-        fflush (_log->log_hd);
+        fprintf (gstreamill->log->log_hd, "\n*** %s : gstreamill stoped ***\n\n", date);
+        fflush (gstreamill->log->log_hd);
+        fflush (gstreamill->log->access_hd);
         g_free (date);
         g_date_time_unref (datetime);
         g_usleep (500000);
@@ -975,7 +990,7 @@ void gstreamill_stop (Gstreamill *gstreamill)
 
     datetime = g_date_time_new_now_local ();
     date = g_date_time_format (datetime, "%b %d %H:%M:%S");
-    fprintf (_log->log_hd, "\n*** %s : stoping gstreamill ***\n\n", date);
+    fprintf (gstreamill->log->log_hd, "\n*** %s : stoping gstreamill ***\n\n", date);
     g_free (date);
     g_date_time_unref (datetime);
 

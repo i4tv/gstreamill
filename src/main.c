@@ -553,7 +553,7 @@ int main (int argc, char *argv[])
     loop = g_main_loop_new (NULL, FALSE);
 
     /* gstreamill */
-    gstreamill = gstreamill_new ("mode", mode, "log_dir", log_dir, "exe_path", exe_path, NULL);
+    gstreamill = gstreamill_new ("mode", mode, "log_dir", log_dir, "log", _log, "exe_path", exe_path, NULL);
     if (gstreamill_start (gstreamill) != 0) {
         GST_ERROR ("start gstreamill error, exit.");
         remove_pid_file ();

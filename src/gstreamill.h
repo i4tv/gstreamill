@@ -12,6 +12,7 @@
 
 #include "config.h"
 #include "job.h"
+#include "log.h"
 
 #define SYNC_THRESHHOLD 3000000000 /* 1000ms */
 #define HEARTBEAT_THRESHHOLD 7000000000 /* 7000ms */
@@ -39,8 +40,9 @@ struct _Gstreamill {
     gchar *start_time;
 
     /* message receive thread */
-    GThread *msg_thread;
+    Log *log;
     gchar *log_dir;
+    GThread *msg_thread;
     guint64 last_dvr_clean_time;
 
     /* segment record thread */

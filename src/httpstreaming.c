@@ -673,10 +673,11 @@ static void access_log (RequestData *request_data)
         }
     }
 
-    GST_CAT_WARNING (ACCESS, "%s - - [%%s] \"%s %s HTTP/%s\" %u %lu \"-\" \"%s\"\n",
+    GST_CAT_WARNING (ACCESS, "%s - - [%%s] \"%s %s?%s HTTP/%s\" %u %lu \"-\" \"%s\"\n",
             get_address (request_data->client_addr),
             http_method_str[request_data->method],
             request_data->uri,
+            request_data->parameters,
             http_version_str[request_data->version],
             request_data->response_status,
             request_data->response_body_size,
