@@ -343,6 +343,8 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
     if (clock_gettime (CLOCK_REALTIME, &ts) == -1) {
         GST_ERROR ("get_mpeg2ts_segment clock_gettime error: %s", g_strerror (errno));
         *buf = g_strdup_printf (http_500, PACKAGE_NAME, PACKAGE_VERSION);
+        request_data->response_status = 500;
+        request_data->response_body_size = http_500_body_size;
         buf_size = strlen (*buf);
         return buf_size;
     }
@@ -353,6 +355,8 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
         }
         GST_ERROR ("get_mpeg2ts_segment sem_timedwait failure: %s", g_strerror (errno));
         *buf = g_strdup_printf (http_500, PACKAGE_NAME, PACKAGE_VERSION);
+        request_data->response_status = 500;
+        request_data->response_body_size = http_500_body_size;
         buf_size = strlen (*buf);
         return buf_size;
     }
@@ -385,6 +389,8 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
             }
         }
         buf_size = strlen (header) + gop_size;
+        request_data->response_status = 200;
+        request_data->response_body_size = gop_size;
         g_free (header);
 
     } else {
@@ -401,9 +407,13 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
             g_error_free (err);
             GST_WARNING ("segment not found: %s", request_data->uri);
             *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+            request_data->response_body_size = http_404_body_size;
+            request_data->response_status = 404;
             buf_size = strlen (*buf);
 
         } else {
+            request_data->response_status = 200;
+            request_data->response_body_size = buf_size;
             max_age = encoder_output->dvr_duration - (g_get_real_time () - timestamp) / 1000000;
             cache_control = g_strdup_printf ("max-age=%lu", max_age);
             header = g_strdup_printf (http_200,
@@ -521,6 +531,7 @@ static gchar * request_master_m3u8_playlist (HTTPStreaming *httpstreaming, Reque
     g_regex_unref (regex);
 
     if (master_m3u8_playlist != NULL) {
+        request_data->response_body_size = strlen (master_m3u8_playlist);
         buf = g_strdup_printf (http_200,
                 PACKAGE_NAME,
                 PACKAGE_VERSION,
@@ -640,9 +651,36 @@ static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encod
     return m3u8playlist;
 }
 
+static const gchar *http_method_str[] = {
+    "GET",
+    "POST"
+};
+
+static const gchar *http_version_str[] = {
+    "1.0",
+    "1.1"
+};
+
 static void access_log (RequestData *request_data)
 {
-    GST_CAT_WARNING (ACCESS, "%s - - [%%s] \"GET %s\"\n", get_address (request_data->client_addr), request_data->uri);
+    gint i;
+    gchar *user_agent;
+
+    user_agent = "-";
+    for (i = 0; i < 64; i++) {
+        if (g_strcmp0 (request_data->headers[i].name, "User-Agent") == 0) {
+            user_agent = request_data->headers[i].value;
+        }
+    }
+
+    GST_CAT_WARNING (ACCESS, "%s - - [%%s] \"%s %s HTTP/%s\" %u %lu \"-\" \"%s\"\n",
+            get_address (request_data->client_addr),
+            http_method_str[request_data->method],
+            request_data->uri,
+            http_version_str[request_data->version],
+            request_data->response_status,
+            request_data->response_body_size,
+            user_agent);
 }
 
 static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestData *request_data)
@@ -661,10 +699,13 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
         /* not crossdomain request if buf == NULL */
         if ((buf == NULL) && g_str_has_suffix (request_data->uri, "playlist.m3u8")) {
             buf = request_master_m3u8_playlist (httpstreaming, request_data);
+            request_data->response_status = 200;
         }
         /* not master m3u8 playlist request if buf == NULL */
         if (buf == NULL) {
             buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+            request_data->response_status = 404;
+            request_data->response_body_size = http_404_body_size;
         }
         buf_size = strlen (buf);
 
@@ -672,11 +713,14 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
         /* not ready */
         GST_DEBUG ("%s not ready.", request_data->uri);
         buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+        request_data->response_status = 404;
+        request_data->response_body_size = http_404_body_size;
         buf_size = strlen (buf);
 
     } else if (g_str_has_suffix (request_data->uri, ".ts")) {
         /* get mpeg2 transport stream segment */
         buf_size = get_mpeg2ts_segment (request_data, encoder_output, &buf);
+        request_data->response_status = 200;
 
     } else if (g_str_has_suffix (request_data->uri, "playlist.m3u8")) {
         /* get m3u8 playlist */
@@ -686,6 +730,8 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
         if (m3u8playlist == NULL) {
             GST_WARNING ("Get %s's playlist failure: not found", request_data->uri);
             buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+            request_data->response_status = 404;
+            request_data->response_body_size = http_404_body_size;
 
         } else {
             cache_control = g_strdup_printf ("max-age=%lu", encoder_output->segment_duration / GST_SECOND);
@@ -696,6 +742,8 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
                     strlen (m3u8playlist),
                     cache_control,
                     m3u8playlist);
+            request_data->response_status = 200;
+            request_data->response_body_size = strlen (m3u8playlist);
             g_free (cache_control);
             g_free (m3u8playlist);
         }
@@ -711,6 +759,8 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
     } else {
         GST_WARNING ("rquest uri %s not found", request_data->uri);
         buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+        request_data->response_status = 404;
+        request_data->response_body_size = http_404_body_size;
         buf_size = strlen (buf);
     }
 

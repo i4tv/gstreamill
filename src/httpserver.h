@@ -17,6 +17,7 @@
                  "Content-Length: 30\r\n" \
                  "Connection: Close\r\n\r\n" \
                  "<h1>Internal Server Error</h1>"
+#define http_500_body_size 30
 
 #define http_501 "HTTP/1.1 501 Not Implemented\r\n" \
                  "Server: %s-%s\r\n" \
@@ -31,6 +32,7 @@
                  "Content-Length: 18\r\n" \
                  "Connection: Close\r\n\r\n" \
                  "<h1>Not found</h1>"
+#define http_404_body_size 18
 
 #define http_400 "HTTP/1.1 400 Bad Request\r\n" \
                  "Server: %s-%s\r\n" \
@@ -118,6 +120,9 @@ typedef struct _RequestData {
     gint num_headers;
     struct http_headers headers[64];
     gpointer priv_data; /* private user data */
+
+    guint response_status;
+    guint64 response_body_size;
 } RequestData;
 
 struct _HTTPServer {
