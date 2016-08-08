@@ -471,6 +471,7 @@ static gint accept_socket (HTTPServer *http_server)
     RequestData *request_data;
     gint request_data_queue_len;
 
+    in_len = sizeof (in_addr);
     for (;;) {
         /* repeat accept until -1 returned */
         accepted_sock = accept (http_server->listen_sock, &in_addr, &in_len);
