@@ -38,13 +38,6 @@ GST_DEBUG_CATEGORY(ACCESS);
 GST_DEBUG_CATEGORY(GSTREAMILL);
 #define GST_CAT_DEFAULT GSTREAMILL
 
-Log *_log;
-
-static void sighandler (gint number)
-{
-    log_reopen (_log);
-}
-
 static void stop_job (gint number)
 {
     GDateTime *datetime;
@@ -52,7 +45,7 @@ static void stop_job (gint number)
 
     datetime = g_date_time_new_now_local ();
     date = g_date_time_format (datetime, "%b %d %H:%M:%S");
-    fprintf (_log->log_hd, "\n*** %s : job stoped ***\n\n", date);
+    GST_WARNING ("\n\n*** %s : job stoped ***", date);
     g_free (date);
     g_date_time_unref (datetime);
 
@@ -164,23 +157,6 @@ static gint prepare_gstreamill_run_dir ()
     return 0;
 }
 
-static gint init_log (gchar *log_path, gchar *access_path)
-{
-    gint ret;
-
-    _log = log_new ("log_path", log_path, "access_path", access_path, NULL);
-
-    ret = log_set_log_handler (_log);
-    if (ret != 0) {
-        return ret;
-    }
-
-    /* remove gstInfo default handler. */
-    gst_debug_remove_log_function (gst_debug_log_default);
-
-    return 0;
-}
-
 static gboolean stop = FALSE;
 static gboolean debug = FALSE;
 static gboolean version = FALSE;
@@ -284,6 +260,7 @@ int main (int argc, char *argv[])
     struct rlimit rlim;
     GDateTime *datetime;
     gchar exe_path[512], *date;
+    Log *log;
 
     ctx = g_option_context_new (NULL);
     g_option_context_add_main_entries (ctx, options, NULL);
@@ -405,16 +382,22 @@ int main (int argc, char *argv[])
         } else {
             log_path = g_build_filename (log_dir, name, "gstreamill.log", NULL);
         }
-        ret = init_log (log_path, NULL);
+
+        /* initialize log */
+        log = log_new ("log_path", log_path, NULL);
         g_free (log_path);
+        ret = log_set_log_handler (log);
         if (ret != 0) {
             exit (7);
         }
 
+        /* remove gstInfo default handler. */
+        gst_debug_remove_log_function (gst_debug_log_default);
+
         /* launch a job. */
         datetime = g_date_time_new_now_local ();
         date = g_date_time_format (datetime, "%b %d %H:%M:%S");
-        fprintf (_log->log_hd, "\n*** %s : job %s starting ***\n\n", date, name);
+        GST_WARNING ("\n\n*** %s : job %s starting ***", date, name);
         g_date_time_unref (datetime);
         g_free (date);
         job = job_new ("name", name, "job", job_desc, NULL);
@@ -443,14 +426,13 @@ int main (int argc, char *argv[])
         }
         datetime = g_date_time_new_now_local ();
         date = g_date_time_format (datetime, "%b %d %H:%M:%S");
-        fprintf (_log->log_hd, "\n*** %s : job %s started ***\n\n", date, name);
+        GST_WARNING ("\n\n*** %s : job %s started ***", date, name);
         g_date_time_unref (datetime);
         g_free (date);
         g_free (name);
         g_free (job_desc);
 
         signal (SIGPIPE, SIG_IGN);
-        signal (SIGUSR1, sighandler);
         signal (SIGTERM, stop_job);
 
         g_main_loop_run (loop);
@@ -509,23 +491,27 @@ int main (int argc, char *argv[])
 
         /* if DAEMON_MODE or DEBUG_MODE then initialize log */
         if ((mode == DAEMON_MODE) || (mode == DEBUG_MODE)) {
-            /* log to file */
+            /* initialize log */
             log_path = g_build_filename (log_dir, "gstreamill.log", NULL);
             access_path = g_build_filename (log_dir, "access.log", NULL);
-            ret = init_log (log_path, access_path);
+            log = log_new ("log_path", log_path, "access_path", access_path, NULL);
             g_free (log_path);
             g_free (access_path);
+            ret = log_set_log_handler (log);
             if (ret != 0) {
                 g_print ("Init log error, ret %d.\n", ret);
                 exit (11);
             }
+
+            /* remove gstInfo default handler. */
+            gst_debug_remove_log_function (gst_debug_log_default);
         }
 
         /* if DAEMON_MODE then daemonize */
         if (mode == DAEMON_MODE) {
             /* daemonize */
             if (daemon (0, 0) != 0) {
-                fprintf (_log->log_hd, "Failed to daemonize");
+                fprintf (log->log_hd, "Failed to daemonize");
                 remove_pid_file ();
                 exit (1);
             }
@@ -537,12 +523,11 @@ int main (int argc, char *argv[])
         }
 
         /* customize signal */
-        signal (SIGUSR1, sighandler);
         signal (SIGTERM, stop_gstreamill);
 
         datetime = g_date_time_new_now_local ();
         date = g_date_time_format (datetime, "%b %d %H:%M:%S");
-        GST_WARNING ("\n*** %s : gstreamill started ***\n\n", date);
+        GST_WARNING ("\n\n*** %s : gstreamill started ***", date);
         g_free (date);
         g_date_time_unref (datetime);
     }
@@ -552,8 +537,13 @@ int main (int argc, char *argv[])
 
     loop = g_main_loop_new (NULL, FALSE);
 
-    /* gstreamill */
-    gstreamill = gstreamill_new ("mode", mode, "log_dir", log_dir, "log", _log, "exe_path", exe_path, NULL);
+    /* start gstreamill */
+    if ((mode == DAEMON_MODE) || (mode == DEBUG_MODE)) {
+        gstreamill = gstreamill_new ("mode", mode, "log_dir", log_dir, "log", log, "exe_path", exe_path, NULL);
+
+    } else {
+        gstreamill = gstreamill_new ("mode", mode, "log_dir", log_dir, "exe_path", exe_path, NULL);
+    }
     if (gstreamill_start (gstreamill) != 0) {
         GST_ERROR ("start gstreamill error, exit.");
         remove_pid_file ();

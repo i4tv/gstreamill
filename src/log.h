@@ -40,6 +40,5 @@ GType log_get_type (void);
 
 gint log_set_log_handler (Log *log);
 gint log_set_stdout_handler ();
-gint log_reopen (Log *log);
 
 #endif /* __LOG_H__ */

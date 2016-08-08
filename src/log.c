@@ -219,9 +219,3 @@ gint log_set_log_handler (Log *log)
     g_free (dir);
 }
 
-gint log_reopen (Log *log)
-{
-    log->log_hd = freopen (log->log_path, "w", log->log_hd);
-
-    return 0;
-}

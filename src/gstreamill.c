@@ -249,7 +249,14 @@ static void rotate_log (Gstreamill *gstreamill, gchar *log_path, pid_t pid)
         g_rename (log_path, name);
         g_free (name);
         GST_DEBUG ("log rotate %s, process pid %d.", log_path, pid);
-        kill (pid, SIGUSR1); /* reopen log file. */
+
+        if (g_strcmp0 (log_path, gstreamill->log->log_path) == 0) {
+            gstreamill->log->log_hd = freopen (gstreamill->log->log_path, "w", gstreamill->log->log_hd);
+
+        } else if (g_strcmp0 (log_path, gstreamill->log->access_path) == 0) {
+            gstreamill->log->access_hd = freopen (gstreamill->log->access_path, "w", gstreamill->log->access_hd);
+        }
+
         name = g_strdup_printf ("%s-*", log_path);
         glob (name, 0, NULL, &pglob);
         if (pglob.gl_pathc > LOG_ROTATE) {
