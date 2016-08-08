@@ -255,6 +255,9 @@ static void rotate_log (Gstreamill *gstreamill, gchar *log_path, pid_t pid)
 
         } else if (g_strcmp0 (log_path, gstreamill->log->access_path) == 0) {
             gstreamill->log->access_hd = freopen (gstreamill->log->access_path, "w", gstreamill->log->access_hd);
+
+        } else {
+            kill (pid, SIGUSR1); /* reopen job's log file. */
         }
 
         name = g_strdup_printf ("%s-*", log_path);
@@ -269,8 +272,7 @@ static void rotate_log (Gstreamill *gstreamill, gchar *log_path, pid_t pid)
     }
 }
 
-    static void
-log_rotate (Gstreamill *gstreamill)
+static void log_rotate (Gstreamill *gstreamill)
 {
     gchar *log_path;
     Job *job;

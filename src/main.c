@@ -38,6 +38,13 @@ GST_DEBUG_CATEGORY(ACCESS);
 GST_DEBUG_CATEGORY(GSTREAMILL);
 #define GST_CAT_DEFAULT GSTREAMILL
 
+Log *_log;
+
+static void sighandler (gint number)
+{
+    _log->log_hd = freopen (_log->log_path, "w", _log->log_hd);
+}
+
 static void stop_job (gint number)
 {
     GDateTime *datetime;
@@ -384,9 +391,9 @@ int main (int argc, char *argv[])
         }
 
         /* initialize log */
-        log = log_new ("log_path", log_path, NULL);
+        _log = log_new ("log_path", log_path, NULL);
         g_free (log_path);
-        ret = log_set_log_handler (log);
+        ret = log_set_log_handler (_log);
         if (ret != 0) {
             exit (7);
         }
@@ -397,7 +404,7 @@ int main (int argc, char *argv[])
         /* launch a job. */
         datetime = g_date_time_new_now_local ();
         date = g_date_time_format (datetime, "%b %d %H:%M:%S");
-        GST_WARNING ("\n\n*** %s : job %s starting ***", date, name);
+        fprintf (_log->log_hd, "\n*** %s : job %s starting ***\n", date, name);
         g_date_time_unref (datetime);
         g_free (date);
         job = job_new ("name", name, "job", job_desc, NULL);
@@ -426,13 +433,14 @@ int main (int argc, char *argv[])
         }
         datetime = g_date_time_new_now_local ();
         date = g_date_time_format (datetime, "%b %d %H:%M:%S");
-        GST_WARNING ("\n\n*** %s : job %s started ***", date, name);
+        fprintf (_log->log_hd, "\n*** %s : job %s started ***\n", date, name);
         g_date_time_unref (datetime);
         g_free (date);
         g_free (name);
         g_free (job_desc);
 
         signal (SIGPIPE, SIG_IGN);
+        signal (SIGUSR1, sighandler);
         signal (SIGTERM, stop_job);
 
         g_main_loop_run (loop);
