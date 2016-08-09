@@ -583,7 +583,6 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
     } else if (g_str_has_suffix (request_data->uri, ".ts")) {
         /* get mpeg2 transport stream segment */
         buf_size = get_mpeg2ts_segment (request_data, encoder_output, &buf);
-        request_data->response_status = 200;
 
     } else if (g_str_has_suffix (request_data->uri, "playlist.m3u8")) {
         /* get m3u8 playlist */
@@ -861,6 +860,7 @@ static GstClockTime http_continue_process (HTTPStreaming *httpstreaming, Request
             }
             g_free (priv_data);
             request_data->priv_data = NULL;
+            access_log (request_data);
             return 0;
 
         } else if ((ret > 0) || ((ret == -1) && (errno == EAGAIN))) {
