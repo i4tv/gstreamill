@@ -38,7 +38,7 @@ M3U8Playlist * m3u8playlist_new (guint version, guint window_size, guint64 seque
 void m3u8playlist_free (M3U8Playlist *playlist);
 gint m3u8playlist_add_entry (M3U8Playlist *playlist, const gchar *url, gfloat duration);
 gchar * m3u8playlist_live_get_playlist (M3U8Playlist *playlist); 
-gchar * m3u8playlist_timeshift_get_playlist (gchar *path, gint64 offset); 
+gchar * m3u8playlist_timeshift_get_playlist (gchar *path, guint version, guint window_size, gint64 offset); 
 gchar * m3u8playlist_callback_get_playlist (gchar *path, guint64 dvr_duration, gchar *start, gchar *end); 
 
 #endif /* __M3U8PLAYLIST_H__ */

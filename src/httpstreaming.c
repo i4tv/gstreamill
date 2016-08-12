@@ -482,14 +482,20 @@ static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encod
         gint64 offset;
 
         offset = get_gint64_parameter (request_data->parameters, "timeshift");
-        m3u8playlist = m3u8playlist_timeshift_get_playlist (encoder_output->record_path, offset);
+        m3u8playlist = m3u8playlist_timeshift_get_playlist (encoder_output->record_path,
+                                                            encoder_output->version,
+                                                            encoder_output->playlist_window_size,
+                                                            offset);
 
         /* callback */
     } else if (g_strrstr (request_data->parameters, "start") && g_strrstr (request_data->parameters, "end")) {
         start = get_str_parameter (request_data->parameters, "start");
         end = get_str_parameter (request_data->parameters, "end");
         if ((start != NULL) && (end != NULL)) {
-            m3u8playlist = m3u8playlist_callback_get_playlist (encoder_output->record_path, encoder_output->dvr_duration, start, end);
+            m3u8playlist = m3u8playlist_callback_get_playlist (encoder_output->record_path,
+                                                            encoder_output->dvr_duration,
+                                                            start,
+                                                            end);
         }
         if (start != NULL) {
             g_free (start);

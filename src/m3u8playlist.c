@@ -163,7 +163,7 @@ gchar * m3u8playlist_live_get_playlist (M3U8Playlist *playlist)
     return p;
 }
 
-gchar * m3u8playlist_timeshift_get_playlist (gchar *path, gint64 offset)
+gchar * m3u8playlist_timeshift_get_playlist (gchar *path, guint version, guint window_size, gint64 offset)
 {
     M3U8Playlist *m3u8playlist = NULL;
     gint i, j;
@@ -187,7 +187,7 @@ gchar * m3u8playlist_timeshift_get_playlist (gchar *path, gint64 offset)
                 if ((g_ascii_strtoull (pp[0], NULL, 10) / 1000000) <= (shift_position % 3600)) {
                     /* sequence: g_ascii_strtoull (pp[1], NULL, 10) */
                     sequence = g_ascii_strtoull (pp[1], NULL, 10);
-                    m3u8playlist = m3u8playlist_new (3, 3, sequence);
+                    m3u8playlist = m3u8playlist_new (version, window_size, sequence);
                     /* remove .ts */
                     pp[2][strlen (pp[2]) - 3] = '\0';
                     p -= 11;
@@ -229,7 +229,7 @@ gchar * m3u8playlist_timeshift_get_playlist (gchar *path, gint64 offset)
                 pp[2][strlen (pp[2]) - 3] = '\0';
                 p -= 11;
                 m3u8playlist_add_entry (m3u8playlist, p, g_strtod ((pp[2]), NULL));
-                if (m3u8playlist->entries->length == 3) {
+                if (m3u8playlist->entries->length == window_size) {
                     g_strfreev (pp);
                     break;
                 }
@@ -238,7 +238,7 @@ gchar * m3u8playlist_timeshift_get_playlist (gchar *path, gint64 offset)
         }
         g_free (pattern);
         globfree (&pglob);
-        if (m3u8playlist->entries->length == 3) {
+        if (m3u8playlist->entries->length == window_size) {
             break;
         }
     }

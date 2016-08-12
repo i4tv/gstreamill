@@ -535,7 +535,9 @@ gint job_output_initialize (Job *job)
     /* initialize m3u8 and dvr parameters */
     for (i = 0; i < output->encoder_count; i++) {
         output->encoders[i].m3u8_playlist = NULL;
+        output->encoders[i].version = jobdesc_m3u8streaming_version (job->description);
         output->encoders[i].segment_duration = jobdesc_m3u8streaming_segment_duration (job->description);
+        output->encoders[i].playlist_window_size = jobdesc_m3u8streaming_window_size (job->description);
         output->encoders[i].system_clock = job->system_clock;
         /* timeshift and dvr */
         output->encoders[i].record_path = NULL;
@@ -666,7 +668,6 @@ void job_reset (Job *job)
     GstDateTime *start_time;
     gint i, sval;
     EncoderOutput *encoder;
-    guint version, window_size;
 
     GST_WARNING ("reset job %s", job->name);
     job->output->sequence = get_dvr_sequence (job->output);
@@ -704,12 +705,6 @@ void job_reset (Job *job)
         return;
     }
 
-    version = jobdesc_m3u8streaming_version (job->description);
-    if (version == 0) {
-        version = 3;
-    }
-    window_size = jobdesc_m3u8streaming_window_size (job->description);
-
     for (i = 0; i < job->output->encoder_count; i++) {
         encoder = &(job->output->encoders[i]);
 
@@ -720,7 +715,7 @@ void job_reset (Job *job)
         if (encoder->m3u8_playlist != NULL) {
             m3u8playlist_free (encoder->m3u8_playlist);
         }
-        encoder->m3u8_playlist = m3u8playlist_new (version, window_size, 0);
+        encoder->m3u8_playlist = m3u8playlist_new (encoder->version, encoder->playlist_window_size, 0);
         /* reset last segment timestamp 0 */
         encoder->last_timestamp = 0;
     }
