@@ -529,7 +529,7 @@ static void access_log (RequestData *request_data)
     gchar *user_agent, parameters[1024];
 
     user_agent = "-";
-    for (i = 0; i < 64; i++) {
+    for (i = 0; i < request_data->num_headers; i++) {
         if (g_strcmp0 (request_data->headers[i].name, "User-Agent") == 0) {
             user_agent = request_data->headers[i].value;
             break;
