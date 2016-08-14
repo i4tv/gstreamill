@@ -481,7 +481,8 @@ static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encod
     if (g_strrstr (request_data->parameters, "timeshift") != NULL) {
         gint64 offset;
 
-        offset = get_gint64_parameter (request_data->parameters, "timeshift");
+        offset = get_gint64_parameter (request_data->parameters, "timeshift") +
+                 encoder_output->playlist_window_size * encoder_output->segment_duration / GST_SECOND;
         m3u8playlist = m3u8playlist_timeshift_get_playlist (encoder_output->record_path,
                                                             encoder_output->version,
                                                             encoder_output->playlist_window_size,
@@ -531,6 +532,7 @@ static void access_log (RequestData *request_data)
     for (i = 0; i < 64; i++) {
         if (g_strcmp0 (request_data->headers[i].name, "User-Agent") == 0) {
             user_agent = request_data->headers[i].value;
+            break;
         }
     }
 
