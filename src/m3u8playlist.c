@@ -313,7 +313,7 @@ gchar * m3u8playlist_callback_get_playlist (gchar *path, guint64 dvr_duration, g
         }
 
         segments_dir = timestamp_to_segment_dir (time); 
-        pattern = g_strdup_printf ("%s/%s/*", path, segments_dir);
+        pattern = g_strdup_printf ("%s/%s/*_*_*.ts", path, segments_dir);
         if (glob (pattern, 0, NULL, &pglob) == GLOB_NOMATCH) {
             g_free (segments_dir);
             continue;
@@ -323,7 +323,9 @@ gchar * m3u8playlist_callback_get_playlist (gchar *path, guint64 dvr_duration, g
             format = g_strdup_printf ("%s/%s/%%lu_", path, segments_dir);
             g_free (segments_dir);
             for (i = 0; i < pglob.gl_pathc; i++) {
-                sscanf (pglob.gl_pathv[i], format, &us);
+                if (1 != sscanf (pglob.gl_pathv[i], format, &us)) {
+                    continue;
+                }
                 if ((us >= start_us) && (us <= end_us)) {
                     p = &(pglob.gl_pathv[i][strlen (path) + 1]);
                     pp = g_strsplit (p, "_", 0);
