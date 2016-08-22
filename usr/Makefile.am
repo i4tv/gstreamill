@@ -74,7 +74,8 @@ localeszh_CN_DATA = \
 EXTRA_DIST = lib local
 
 install-exec-hook:
-	test -s /usr/lib/systemd/system && { \
+	ps -p1 | grep systemd && { \
+	    mkdir -p /usr/lib/systemd/system; \
 	    sed -e 's:$$(bindir):$(bindir):' lib/systemd/system/gstreamill.service.in > lib/systemd/system/gstreamill.service; \
 	    install -c -m 644 lib/systemd/system/gstreamill.service '/usr/lib/systemd/system'; \
 	} || true
