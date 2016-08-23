@@ -582,7 +582,7 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
 
     } else if (!is_encoder_output_ready (encoder_output)) {
         /* not ready */
-        GST_DEBUG ("%s not ready.", request_data->uri);
+        GST_WARNING ("%s not ready.", request_data->uri);
         buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
         request_data->response_status = 404;
         request_data->response_body_size = http_404_body_size;
@@ -621,7 +621,6 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
 
     } else if (is_http_progress_play_url (request_data)) {
         /* http progressive streaming request */
-        GST_INFO ("Play %s.", request_data->uri);
         buf = g_strdup_printf (http_chunked, PACKAGE_NAME, PACKAGE_VERSION);
         buf_size = strlen (buf);
         is_http_progress_play_request = TRUE;
@@ -629,7 +628,6 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
         request_data->response_body_size = 0;
 
     } else {
-        GST_WARNING ("rquest uri %s not found", request_data->uri);
         buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
         request_data->response_status = 404;
         request_data->response_body_size = http_404_body_size;
