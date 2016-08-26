@@ -239,15 +239,20 @@ GType gstreamill_get_type (void)
 static void rotate_log (Gstreamill *gstreamill, gchar *log_path, pid_t pid)
 {
     GStatBuf st;
-    gchar *name;
+    GDateTime *datetime;
+    gchar *date, *name;
     glob_t pglob;
     gint i;
 
     g_stat (log_path, &st);
     if (st.st_size > LOG_SIZE) {
-        name = g_strdup_printf ("%s-%lu", log_path, gst_clock_get_time (gstreamill->system_clock));
+        datetime = g_date_time_new_now_local ();
+        date = g_date_time_format (datetime, "%m-%d_%T");
+        name = g_strdup_printf ("%s_%s.%d", log_path, date, g_date_time_get_microsecond (datetime) / 1000);
         g_rename (log_path, name);
         g_free (name);
+        g_free (date);
+        g_date_time_unref (datetime);
         GST_DEBUG ("log rotate %s, process pid %d.", log_path, pid);
 
         if (g_strcmp0 (log_path, gstreamill->log->log_path) == 0) {
@@ -260,7 +265,7 @@ static void rotate_log (Gstreamill *gstreamill, gchar *log_path, pid_t pid)
             kill (pid, SIGUSR1); /* reopen job's log file. */
         }
 
-        name = g_strdup_printf ("%s-*", log_path);
+        name = g_strdup_printf ("%s_*", log_path);
         glob (name, 0, NULL, &pglob);
         if (pglob.gl_pathc > LOG_ROTATE) {
             for (i = 0; i < pglob.gl_pathc - LOG_ROTATE; i++) {
