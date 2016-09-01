@@ -158,6 +158,12 @@ static gchar * remove_empty_out_media_dir (gchar *media)
     gboolean rm_outdir;
 
     path = g_path_get_dirname (media);
+
+    /* is it transcode in directory? */
+    if (g_str_has_suffix (path, "transcode/in")) {
+        return g_strdup ("{\n    \"result\": \"success\"\n}");
+    }
+
     n = scandir (path, &namelist, NULL, alphasort);
     i = n;
     if (n < 0) {
@@ -195,12 +201,13 @@ static gchar * remove_empty_out_media_dir (gchar *media)
         }
     }
     g_free (path);
+
     return g_strdup ("{\n    \"result\": \"success\"\n}");
 }
 
 gchar * media_transcode_rm (gchar *media)
 {
-    if (g_remove (media) == 0) {
+    if (g_unlink (media) == 0) {
         /* if out dir empty, remove it */
         return remove_empty_out_media_dir (media);
 
