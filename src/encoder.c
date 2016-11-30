@@ -427,6 +427,7 @@ static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data
     GstPad *pad;
     GstEvent *event;
     Encoder *encoder;
+    GstClockTime running_time;
 
     current_position = (stream->current_position + 1) % SOURCE_RING_SIZE;
     for (;;) {
@@ -465,11 +466,9 @@ static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data
         encoder = stream->encoder;
         /* segment_duration != 0? with m3u8playlist conf */
         if (stream->is_segment_reference) {
+            running_time = GST_BUFFER_PTS (buffer);
             if (encoder->duration_accumulation >= encoder->segment_duration) {
-                GstClockTime running_time;
-
                 encoder->last_segment_duration = encoder->duration_accumulation;
-                running_time = GST_BUFFER_PTS (buffer);
                 /* force key unit? */
                 if (encoder->has_video) {
                     pad = gst_element_get_static_pad ((GstElement *)src, "src");
@@ -479,6 +478,7 @@ static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data
                             TRUE,
                             encoder->force_key_count);
                     gst_pad_push_event (pad, event);
+                    encoder->last_video_buffer_pts = running_time;
 
                 } else {
                     encoder->last_running_time = running_time;
@@ -486,7 +486,13 @@ static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data
                 encoder->force_key_count++;
                 encoder->duration_accumulation = 0;
             }
-            encoder->duration_accumulation += GST_BUFFER_DURATION (buffer);
+
+            if (G_LIKELY (GST_BUFFER_DURATION (buffer) != GST_CLOCK_TIME_NONE)) {
+                encoder->duration_accumulation += GST_BUFFER_DURATION (buffer);
+
+            } else {
+                encoder->duration_accumulation = running_time - encoder->last_video_buffer_pts;
+            }
         }
 
         /* push buffer */

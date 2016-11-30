@@ -89,8 +89,9 @@ struct _Encoder {
     gboolean is_first_key;
     struct sockaddr_un msg_sock_addr;
     gint msg_sock;
-    GstClockTime last_segment_duration;
+    GstClockTime last_video_buffer_pts;
     GstClockTime last_running_time;
+    GstClockTime last_segment_duration;
 };
 
 struct _EncoderClass {
