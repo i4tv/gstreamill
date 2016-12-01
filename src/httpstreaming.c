@@ -292,17 +292,12 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
     return buf_size;
 }
 
-static gboolean is_http_progress_play_url (RequestData *request_data)
+static gboolean is_encoder_channel_url (RequestData *request_data)
 {
     GRegex *regex = NULL;
     GMatchInfo *match_info = NULL;
     gchar *e;
     gint index;
-
-    if (request_data->parameters[0] != '\0') {
-        GST_WARNING ("parameters is needless : %s?%s", request_data->uri, request_data->parameters);
-        return FALSE;
-    }
 
     index = -1;
     regex = g_regex_new ("^/[^/]*/encoder/(?<encoder>[0-9]+)$", G_REGEX_OPTIMIZE, 0, NULL);
@@ -326,7 +321,20 @@ static gboolean is_http_progress_play_url (RequestData *request_data)
     return TRUE;
 }
 
-static void http_progress_play_priv_data_init (HTTPStreaming *httpstreaming, RequestData *request_data, HTTPStreamingPrivateData *priv_data)
+static gboolean is_http_progress_play_request (RequestData *request_data)
+{
+
+    if (request_data->parameters[0] != '\0') {
+        GST_WARNING ("parameters is needless : %s?%s", request_data->uri, request_data->parameters);
+        return FALSE;
+    }
+
+    return is_encoder_channel_url (request_data);
+}
+
+static void http_progress_play_priv_data_init (HTTPStreaming *httpstreaming,
+                                               RequestData *request_data,
+                                               HTTPStreamingPrivateData *priv_data)
 {
     priv_data->job = gstreamill_get_job (httpstreaming->gstreamill, request_data->uri);
     priv_data->livejob_age = priv_data->job->age;
@@ -562,17 +570,20 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
     gchar *buf = NULL;
     gsize buf_size;
     gint ret;
-    gboolean is_http_progress_play_request = FALSE;
+    gboolean http_progress_play_request = FALSE;
 
     encoder_output = gstreamill_get_encoder_output (httpstreaming->gstreamill, request_data->uri);
     if (encoder_output == NULL) {
+        /* crossdomain request? */
         buf = request_crossdomain (request_data);
-        /* not crossdomain request if buf == NULL */
+
+        /* master m3u8 playlist request? */
         if ((buf == NULL) && g_str_has_suffix (request_data->uri, "playlist.m3u8")) {
             buf = request_master_m3u8_playlist (httpstreaming, request_data);
             request_data->response_status = 200;
         }
-        /* not master m3u8 playlist request if buf == NULL */
+
+        /* 404 not found */
         if (buf == NULL) {
             buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
             request_data->response_status = 404;
@@ -619,11 +630,11 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
         }
         buf_size = strlen (buf);
 
-    } else if (is_http_progress_play_url (request_data)) {
-        /* http progressive streaming request */
+    /* http progressive streaming request? */
+    } else if (is_http_progress_play_request (request_data)) {
         buf = g_strdup_printf (http_chunked, PACKAGE_NAME, PACKAGE_VERSION);
         buf_size = strlen (buf);
-        is_http_progress_play_request = TRUE;
+        http_progress_play_request = TRUE;
         request_data->response_status = 200;
         request_data->response_body_size = 0;
 
@@ -645,7 +656,7 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
         priv_data->send_position = ret > 0? ret : 0;
         priv_data->encoder_output = encoder_output;
         request_data->priv_data = priv_data;
-        if (is_http_progress_play_request) {
+        if (http_progress_play_request) {
             http_progress_play_priv_data_init (httpstreaming, request_data, priv_data);
             priv_data->rap_addr = *(encoder_output->last_rap_addr);
         }
@@ -659,8 +670,9 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
 
     /* send complete or socket error */
     g_free (buf);
-    if ((is_http_progress_play_request) && (ret == buf_size)) {
-        /* http progress play request and send complete */
+
+    /* http progress play request and send complete? */
+    if ((http_progress_play_request) && (ret == buf_size)) {
         priv_data = (HTTPStreamingPrivateData *)g_malloc (sizeof (HTTPStreamingPrivateData));
         http_progress_play_priv_data_init (httpstreaming, request_data, priv_data);
         priv_data->encoder_output = encoder_output;
@@ -851,7 +863,7 @@ static GstClockTime http_continue_process (HTTPStreaming *httpstreaming, Request
             priv_data->buf = NULL;
 
             /* progressive play? continue */
-            if (is_http_progress_play_url (request_data)) {
+            if (is_http_progress_play_request (request_data)) {
                 priv_data->send_position = *(encoder_output->last_rap_addr) + 12;
                 priv_data->buf = NULL;
                 return gst_clock_get_time (system_clock);
