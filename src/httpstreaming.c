@@ -325,7 +325,6 @@ static gboolean is_http_progress_play_request (RequestData *request_data)
 {
 
     if (request_data->parameters[0] != '\0') {
-        GST_WARNING ("parameters is needless : %s?%s", request_data->uri, request_data->parameters);
         return FALSE;
     }
 
