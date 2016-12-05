@@ -4,6 +4,9 @@ v-0.8.4
 - add web style access log file
 - use live playlist window size as time shift playlist window size
 - time shift position is last segment in time shift playlist
+- update parson
+- calculate segment duration use buffer pts if no fix_frame_rate eq 0
+- dvr download
 
 v-0.8.3
 - check first slice of a picture

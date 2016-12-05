@@ -105,6 +105,9 @@ Accessing gstreamill output
 
     *udp://@ip:port*
 
+**dvr download**
+    *http://gstreamill.server.addr:20119/job_name/encoder/0?start=20150606060600&end=20150606070600*
+
 Use Gstreamill through web managment
 ====================================
 
