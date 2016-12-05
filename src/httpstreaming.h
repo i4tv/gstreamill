@@ -26,6 +26,12 @@ typedef struct _HTTPStreamingPrivateData {
     gpointer encoder_output;
     gchar *buf;
     gsize buf_size;
+    GSList *segment_list;
+    gint64 dvr_download_size;
+    guint list_index;
+    gchar *segment;
+    gsize segment_size;
+    gint64 segment_position;
 } HTTPStreamingPrivateData;
 
 typedef struct _HTTPStreaming      HTTPStreaming;

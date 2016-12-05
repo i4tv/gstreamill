@@ -8,11 +8,13 @@
 #define _XOPEN_SOURCE 600
 #include <unistd.h>
 #include <glib/gprintf.h>
+#include <glib/gstdio.h>
 #include <gst/gst.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <glob.h>
 
 #include "httpstreaming.h"
 #include "utils.h"
@@ -292,6 +294,53 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
     return buf_size;
 }
 
+static guint64 get_gint64_parameter (gchar *parameters, gchar *parameter)
+{
+    gchar **pp1, **pp2, *format;
+    gint64 value;
+
+    pp1 = pp2 = g_strsplit (parameters, "&", 0);
+    while (*pp1 != NULL) {
+        if (g_str_has_prefix (*pp1, parameter)) {
+            format = g_strdup_printf ("%s=%%ld", parameter);
+            if (sscanf (*pp1, format, &value) == 1) {
+                break;
+            }
+            g_free (format);
+        }
+        pp1++;
+    }
+    if (*pp1 == NULL) {
+        value = 0;
+    }
+    g_strfreev (pp2);
+
+    return value;
+}
+
+static gchar * get_str_parameter (gchar *parameters, gchar *parameter)
+{
+    gchar **pp1, **pp2, *format, value[256];
+
+    pp1 = pp2 = g_strsplit (parameters, "&", 0);
+    while (*pp1 != NULL) {
+        if (g_str_has_prefix (*pp1, parameter)) {
+            format = g_strdup_printf ("%s=%%s", parameter);
+            if (sscanf (*pp1, format, value) == 1) {
+                break;
+            }
+            g_free (format);
+        }
+        pp1++;
+    }
+    if (*pp1 == NULL) {
+        value[0] = '\0';
+    }
+    g_strfreev (pp2);
+
+    return g_strdup_printf ("%s", value);
+}
+
 static gboolean is_encoder_channel_url (RequestData *request_data)
 {
     GRegex *regex = NULL;
@@ -343,6 +392,128 @@ static void http_progress_play_priv_data_init (HTTPStreaming *httpstreaming,
     priv_data->chunk_size_str_len = 0;
     request_data->priv_data = priv_data;
     request_data->bytes_send = 0;
+}
+
+static gboolean is_dvr_download_request (RequestData *request_data)
+{
+    gchar start_dir[11], end_dir[11], *start, *end, *segments_dir, *pattern, *format, *path;
+    gint number, i;
+    time_t start_time, end_time, time;
+    guint64 start_min, start_sec, end_min, end_sec, start_us, end_us, us;
+    glob_t pglob;
+    HTTPStreamingPrivateData *priv_data;
+    GStatBuf stat;
+
+    if (!is_encoder_channel_url (request_data)) {
+        return FALSE;
+    }
+
+    /* path is uri with 'encoder' removed */
+    path = g_strdup (request_data->uri);
+    path[strlen (path) - 9] = path[strlen (path) - 1];
+    path[strlen (path) - 8] = '\0';
+
+    /* retrieve segments */
+    if (g_strrstr (request_data->parameters, "start") && g_strrstr (request_data->parameters, "end")) {
+        start = get_str_parameter (request_data->parameters, "start");
+        end = get_str_parameter (request_data->parameters, "end");
+        if ((start != NULL) && (end != NULL)) {
+            number = sscanf (start, "%10s%02lu%02lu", start_dir, &start_min, &start_sec);
+            if (number != 3) {
+                GST_ERROR ("bad dvr download parameters: start=%s", start);
+                goto bad_request;
+            }
+            if (segment_dir_to_timestamp (start_dir, &start_time) != 0) {
+                GST_ERROR ("segment_dir_to_timestamp error, start_dir: %s", start_dir);
+                goto bad_request;
+            }
+            if ((start_min > 59) || (start_sec > 59)) {
+                GST_ERROR ("Error start_min: %ld or start_sec: %ld", start_min, start_sec);
+                goto bad_request;
+            }
+            number = sscanf (end, "%10s%02lu%02lu", end_dir, &end_min, &end_sec);
+            if (number != 3) {
+                GST_ERROR ("bad callback parameters: end=%s", end);
+                goto bad_request;
+            }
+            if (segment_dir_to_timestamp (end_dir, &end_time) != 0) {
+                GST_ERROR ("segment_dir_to_timestamp error, end_dir: %s", end_dir);
+                goto bad_request;
+            }
+            if ((end_min > 59) || (end_sec > 59)) {
+                GST_ERROR ("Error end_min: %ld or end_sec: %ld", end_min, end_sec);
+                goto bad_request;
+            }
+
+            priv_data = (HTTPStreamingPrivateData *)g_malloc (sizeof (HTTPStreamingPrivateData));
+            priv_data->buf = NULL;
+            priv_data->job = NULL;
+            priv_data->segment_list = NULL;
+            priv_data->dvr_download_size = 0;
+            priv_data->list_index = 0;
+            priv_data->segment_position = 0;
+            priv_data->segment_size = 0;
+            for (time = start_time; time <= end_time; time += 3600) {
+                if (time == start_time) {
+                    start_us = start_min * 60000000 + start_sec * 1000000;
+
+                } else {
+                    start_us = 0;
+                }
+
+                if (time == end_time) {
+                    end_us = end_min * 60000000 + end_sec * 1000000;
+
+                } else {
+                    end_us = 3600000000;
+                }
+
+                segments_dir = timestamp_to_segment_dir (time); 
+                pattern = g_strdup_printf ("%s/dvr%s/%s/*_*_*.ts", MEDIA_LOCATION, path, segments_dir);
+                if (glob (pattern, 0, NULL, &pglob) == GLOB_NOMATCH) {
+                    g_free (segments_dir);
+                    continue;
+
+                } else {
+                    g_free (pattern);
+                    format = g_strdup_printf ("%s/dvr%s/%s/%%lu_", MEDIA_LOCATION, path, segments_dir);
+                    g_free (segments_dir);
+                    for (i = 0; i < pglob.gl_pathc; i++) {
+                        if (1 != sscanf (pglob.gl_pathv[i], format, &us)) {
+                            continue;
+                        }
+                        if ((us >= start_us) && (us <= end_us)) {
+                            g_lstat (pglob.gl_pathv[i], &stat);
+                            priv_data->dvr_download_size += stat.st_size;
+                            priv_data->segment_list = g_slist_append (priv_data->segment_list, g_strdup (pglob.gl_pathv[i]));
+                        }
+                    }
+                    g_free (format);
+                }
+                globfree (&pglob);
+            }
+
+            g_free (path);
+            g_free (start);
+            g_free (end);
+            if (g_slist_length (priv_data->segment_list) == 0) {
+                g_free (priv_data);
+                return FALSE;
+            }
+            request_data->priv_data = priv_data;
+            return TRUE;
+        }
+
+bad_request:
+        if (start != NULL) {
+            g_free (start);
+        }
+        if (end != NULL) {
+            g_free (end);
+        }
+    }
+
+    return FALSE;
 }
 
 static gchar * request_crossdomain (RequestData *request_data)
@@ -410,53 +581,6 @@ static gchar * request_master_m3u8_playlist (HTTPStreaming *httpstreaming, Reque
     return buf;
 }
 
-static guint64 get_gint64_parameter (gchar *parameters, gchar *parameter)
-{
-    gchar **pp1, **pp2, *format;
-    gint64 value;
-
-    pp1 = pp2 = g_strsplit (parameters, "&", 0);
-    while (*pp1 != NULL) {
-        if (g_str_has_prefix (*pp1, parameter)) {
-            format = g_strdup_printf ("%s=%%ld", parameter);
-            if (sscanf (*pp1, format, &value) == 1) {
-                break;
-            }
-            g_free (format);
-        }
-        pp1++;
-    }
-    if (*pp1 == NULL) {
-        value = 0;
-    }
-    g_strfreev (pp2);
-
-    return value;
-}
-
-static gchar * get_str_parameter (gchar *parameters, gchar *parameter)
-{
-    gchar **pp1, **pp2, *format, value[256];
-
-    pp1 = pp2 = g_strsplit (parameters, "&", 0);
-    while (*pp1 != NULL) {
-        if (g_str_has_prefix (*pp1, parameter)) {
-            format = g_strdup_printf ("%s=%%s", parameter);
-            if (sscanf (*pp1, format, value) == 1) {
-                break;
-            }
-            g_free (format);
-        }
-        pp1++;
-    }
-    if (*pp1 == NULL) {
-        value[0] = '\0';
-    }
-    g_strfreev (pp2);
-
-    return g_strdup_printf ("%s", value);
-}
-
 static gboolean is_channel_playlist_url_valid (RequestData *request_data)
 {
     GRegex *regex;
@@ -484,7 +608,7 @@ static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encod
         return NULL;
     }
 
-    /* time shift */
+    /* time shift? */
     if (g_strrstr (request_data->parameters, "timeshift") != NULL) {
         gint64 offset;
 
@@ -495,7 +619,7 @@ static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encod
                                                             encoder_output->playlist_window_size,
                                                             offset);
 
-        /* callback */
+    /* callback? */
     } else if (g_strrstr (request_data->parameters, "start") && g_strrstr (request_data->parameters, "end")) {
         start = get_str_parameter (request_data->parameters, "start");
         end = get_str_parameter (request_data->parameters, "end");
@@ -569,7 +693,7 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
     gchar *buf = NULL;
     gsize buf_size;
     gint ret;
-    gboolean http_progress_play_request = FALSE;
+    gboolean http_progress_play_request = FALSE, dvr_download_request = FALSE;
 
     encoder_output = gstreamill_get_encoder_output (httpstreaming->gstreamill, request_data->uri);
     if (encoder_output == NULL) {
@@ -580,6 +704,19 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
         if ((buf == NULL) && g_str_has_suffix (request_data->uri, "playlist.m3u8")) {
             buf = request_master_m3u8_playlist (httpstreaming, request_data);
             request_data->response_status = 200;
+        }
+
+        /* is dvr download request? */
+        if ((buf == NULL) && is_dvr_download_request (request_data)) {
+            priv_data = request_data->priv_data;
+            buf = g_strdup_printf (http_200,
+                    PACKAGE_NAME,
+                    PACKAGE_VERSION,
+                    "video/mpeg",
+                    priv_data->dvr_download_size,
+                    "private",
+                    "");
+            dvr_download_request = TRUE;
         }
 
         /* 404 not found */
@@ -654,6 +791,7 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
         priv_data->job = NULL;
         priv_data->send_position = ret > 0? ret : 0;
         priv_data->encoder_output = encoder_output;
+        priv_data->segment_list = NULL;
         request_data->priv_data = priv_data;
         if (http_progress_play_request) {
             http_progress_play_priv_data_init (httpstreaming, request_data, priv_data);
@@ -679,6 +817,11 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
         priv_data->send_position = *(encoder_output->last_rap_addr) + 12;
         priv_data->buf = NULL;
         request_data->priv_data = priv_data;
+        return gst_clock_get_time (system_clock);
+    }
+
+    /* dvr download request? */
+    if ((dvr_download_request) && (ret == buf_size)) {
         return gst_clock_get_time (system_clock);
     }
 
@@ -838,6 +981,59 @@ static GstClockTime send_chunk (EncoderOutput *encoder_output, RequestData *requ
     }
 }
 
+static GstClockTime dvr_download (RequestData *request_data, GstClock *system_clock)
+{
+    HTTPStreamingPrivateData *priv_data;
+    gchar *path;
+    GError *err = NULL;
+    gint ret;
+
+    priv_data = request_data->priv_data;
+
+    /* first segment or current segment send complete? */
+    if (priv_data->segment_position == priv_data->segment_size) {
+        path = g_slist_nth_data (priv_data->segment_list, priv_data->list_index);
+        if (!g_file_get_contents (path, &(priv_data->segment), &(priv_data->segment_size), &err)) {
+            GST_ERROR ("read %s failure: %s", path, err->message);
+            g_error_free (err);
+            return 0;
+        }
+        priv_data->segment_position = 0;
+        priv_data->list_index++;
+    }
+
+    ret = write (request_data->sock,
+            priv_data->segment + priv_data->segment_position,
+            priv_data->segment_size - priv_data->segment_position);
+    if (ret >= 0) {
+        priv_data->segment_position += ret;
+        /* seng segment complete? */
+        if (priv_data->segment_position == priv_data->segment_size) {
+            g_free (priv_data->segment);
+            /* dvr download complete? */
+            if (priv_data->list_index == g_slist_length (priv_data->segment_list)) {
+                return 0;
+
+            } else {
+                return gst_clock_get_time (system_clock);
+            }
+
+        } else {
+            return GST_CLOCK_TIME_NONE;
+        }
+
+    } else if ((ret == -1) && (errno == EAGAIN)) {
+        return GST_CLOCK_TIME_NONE;
+
+    } else if ((ret == -1) && (errno != EAGAIN)) {
+        GST_ERROR ("Write sock error: %s", g_strerror (errno));
+        g_free (priv_data->segment);
+        return 0;
+    }
+
+    return 0;
+}
+
 static GstClockTime http_continue_process (HTTPStreaming *httpstreaming, RequestData *request_data)
 {
     HTTPStreamingPrivateData *priv_data;
@@ -887,6 +1083,10 @@ static GstClockTime http_continue_process (HTTPStreaming *httpstreaming, Request
         }
     }
 
+    if (priv_data->segment_list != NULL) {
+        return dvr_download (request_data, system_clock);
+    }
+
     if ((priv_data->livejob_age != priv_data->job->age) ||
             (*(priv_data->job->output->state) != JOB_STATE_PLAYING)) {
         if (priv_data->encoder_output != NULL) {
@@ -933,6 +1133,9 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
                 }
                 if (priv_data->buf != NULL) {
                     g_free (priv_data->buf);
+                }
+                if (priv_data->segment_list != NULL) {
+                    g_slist_free (priv_data->segment_list);
                 }
                 g_free (request_data->priv_data);
                 request_data->priv_data = NULL;
