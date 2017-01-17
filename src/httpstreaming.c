@@ -816,6 +816,7 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
         priv_data->rap_addr = *(encoder_output->last_rap_addr);
         priv_data->send_position = *(encoder_output->last_rap_addr) + 12;
         priv_data->buf = NULL;
+        priv_data->segment_list = NULL;
         request_data->priv_data = priv_data;
         return gst_clock_get_time (system_clock);
     }
