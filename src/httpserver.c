@@ -610,7 +610,7 @@ static gint socket_prepare (HTTPServer *http_server)
             GST_ERROR ("Bind socket %d error: %s", listen_sock, g_strerror (errno));
             return 1;
         }
-        (void) close (accepted_sock);
+        (void) close (listen_sock);
         //close_socket_gracefully (listen_sock);
     }
 
