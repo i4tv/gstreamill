@@ -490,7 +490,8 @@ static gint accept_socket (HTTPServer *http_server)
         g_mutex_unlock (&(http_server->request_data_queue_mutex));
         if (request_data_queue_len == 0) {
             GST_ERROR ("event queue empty");
-            close_socket_gracefully (accepted_sock);
+            (void) close (accepted_sock);
+            //close_socket_gracefully (accepted_sock);
             continue;
         }
         GST_INFO ("request from %s:%d, accepted_sock %d", get_address (in_addr), get_port (in_addr), accepted_sock);
@@ -504,7 +505,8 @@ static gint accept_socket (HTTPServer *http_server)
         g_mutex_unlock (&(http_server->request_data_queue_mutex));
         if (request_data_pointer == NULL) {
             GST_WARNING ("No NONE request, refuse this request.");
-            close_socket_gracefully (accepted_sock);
+            (void) close (accepted_sock);
+            //close_socket_gracefully (accepted_sock);
             continue;
         }
         request_data = *request_data_pointer;
@@ -608,7 +610,8 @@ static gint socket_prepare (HTTPServer *http_server)
             GST_ERROR ("Bind socket %d error: %s", listen_sock, g_strerror (errno));
             return 1;
         }
-        close_socket_gracefully (listen_sock);
+        (void) close (accepted_sock);
+        //close_socket_gracefully (listen_sock);
     }
 
     if (rp == NULL) {
