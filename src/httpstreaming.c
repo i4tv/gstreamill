@@ -609,15 +609,24 @@ static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encod
     }
 
     /* time shift? */
-    if (g_strrstr (request_data->parameters, "timeshift") != NULL) {
+    if ((g_strrstr (request_data->parameters, "timeshift") != NULL) ||
+        (g_strrstr (request_data->parameters, "position") != NULL)){
         gint64 offset;
+        time_t shift_position;
 
-        offset = get_gint64_parameter (request_data->parameters, "timeshift") +
+        if (g_strrstr (request_data->parameters, "timeshift") != NULL) {
+            offset = get_gint64_parameter (request_data->parameters, "timeshift") +
                  encoder_output->playlist_window_size * encoder_output->segment_duration / GST_SECOND;
+            shift_position = g_get_real_time () / 1000000 - offset;
+
+        } else {
+            shift_position = get_gint64_parameter (request_data->parameters, "position") +
+                 encoder_output->playlist_window_size * encoder_output->segment_duration / GST_SECOND;
+        }
         m3u8playlist = m3u8playlist_timeshift_get_playlist (encoder_output->record_path,
                                                             encoder_output->version,
                                                             encoder_output->playlist_window_size,
-                                                            offset);
+                                                            shift_position);
 
     /* callback? */
     } else if (g_strrstr (request_data->parameters, "start") && g_strrstr (request_data->parameters, "end")) {

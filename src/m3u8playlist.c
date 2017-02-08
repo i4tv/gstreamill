@@ -163,17 +163,16 @@ gchar * m3u8playlist_live_get_playlist (M3U8Playlist *playlist)
     return p;
 }
 
-gchar * m3u8playlist_timeshift_get_playlist (gchar *path, guint version, guint window_size, gint64 offset)
+gchar * m3u8playlist_timeshift_get_playlist (gchar *path, guint version, guint window_size, time_t shift_position)
 {
     M3U8Playlist *m3u8playlist = NULL;
     gint i, j;
     gchar **pp, *p, *segment_dir;
     glob_t pglob;
     gchar *pattern, *playlist;
-    time_t time, shift_position;
+    time_t time;
     guint64 sequence;
 
-    shift_position = g_get_real_time () / 1000000 - offset;
     /* loop seek time shift position, step: 10s */
     for (i = 0; i < 10; i++) {
         time = shift_position - i * 10;
