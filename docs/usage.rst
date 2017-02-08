@@ -96,6 +96,7 @@ Accessing gstreamill output
 **hls time shift**
 
     *http://gstreamill.server.addr:20119/job_name/playlist.m3u8?timeshift=3600*
+    *http://gstreamill.server.addr:20119/job_name/playlist.m3u8?timeshift=1486556428(Wed Feb  8 20:20:28 CST 2017)*
 
 **hls catchup**
 

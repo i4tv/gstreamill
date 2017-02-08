@@ -7,6 +7,7 @@ v-0.8.4
 - update parson
 - calculate segment duration use buffer pts if no fix_frame_rate eq 0
 - dvr download
+- position parameter, absolute time shift
 
 v-0.8.3
 - check first slice of a picture

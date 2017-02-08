@@ -134,6 +134,7 @@ default management port is 20118, use curl to invoke test job via management int
     
         http://host.name.or.ip:20119/test/playlist.m3u8 (live)
         http://host.name.or.ip:20119/test/playlist.m3u8?timeshift=3600 (time shift)
+        http://host.name.or.ip:20119/test/playlist.m3u8?position=1486556428 (time shift Wed Feb  8 20:20:28 CST 2017)
         http://host.name.or.ip:20119/test/playlist.m3u8?start=201506060606&end=20150606070600 (callback)
 
 ## Management interface
