@@ -602,12 +602,14 @@ static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encod
 {
     gchar *m3u8playlist = NULL;
     gchar *start, *end;
+    gint64 now;
 
     if (!is_channel_playlist_url_valid (request_data)) {
         GST_WARNING ("bad request url: %s", request_data->uri);
         return NULL;
     }
 
+    now = g_get_real_time () / 1000000;
     /* time shift? */
     if ((g_strrstr (request_data->parameters, "timeshift") != NULL) ||
         (g_strrstr (request_data->parameters, "position") != NULL)){
@@ -617,16 +619,19 @@ static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encod
         if (g_strrstr (request_data->parameters, "timeshift") != NULL) {
             offset = get_gint64_parameter (request_data->parameters, "timeshift") +
                  encoder_output->playlist_window_size * encoder_output->segment_duration / GST_SECOND;
-            shift_position = g_get_real_time () / 1000000 - offset;
+            shift_position = now - offset;
 
         } else {
             shift_position = get_gint64_parameter (request_data->parameters, "position") +
                  encoder_output->playlist_window_size * encoder_output->segment_duration / GST_SECOND;
         }
-        m3u8playlist = m3u8playlist_timeshift_get_playlist (encoder_output->record_path,
+        if ((shift_position < now) &&
+            (shift_position > now - encoder_output->dvr_duration)) {
+            m3u8playlist = m3u8playlist_timeshift_get_playlist (encoder_output->record_path,
                                                             encoder_output->version,
                                                             encoder_output->playlist_window_size,
                                                             shift_position);
+        }
 
     /* callback? */
     } else if (g_strrstr (request_data->parameters, "start") && g_strrstr (request_data->parameters, "end")) {
@@ -760,7 +765,19 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
             request_data->response_body_size = http_404_body_size;
 
         } else {
-            cache_control = g_strdup_printf ("max-age=%lu", encoder_output->segment_duration / GST_SECOND);
+            if ((g_strrstr (request_data->parameters, "position") != NULL) &&
+                (g_strrstr (request_data->parameters, "timeshift") == NULL)) {
+                guint64 age;
+
+                age = get_gint64_parameter (request_data->parameters, "position") +
+                    encoder_output->dvr_duration +
+                    3600 - /* remove an hour record */
+                    g_get_real_time () / 1000000;
+                cache_control = g_strdup_printf ("max-age=%lu", age);
+
+            } else {
+                cache_control = g_strdup_printf ("max-age=%lu", encoder_output->segment_duration / GST_SECOND);
+            }
             buf = g_strdup_printf (http_200,
                     PACKAGE_NAME,
                     PACKAGE_VERSION,
