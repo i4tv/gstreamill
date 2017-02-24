@@ -759,7 +759,6 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
 
         m3u8playlist = get_m3u8playlist (request_data, encoder_output);
         if (m3u8playlist == NULL) {
-            GST_WARNING ("Get %s's playlist failure: not found", request_data->uri);
             buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
             request_data->response_status = 404;
             request_data->response_body_size = http_404_body_size;

@@ -19,7 +19,7 @@
 #define NONLIVE_HEARTBEAT_THRESHHOLD 60000000000 /* 60s */
 #define ENCODER_OUTPUT_HEARTBEAT_THRESHHOLD 30000000000 /* 30s */
 
-#define LOG_SIZE 4*1024*1024
+#define LOG_SIZE 40*1024*1024
 #define LOG_ROTATE 100
 
 typedef struct _Gstreamill      Gstreamill;
