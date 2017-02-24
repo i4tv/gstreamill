@@ -1,5 +1,9 @@
 releases are sorted from youngest to oldest.
 
+v-0.8.5 2017-02-24
+- log file size 40M
+- remove useless log message
+
 v-0.8.4 2017-02-21
 - add web style access log file
 - use live playlist window size as time shift playlist window size
