@@ -19,7 +19,7 @@
 
 ## Overview
 
-gstreamill is an open source, GPL licensed "stream mill" based on gstreamer-1.0 with dvr support and hls output. 
+gstreamill is an open source, based on gstreamer-1.0 with dvr support and hls output. 
 
 ## Highlight
 
@@ -366,3 +366,6 @@ There are examples in examples directory of source.
 
 Talk about gstreamill on [gstreamill](https://groups.google.com/forum/#!forum/gstreamill) or report a bug on [issues](https://github.com/zhangping/gstreamill/issues) page.
 
+## License
+
+gstreamill is available under the GNU license. See the LICENSE file for more info. 

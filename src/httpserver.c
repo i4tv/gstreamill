@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2012, 2013 iTV.cn
- * Author Zhang Ping <dqzhangp@itv.cn>
  *
+ * Copyright (C) 2014, 2015, 2016, 2017 Zhang Ping <dqzhangp@163.com>
  */
 
 #include <stdlib.h>
