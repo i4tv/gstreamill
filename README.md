@@ -368,4 +368,4 @@ Talk about gstreamill on [gstreamill](https://groups.google.com/forum/#!forum/gs
 
 ## License
 
-gstreamill is available under the GNU license. See the LICENSE file for more info. 
+gstreamill is available under GPL v3. See the LICENSE file for more info. 
