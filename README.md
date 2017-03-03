@@ -55,7 +55,7 @@ gstreamill is an open source, based on gstreamer-1.0 with dvr support and hls ou
 
 # INSTALL
 
-gstreamill have been tested in ubuntu 14.04.
+gstreamill have been tested in ubuntu 14.04.5 and ubuntu 16.04.2.
 
 ## get source
 
@@ -63,7 +63,7 @@ gstreamill have been tested in ubuntu 14.04.
 
 ## install prerequisites
 
-    sudo apt-get install autoconf automake libtool libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libaugeas-dev
+    sudo apt-get install autoconf automake libtool libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev libaugeas-dev
 
 ## Compile and install
 
@@ -80,7 +80,7 @@ gstreamill have been tested in ubuntu 14.04.
 
 ## install prerequisites
 
-    sudo apt-get install gstreamer1.0-plugins-ugly gstreamer1.0-plugins-bad gstreamer1.0-plugins-good gstreamer1.0-plugins-base libgstreamer-plugins-bad1.0-dev
+    sudo apt-get install gstreamer1.0-plugins-ugly gstreamer1.0-plugins-bad gstreamer1.0-plugins-good gstreamer1.0-plugins-base
 
 ## B/S Management URL
 
