@@ -1,7 +1,7 @@
 Gstreamill install
 ******************
 
-Gstreamill have been tested on Ubuntu 14.04 and CentOS 7.0.
+Gstreamill have been tested on Ubuntu 16.04.2 and CentOS 7.0.
 
 Install gstreamill from source on ubuntu 14.04
 ==============================================
@@ -12,11 +12,11 @@ Install the prerequistites::
 
 get lastest release tarball::
 
-    wget https://github.com/i4tv/gstreamill/archive/v0.6.2.tar.gz
+    wget https://github.com/i4tv/gstreamill/archive/v0.8.5.tar.gz
 
 unpack tarball::
 
-    tar xvf v0.6.2.tar.gz
+    tar xvf v0.8.5.tar.gz
 
 Build and install gstreamill::
 

@@ -55,7 +55,7 @@ gstreamill is an open source, based on gstreamer-1.0 with dvr support and hls ou
 
 # INSTALL
 
-gstreamill have been tested in ubuntu 14.04.5 and ubuntu 16.04.2.
+gstreamill have been tested in ubuntu 16.04.2.
 
 ## get source
 
