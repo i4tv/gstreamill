@@ -20,6 +20,7 @@
 #include <locale.h>
 #include <pwd.h>
 #include <grp.h>
+#include <signal.h>
 
 #include "gstreamill.h"
 #include "httpstreaming.h"
@@ -57,6 +58,27 @@ static void stop_job (gint number)
     g_date_time_unref (datetime);
 
     exit (0);
+}
+
+/*
+ * idle thread for signal SIGTERM - stop the gstreamill.
+ * other thread for signal SIGTERM would cause dead lock.
+ */
+static gpointer idle_thread (gpointer data)
+{
+    sigset_t set;
+
+    sigemptyset(&set);
+    sigaddset(&set, SIGTERM);
+    sigaddset(&set, SIGUSR1);
+    if (pthread_sigmask (SIG_UNBLOCK, &set, NULL) != 0) {
+        g_printf ("sigprocmask failure: %s", strerror (errno));
+        exit (-1);
+    }
+
+    for (;;) {
+        sleep (3600);
+    }
 }
 
 static void print_version_info ()
@@ -356,6 +378,15 @@ int main (int argc, char *argv[])
         Job *job;
         gchar *log_path, *name;
         gint ret;
+        sigset_t set;
+
+        sigemptyset(&set);
+        sigaddset(&set, SIGTERM);
+        sigaddset(&set, SIGUSR1);
+        if (sigprocmask (SIG_UNBLOCK, &set, NULL) != 0) {
+            g_printf ("sigprocmask failure: %s", strerror (errno));
+            exit (-1);
+        }
 
         /* set subprocess maximum of core file */
         rlim.rlim_cur = 0;
@@ -464,6 +495,14 @@ int main (int argc, char *argv[])
     if (mode != SINGLE_JOB_MODE) {
         gchar *path, *log_path, *access_path;
         gint ret;
+        sigset_t set;
+
+        sigemptyset(&set);
+        sigaddset(&set, SIGTERM);
+        if (sigprocmask (SIG_BLOCK, &set, NULL) != 0) {
+            g_printf ("sigprocmask failure: %s", strerror (errno));
+            exit (-1);
+        }
 #if 0
         /* pid file exist? */
         if (g_file_test (PID_FILE, G_FILE_TEST_EXISTS)) {
@@ -557,6 +596,8 @@ int main (int argc, char *argv[])
         remove_pid_file ();
         exit (12);
     }
+
+    g_thread_new ("idle_thread", idle_thread, NULL);
 
     /* httpstreaming, pull */
     httpstreaming = httpstreaming_new ("gstreamill", gstreamill, "address", http_streaming, NULL);
