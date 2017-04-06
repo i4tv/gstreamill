@@ -314,6 +314,7 @@ gchar * m3u8playlist_callback_get_playlist (gchar *path, guint64 dvr_duration, g
         segments_dir = timestamp_to_segment_dir (time); 
         pattern = g_strdup_printf ("%s/%s/*_*_*.ts", path, segments_dir);
         if (glob (pattern, 0, NULL, &pglob) == GLOB_NOMATCH) {
+            g_free (pattern);
             g_free (segments_dir);
             continue;
 
