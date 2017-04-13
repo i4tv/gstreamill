@@ -261,8 +261,8 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
                 encoder_output->record_path,
                 year, month, mday, hour, us, sequence, duration);
         if (!g_file_get_contents (path, &file, &buf_size, &err)) {
+            GST_WARNING ("read segment error: %s", err->message);
             g_error_free (err);
-            GST_WARNING ("segment not found: %s", request_data->uri);
             *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
             request_data->response_body_size = http_404_body_size;
             request_data->response_status = 404;
