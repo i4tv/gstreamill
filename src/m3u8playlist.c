@@ -332,6 +332,7 @@ gchar * m3u8playlist_callback_get_playlist (gchar *path, guint64 dvr_duration, g
                     /* remove .ts */
                     pp[2][strlen (pp[2]) - 3] = '\0';
                     duration = g_strtod ((pp[2]), NULL);
+                    g_strfreev (pp);
                     if (target_duration < duration) {
                         target_duration = duration;
                     }
