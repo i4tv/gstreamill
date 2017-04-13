@@ -328,6 +328,7 @@ static gchar * get_str_parameter (gchar *parameters, gchar *parameter)
         if (g_str_has_prefix (*pp1, parameter)) {
             format = g_strdup_printf ("%s=%%s", parameter);
             if (sscanf (*pp1, format, value) == 1) {
+                g_free (format);
                 break;
             }
             g_free (format);
