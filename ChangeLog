@@ -1,5 +1,8 @@
 releases are sorted from youngest to oldest.
 
+v-0.8.7 2017-04-13
+- #97 memory leak bug fix
+
 v-0.8.6 2017-04-09
 - gstreamill -s deadlock bugfix
 - #97 memory leak bug fix
