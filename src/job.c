@@ -433,10 +433,68 @@ gint job_initialize (Job *job, gint mode, gint shm_fd, gchar *shm_p)
     return 0;
 }
 
+static gchar * get_bitrate (Job *job, gint index)
+{
+    gchar *value, *pipeline, **bins, *p, **pp;
+    guint v_bitrate, a_bitrate, ts_bitrate;
+
+    v_bitrate = a_bitrate = ts_bitrate = 0;
+    pipeline = g_strdup_printf ("encoder.%d", index);
+    pp = bins = jobdesc_bins (job->description, pipeline);
+    while (*pp != NULL) {
+       if (g_strrstr (*pp, "x264enc") != NULL) {
+           /* default bitrate of x264enc is 2048kbps */
+           v_bitrate = 2048;
+
+       } else if (g_strrstr (*pp, "voaacenc") != NULL) {
+           /* default bitrate of voaacenc is 128kbps */
+           a_bitrate = 128;
+       }
+       pp++;
+    }
+    g_free (pipeline);
+    g_strfreev (bins);
+
+    p = g_strdup_printf ("encoder.%d.elements.x264enc.property.bitrate", index);
+    value = jobdesc_element_property_value (job->description, p);
+    g_free (p);
+    if (value != NULL) {
+        v_bitrate = g_strtod (value, NULL);
+        g_free (value);
+    }
+
+    p = g_strdup_printf ("encoder.%d.elements.voaacenc.property.bitrate", index);
+    value = jobdesc_element_property_value (job->description, p);
+    g_free (p);
+    if (value != NULL) {
+        a_bitrate = g_strtod (value, NULL) / 1000;
+        g_free (value);
+    }
+
+    p = g_strdup_printf ("encoder.%d.elements.tssegment.property.bitrate", index);
+    value = jobdesc_element_property_value (job->description, p);
+    g_free (p);
+    if (value != NULL) {
+        ts_bitrate = g_strtod (value, NULL);
+        g_free (value);
+    }
+
+    if ((v_bitrate != 0) || (a_bitrate != 0)) {
+        if (v_bitrate != 0) {
+            ts_bitrate = v_bitrate + a_bitrate;
+
+        } else if ((ts_bitrate == 0) && (a_bitrate != 0)) {
+            ts_bitrate = a_bitrate;
+        }
+    }
+
+    return g_strdup_printf ("%u", ts_bitrate);
+}
+
 static gchar * render_master_m3u8_playlist (Job *job)
 {
     GString *master_m3u8_playlist;
-    gchar *p, *value;
+    gchar *p;
     gint i;
 
     master_m3u8_playlist = g_string_new ("");
@@ -449,27 +507,10 @@ static gchar * render_master_m3u8_playlist (Job *job)
     }
 
     for (i = 0; i < job->output->encoder_count; i++) {
-        p = g_strdup_printf ("encoder.%d.elements.x264enc.property.bitrate", i);
-        value = jobdesc_element_property_value (job->description, p);
-
-        /* value == NULL? no video encoder */
-        if (value == NULL) {
-            g_free (p);
-            p = g_strdup_printf ("encoder.%d.elements.tssegment.property.bitrate", i);
-            value = jobdesc_element_property_value (job->description, p);
-        }
-
-        /* value == NUL? audio only? */
-        if (value != NULL) {
-            g_string_append_printf (master_m3u8_playlist, M3U8_STREAM_INF_TAG, 1, value);
-            g_free (value);
-
-        } else {
-            /* audio only, use 64kbit bitrate */
-            g_string_append_printf (master_m3u8_playlist, M3U8_STREAM_INF_TAG, 1, "64");
-        }
-        g_string_append_printf (master_m3u8_playlist, "encoder/%d/playlist.m3u8<%%parameters%%>\n", i);
+        p = get_bitrate (job, i);
+        g_string_append_printf (master_m3u8_playlist, M3U8_STREAM_INF_TAG, 1, p);
         g_free (p);
+        g_string_append_printf (master_m3u8_playlist, "encoder/%d/playlist.m3u8<%%parameters%%>\n", i);
     }
 
     p = master_m3u8_playlist->str;
