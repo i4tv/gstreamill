@@ -121,6 +121,8 @@ static gchar * m3u8playlist_render (M3U8Playlist * playlist)
 gint m3u8playlist_add_entry (M3U8Playlist *playlist, const gchar *url, gfloat duration)
 {
     M3U8Entry *entry;
+    guint64 sequence;
+    gint number;
 
     g_rw_lock_writer_lock (&(playlist->lock));
 
@@ -132,7 +134,10 @@ gint m3u8playlist_add_entry (M3U8Playlist *playlist, const gchar *url, gfloat du
 
     /* add entry */
     entry = m3u8entry_new (url, duration);
-    playlist->sequence_number++;
+    number = sscanf (url, "%*[^/]/%lu.ts$", &sequence);
+    if (number == 1) {
+        playlist->sequence_number = sequence;
+    }
     g_queue_push_tail (playlist->entries, entry);
 
     /* genertae playlist */
@@ -163,99 +168,53 @@ gchar * m3u8playlist_live_get_playlist (M3U8Playlist *playlist)
     return p;
 }
 
-gchar * m3u8playlist_timeshift_get_playlist (gchar *path, guint version, guint window_size, time_t shift_position)
+gchar * m3u8playlist_timeshift_get_playlist (gchar *path, guint64 duration, guint version, guint window_size, time_t shift_position)
 {
     M3U8Playlist *m3u8playlist = NULL;
-    gint i, j;
-    gchar **pp, *p, *segment_dir;
+    gint i;
     glob_t pglob;
-    gchar *pattern, *playlist;
+    gchar *playlist, *segment_dir, *p;
     time_t time;
-    guint64 sequence;
+    guint64 sequence, segment_duration;
 
-    /* loop seek time shift position, step: 10s */
-    for (i = 0; i < 10; i++) {
-        time = shift_position - i * 10;
+    sequence = shift_position / (duration / GST_SECOND);
+    m3u8playlist = m3u8playlist_new (version, window_size, sequence);
+    for (i = 0; i < window_size; i++) {
+        time = shift_position + i * (duration / GST_SECOND);
         segment_dir = timestamp_to_segment_dir (time);
-        pattern = g_strdup_printf ("%s/%s/%03lu*.ts", path, segment_dir, (time % 3600) / 10);
+        sequence = time / (duration / GST_SECOND);
+        p = g_strdup_printf ("%s/%s/%lu_*.ts", path, segment_dir, sequence);
+        if (glob (p, 0, NULL, &pglob) == 0) {
+            g_free (p);
+            p = g_strdup_printf ("%s/%s/%lu_%%lu.ts$", path, segment_dir, sequence);
+            sscanf (pglob.gl_pathv[0], p, &segment_duration);
+            g_free (p);
+            p = g_strdup_printf ("%s/%lu.ts", segment_dir, sequence);
+            m3u8playlist_add_entry (m3u8playlist, p, segment_duration);
+            g_free (p);
+
+        } else {
+            g_free (p);
+        }
         g_free (segment_dir);
-        if (glob (pattern, 0, NULL, &pglob) == 0) {
-            for (j = pglob.gl_pathc - 1; j >= 0; j--) {
-                p = &(pglob.gl_pathv[j][strlen (path) + 12]);
-                pp = g_strsplit (p, "_", 0);
-                if ((g_ascii_strtoull (pp[0], NULL, 10) / 1000000) <= (shift_position % 3600)) {
-                    /* sequence: g_ascii_strtoull (pp[1], NULL, 10) */
-                    sequence = g_ascii_strtoull (pp[1], NULL, 10);
-                    m3u8playlist = m3u8playlist_new (version, window_size, sequence);
-                    /* remove .ts */
-                    pp[2][strlen (pp[2]) - 3] = '\0';
-                    p -= 11;
-                    m3u8playlist_add_entry (m3u8playlist, p, g_strtod ((pp[2]), NULL));
-                    g_strfreev (pp);
-                    break;
-                }
-                g_strfreev (pp);
-            }
-        }
-        g_free (pattern);
         globfree (&pglob);
-        if (m3u8playlist != NULL) {
-            break;
-        }
     }
 
-    if (m3u8playlist == NULL) {
-        return NULL;
-    }
-
-    /* add entry */
-    for (i = 0; i < 10; i++) {
-        time = shift_position + i * 10;
-        segment_dir = timestamp_to_segment_dir (time);
-        pattern = g_strdup_printf ("%s/%s/%03lu*.ts", path, segment_dir, (time % 3600) / 10);
-        g_free (segment_dir);
-        if (glob (pattern, 0, NULL, &pglob) == 0) {
-            for (j = 0; j < pglob.gl_pathc; j++) {
-                p = &(pglob.gl_pathv[j][strlen (path) + 12]);
-                pp = g_strsplit (p, "_", 0);
-                /* next segment? */
-                if (g_ascii_strtoull (pp[1], NULL, 10) != (sequence + 1)) {
-                    g_strfreev (pp);
-                    continue;
-                }
-                sequence += 1;
-                /* remove .ts */
-                pp[2][strlen (pp[2]) - 3] = '\0';
-                p -= 11;
-                m3u8playlist_add_entry (m3u8playlist, p, g_strtod ((pp[2]), NULL));
-                if (m3u8playlist->entries->length == window_size) {
-                    g_strfreev (pp);
-                    break;
-                }
-                g_strfreev (pp);
-            }
-        }
-        g_free (pattern);
-        globfree (&pglob);
-        if (m3u8playlist->entries->length == window_size) {
-            break;
-        }
-    }
     playlist = g_strdup (m3u8playlist->playlist_str);
     m3u8playlist_free (m3u8playlist);
 
     return playlist;
 }
 
-gchar * m3u8playlist_callback_get_playlist (gchar *path, guint64 dvr_duration, gchar *start, gchar *end)
+gchar * m3u8playlist_callback_get_playlist (gchar *path, guint64 duration, guint64 dvr_duration, gchar *start, gchar *end)
 {
     gchar start_dir[11], end_dir[11];
-    gint number, i;
+    gint number;
     time_t start_time, end_time, time;
-    guint64 start_min, start_sec, end_min, end_sec, start_us, end_us, us;
-    gchar *segments_dir, *pattern, *format, *p, **pp;
+    guint64 start_min, start_sec, end_min, end_sec, sequence, segment_duration;
+    gchar *segment_dir, *p;
     glob_t pglob;
-    gfloat target_duration = 0, duration;
+    gfloat target_duration = 0;
     GString *gstring;
 
     time = g_get_real_time () / 1000000;
@@ -276,6 +235,7 @@ gchar * m3u8playlist_callback_get_playlist (gchar *path, guint64 dvr_duration, g
         GST_ERROR ("callback request exceed dvr duration, start_time: %ld", start_time);
         return NULL;
     }
+    start_time += start_min * 60 + start_sec;
 
     number = sscanf (end, "%10s%02lu%02lu", end_dir, &end_min, &end_sec);
     if (number != 3) {
@@ -294,60 +254,33 @@ gchar * m3u8playlist_callback_get_playlist (gchar *path, guint64 dvr_duration, g
         GST_ERROR ("callback request exceed dvr duration, end_time: %ld", end_time);
         return NULL;
     }
+    end_time += end_min * 60 + end_sec;
 
     gstring = g_string_new ("");
-    for (time = start_time; time <= end_time; time += 3600) {
-        if (time == start_time) {
-            start_us = start_min * 60000000 + start_sec * 1000000;
-
-        } else {
-            start_us = 0;
-        }
-
-        if (time == end_time) {
-            end_us = end_min * 60000000 + end_sec * 1000000;
-
-        } else {
-            end_us = 3600000000;
-        }
-
-        segments_dir = timestamp_to_segment_dir (time); 
-        pattern = g_strdup_printf ("%s/%s/*_*_*.ts", path, segments_dir);
-        if (glob (pattern, 0, NULL, &pglob) == GLOB_NOMATCH) {
-            g_free (pattern);
-            g_free (segments_dir);
-            continue;
-
-        } else {
-            g_free (pattern);
-            format = g_strdup_printf ("%s/%s/%%lu_", path, segments_dir);
-            g_free (segments_dir);
-            for (i = 0; i < pglob.gl_pathc; i++) {
-                if (1 != sscanf (pglob.gl_pathv[i], format, &us)) {
-                    continue;
-                }
-                if ((us >= start_us) && (us <= end_us)) {
-                    p = &(pglob.gl_pathv[i][strlen (path) + 1]);
-                    pp = g_strsplit (p, "_", 0);
-                    /* remove .ts */
-                    pp[2][strlen (pp[2]) - 3] = '\0';
-                    duration = g_strtod ((pp[2]), NULL);
-                    g_strfreev (pp);
-                    if (target_duration < duration) {
-                        target_duration = duration;
-                    }
-                    g_string_append_printf (gstring, M3U8_INF_TAG, duration / GST_SECOND, p);
-                }
+    for (time = start_time; time <= end_time; time += duration / GST_SECOND) {
+        segment_dir = timestamp_to_segment_dir (time); 
+        sequence = time / (duration / GST_SECOND);
+        p = g_strdup_printf ("%s/%s/%lu_*.ts", path, segment_dir, sequence);
+        GST_ERROR ("p: %s, start: %ld, end: %ld, duration: %lu", p, start_time, end_time, duration / GST_SECOND);
+        if (glob (p, 0, NULL, &pglob) == 0) {
+            g_free (p);
+            p = g_strdup_printf ("%s/%s/%lu_%%lu.ts$", path, segment_dir, sequence);
+            sscanf (pglob.gl_pathv[0], p, &segment_duration);
+            g_free (p);
+            if (target_duration < (float)segment_duration) {
+                target_duration = (float)segment_duration;
             }
-            g_free (format);
+            p = g_strdup_printf ("%s/%lu.ts", segment_dir, sequence);
+            g_string_append_printf (gstring, M3U8_INF_TAG, (float)segment_duration / GST_SECOND, p);
+            g_free (p);
+
+        } else {
+            g_free (p);
         }
+        g_free (segment_dir);
         globfree (&pglob);
     }
-    if (g_strcmp0 (gstring->str, "") == 0) {
-        GST_WARNING ("callback: no segment found");
-        g_string_free (gstring, TRUE);
-        return NULL;
-    }
+
     p = gstring->str;
     g_string_free (gstring, FALSE);
     gstring = g_string_new ("");

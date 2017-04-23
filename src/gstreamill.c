@@ -837,9 +837,8 @@ static void dvr_record_segment (Gstreamill *gstreamill, EncoderOutput *encoder_o
     seg_dir = segment_dir (encoder_output);
     record_data->dir = g_strdup_printf ("%s/%s", encoder_output->record_path, seg_dir);
     g_free (seg_dir);
-    record_data->file = g_strdup_printf ("%010lu_%lu_%lu.ts",
-            encoder_output->last_timestamp % 3600000000,
-            encoder_output->sequence,
+    record_data->file = g_strdup_printf ("%lu_%lu.ts",
+            (encoder_output->last_timestamp * 1000) / encoder_output->segment_duration,
             duration);
     record_data->buf = buf;
     record_data->segment_size = segment_size;
@@ -847,7 +846,6 @@ static void dvr_record_segment (Gstreamill *gstreamill, EncoderOutput *encoder_o
     g_queue_push_head (gstreamill->record_queue, record_data);
     g_cond_signal (&(gstreamill->record_queue_cond));
     g_mutex_unlock (&(gstreamill->record_queue_mutex));
-    encoder_output->sequence += 1;
 }
 
 static gpointer msg_thread (gpointer data)
@@ -933,11 +931,9 @@ static gpointer msg_thread (gpointer data)
             /* last_timestamp==0 means it's first segment */
             if (encoder_output->last_timestamp != 0) {
                 seg_dir = segment_dir (encoder_output);
-                seg_path = g_strdup_printf ("%s/%010lu_%lu_%lu.ts",
+                seg_path = g_strdup_printf ("%s/%lu.ts",
                         seg_dir,
-                        encoder_output->last_timestamp % 3600000000,
-                        encoder_output->sequence,
-                        duration);
+                        (encoder_output->last_timestamp * 1000) / encoder_output->segment_duration);
                 m3u8playlist_add_entry (encoder_output->m3u8_playlist, seg_path, duration);
                 g_free (seg_path);
                 if (encoder_output->dvr_duration != 0) {

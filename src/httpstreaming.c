@@ -174,27 +174,22 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
 {
     GstClockTime timestamp;
     gint number;
-    guint64 year, month, mday, hour, sequence, duration, rap_addr, max_age;
-    GstClockTime us; /* microseconds */
-    struct tm tm;
-    gchar date[20], *header, *path, *file, *cache_control;
+    guint64 year, month, mday, hour, sequence, rap_addr, max_age;
+    gchar *header, *path, *file, *cache_control, *pattern;
     gsize buf_size;
     GError *err = NULL;
     struct timespec ts;
+    glob_t pglob;
 
-    number = sscanf (request_data->uri, "/%*[^/]/encoder/%*[^/]/%04lu%02lu%02lu%02lu/%lu_%lu_%lu.ts$",
-            &year, &month, &mday, &hour, &us, &sequence, &duration);
-    if (number != 7) {
+    number = sscanf (request_data->uri, "/%*[^/]/encoder/%*[^/]/%04lu%02lu%02lu%02lu/%lu.ts$",
+            &year, &month, &mday, &hour, &sequence);
+    if (number != 5) {
         GST_WARNING ("uri not found: %s", request_data->uri);
         *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
         buf_size = strlen (*buf);
         return buf_size;
     }
-    sprintf (date, "%04lu-%02lu-%02lu %02lu:00:00", year, month, mday, hour);
-    memset (&tm, 0, sizeof (struct tm));
-    strptime (date, "%Y-%m-%d %H:%M:%S", &tm);
-    tm.tm_isdst = daylight;
-    timestamp = mktime (&tm) * 1000000 + us;
+    timestamp = sequence * encoder_output->segment_duration / 1000;
 
     /* read from memory */
     if (clock_gettime (CLOCK_REALTIME, &ts) == -1) {
@@ -257,38 +252,47 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
 
     /* buf_size == 0? segment not found in memory, read frome dvr directory */
     if (buf_size == 0) {
-        path = g_strdup_printf ("%s/%04lu%02lu%02lu%02lu/%010lu_%lu_%lu.ts",
-                encoder_output->record_path,
-                year, month, mday, hour, us, sequence, duration);
-        if (!g_file_get_contents (path, &file, &buf_size, &err)) {
-            GST_WARNING ("read segment error: %s", err->message);
-            g_error_free (err);
+        pattern = g_strdup_printf ("%s/%04lu%02lu%02lu%02lu/%lu_*.ts",
+                encoder_output->record_path, year, month, mday, hour, sequence);
+        if (glob (pattern, 0, NULL, &pglob) == GLOB_NOMATCH) {
             *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
             request_data->response_body_size = http_404_body_size;
             request_data->response_status = 404;
             buf_size = strlen (*buf);
 
         } else {
-            request_data->response_status = 200;
-            request_data->response_body_size = buf_size;
-            max_age = encoder_output->dvr_duration - (g_get_real_time () - timestamp) / 1000000;
-            cache_control = g_strdup_printf ("max-age=%lu", max_age);
-            header = g_strdup_printf (http_200,
-                    PACKAGE_NAME,
-                    PACKAGE_VERSION,
-                    "video/mpeg",
-                    buf_size,
-                    cache_control,
-                    "");
-            g_free (cache_control);
-            *buf = g_malloc (buf_size + strlen (header));
-            memcpy (*buf, header, strlen (header));
-            memcpy (*buf + strlen (header), file, buf_size);
-            buf_size += strlen (header);
-            g_free (header);
-            g_free (file);
+            path = pglob.gl_pathv[0];
+            if (!g_file_get_contents (path, &file, &buf_size, &err)) {
+                GST_WARNING ("read segment error: %s", err->message);
+                g_error_free (err);
+                *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
+                request_data->response_body_size = http_404_body_size;
+                request_data->response_status = 404;
+                buf_size = strlen (*buf);
+
+            } else {
+                request_data->response_status = 200;
+                request_data->response_body_size = buf_size;
+                max_age = encoder_output->dvr_duration - (g_get_real_time () - timestamp) / 1000000;
+                cache_control = g_strdup_printf ("max-age=%lu", max_age);
+                header = g_strdup_printf (http_200,
+                        PACKAGE_NAME,
+                        PACKAGE_VERSION,
+                        "video/mpeg",
+                        buf_size,
+                        cache_control,
+                        "");
+                g_free (cache_control);
+                *buf = g_malloc (buf_size + strlen (header));
+                memcpy (*buf, header, strlen (header));
+                memcpy (*buf + strlen (header), file, buf_size);
+                buf_size += strlen (header);
+                g_free (header);
+                g_free (file);
+            }
+            globfree (&pglob);
         }
-        g_free (path);
+        g_free (pattern);
     }
 
     return buf_size;
@@ -473,6 +477,7 @@ static gboolean is_dvr_download_request (RequestData *request_data)
                 segments_dir = timestamp_to_segment_dir (time); 
                 pattern = g_strdup_printf ("%s/dvr%s/%s/*_*_*.ts", MEDIA_LOCATION, path, segments_dir);
                 if (glob (pattern, 0, NULL, &pglob) == GLOB_NOMATCH) {
+                    ///g_free (pattern);???
                     g_free (segments_dir);
                     continue;
 
@@ -630,6 +635,7 @@ static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encod
         if ((shift_position < now) &&
             (shift_position > now - encoder_output->dvr_duration)) {
             m3u8playlist = m3u8playlist_timeshift_get_playlist (encoder_output->record_path,
+                                                            encoder_output->segment_duration,
                                                             encoder_output->version,
                                                             encoder_output->playlist_window_size,
                                                             shift_position);
@@ -641,6 +647,7 @@ static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encod
         end = get_str_parameter (request_data->parameters, "end");
         if ((start != NULL) && (end != NULL)) {
             m3u8playlist = m3u8playlist_callback_get_playlist (encoder_output->record_path,
+                                                            encoder_output->segment_duration,
                                                             encoder_output->dvr_duration,
                                                             start,
                                                             end);

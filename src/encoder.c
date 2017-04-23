@@ -192,7 +192,7 @@ static void move_last_rap (Encoder *encoder, GstBuffer *buffer)
 {
     gchar buf[12];
     gint32 size, n;
-    GstClockTime buffer_time;
+    GstClockTime buffer_time, now;
 
     /* calculate and write gop size. */
     if (*(encoder->output->tail_addr) >= *(encoder->output->last_rap_addr)) {
@@ -218,7 +218,8 @@ static void move_last_rap (Encoder *encoder, GstBuffer *buffer)
 
     /* new gop timestamp, 4bytes reservation for gop size. */
     *(encoder->output->last_rap_addr) = *(encoder->output->tail_addr);
-    buffer_time = g_get_real_time ();
+    now = g_get_real_time ();
+    buffer_time = now - now % (encoder->segment_duration / 1000);
     memcpy (buf, &buffer_time, 8);
     size = 0;
     memcpy (buf + 8, &size, 4);
@@ -427,7 +428,7 @@ static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data
     GstPad *pad;
     GstEvent *event;
     Encoder *encoder;
-    GstClockTime running_time;
+    GstClockTime running_time, wall_clock;
 
     current_position = (stream->current_position + 1) % SOURCE_RING_SIZE;
     for (;;) {
@@ -466,8 +467,10 @@ static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data
         encoder = stream->encoder;
         /* segment_duration != 0? with m3u8playlist conf */
         if (stream->is_segment_reference) {
+            wall_clock = g_get_real_time ();
             running_time = GST_BUFFER_PTS (buffer);
-            if (encoder->duration_accumulation >= encoder->segment_duration) {
+            if ((wall_clock % encoder->segment_duration < 40000) ||
+                (encoder->duration_accumulation >= encoder->segment_duration)) {
                 encoder->last_segment_duration = encoder->duration_accumulation;
                 /* force key unit? */
                 if (encoder->has_video) {

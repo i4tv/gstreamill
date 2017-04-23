@@ -519,34 +519,6 @@ static gchar * render_master_m3u8_playlist (Job *job)
     return p;
 }
 
-static guint64 get_dvr_sequence (JobOutput *joboutput)
-{
-    glob_t dglob, fglob;
-    gchar *pattern_dir, *pattern_seg, *format;
-    guint64 sequence;
-    gint i;
-
-    sequence = 0;
-    for (i = 0; i < joboutput->encoder_count; i++) {
-        pattern_dir = g_strdup_printf ("%s/??????????", joboutput->encoders[i].record_path);
-        if (glob (pattern_dir, 0, NULL, &dglob) != GLOB_NOMATCH) {
-            pattern_seg = g_strdup_printf ("%s/*", dglob.gl_pathv[dglob.gl_pathc - 1]);
-            if (glob (pattern_seg, 0, NULL, &fglob) != GLOB_NOMATCH) {
-                format = g_strdup_printf ("%s/%%*[^_]_%%lu_%%*[^_]$", dglob.gl_pathv[dglob.gl_pathc - 1]);
-                sscanf (fglob.gl_pathv[fglob.gl_pathc - 1], format, &sequence);
-                sequence += 1;
-                g_free (format);
-            }
-            g_free (pattern_seg);
-            globfree (&fglob);
-        }
-        globfree (&dglob);
-        g_free (pattern_dir);
-    }
-
-    return sequence;
-}
-
 /*
  * job_output_initialize:
  * @job: (in): job object
@@ -711,7 +683,6 @@ void job_reset (Job *job)
     EncoderOutput *encoder;
 
     GST_WARNING ("reset job %s", job->name);
-    job->output->sequence = get_dvr_sequence (job->output);
     job->stoping = FALSE;
     *(job->output->state) = JOB_STATE_VOID_PENDING;
     g_file_get_contents ("/proc/stat", &stat, NULL, NULL);
@@ -748,9 +719,6 @@ void job_reset (Job *job)
 
     for (i = 0; i < job->output->encoder_count; i++) {
         encoder = &(job->output->encoders[i]);
-
-        /* encoder dvr sequence */
-        encoder->sequence = job->output->sequence;
 
         /* reset m3u8 playlist */
         if (encoder->m3u8_playlist != NULL) {

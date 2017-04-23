@@ -44,7 +44,6 @@ typedef struct _EncoderOutput {
 
     /* timeshift and dvr */
     gchar *record_path;
-    guint64 sequence;
     guint64 dvr_duration;
 } EncoderOutput;
 
