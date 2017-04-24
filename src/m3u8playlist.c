@@ -261,7 +261,6 @@ gchar * m3u8playlist_callback_get_playlist (gchar *path, guint64 duration, guint
         segment_dir = timestamp_to_segment_dir (time); 
         sequence = time / (duration / GST_SECOND);
         p = g_strdup_printf ("%s/%s/%lu_*.ts", path, segment_dir, sequence);
-        GST_ERROR ("p: %s, start: %ld, end: %ld, duration: %lu", p, start_time, end_time, duration / GST_SECOND);
         if (glob (p, 0, NULL, &pglob) == 0) {
             g_free (p);
             p = g_strdup_printf ("%s/%s/%lu_%%lu.ts$", path, segment_dir, sequence);
