@@ -498,7 +498,6 @@ static gboolean apply_pmt (TsSegment *tssegment, GstMpegtsSection * section)
         return TRUE;
     }
 
-
     /* activate program */
     /* Ownership of pmt_info is given to the program */
     tssegment->pmt = pmt;
@@ -1230,7 +1229,9 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
 
         } else if ((packet.pid == tssegment->video_pid) && FLAGS_HAS_PAYLOAD (packet.scram_afc_cc)) {
             if (tssegment->video_cc != FLAGS_CONTINUITY_COUNTER (packet.scram_afc_cc)) {
-                GST_WARNING ("expect video cc %d, but %d found", tssegment->video_cc, FLAGS_CONTINUITY_COUNTER (packet.scram_afc_cc));
+                GST_WARNING ("expect video cc %d, but %d found",
+                        tssegment->video_cc,
+                        FLAGS_CONTINUITY_COUNTER (packet.scram_afc_cc));
             }
             tssegment->video_cc = (FLAGS_CONTINUITY_COUNTER (packet.scram_afc_cc) + 1) % 16;
             if (G_LIKELY (packet.payload_unit_start_indicator)) {
@@ -1243,6 +1244,7 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
                 } else if (tssegment->video_stream_type == GST_MPEGTS_STREAM_TYPE_VIDEO_HEVC) {
                     nalu_parsing_result = h265_parse_nalu (tssegment);
                 }
+
                 /* if new frame found, push a segment downstream */
                 if (nalu_parsing_result & NALU_FRAME) {
                     data = g_malloc (tssegment->current_size);
