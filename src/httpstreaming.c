@@ -400,12 +400,12 @@ static void http_progress_play_priv_data_init (HTTPStreaming *httpstreaming,
     request_data->bytes_send = 0;
 }
 
-static gboolean is_dvr_download_request (RequestData *request_data)
+static gboolean is_dvr_download_request (RequestData *request_data, EncoderOutput *encoder_output)
 {
-    gchar start_dir[11], end_dir[11], *start, *end, *segments_dir, *pattern, *format, *path;
-    gint number, i;
+    gchar start_dir[11], end_dir[11], *start, *end, *segments_dir, *path, *p;
+    gint number;
     time_t start_time, end_time, time;
-    guint64 start_min, start_sec, end_min, end_sec, start_us, end_us, us;
+    guint64 start_min, start_sec, end_min, end_sec, sequence;
     glob_t pglob;
     HTTPStreamingPrivateData *priv_data;
     GStatBuf stat;
@@ -437,6 +437,8 @@ static gboolean is_dvr_download_request (RequestData *request_data)
                 GST_ERROR ("Error start_min: %ld or start_sec: %ld", start_min, start_sec);
                 goto bad_request;
             }
+            start_time += start_min * 60 + start_sec;
+
             number = sscanf (end, "%10s%02lu%02lu", end_dir, &end_min, &end_sec);
             if (number != 3) {
                 GST_ERROR ("bad callback parameters: end=%s", end);
@@ -450,6 +452,7 @@ static gboolean is_dvr_download_request (RequestData *request_data)
                 GST_ERROR ("Error end_min: %ld or end_sec: %ld", end_min, end_sec);
                 goto bad_request;
             }
+            end_time += end_min * 60 + end_sec;
 
             priv_data = (HTTPStreamingPrivateData *)g_malloc (sizeof (HTTPStreamingPrivateData));
             priv_data->buf = NULL;
@@ -459,44 +462,17 @@ static gboolean is_dvr_download_request (RequestData *request_data)
             priv_data->list_index = 0;
             priv_data->segment_position = 0;
             priv_data->segment_size = 0;
-            for (time = start_time; time <= end_time; time += 3600) {
-                if (time == start_time) {
-                    start_us = start_min * 60000000 + start_sec * 1000000;
-
-                } else {
-                    start_us = 0;
-                }
-
-                if (time == end_time) {
-                    end_us = end_min * 60000000 + end_sec * 1000000;
-
-                } else {
-                    end_us = 3600000000;
-                }
-
+            for (time = start_time; time <= end_time; time += encoder_output->segment_duration / GST_SECOND) {
                 segments_dir = timestamp_to_segment_dir (time); 
-                pattern = g_strdup_printf ("%s/dvr%s/%s/*_*_*.ts", MEDIA_LOCATION, path, segments_dir);
-                if (glob (pattern, 0, NULL, &pglob) == GLOB_NOMATCH) {
-                    ///g_free (pattern);???
-                    g_free (segments_dir);
-                    continue;
-
-                } else {
-                    g_free (pattern);
-                    format = g_strdup_printf ("%s/dvr%s/%s/%%lu_", MEDIA_LOCATION, path, segments_dir);
-                    g_free (segments_dir);
-                    for (i = 0; i < pglob.gl_pathc; i++) {
-                        if (1 != sscanf (pglob.gl_pathv[i], format, &us)) {
-                            continue;
-                        }
-                        if ((us >= start_us) && (us <= end_us)) {
-                            g_lstat (pglob.gl_pathv[i], &stat);
-                            priv_data->dvr_download_size += stat.st_size;
-                            priv_data->segment_list = g_slist_append (priv_data->segment_list, g_strdup (pglob.gl_pathv[i]));
-                        }
-                    }
-                    g_free (format);
+                sequence = time / (encoder_output->segment_duration / GST_SECOND);
+                p = g_strdup_printf ("%s/dvr%s/%s/%lu_*.ts", MEDIA_LOCATION, path, segments_dir, sequence);
+                g_free (segments_dir);
+                if (glob (p, 0, NULL, &pglob) == 0) {
+                    g_lstat (pglob.gl_pathv[0], &stat);
+                    priv_data->dvr_download_size += stat.st_size;
+                    priv_data->segment_list = g_slist_append (priv_data->segment_list, g_strdup (pglob.gl_pathv[0]));
                 }
+                g_free (p);
                 globfree (&pglob);
             }
 
@@ -729,19 +705,6 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
             request_data->response_status = 200;
         }
 
-        /* is dvr download request? */
-        if ((buf == NULL) && is_dvr_download_request (request_data)) {
-            priv_data = request_data->priv_data;
-            buf = g_strdup_printf (http_200,
-                    PACKAGE_NAME,
-                    PACKAGE_VERSION,
-                    "video/mpeg",
-                    priv_data->dvr_download_size,
-                    "private",
-                    "");
-            dvr_download_request = TRUE;
-        }
-
         /* 404 not found */
         if (buf == NULL) {
             buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
@@ -807,6 +770,19 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
         http_progress_play_request = TRUE;
         request_data->response_status = 200;
         request_data->response_body_size = 0;
+
+    /* is dvr download request? */
+    } else if ((buf == NULL) && is_dvr_download_request (request_data, encoder_output)) {
+        priv_data = request_data->priv_data;
+        buf = g_strdup_printf (http_200,
+                PACKAGE_NAME,
+                PACKAGE_VERSION,
+                "video/mpeg",
+                priv_data->dvr_download_size,
+                "private",
+                "");
+        dvr_download_request = TRUE;
+        buf_size = strlen (buf);
 
     } else {
         buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
