@@ -151,6 +151,8 @@ typedef struct _TsSegment {
     GstClockTime frames_accumulate;
     /* whether we saw a idr */
     gboolean seen_idr;
+
+    GstTagList *tag;
 } TsSegment;
 
 typedef struct _TsSegmentClass {

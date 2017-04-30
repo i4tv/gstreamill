@@ -108,6 +108,8 @@ static void ts_segment_init (TsSegment *tssegment)
     tssegment->pes_packet_duration = 0;
     tssegment->h264parser = gst_h264_nal_parser_new ();
     tssegment->h265parser = gst_h265_parser_new ();
+
+    tssegment->tag = gst_tag_list_new ("codec");
 }
 
 static void ts_segment_set_property (GObject *obj, guint prop_id, const GValue *value, GParamSpec *pspec)
@@ -146,6 +148,7 @@ static void ts_segment_dispose (GObject * object)
 
     tssegment = TS_SEGMENT (object);
     g_free (tssegment->known_psi);
+    gst_tag_list_unref (tssegment->tag);
     g_object_unref (tssegment);
 }
 
@@ -507,11 +510,33 @@ static gboolean apply_pmt (TsSegment *tssegment, GstMpegtsSection * section)
             GST_INFO ("H.264 video, pid %d", stream->pid);
             tssegment->video_stream_type = GST_MPEGTS_STREAM_TYPE_VIDEO_H264;
             tssegment->video_pid = stream->pid;
+            gst_tag_list_add (tssegment->tag, GST_TAG_MERGE_REPLACE, GST_TAG_VIDEO_CODEC, "avc", NULL);
 
         } else if (stream->stream_type == GST_MPEGTS_STREAM_TYPE_VIDEO_HEVC) {
             GST_INFO ("H.265 video, pid %d", stream->pid);
             tssegment->video_stream_type = GST_MPEGTS_STREAM_TYPE_VIDEO_HEVC;
             tssegment->video_pid = stream->pid;
+            gst_tag_list_add (tssegment->tag, GST_TAG_MERGE_REPLACE, GST_TAG_VIDEO_CODEC, "hevc", NULL);
+
+        } else if (stream->stream_type == GST_MPEGTS_STREAM_TYPE_AUDIO_AAC_ADTS) {
+            GST_INFO ("AAC ADTS Audio, pid %d", stream->pid);
+            gst_tag_list_add (tssegment->tag, GST_TAG_MERGE_REPLACE, GST_TAG_AUDIO_CODEC, "mp4a", NULL);
+
+        } else if (stream->stream_type == GST_MPEGTS_STREAM_TYPE_AUDIO_AAC_LATM) {
+            GST_INFO ("AAC LATM Audio, pid %d", stream->pid);
+            gst_tag_list_add (tssegment->tag, GST_TAG_MERGE_REPLACE, GST_TAG_AUDIO_CODEC, "mp4a", NULL);
+
+        } else if (stream->stream_type == GST_MPEGTS_STREAM_TYPE_AUDIO_AAC_CLEAN) {
+            GST_INFO ("AAC CLEAN, pid %d", stream->pid);
+            gst_tag_list_add (tssegment->tag, GST_TAG_MERGE_REPLACE, GST_TAG_AUDIO_CODEC, "mp4a", NULL);
+
+        } else if (stream->stream_type == GST_MPEGTS_STREAM_TYPE_AUDIO_MPEG1) {
+            GST_WARNING ("MPEG1 AUDIO, pid %d", stream->pid);
+            gst_tag_list_add (tssegment->tag, GST_TAG_MERGE_REPLACE, GST_TAG_AUDIO_CODEC, "mp21", NULL);
+
+        } else if (stream->stream_type == GST_MPEGTS_STREAM_TYPE_VIDEO_MPEG2) {
+            GST_WARNING ("MPEG2 video, pid %d", stream->pid);
+            gst_tag_list_add (tssegment->tag, GST_TAG_MERGE_REPLACE, GST_TAG_AUDIO_CODEC, "mp21", NULL);
         }
     }
 
@@ -1266,6 +1291,7 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
 
                     } else if (nalu_parsing_result & NALU_IDR) {
                         tssegment->seen_idr = TRUE;
+                        gst_pad_push_event (tssegment->srcpad, gst_event_new_tag (tssegment->tag));
                     }
                     tssegment->current_size = 0;
                     tssegment->pes_packet_duration = 0;

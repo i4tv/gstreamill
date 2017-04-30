@@ -107,5 +107,6 @@ void job_reset (Job *job);
 gint job_stat_update (Job *job);
 gint job_start (Job *job);
 gint job_stop (Job *job, gint sig);
+gchar * job_render_master_m3u8_playlist (Job *job);
 
 #endif /* __JOB_H__ */

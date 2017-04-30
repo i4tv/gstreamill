@@ -256,6 +256,7 @@ static gsize status_output_size (gchar *job)
     size += sizeof (gint64); /* duration for transcode */
     size += jobdesc_streams_count (job, "source") * sizeof (struct _SourceStreamState);
     for (i = 0; i < jobdesc_encoders_count (job); i++) {
+        size += 64; /* encoder codec */
         size += sizeof (GstClockTime); /* encoder output heartbeat */
         size += sizeof (gboolean); /* end of stream */
         pipeline = g_strdup_printf ("encoder.%d", i);
@@ -403,6 +404,8 @@ gint job_initialize (Job *job, gint mode, gint shm_fd, gchar *shm_p)
         output->encoders[i].stream_count = jobdesc_streams_count (job->description, name);
         g_free (name);
         output->encoders[i].semaphore = output->semaphore;
+        output->encoders[i].codec = (gchar *)p;
+        p += 64; /* string codec size */
         output->encoders[i].heartbeat = (GstClockTime *)p;
         p += sizeof (GstClockTime); /* encoder heartbeat */
         output->encoders[i].eos = (gboolean *)p;
@@ -491,7 +494,7 @@ static gchar * get_bitrate (Job *job, gint index)
     return g_strdup_printf ("%u", ts_bitrate);
 }
 
-static gchar * render_master_m3u8_playlist (Job *job)
+gchar * job_render_master_m3u8_playlist (Job *job)
 {
     GString *master_m3u8_playlist;
     gchar *p;
@@ -510,6 +513,12 @@ static gchar * render_master_m3u8_playlist (Job *job)
         p = get_bitrate (job, i);
         g_string_append_printf (master_m3u8_playlist, M3U8_STREAM_INF_TAG, 1, p);
         g_free (p);
+        if (g_strcmp0 (job->output->encoders[i].codec, "") == 0) {
+            g_string_append_printf (master_m3u8_playlist, "\n");
+
+        } else {
+            g_string_append_printf (master_m3u8_playlist, ",CODECS=\"%s\"\n", job->output->encoders[i].codec);
+        }
         g_string_append_printf (master_m3u8_playlist, "encoder/%d/playlist.m3u8<%%parameters%%>\n", i);
     }
 
@@ -532,18 +541,7 @@ gint job_output_initialize (Job *job)
     JobOutput *output;
 
     output = job->output;
-    /* m3u8 streaming? */
-    if (jobdesc_m3u8streaming (job->description)) {
-        /* m3u8 master playlist */
-        output->master_m3u8_playlist = render_master_m3u8_playlist (job);
-        if (output->master_m3u8_playlist == NULL) {
-            GST_ERROR ("job %s render master m3u8 playlist failure", job->name);
-            return 1;
-        }
-
-    } else {
-        output->master_m3u8_playlist = NULL;
-    }
+    output->master_m3u8_playlist = NULL;
 
     /* initialize m3u8 and dvr parameters */
     for (i = 0; i < output->encoder_count; i++) {

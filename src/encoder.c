@@ -9,6 +9,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <glib/gstdio.h>
 #include <gst/gst.h>
 #include <gst/app/gstappsrc.h>
 #include <gst/app/gstappsink.h>
@@ -519,21 +520,27 @@ static GstPadProbeReturn encoder_appsink_event_probe (GstPad *pad, GstPadProbeIn
     GstClockTime timestamp, running_time, stream_time;
     gboolean all_headers;
     guint count;
+    GstTagList *taglist;
+    gchar *vcodec, *acodec;
 
     if (GST_EVENT_TYPE (event) == GST_EVENT_EOS) {
         GST_ERROR ("End of Stream of encoder %s", encoder->name);
         *(encoder->output->eos) = TRUE;
-        return GST_PAD_PROBE_OK;
-    }
 
-    if (!gst_video_event_is_force_key_unit (event)) {
-        return GST_PAD_PROBE_OK;
-    }
+    } else if (GST_EVENT_TYPE (event) == GST_EVENT_TAG) {
+        gst_event_parse_tag (event, &taglist);
+        gst_tag_list_get_string (taglist, GST_TAG_VIDEO_CODEC, &vcodec);
+        gst_tag_list_get_string (taglist, GST_TAG_AUDIO_CODEC, &acodec);
+        g_sprintf (encoder->output->codec, "%s,%s", vcodec, acodec);
+        g_free (vcodec);
+        g_free (acodec);
 
-    /* force key unit event */
-    gst_video_event_parse_downstream_force_key_unit (event, &timestamp, &stream_time, &running_time, &all_headers, &count);
-    if (encoder->last_segment_duration != 0) {
-        encoder->last_running_time = timestamp;
+    } else if (gst_video_event_is_force_key_unit (event)) {
+        /* force key unit event */
+        gst_video_event_parse_downstream_force_key_unit (event, &timestamp, &stream_time, &running_time, &all_headers, &count);
+        if (encoder->last_segment_duration != 0) {
+            encoder->last_running_time = timestamp;
+        }
     }
 
     return GST_PAD_PROBE_OK;

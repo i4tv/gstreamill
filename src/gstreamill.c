@@ -1453,13 +1453,10 @@ gchar * gstreamill_get_master_m3u8playlist (Gstreamill *gstreamill, gchar *uri)
         return NULL;
     }
     g_free (master);
-
     if (job->output->master_m3u8_playlist == NULL) {
-        playlist = NULL;
-
-    } else {
-        playlist = g_strdup (job->output->master_m3u8_playlist);
+        job->output->master_m3u8_playlist = job_render_master_m3u8_playlist (job);
     }
+    playlist = g_strdup (job->output->master_m3u8_playlist);
     g_object_unref (job);
 
     return playlist;
