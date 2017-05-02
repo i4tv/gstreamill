@@ -433,7 +433,7 @@ static void pad_added_callback (GstElement *src, GstPad *pad, gpointer data)
         GST_WARNING ("skip sometimes pad: %s", src_pad_name);
         return;
     }
-    GST_DEBUG ("sometimes pad: %s found", src_pad_name);
+    GST_INFO ("sometimes pad: %s found", src_pad_name);
 
     pipeline = (GstElement *)gst_element_get_parent (src);
     elements = bin->elements;
@@ -447,7 +447,7 @@ static void pad_added_callback (GstElement *src, GstPad *pad, gpointer data)
     links = bin->links;
     while (links != NULL) {
         link = links->data;
-        GST_DEBUG ("Link %s -> %s", link->src_name, link->sink_name);
+        GST_INFO ("Link %s -> %s", link->src_name, link->sink_name);
         if (link->caps != NULL) {
             caps = gst_caps_from_string (link->caps);
             gst_element_link_filtered (link->src, link->sink, caps);
@@ -460,7 +460,7 @@ static void pad_added_callback (GstElement *src, GstPad *pad, gpointer data)
     }
 
     if (gst_element_link (src, bin->previous->sink)) {
-        GST_DEBUG ("new added pad name: %s, delayed src pad name %s. ok!", src_pad_name, bin->previous->src_pad_name);
+        GST_INFO ("new added pad name: %s, delayed src pad name %s. ok!", src_pad_name, bin->previous->src_pad_name);
     }
 
     g_free (src_pad_name);
