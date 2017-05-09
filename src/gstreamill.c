@@ -628,6 +628,7 @@ static void dvr_clean (Gstreamill *gstreamill)
             for (j = 0; j < pglob.gl_pathc; j++) {
                 dir = &(pglob.gl_pathv[j][strlen (job->output->encoders[i].record_path) + 1]);
                 if (g_strcmp0 (expire_dir, dir) > 0) {
+                    GST_INFO ("remove dvr directory: %s", pglob.gl_pathv[j]);
                     remove_dir (pglob.gl_pathv[j]);
 
                 } else {
@@ -789,7 +790,10 @@ static void dvr_record_segment (Gstreamill *gstreamill, EncoderOutput *encoder_o
 
     /* gop not found? */
     if (rap_addr == G_MAXUINT64) {
-        GST_WARNING ("%s: record segment, but segment not found!", encoder_output->name);
+        GST_WARNING ("%s segment %lu_%lu.ts not found!",
+                encoder_output->name,
+                ((encoder_output->last_timestamp + 500000) * 1000) / encoder_output->segment_duration,
+                encoder_output->segment_duration);
         //sem_post (encoder_output->semaphore);
         return;
     }
@@ -838,7 +842,7 @@ static void dvr_record_segment (Gstreamill *gstreamill, EncoderOutput *encoder_o
     record_data->dir = g_strdup_printf ("%s/%s", encoder_output->record_path, seg_dir);
     g_free (seg_dir);
     record_data->file = g_strdup_printf ("%lu_%lu.ts",
-            (encoder_output->last_timestamp * 1000) / encoder_output->segment_duration,
+            ((encoder_output->last_timestamp + 500000) * 1000) / encoder_output->segment_duration,
             duration);
     record_data->buf = buf;
     record_data->segment_size = segment_size;
@@ -1300,6 +1304,7 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
             p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"unknown\"\n}");
         }
     }
+    job_render_master_m3u8_playlist (job);
 
     return p;
 }
@@ -1454,9 +1459,11 @@ gchar * gstreamill_get_master_m3u8playlist (Gstreamill *gstreamill, gchar *uri)
     }
     g_free (master);
     if (job->output->master_m3u8_playlist == NULL) {
-        job->output->master_m3u8_playlist = job_render_master_m3u8_playlist (job);
+        playlist = NULL;
+
+    } else {
+        playlist = g_strdup (job->output->master_m3u8_playlist);
     }
-    playlist = g_strdup (job->output->master_m3u8_playlist);
     g_object_unref (job);
 
     return playlist;

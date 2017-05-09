@@ -494,7 +494,7 @@ static gchar * get_bitrate (Job *job, gint index)
     return g_strdup_printf ("%u", ts_bitrate);
 }
 
-gchar * job_render_master_m3u8_playlist (Job *job)
+void job_render_master_m3u8_playlist (Job *job)
 {
     GString *master_m3u8_playlist;
     gchar *p;
@@ -522,10 +522,8 @@ gchar * job_render_master_m3u8_playlist (Job *job)
         g_string_append_printf (master_m3u8_playlist, "encoder/%d/playlist.m3u8<%%parameters%%>\n", i);
     }
 
-    p = master_m3u8_playlist->str;
+    job->output->master_m3u8_playlist = master_m3u8_playlist->str;
     g_string_free (master_m3u8_playlist, FALSE);
-
-    return p;
 }
 
 /*
