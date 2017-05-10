@@ -51,6 +51,12 @@ struct _Gstreamill {
     GQueue *record_queue;
     GThread *record_thread;
 
+    /* remove dvr thread */
+    GMutex remove_dvr_queue_mutex;
+    GCond remove_dvr_queue_cond;
+    GQueue *remove_dvr_queue;
+    GThread *remove_dvr_thread;
+
     gdouble cpu_average;
     gdouble cpu_current;
 

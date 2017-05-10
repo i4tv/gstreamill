@@ -105,6 +105,10 @@ static void gstreamill_init (Gstreamill *gstreamill)
     g_mutex_init (&(gstreamill->record_queue_mutex));
     g_cond_init (&(gstreamill->record_queue_cond));
     gstreamill->record_queue = g_queue_new ();
+
+    g_mutex_init (&(gstreamill->remove_dvr_queue_mutex));
+    g_cond_init (&(gstreamill->remove_dvr_queue_cond));
+    gstreamill->remove_dvr_queue = g_queue_new ();
 }
 
 static GObject * gstreamill_constructor (GType type, guint n_construct_properties, GObjectConstructParam *construct_properties)
@@ -184,6 +188,7 @@ static void gstreamill_dispose (GObject *obj)
     Gstreamill *gstreamill = GSTREAMILL (obj);
     GObjectClass *parent_class = g_type_class_peek (G_TYPE_OBJECT);
     RecordData *record_data;
+    gchar *path;
 
     if (gstreamill->log_dir != NULL) {
         g_free (gstreamill->log_dir);
@@ -200,6 +205,12 @@ static void gstreamill_dispose (GObject *obj)
         free_record_data (record_data);
     }
     g_queue_free (gstreamill->record_queue);
+
+    while (g_queue_get_length (gstreamill->remove_dvr_queue) > 0) {
+        path = (gchar *)g_queue_pop_tail (gstreamill->remove_dvr_queue);
+        g_free (path);
+    }
+    g_queue_free (gstreamill->remove_dvr_queue);
 
     G_OBJECT_CLASS (parent_class)->dispose (obj);
 }
@@ -594,11 +605,37 @@ static void job_check_func (gpointer data, gpointer user_data)
     g_mutex_unlock (&(job->access_mutex));
 }
 
+static gpointer remove_dvr_thread (gpointer data)
+{
+    Gstreamill *gstreamill = (Gstreamill *)data;
+    gchar *path;
+
+    for (;;) {
+        g_mutex_lock (&(gstreamill->remove_dvr_queue_mutex));
+        while (g_queue_get_length (gstreamill->remove_dvr_queue) > 0) {
+            if (g_queue_get_length (gstreamill->remove_dvr_queue) > 10) {
+                GST_WARNING ("remove_dvr_queue length: %u", g_queue_get_length (gstreamill->remove_dvr_queue));
+            }
+            path = (gchar *)g_queue_pop_tail (gstreamill->remove_dvr_queue);
+            g_mutex_unlock (&(gstreamill->remove_dvr_queue_mutex));
+            GST_INFO ("remove dvr directory: %s", path);
+            remove_dir (path);
+            g_free (path);
+            g_mutex_lock (&(gstreamill->remove_dvr_queue_mutex));
+        }
+        g_cond_wait (&(gstreamill->remove_dvr_queue_cond), &(gstreamill->remove_dvr_queue_mutex));
+        g_mutex_unlock (&(gstreamill->remove_dvr_queue_mutex));
+    }
+
+    return NULL;
+}
+
+
 static void dvr_clean (Gstreamill *gstreamill)
 {
     guint64 now, time;
     gint i, j;
-    gchar *pattern, *expire_dir, *dir;
+    gchar *pattern, *expire_dir, *dir, *path;
     glob_t pglob;
     GSList *list;
     Job *job;
@@ -628,8 +665,12 @@ static void dvr_clean (Gstreamill *gstreamill)
             for (j = 0; j < pglob.gl_pathc; j++) {
                 dir = &(pglob.gl_pathv[j][strlen (job->output->encoders[i].record_path) + 1]);
                 if (g_strcmp0 (expire_dir, dir) > 0) {
-                    GST_INFO ("remove dvr directory: %s", pglob.gl_pathv[j]);
-                    remove_dir (pglob.gl_pathv[j]);
+                    GST_INFO ("Add removing dvr directory %s task into queue", pglob.gl_pathv[j]);
+                    path = g_strdup (pglob.gl_pathv[j]);
+                    g_mutex_lock (&(gstreamill->remove_dvr_queue_mutex));
+                    g_queue_push_head (gstreamill->remove_dvr_queue, path);
+                    g_cond_signal (&(gstreamill->remove_dvr_queue_cond));
+                    g_mutex_unlock (&(gstreamill->remove_dvr_queue_mutex));
 
                 } else {
                     break;
@@ -972,7 +1013,12 @@ gint gstreamill_start (Gstreamill *gstreamill)
 
     /* message process thread */
     gstreamill->msg_thread = g_thread_new ("msg_thread", msg_thread, gstreamill);
+
+    /* record thread */
     gstreamill->record_thread = g_thread_new ("record_thread", record_thread, gstreamill);
+
+    /* remove dvr thread */
+    gstreamill->remove_dvr_thread = g_thread_new ("remove_dvr_thread", remove_dvr_thread, gstreamill);
 
     /* regist gstreamill monitor */
     t = gst_clock_get_time (gstreamill->system_clock)  + 5000 * GST_MSECOND;
