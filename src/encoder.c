@@ -221,6 +221,19 @@ static void move_last_rap (Encoder *encoder, GstBuffer *buffer)
     *(encoder->output->last_rap_addr) = *(encoder->output->tail_addr);
     now = g_get_real_time ();
     buffer_time = now - now % (encoder->segment_duration / 1000);
+    if (G_UNLIKELY (buffer_time != encoder->last_buffer_time + encoder->segment_duration / 1000)) {
+        if (G_UNLIKELY (encoder->last_buffer_time == GST_CLOCK_TIME_NONE)) {
+            encoder->last_buffer_time = buffer_time;
+
+        } else {
+            encoder->last_buffer_time += encoder->segment_duration / 1000;
+            GST_WARNING ("Wrong buffer time: %ld, should be: %ld", buffer_time, encoder->last_buffer_time);
+            buffer_time = encoder->last_buffer_time;
+        }
+
+    } else {
+        encoder->last_buffer_time = buffer_time;
+    }
     memcpy (buf, &buffer_time, 8);
     size = 0;
     memcpy (buf + 8, &size, 4);
@@ -387,7 +400,7 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
             /* no m3u8 output */
             move_last_rap (encoder, buffer);
 
-        } else if (GST_BUFFER_PTS (buffer) + 90000000 >= encoder->last_running_time) {
+        } else if (encoder->last_running_time != GST_CLOCK_TIME_NONE) {
             move_last_rap (encoder, buffer);
             segment_found = TRUE;
 
@@ -429,7 +442,7 @@ static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data
     GstPad *pad;
     GstEvent *event;
     Encoder *encoder;
-    GstClockTime running_time, wall_clock;
+    GstClockTime running_time;
 
     current_position = (stream->current_position + 1) % SOURCE_RING_SIZE;
     for (;;) {
@@ -442,7 +455,10 @@ static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data
                 GstFlowReturn ret;
 
                 ret = gst_app_src_end_of_stream (src);
-                GST_INFO ("EOS of source %s, tell encoder %s, return %s", stream->source->name, stream->name, gst_flow_get_name (ret));
+                GST_INFO ("EOS of source %s, tell encoder %s, return %s",
+                        stream->source->name,
+                        stream->name,
+                        gst_flow_get_name (ret));
                 break;
             }
             GST_DEBUG ("waiting %s source ready", stream->name);
@@ -468,9 +484,8 @@ static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data
         encoder = stream->encoder;
         /* segment_duration != 0? with m3u8playlist conf */
         if (stream->is_segment_reference) {
-            wall_clock = g_get_real_time ();
             running_time = GST_BUFFER_PTS (buffer);
-            if ((wall_clock % encoder->segment_duration < 40000) ||
+            if ((encoder->segment_duration - encoder->duration_accumulation < 20000000) ||
                 (encoder->duration_accumulation >= encoder->segment_duration)) {
                 encoder->last_segment_duration = encoder->duration_accumulation;
                 /* force key unit? */
@@ -481,8 +496,12 @@ static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data
                             running_time,
                             TRUE,
                             encoder->force_key_count);
-                    gst_pad_push_event (pad, event);
-                    encoder->last_video_buffer_pts = running_time;
+                    if (G_LIKELY (gst_pad_push_event (pad, event))) {
+                        encoder->last_video_buffer_pts = running_time;
+
+                    } else {
+                        GST_ERROR ("push key event failure, running time: %ld", running_time);
+                    }
 
                 } else {
                     encoder->last_running_time = running_time;
@@ -775,6 +794,7 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
         encoder->id = i;
         encoder->last_running_time = GST_CLOCK_TIME_NONE;
         encoder->output = &(encoders[i]);
+        encoder->last_buffer_time = GST_CLOCK_TIME_NONE;
         encoder->segment_duration = jobdesc_m3u8streaming_segment_duration (job);
         encoder->duration_accumulation = 0;
         encoder->last_segment_duration = 0;
