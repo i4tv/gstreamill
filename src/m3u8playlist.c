@@ -201,7 +201,6 @@ gchar * m3u8playlist_callback_get_playlist (gchar *path, guint64 duration, guint
     time_t start_time, end_time, time;
     guint64 start_min, start_sec, end_min, end_sec, sequence;
     gchar *segment_dir, *p;
-    gfloat target_duration = 0;
     GString *gstring;
 
     time = g_get_real_time () / 1000000;
@@ -259,7 +258,7 @@ gchar * m3u8playlist_callback_get_playlist (gchar *path, guint64 duration, guint
     g_string_append_printf (gstring, M3U8_HEADER_TAG);
     g_string_append_printf (gstring, M3U8_VERSION_TAG, 3);
     g_string_append_printf (gstring, M3U8_ALLOW_CACHE_TAG, "YES");
-    g_string_append_printf (gstring, M3U8_TARGETDURATION_TAG, (guint)((target_duration + 500 * GST_MSECOND) / GST_SECOND));
+    g_string_append_printf (gstring, M3U8_TARGETDURATION_TAG, duration / GST_SECOND);
     g_string_append_printf (gstring, "\n");
     g_string_append_printf (gstring, "%s", p);
     g_free (p);
