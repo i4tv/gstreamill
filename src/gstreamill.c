@@ -831,11 +831,9 @@ static void dvr_record_segment (Gstreamill *gstreamill, EncoderOutput *encoder_o
 
     /* gop not found? */
     if (rap_addr == G_MAXUINT64) {
-        GST_WARNING ("%s segment %lu_%lu.ts not found!",
+        GST_WARNING ("%s segment %lu.ts not found!",
                 encoder_output->name,
-                ((encoder_output->last_timestamp + 500000) * 1000) / encoder_output->segment_duration,
-                encoder_output->segment_duration);
-        //sem_post (encoder_output->semaphore);
+                ((encoder_output->last_timestamp + 500000) * 1000) / encoder_output->segment_duration);
         return;
     }
 
@@ -882,9 +880,8 @@ static void dvr_record_segment (Gstreamill *gstreamill, EncoderOutput *encoder_o
     seg_dir = segment_dir (encoder_output);
     record_data->dir = g_strdup_printf ("%s/%s", encoder_output->record_path, seg_dir);
     g_free (seg_dir);
-    record_data->file = g_strdup_printf ("%lu_%lu.ts",
-            ((encoder_output->last_timestamp + 500000) * 1000) / encoder_output->segment_duration,
-            duration);
+    record_data->file = g_strdup_printf ("%lu.ts",
+            ((encoder_output->last_timestamp + 500000) * 1000) / encoder_output->segment_duration);
     record_data->buf = buf;
     record_data->segment_size = segment_size;
     g_mutex_lock (&(gstreamill->record_queue_mutex));

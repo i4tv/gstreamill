@@ -174,16 +174,14 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
 {
     GstClockTime timestamp;
     gint number;
-    guint64 year, month, mday, hour, sequence, rap_addr, max_age;
-    gchar *header, *path, *file, *cache_control, *pattern;
+    guint64 sequence, rap_addr, max_age;
+    gchar *header, *path, *file, *cache_control, dir[16];
     gsize buf_size;
     GError *err = NULL;
     struct timespec ts;
-    glob_t pglob;
 
-    number = sscanf (request_data->uri, "/%*[^/]/encoder/%*[^/]/%04lu%02lu%02lu%02lu/%lu.ts$",
-            &year, &month, &mday, &hour, &sequence);
-    if (number != 5) {
+    number = sscanf (request_data->uri, "/%*[^/]/encoder/%*[^/]/%10[^/]/%lu.ts$", dir, &sequence);
+    if (number != 2) {
         GST_WARNING ("uri not found: %s", request_data->uri);
         *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
         buf_size = strlen (*buf);
@@ -252,47 +250,36 @@ static gsize get_mpeg2ts_segment (RequestData *request_data, EncoderOutput *enco
 
     /* buf_size == 0? segment not found in memory, read frome dvr directory */
     if (buf_size == 0) {
-        pattern = g_strdup_printf ("%s/%04lu%02lu%02lu%02lu/%lu_*.ts",
-                encoder_output->record_path, year, month, mday, hour, sequence);
-        if (glob (pattern, 0, NULL, &pglob) == GLOB_NOMATCH) {
+        path = g_strdup_printf ("%s/%s/%lu.ts", encoder_output->record_path, dir, sequence);
+        if (!g_file_get_contents (path, &file, &buf_size, &err)) {
+            GST_WARNING ("read segment error: %s", err->message);
+            g_error_free (err);
             *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
             request_data->response_body_size = http_404_body_size;
             request_data->response_status = 404;
             buf_size = strlen (*buf);
 
         } else {
-            path = pglob.gl_pathv[0];
-            if (!g_file_get_contents (path, &file, &buf_size, &err)) {
-                GST_WARNING ("read segment error: %s", err->message);
-                g_error_free (err);
-                *buf = g_strdup_printf (http_404, PACKAGE_NAME, PACKAGE_VERSION);
-                request_data->response_body_size = http_404_body_size;
-                request_data->response_status = 404;
-                buf_size = strlen (*buf);
-
-            } else {
-                request_data->response_status = 200;
-                request_data->response_body_size = buf_size;
-                max_age = encoder_output->dvr_duration - (g_get_real_time () - timestamp) / 1000000;
-                cache_control = g_strdup_printf ("max-age=%lu", max_age);
-                header = g_strdup_printf (http_200,
-                        PACKAGE_NAME,
-                        PACKAGE_VERSION,
-                        "video/mpeg",
-                        buf_size,
-                        cache_control,
-                        "");
-                g_free (cache_control);
-                *buf = g_malloc (buf_size + strlen (header));
-                memcpy (*buf, header, strlen (header));
-                memcpy (*buf + strlen (header), file, buf_size);
-                buf_size += strlen (header);
-                g_free (header);
-                g_free (file);
-            }
-            globfree (&pglob);
+            request_data->response_status = 200;
+            request_data->response_body_size = buf_size;
+            max_age = encoder_output->dvr_duration - (g_get_real_time () - timestamp) / 1000000;
+            cache_control = g_strdup_printf ("max-age=%lu", max_age);
+            header = g_strdup_printf (http_200,
+                    PACKAGE_NAME,
+                    PACKAGE_VERSION,
+                    "video/mpeg",
+                    buf_size,
+                    cache_control,
+                    "");
+            g_free (cache_control);
+            *buf = g_malloc (buf_size + strlen (header));
+            memcpy (*buf, header, strlen (header));
+            memcpy (*buf + strlen (header), file, buf_size);
+            buf_size += strlen (header);
+            g_free (header);
+            g_free (file);
         }
-        g_free (pattern);
+        g_free (path);
     }
 
     return buf_size;
@@ -406,7 +393,6 @@ static gboolean is_dvr_download_request (RequestData *request_data, EncoderOutpu
     gint number;
     time_t start_time, end_time, time;
     guint64 start_min, start_sec, end_min, end_sec, sequence;
-    glob_t pglob;
     HTTPStreamingPrivateData *priv_data;
     GStatBuf stat;
 
@@ -465,15 +451,11 @@ static gboolean is_dvr_download_request (RequestData *request_data, EncoderOutpu
             for (time = start_time; time <= end_time; time += encoder_output->segment_duration / GST_SECOND) {
                 segments_dir = timestamp_to_segment_dir (time); 
                 sequence = time / (encoder_output->segment_duration / GST_SECOND);
-                p = g_strdup_printf ("%s/dvr%s/%s/%lu_*.ts", MEDIA_LOCATION, path, segments_dir, sequence);
+                p = g_strdup_printf ("%s/dvr%s/%s/%lu.ts", MEDIA_LOCATION, path, segments_dir, sequence);
+                g_lstat (p, &stat);
+                priv_data->dvr_download_size += stat.st_size;
+                priv_data->segment_list = g_slist_append (priv_data->segment_list, p);
                 g_free (segments_dir);
-                if (glob (p, 0, NULL, &pglob) == 0) {
-                    g_lstat (pglob.gl_pathv[0], &stat);
-                    priv_data->dvr_download_size += stat.st_size;
-                    priv_data->segment_list = g_slist_append (priv_data->segment_list, g_strdup (pglob.gl_pathv[0]));
-                }
-                g_free (p);
-                globfree (&pglob);
             }
 
             g_free (path);
