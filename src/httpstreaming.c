@@ -470,6 +470,7 @@ static gboolean is_dvr_download_request (RequestData *request_data, EncoderOutpu
         }
 
 bad_request:
+        g_free (path);
         if (start != NULL) {
             g_free (start);
         }
