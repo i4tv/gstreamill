@@ -448,13 +448,18 @@ static gboolean is_dvr_download_request (RequestData *request_data, EncoderOutpu
             priv_data->list_index = 0;
             priv_data->segment_position = 0;
             priv_data->segment_size = 0;
+
             for (time = start_time; time <= end_time; time += encoder_output->segment_duration / GST_SECOND) {
                 segments_dir = timestamp_to_segment_dir (time); 
                 sequence = time / (encoder_output->segment_duration / GST_SECOND);
                 p = g_strdup_printf ("%s/dvr%s/%s/%lu.ts", MEDIA_LOCATION, path, segments_dir, sequence);
-                g_lstat (p, &stat);
-                priv_data->dvr_download_size += stat.st_size;
-                priv_data->segment_list = g_slist_append (priv_data->segment_list, p);
+                if (g_lstat (p, &stat) != 0) {
+                    GST_WARNING ("download segment lstat error: %s", g_strerror(errno));
+
+                } else {
+                    priv_data->dvr_download_size += stat.st_size;
+                    priv_data->segment_list = g_slist_append (priv_data->segment_list, p);
+                }
                 g_free (segments_dir);
             }
 
@@ -465,6 +470,7 @@ static gboolean is_dvr_download_request (RequestData *request_data, EncoderOutpu
                 g_free (priv_data);
                 return FALSE;
             }
+
             request_data->priv_data = priv_data;
             return TRUE;
         }
@@ -694,6 +700,7 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
             request_data->response_status = 404;
             request_data->response_body_size = http_404_body_size;
         }
+
         buf_size = strlen (buf);
 
     } else if (!is_encoder_output_ready (encoder_output)) {
@@ -846,7 +853,9 @@ static gint send_data (EncoderOutput *encoder_output, RequestData *request_data)
         iov[1].iov_len = priv_data->chunk_size;
 
     } else if (priv_data->send_count < (priv_data->chunk_size_str_len + priv_data->chunk_size)) {
-        iov[1].iov_base = encoder_output->cache_addr + priv_data->send_position + (priv_data->send_count - priv_data->chunk_size_str_len);
+        iov[1].iov_base = encoder_output->cache_addr
+            + priv_data->send_position
+            + (priv_data->send_count - priv_data->chunk_size_str_len);
         iov[1].iov_len = priv_data->chunk_size - (priv_data->send_count - priv_data->chunk_size_str_len);
 
     } else if (priv_data->send_count > (priv_data->chunk_size_str_len + priv_data->chunk_size)) {
@@ -984,13 +993,13 @@ static GstClockTime dvr_download (RequestData *request_data, GstClock *system_cl
 
     priv_data = request_data->priv_data;
 
-    /* first segment or current segment send complete? */
+    /* first segment or current segment sent complete? */
     if (priv_data->segment_position == priv_data->segment_size) {
         path = g_slist_nth_data (priv_data->segment_list, priv_data->list_index);
         if (!g_file_get_contents (path, &(priv_data->segment), &(priv_data->segment_size), &err)) {
             GST_ERROR ("read %s failure: %s", path, err->message);
             g_error_free (err);
-            return 0;
+            goto download_finish;
         }
         priv_data->segment_position = 0;
         priv_data->list_index++;
@@ -1001,12 +1010,12 @@ static GstClockTime dvr_download (RequestData *request_data, GstClock *system_cl
             priv_data->segment_size - priv_data->segment_position);
     if (ret >= 0) {
         priv_data->segment_position += ret;
-        /* seng segment complete? */
+        /* sent segment complete? */
         if (priv_data->segment_position == priv_data->segment_size) {
             g_free (priv_data->segment);
             /* dvr download complete? */
             if (priv_data->list_index == g_slist_length (priv_data->segment_list)) {
-                return 0;
+                goto download_finish;
 
             } else {
                 return gst_clock_get_time (system_clock);
@@ -1022,9 +1031,12 @@ static GstClockTime dvr_download (RequestData *request_data, GstClock *system_cl
     } else if ((ret == -1) && (errno != EAGAIN)) {
         GST_ERROR ("Write sock error: %s", g_strerror (errno));
         g_free (priv_data->segment);
-        return 0;
     }
 
+download_finish:
+    g_slist_free_full (priv_data->segment_list, g_free);
+    g_free (priv_data);
+    request_data->priv_data = NULL;
     return 0;
 }
 
@@ -1129,7 +1141,7 @@ static GstClockTime httpstreaming_dispatcher (gpointer data, gpointer user_data)
                     g_free (priv_data->buf);
                 }
                 if (priv_data->segment_list != NULL) {
-                    g_slist_free (priv_data->segment_list);
+                    g_slist_free_full (priv_data->segment_list, g_free);
                 }
                 g_free (request_data->priv_data);
                 request_data->priv_data = NULL;
