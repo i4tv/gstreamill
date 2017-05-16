@@ -454,7 +454,8 @@ static gboolean is_dvr_download_request (RequestData *request_data, EncoderOutpu
                 sequence = time / (encoder_output->segment_duration / GST_SECOND);
                 p = g_strdup_printf ("%s/dvr%s/%s/%lu.ts", MEDIA_LOCATION, path, segments_dir, sequence);
                 if (g_lstat (p, &stat) != 0) {
-                    GST_WARNING ("download segment lstat error: %s", g_strerror(errno));
+                    GST_DEBUG ("download %s lstat error: %s", p, g_strerror(errno));
+                    g_free (p);
 
                 } else {
                     priv_data->dvr_download_size += stat.st_size;
@@ -466,7 +467,7 @@ static gboolean is_dvr_download_request (RequestData *request_data, EncoderOutpu
             g_free (path);
             g_free (start);
             g_free (end);
-            if (g_slist_length (priv_data->segment_list) == 0) {
+            if (priv_data->segment_list == NULL) {
                 g_free (priv_data);
                 return FALSE;
             }
