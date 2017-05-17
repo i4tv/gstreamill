@@ -663,7 +663,7 @@ static void access_log (RequestData *request_data)
         g_sprintf (parameters, "?%s", request_data->parameters);
     }
 
-    GST_CAT_WARNING (ACCESS, "%s - - [%%s] \"%s %s%s HTTP/%s\" %u %lu \"-\" \"%s\"\n",
+    GST_CAT_WARNING (ACCESS, "%s - - [%%s] \"%s %s%s HTTP/%s\" %u %lu %.6f \"-\" \"%s\"\n",
             get_address (request_data->client_addr),
             http_method_str[request_data->method],
             request_data->uri,
@@ -671,6 +671,7 @@ static void access_log (RequestData *request_data)
             http_version_str[request_data->version],
             request_data->response_status,
             request_data->response_body_size,
+            (float)(g_get_real_time () * 1000 - request_data->birth_time) / GST_SECOND,
             user_agent);
 }
 
@@ -772,6 +773,8 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
                 priv_data->dvr_download_size,
                 "private",
                 "");
+        request_data->response_status = 200;
+        request_data->response_body_size = priv_data->dvr_download_size;
         dvr_download_request = TRUE;
         buf_size = strlen (buf);
 
@@ -804,8 +807,6 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
         GST_ERROR ("Write sock error: %s", g_strerror (errno));
     }
 
-    access_log (request_data);
-
     /* send complete or socket error */
     g_free (buf);
 
@@ -826,6 +827,8 @@ static GstClockTime http_request_process (HTTPStreaming *httpstreaming, RequestD
     if ((dvr_download_request) && (ret == buf_size)) {
         return gst_clock_get_time (system_clock);
     }
+
+    access_log (request_data);
 
     if (encoder_output != NULL) {
         gstreamill_unaccess (httpstreaming->gstreamill, request_data->uri);
@@ -1035,9 +1038,11 @@ static GstClockTime dvr_download (RequestData *request_data, GstClock *system_cl
     }
 
 download_finish:
+    access_log (request_data);
     g_slist_free_full (priv_data->segment_list, g_free);
     g_free (priv_data);
     request_data->priv_data = NULL;
+
     return 0;
 }
 
