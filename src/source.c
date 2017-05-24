@@ -704,7 +704,10 @@ static GstFlowReturn new_sample_callback (GstAppSink *elt, gpointer user_data)
     stream->current_position = (stream->current_position + 1) % SOURCE_RING_SIZE;
 
     /* output running status */
-    GST_DEBUG ("%s current position %d, buffer duration: %ld", stream->name, stream->current_position, GST_BUFFER_DURATION (buffer));
+    GST_WARNING ("%s current position %d, buffer duration: %ld",
+            stream->name,
+            stream->current_position,
+            GST_BUFFER_DURATION (buffer));
     for (i = 0; i < stream->encoders->len; i++) {
         encoder = g_array_index (stream->encoders, gpointer, i);
         if (stream->is_live) {

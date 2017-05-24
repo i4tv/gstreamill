@@ -227,7 +227,10 @@ static void move_last_rap (Encoder *encoder, GstBuffer *buffer)
 
         } else {
             encoder->last_buffer_time += encoder->segment_duration / 1000;
-            GST_WARNING ("Wrong buffer time: %ld, should be: %ld", buffer_time, encoder->last_buffer_time);
+            GST_WARNING ("Wrong buffer time: %ld, should be: %ld, diff: %ld",
+                    encoder->last_buffer_time,
+                    buffer_time,
+                    buffer_time - encoder->last_buffer_time);
             buffer_time = encoder->last_buffer_time;
         }
 
