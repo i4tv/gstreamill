@@ -472,12 +472,12 @@ static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data
         /* first buffer, set caps. */
         if (stream->current_position == -1) {
             GstCaps *caps;
-            caps = gst_sample_get_caps (stream->source->ring[current_position]);
+            caps = gst_sample_get_caps (stream->source->ring[current_position]->sample);
             gst_app_src_set_caps (src, caps);
             GST_INFO ("set stream %s caps: %s", stream->name, gst_caps_to_string (caps));
         }
 
-        buffer = gst_sample_get_buffer (stream->source->ring[current_position]);
+        buffer = gst_sample_get_buffer (stream->source->ring[current_position]->sample);
         GST_DEBUG ("%s encoder position %d; timestamp %" GST_TIME_FORMAT " source position %d",
                 stream->name,   
                 stream->current_position,
@@ -488,8 +488,9 @@ static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data
         /* segment_duration != 0? with m3u8playlist conf */
         if (stream->is_segment_reference) {
             running_time = GST_BUFFER_PTS (buffer);
-            if ((encoder->segment_duration - encoder->duration_accumulation < 20000000) ||
-                (encoder->duration_accumulation >= encoder->segment_duration)) {
+   /*         if ((encoder->segment_duration - encoder->duration_accumulation < 20000000) ||
+                (encoder->duration_accumulation >= encoder->segment_duration)) {*/
+            if (stream->source->ring[current_position]->is_rap) {
                 encoder->last_segment_duration = encoder->duration_accumulation;
                 /* force key unit? */
                 if (encoder->has_video) {

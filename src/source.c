@@ -696,15 +696,19 @@ static GstFlowReturn new_sample_callback (GstAppSink *elt, gpointer user_data)
     GstBuffer *buffer;
     SourceStream *stream = (SourceStream *)user_data;
     EncoderStream *encoder;
+    RingBuffer *ring_buffer;
     gint i;
 
     sample = gst_app_sink_pull_sample (GST_APP_SINK (elt));
     buffer = gst_sample_get_buffer (sample);
     stream->state->last_heartbeat = gst_clock_get_time (stream->system_clock);
     stream->current_position = (stream->current_position + 1) % SOURCE_RING_SIZE;
+    ring_buffer = (RingBuffer *)g_malloc (sizeof (RingBuffer));
+    ring_buffer->sample = sample;
+    ring_buffer->is_rap = FALSE;
 
     /* output running status */
-    GST_WARNING ("%s current position %d, buffer duration: %ld",
+    GST_DEBUG ("%s current position %d, buffer duration: %ld",
             stream->name,
             stream->current_position,
             GST_BUFFER_DURATION (buffer));
@@ -726,12 +730,36 @@ static GstFlowReturn new_sample_callback (GstAppSink *elt, gpointer user_data)
         }
     }
 
+    stream->state->current_timestamp = GST_BUFFER_PTS (buffer);
+    if (stream->state->last_heartbeat + GST_SECOND > stream->next_segment_timestamp) {
+        if  (G_UNLIKELY (stream->next_segment_timestamp == 0)) {
+            if ((stream->state->last_heartbeat % stream->segment_duration) < 100000000/* 100ms */) {
+                stream->next_segment_timestamp = stream->segment_duration *
+                                                (stream->state->last_heartbeat / stream->segment_duration);
+                GST_DEBUG ("duration: %ld, timestamp: %ld", stream->current_segment_duration, stream->next_segment_timestamp);
+                ring_buffer->is_rap = TRUE;
+                ring_buffer->timestamp = stream->next_segment_timestamp;
+                stream->next_segment_timestamp += stream->segment_duration;
+                stream->current_segment_duration = 0;
+            }
+
+        } else if ((stream->current_segment_duration == stream->segment_duration) ||
+            (stream->state->last_heartbeat - GST_SECOND > stream->next_segment_timestamp)) {
+            GST_DEBUG ("duration: %ld, timestamp: %ld, last timestamp: %ld, segment_duration: %ld", stream->current_segment_duration, stream->next_segment_timestamp, stream->state->last_heartbeat, stream->segment_duration);
+            ring_buffer->is_rap = TRUE;
+            ring_buffer->timestamp = stream->next_segment_timestamp;
+            stream->next_segment_timestamp += stream->segment_duration;
+            stream->current_segment_duration = 0;
+        }
+    }
+
     /* out a buffer */
     if (stream->ring[stream->current_position] != NULL) {
-        gst_sample_unref (stream->ring[stream->current_position]);
+        gst_sample_unref (stream->ring[stream->current_position]->sample);
+        g_free (stream->ring[stream->current_position]);
     }
-    stream->ring[stream->current_position] = sample;
-    stream->state->current_timestamp = GST_BUFFER_PTS (buffer);
+    stream->ring[stream->current_position] = ring_buffer;
+    stream->current_segment_duration += GST_BUFFER_DURATION (buffer);
 
     return GST_FLOW_OK;
 }
@@ -861,6 +889,9 @@ Source * source_initialize (gchar *job, SourceState *source_stat)
             stream->is_live = FALSE;
         }
         stream->system_clock = source->system_clock;
+        stream->segment_duration = jobdesc_m3u8streaming_segment_duration (job);
+        stream->current_segment_duration = 0;
+        stream->next_segment_timestamp = 0;
         stream->encoders = g_array_new (FALSE, FALSE, sizeof (gpointer));
         for (j = 0; j < SOURCE_RING_SIZE; j++) {
             stream->ring[j] = NULL;

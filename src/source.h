@@ -57,13 +57,22 @@ typedef struct _SourceState {
     SourceStreamState *streams;
 } SourceState;
 
+typedef struct _RingBuffer {
+    gboolean is_rap;
+    GstClockTime timestamp;
+    GstSample *sample;
+} RingBuffer;
+
 typedef struct _SourceStream {
     gchar *name;
     gboolean is_live;
     gboolean eos;
-    GstSample *ring[SOURCE_RING_SIZE];
+    RingBuffer *ring[SOURCE_RING_SIZE];
     gint current_position; /* current source output position */
     GstClock *system_clock;
+    GstClockTime next_segment_timestamp;
+    GstClockTime current_segment_duration;
+    GstClockTime segment_duration;
     GArray *encoders;
 
     SourceStreamState *state;
