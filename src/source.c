@@ -736,20 +736,29 @@ static GstFlowReturn new_sample_callback (GstAppSink *elt, gpointer user_data)
             if ((stream->state->last_heartbeat % stream->segment_duration) < 100000000/* 100ms */) {
                 stream->next_segment_timestamp = stream->segment_duration *
                                                 (stream->state->last_heartbeat / stream->segment_duration);
-                GST_DEBUG ("duration: %ld, timestamp: %ld", stream->current_segment_duration, stream->next_segment_timestamp);
                 ring_buffer->is_rap = TRUE;
                 ring_buffer->timestamp = stream->next_segment_timestamp;
+                ring_buffer->duration = stream->current_segment_duration;
                 stream->next_segment_timestamp += stream->segment_duration;
                 stream->current_segment_duration = 0;
+                stream->last_segment_pts = GST_BUFFER_PTS (buffer);
             }
 
         } else if ((stream->current_segment_duration == stream->segment_duration) ||
             (stream->state->last_heartbeat - GST_SECOND > stream->next_segment_timestamp)) {
-            GST_DEBUG ("duration: %ld, timestamp: %ld, last timestamp: %ld, segment_duration: %ld", stream->current_segment_duration, stream->next_segment_timestamp, stream->state->last_heartbeat, stream->segment_duration);
-            ring_buffer->is_rap = TRUE;
-            ring_buffer->timestamp = stream->next_segment_timestamp;
-            stream->next_segment_timestamp += stream->segment_duration;
-            stream->current_segment_duration = 0;
+            if (!GST_BUFFER_FLAG_IS_SET (buffer, GST_BUFFER_FLAG_DELTA_UNIT) ||
+                GST_BUFFER_DURATION_IS_VALID (buffer)) {
+                GST_INFO ("duration: %ld, timestamp: %ld, last timestamp: %ld, segment_duration: %ld",
+                    stream->current_segment_duration,
+                    stream->next_segment_timestamp,
+                    stream->state->last_heartbeat,
+                    stream->current_segment_duration);
+                ring_buffer->is_rap = TRUE;
+                ring_buffer->timestamp = stream->next_segment_timestamp;
+                stream->next_segment_timestamp += stream->segment_duration;
+                stream->current_segment_duration = 0;
+                stream->last_segment_pts = GST_BUFFER_PTS (buffer);
+            }
         }
     }
 
@@ -759,7 +768,12 @@ static GstFlowReturn new_sample_callback (GstAppSink *elt, gpointer user_data)
         g_free (stream->ring[stream->current_position]);
     }
     stream->ring[stream->current_position] = ring_buffer;
-    stream->current_segment_duration += GST_BUFFER_DURATION (buffer);
+    if (GST_BUFFER_DURATION_IS_VALID (buffer)) {
+        stream->current_segment_duration += GST_BUFFER_DURATION (buffer);
+
+    } else if (GST_BUFFER_PTS_IS_VALID (buffer)) {
+        stream->current_segment_duration = GST_BUFFER_PTS (buffer) - stream->last_segment_pts;
+    }
 
     return GST_FLOW_OK;
 }

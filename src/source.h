@@ -60,6 +60,7 @@ typedef struct _SourceState {
 typedef struct _RingBuffer {
     gboolean is_rap;
     GstClockTime timestamp;
+    GstClockTime duration;
     GstSample *sample;
 } RingBuffer;
 
@@ -73,6 +74,7 @@ typedef struct _SourceStream {
     GstClockTime next_segment_timestamp;
     GstClockTime current_segment_duration;
     GstClockTime segment_duration;
+    GstClockTime last_segment_pts;
     GArray *encoders;
 
     SourceStreamState *state;

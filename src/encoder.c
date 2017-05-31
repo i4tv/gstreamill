@@ -221,22 +221,6 @@ static void move_last_rap (Encoder *encoder, GstBuffer *buffer)
     *(encoder->output->last_rap_addr) = *(encoder->output->tail_addr);
     now = g_get_real_time ();
     buffer_time = now - now % (encoder->segment_duration / 1000);
-    if (G_UNLIKELY (buffer_time != encoder->last_buffer_time + encoder->segment_duration / 1000)) {
-        if (G_UNLIKELY (encoder->last_buffer_time == GST_CLOCK_TIME_NONE)) {
-            encoder->last_buffer_time = buffer_time;
-
-        } else {
-            encoder->last_buffer_time += encoder->segment_duration / 1000;
-            GST_WARNING ("Wrong buffer time: %ld, should be: %ld, diff: %ld",
-                    encoder->last_buffer_time,
-                    buffer_time,
-                    buffer_time - encoder->last_buffer_time);
-            buffer_time = encoder->last_buffer_time;
-        }
-
-    } else {
-        encoder->last_buffer_time = buffer_time;
-    }
     memcpy (buf, &buffer_time, 8);
     size = 0;
     memcpy (buf + 8, &size, 4);
@@ -485,13 +469,10 @@ static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data
                 stream->source->current_position);
 
         encoder = stream->encoder;
-        /* segment_duration != 0? with m3u8playlist conf */
         if (stream->is_segment_reference) {
-            running_time = GST_BUFFER_PTS (buffer);
-   /*         if ((encoder->segment_duration - encoder->duration_accumulation < 20000000) ||
-                (encoder->duration_accumulation >= encoder->segment_duration)) {*/
+            running_time = stream->source->ring[current_position]->timestamp;
             if (stream->source->ring[current_position]->is_rap) {
-                encoder->last_segment_duration = encoder->duration_accumulation;
+                encoder->last_segment_duration = stream->source->ring[current_position]->duration;
                 /* force key unit? */
                 if (encoder->has_video) {
                     pad = gst_element_get_static_pad ((GstElement *)src, "src");
@@ -506,6 +487,7 @@ static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data
                     } else {
                         GST_ERROR ("push key event failure, running time: %ld", running_time);
                     }
+                    encoder->last_running_time = running_time;
 
                 } else {
                     encoder->last_running_time = running_time;
@@ -540,9 +522,6 @@ static GstPadProbeReturn encoder_appsink_event_probe (GstPad *pad, GstPadProbeIn
 {
     GstEvent *event = gst_pad_probe_info_get_event (info);
     Encoder *encoder = data;
-    GstClockTime timestamp, running_time, stream_time;
-    gboolean all_headers;
-    guint count;
     GstTagList *taglist;
     gchar *vcodec, *acodec;
 
@@ -555,15 +534,9 @@ static GstPadProbeReturn encoder_appsink_event_probe (GstPad *pad, GstPadProbeIn
         gst_tag_list_get_string (taglist, GST_TAG_VIDEO_CODEC, &vcodec);
         gst_tag_list_get_string (taglist, GST_TAG_AUDIO_CODEC, &acodec);
         g_sprintf (encoder->output->codec, "%s,%s", vcodec, acodec);
+        GST_INFO ("%s's codec: %s", encoder->output->name, encoder->output->codec);
         g_free (vcodec);
         g_free (acodec);
-
-    } else if (gst_video_event_is_force_key_unit (event)) {
-        /* force key unit event */
-        gst_video_event_parse_downstream_force_key_unit (event, &timestamp, &stream_time, &running_time, &all_headers, &count);
-        if (encoder->last_segment_duration != 0) {
-            encoder->last_running_time = timestamp;
-        }
     }
 
     return GST_PAD_PROBE_OK;
@@ -680,8 +653,7 @@ static gint encoder_extract_streams (Encoder *encoder, gchar **bins)
             g_match_info_free (match_info);
             g_array_append_val (encoder->streams, stream);
             stream->is_segment_reference = FALSE;
-            if (g_str_has_prefix (stream->name, "video") && strstr (bin, "x264enc") != NULL) {
-                /* with video encoder */
+            if (g_str_has_prefix (stream->name, "video")) {
                 encoder->has_video = TRUE;
                 if (!encoder->has_tssegment) {
                     segment_reference_stream = stream;

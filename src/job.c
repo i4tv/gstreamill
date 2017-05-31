@@ -514,9 +514,11 @@ void job_render_master_m3u8_playlist (Job *job)
         g_string_append_printf (master_m3u8_playlist, M3U8_STREAM_INF_TAG, 1, p);
         g_free (p);
         if (g_strcmp0 (job->output->encoders[i].codec, "") == 0) {
+            GST_INFO ("%s's codec is null", job->output->encoders[i].name);
             g_string_append_printf (master_m3u8_playlist, "\n");
 
         } else {
+            GST_INFO ("%s's codec is %s", job->output->encoders[i].name, job->output->encoders[i].codec);
             g_string_append_printf (master_m3u8_playlist, ",CODECS=\"%s\"\n", job->output->encoders[i].codec);
         }
         g_string_append_printf (master_m3u8_playlist, "encoder/%d/playlist.m3u8<%%parameters%%>\n", i);
