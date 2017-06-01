@@ -470,7 +470,12 @@ static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data
 
         encoder = stream->encoder;
         if (stream->is_segment_reference) {
-            running_time = stream->source->ring[current_position]->timestamp;
+            if (GST_BUFFER_PTS_IS_VALID (buffer)) {
+                running_time = GST_BUFFER_PTS (buffer);
+
+            } else {
+                running_time = stream->source->ring[current_position]->timestamp;
+            }
             if (stream->source->ring[current_position]->is_rap) {
                 encoder->last_segment_duration = stream->source->ring[current_position]->duration;
                 /* force key unit? */
@@ -482,6 +487,7 @@ static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data
                             TRUE,
                             encoder->force_key_count);
                     if (G_LIKELY (gst_pad_push_event (pad, event))) {
+                        GST_INFO ("push force key, running time: %ld", running_time);
                         encoder->last_video_buffer_pts = running_time;
 
                     } else {

@@ -755,6 +755,7 @@ static GstFlowReturn new_sample_callback (GstAppSink *elt, gpointer user_data)
                     stream->current_segment_duration);
                 ring_buffer->is_rap = TRUE;
                 ring_buffer->timestamp = stream->next_segment_timestamp;
+                ring_buffer->duration = stream->current_segment_duration;
                 stream->next_segment_timestamp += stream->segment_duration;
                 stream->current_segment_duration = 0;
                 stream->last_segment_pts = GST_BUFFER_PTS (buffer);
