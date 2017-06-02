@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <gst/gst.h>
+#include <glib/gstdio.h>
 #include <gst/app/gstappsink.h>
 
 #include "source.h"
@@ -173,6 +174,28 @@ static void print_one_tag (const GstTagList * list, const gchar * tag, gpointer 
     }
 }
 
+static void get_tssegment_codec_tag (Source *source, GstTagList *tags)
+{
+    SourceStream *stream;
+    gchar *value, *audio, *video;
+
+    value = NULL; audio = NULL; video = NULL;
+    stream = g_array_index (source->streams, gpointer, 0);
+    if (gst_tag_list_get_string (tags, "title", &value)) {
+        if (g_strcmp0 (value, "tssegment") == 0) {
+            if (gst_tag_list_get_string (tags, GST_TAG_AUDIO_CODEC, &audio)) {
+                if (gst_tag_list_get_string (tags, GST_TAG_VIDEO_CODEC, &video)) {
+                    stream->codec = g_strdup_printf ("%s,%s", video, audio);
+                    GST_WARNING ("mpegts stream codec is: %s", stream->codec);
+                    g_free (video);
+                }
+                g_free (audio);
+            }
+        }
+        g_free (value);
+    }
+}
+
 gboolean bus_callback (GstBus *bus, GstMessage *msg, gpointer user_data)
 {
     gchar *debug;
@@ -182,6 +205,7 @@ gboolean bus_callback (GstBus *bus, GstMessage *msg, gpointer user_data)
     GstClock *clock;
     GstTagList *tags;
     GObject *object = user_data;
+    Source *source = (Source *)user_data;
     GValue state = { 0, }, name = { 0, };
 
     g_value_init (&name, G_TYPE_STRING);
@@ -193,8 +217,9 @@ gboolean bus_callback (GstBus *bus, GstMessage *msg, gpointer user_data)
             break;
 
         case GST_MESSAGE_TAG:
-            GST_DEBUG ("TAG");
+            GST_DEBUG ("TAG %s", source->name);
             gst_message_parse_tag (msg, &tags);
+            get_tssegment_codec_tag (source, tags);
             gst_tag_list_foreach (tags, print_one_tag, NULL);
             break;
 
@@ -733,6 +758,10 @@ static GstFlowReturn new_sample_callback (GstAppSink *elt, gpointer user_data)
     stream->state->current_timestamp = GST_BUFFER_PTS (buffer);
     if (stream->state->last_heartbeat + GST_SECOND > stream->next_segment_timestamp) {
         if  (G_UNLIKELY (stream->next_segment_timestamp == 0)) {
+            if ((stream->codec != NULL) && (stream->codec != NULL)) {
+                encoder = g_array_index (stream->encoders, gpointer, 0);
+                g_sprintf (encoder->encoder->output->codec, "%s", stream->codec);
+            }
             if ((stream->state->last_heartbeat % stream->segment_duration) < 100000000/* 100ms */) {
                 stream->next_segment_timestamp = stream->segment_duration *
                                                 (stream->state->last_heartbeat / stream->segment_duration);
@@ -895,6 +924,7 @@ Source * source_initialize (gchar *job, SourceState *source_stat)
 
     for (i = 0; i < source->streams->len; i++) {
         stream = g_array_index (source->streams, gpointer, i);
+        stream->codec = NULL;
         stream->eos = FALSE;
         stream->current_position = -1;
         if (jobdesc_is_live (job)) {

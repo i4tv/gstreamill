@@ -109,7 +109,7 @@ static void ts_segment_init (TsSegment *tssegment)
     tssegment->h264parser = gst_h264_nal_parser_new ();
     tssegment->h265parser = gst_h265_parser_new ();
 
-    tssegment->tag = gst_tag_list_new ("codec");
+    tssegment->tag = gst_tag_list_new_empty ();
 }
 
 static void ts_segment_set_property (GObject *obj, guint prop_id, const GValue *value, GParamSpec *pspec)
@@ -539,6 +539,8 @@ static gboolean apply_pmt (TsSegment *tssegment, GstMpegtsSection * section)
             gst_tag_list_add (tssegment->tag, GST_TAG_MERGE_REPLACE, GST_TAG_AUDIO_CODEC, "mp21", NULL);
         }
     }
+    gst_tag_list_add (tssegment->tag, GST_TAG_MERGE_REPLACE, GST_TAG_TITLE, "tssegment", NULL);
+    gst_pad_push_event (tssegment->srcpad, gst_event_new_tag (tssegment->tag));
 
     return TRUE;
 }
@@ -1291,7 +1293,6 @@ static GstFlowReturn ts_segment_chain (GstPad * pad, GstObject * parent, GstBuff
 
                     } else if (nalu_parsing_result & NALU_IDR) {
                         tssegment->seen_idr = TRUE;
-                        gst_pad_push_event (tssegment->srcpad, gst_event_new_tag (tssegment->tag));
                     }
                     tssegment->current_size = 0;
                     tssegment->pes_packet_duration = 0;

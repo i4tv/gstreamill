@@ -66,6 +66,7 @@ typedef struct _RingBuffer {
 
 typedef struct _SourceStream {
     gchar *name;
+    gchar *codec;
     gboolean is_live;
     gboolean eos;
     RingBuffer *ring[SOURCE_RING_SIZE];

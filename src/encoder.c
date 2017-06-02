@@ -9,7 +9,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <glib/gstdio.h>
 #include <gst/gst.h>
 #include <gst/app/gstappsrc.h>
 #include <gst/app/gstappsink.h>
@@ -517,21 +516,10 @@ static GstPadProbeReturn encoder_appsink_event_probe (GstPad *pad, GstPadProbeIn
 {
     GstEvent *event = gst_pad_probe_info_get_event (info);
     Encoder *encoder = data;
-    GstTagList *taglist;
-    gchar *vcodec, *acodec;
 
     if (GST_EVENT_TYPE (event) == GST_EVENT_EOS) {
         GST_ERROR ("End of Stream of encoder %s", encoder->name);
         *(encoder->output->eos) = TRUE;
-
-    } else if (GST_EVENT_TYPE (event) == GST_EVENT_TAG) {
-        gst_event_parse_tag (event, &taglist);
-        gst_tag_list_get_string (taglist, GST_TAG_VIDEO_CODEC, &vcodec);
-        gst_tag_list_get_string (taglist, GST_TAG_AUDIO_CODEC, &acodec);
-        g_sprintf (encoder->output->codec, "%s,%s", vcodec, acodec);
-        GST_INFO ("%s's codec: %s", encoder->output->name, encoder->output->codec);
-        g_free (vcodec);
-        g_free (acodec);
     }
 
     return GST_PAD_PROBE_OK;

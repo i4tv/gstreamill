@@ -1347,7 +1347,6 @@ gchar * gstreamill_job_start (Gstreamill *gstreamill, gchar *job_desc)
             p = g_strdup_printf ("{\n    \"result\": \"failure\",\n    \"reason\": \"unknown\"\n}");
         }
     }
-    job_render_master_m3u8_playlist (job);
 
     return p;
 }
@@ -1502,11 +1501,9 @@ gchar * gstreamill_get_master_m3u8playlist (Gstreamill *gstreamill, gchar *uri)
     }
     g_free (master);
     if (job->output->master_m3u8_playlist == NULL) {
-        playlist = NULL;
-
-    } else {
-        playlist = g_strdup (job->output->master_m3u8_playlist);
+        job_render_master_m3u8_playlist (job);
     }
+    playlist = g_strdup (job->output->master_m3u8_playlist);
     g_object_unref (job);
 
     return playlist;
