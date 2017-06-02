@@ -363,17 +363,6 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
         move_head (encoder);
     }
 
-    if (encoder->has_tssegment && encoder->has_m3u8_output) { 
-        if ((encoder->duration_accumulation >= encoder->segment_duration) ||
-                ((encoder->segment_duration - encoder->duration_accumulation) < 500000000)) {
-            encoder->last_segment_duration = encoder->duration_accumulation;
-            encoder->last_running_time = GST_BUFFER_PTS (buffer);
-            encoder->duration_accumulation = 0;
-
-        }
-        encoder->duration_accumulation += GST_BUFFER_DURATION (buffer);
-    }
-
     /* 
      * random access point found.
      * 1. with video encoder and IDR found;
@@ -685,7 +674,7 @@ static gint encoder_extract_streams (Encoder *encoder, gchar **bins)
             encoder->has_tssegment = TRUE;
             encoder->has_video = FALSE;
             encoder->has_audio_only = FALSE;
-            segment_reference_stream = NULL;
+            segment_reference_stream = stream;
         }
         p++;
     }
