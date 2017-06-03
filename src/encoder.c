@@ -218,8 +218,13 @@ static void move_last_rap (Encoder *encoder, GstBuffer *buffer)
 
     /* new gop timestamp, 4bytes reservation for gop size. */
     *(encoder->output->last_rap_addr) = *(encoder->output->tail_addr);
-    now = g_get_real_time ();
-    buffer_time = now - now % (encoder->segment_duration / 1000);
+    now = gst_clock_get_time (encoder->system_clock);
+    if ((encoder->segment_timestamp + encoder->segment_duration < now) ||
+        (now + encoder->segment_duration < encoder->segment_timestamp)) {
+        GST_WARNING ("segment timestamp jitter, timestamp:now is %ld:%ld", encoder->segment_timestamp, now);
+    }
+    buffer_time = encoder->segment_timestamp / 1000;
+    GST_INFO ("new segment, timestamp is %ld", buffer_time);
     memcpy (buf, &buffer_time, 8);
     size = 0;
     memcpy (buf + 8, &size, 4);
@@ -338,6 +343,7 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
     Encoder *encoder = (Encoder *)user_data;
     struct timespec ts;
     gboolean segment_found = FALSE;
+    GstClockTime now;
 
     *(encoder->output->heartbeat) = gst_clock_get_time (encoder->system_clock);
     sample = gst_app_sink_pull_sample (GST_APP_SINK (sink));
@@ -376,14 +382,19 @@ static GstFlowReturn new_sample_callback (GstAppSink * sink, gpointer user_data)
             move_last_rap (encoder, buffer);
 
         } else if (encoder->last_running_time != GST_CLOCK_TIME_NONE) {
-            move_last_rap (encoder, buffer);
-            segment_found = TRUE;
+            if (G_UNLIKELY (encoder->is_first_key)) {
+                /* move_last_rap if its first key even if has m3u8 output */
+                now = gst_clock_get_time (encoder->system_clock);
+                encoder->segment_timestamp = now - (now % encoder->segment_duration);
+                move_last_rap (encoder, buffer);
+                segment_found = TRUE;
+                encoder->is_first_key = FALSE;
 
-        } else if (encoder->is_first_key) {
-            /* move_last_rap if its first key even if has m3u8 output */
-            move_last_rap (encoder, buffer);
-            segment_found = TRUE;
-            encoder->is_first_key = FALSE;
+            } else {
+                encoder->segment_timestamp += encoder->segment_duration;
+                move_last_rap (encoder, buffer);
+                segment_found = TRUE;
+            }
         }
     }
 
@@ -753,7 +764,6 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
         encoder->id = i;
         encoder->last_running_time = GST_CLOCK_TIME_NONE;
         encoder->output = &(encoders[i]);
-        encoder->last_buffer_time = GST_CLOCK_TIME_NONE;
         encoder->segment_duration = jobdesc_m3u8streaming_segment_duration (job);
         encoder->duration_accumulation = 0;
         encoder->last_segment_duration = 0;

@@ -78,7 +78,7 @@ struct _Encoder {
 
     /* gop size */
     guint force_key_count; /* downstream force key unit count */
-    GstClockTime last_buffer_time; /* last buffer time */
+    GstClockTime segment_timestamp; /* segment timestamp */
     GstClockTime segment_duration; /* force key interval */
     GstClockTime duration_accumulation; /* current segment duration accumulation */
 
