@@ -1,6 +1,5 @@
 {
     "name" : "iptv5",
-    "debug" : "3",
     "is-live" : true,
     "source" : {
         "elements" : {
@@ -18,7 +17,7 @@
         },
         "bins" : [
             "udpsrc ! queue ! tsdemux name=demuxer",
-            "demuxer.video ! queue ! appsink name = video",
+            "demuxer.video ! queue ! h264parse ! queue ! appsink name = video",
             "demuxer.audio ! mpegaudioparse ! queue ! mad ! queue ! appsink name = audio"
         ]
     },
@@ -35,17 +34,12 @@
                     "property": {
                         "sync": false
                     }
-                },
-                "tssegment": {
-                    "property": {
-                        "bitrate": 1200
-                    }
                 }
             },
             "bins" : [
                 "appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc name=voaacenc0 ! aacparse ! queue ! mpegts.",
-                "appsrc name=video ! queue ! h264parse ! queue ! mpegts.",
-                "mpegtsmux name=mpegts ! queue ! tssegment ! queue ! appsink sync=FALSE"
+                "appsrc name=video ! queue ! mpegts.",
+                "mpegtsmux name=mpegts ! queue ! appsink sync=FALSE"
             ]
         }
     ],

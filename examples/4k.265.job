@@ -17,7 +17,7 @@
             }
         },
         "bins" : [
-            "udpsrc ! queue ! appsink name = mpegts"
+            "udpsrc ! queue ! tssegment ! queue ! appsink name = tssegment"
         ]
     },
     "encoders" : [
@@ -41,7 +41,7 @@
                 }
             },
             "bins" : [
-                "appsrc name=mpegts ! queue ! tssegment ! queue ! appsink"
+                "appsrc name=tssegment ! queue ! appsink"
             ]
         }
     ],
