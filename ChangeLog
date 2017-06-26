@@ -1,5 +1,8 @@
 releases are sorted from youngest to oldest.
 
+v-0.9.1 2017-06-26
+- removing dvr directory bug fix
+
 v-0.9.0 2017-06-03
 - synchronization of master and slave encoder
 - codec and bandwidth parameter in m3u8 master playlist

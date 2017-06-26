@@ -649,7 +649,7 @@ static void dvr_clean (Gstreamill *gstreamill)
     while (list != NULL) {
         job = list->data;
         /* non live job need not clean dvr */
-        if (!job->is_live || (job->output->master_m3u8_playlist == NULL)) {
+        if (!job->is_live) {
             list = list->next;
             continue;
         }
