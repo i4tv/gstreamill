@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <glob.h>
+#include <sys/uio.h>
 
 #include "httpstreaming.h"
 #include "utils.h"

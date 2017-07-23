@@ -18,7 +18,8 @@
 #include <stdlib.h>
 #include <augeas.h>
 
-#define __USE_GNU
+//#define __USE_GNU
+#define _GNU_SOURCE
 #include <sys/mman.h>
 
 #include "parson.h"
