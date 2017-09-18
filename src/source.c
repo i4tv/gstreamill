@@ -756,7 +756,8 @@ static GstFlowReturn new_sample_callback (GstAppSink *elt, gpointer user_data)
     }
 
     stream->state->current_timestamp = GST_BUFFER_PTS (buffer);
-    if (stream->state->last_heartbeat + GST_SECOND > stream->next_segment_timestamp) {
+    if ((stream->segment_duration != GST_CLOCK_TIME_NONE) &&
+        (stream->state->last_heartbeat + GST_SECOND > stream->next_segment_timestamp)) {
         if  (G_UNLIKELY (stream->next_segment_timestamp == 0)) {
             if ((stream->codec != NULL) && (stream->codec != NULL)) {
                 encoder = g_array_index (stream->encoders, gpointer, 0);
@@ -934,9 +935,12 @@ Source * source_initialize (gchar *job, SourceState *source_stat)
             stream->is_live = FALSE;
         }
         stream->system_clock = source->system_clock;
-        stream->segment_duration = jobdesc_m3u8streaming_segment_duration (job);
-        stream->current_segment_duration = 0;
-        stream->next_segment_timestamp = 0;
+        stream->segment_duration = GST_CLOCK_TIME_NONE;
+        if (jobdesc_m3u8streaming (job)) {
+            stream->segment_duration = jobdesc_m3u8streaming_segment_duration (job);
+            stream->current_segment_duration = 0;
+            stream->next_segment_timestamp = 0;
+        }
         stream->encoders = g_array_new (FALSE, FALSE, sizeof (gpointer));
         for (j = 0; j < SOURCE_RING_SIZE; j++) {
             stream->ring[j] = NULL;
