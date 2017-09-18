@@ -17,8 +17,9 @@
         },
         "bins" : [
             "udpsrc ! queue ! tsdemux name=demuxer",
-            "demuxer.video ! queue ! mpeg2dec ! queue ! appsink name = video"/*,
-            "demuxer.audio ! queue ! mpegaudioparse ! queue ! avdec_mp2float ! queue ! appsink name = audio"*/
+            "demuxer.video ! queue ! mpeg2dec ! queue ! appsink name = video",
+            "demuxer.audio_0_0352 ! queue ! mpegaudioparse ! queue ! avdec_mp2float ! queue ! appsink name = audio_0_0352",
+            "demuxer.audio_0_035b ! queue ! mpegaudioparse ! queue ! avdec_mp2float ! queue ! appsink name = audio_0_035b"
         ]
     },
     "encoders" : [
@@ -45,7 +46,8 @@
             },
             "bins" : [
                 "appsrc name=video ! queue ! x264enc ! queue ! muxer.",
-                /*"appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc ! queue ! aacparse ! queue ! muxer.",*/
+                "appsrc name=audio_0_0352 ! queue ! audioconvert ! queue ! voaacenc ! queue ! aacparse ! queue ! muxer.",
+                "appsrc name=audio_0_035b ! queue ! audioconvert ! queue ! voaacenc ! queue ! aacparse ! queue ! muxer.",
                 "mpegtsmux name=muxer ! queue ! appsink" 
             ]
         }

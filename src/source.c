@@ -445,7 +445,8 @@ static void pad_added_callback (GstElement *src, GstPad *pad, gpointer data)
     bin = NULL;
     while (bins != NULL) {
         bin = bins->data;
-        if (g_str_has_prefix (caps_str, bin->name)) {
+        if (g_str_has_prefix (caps_str, bin->name) ||
+            (g_strcmp0 (src_pad_name, bin->name) == 0)) {
             break;
 
         } else {
