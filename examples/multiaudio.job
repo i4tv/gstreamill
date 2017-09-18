@@ -1,0 +1,60 @@
+{
+    "name" : "multiaudio",
+    "debug" : "3",
+    "source" : {
+        "elements" : {
+            "udpsrc" : {
+                "property" : {
+                    "uri" : "udp://127.0.0.1:12345"
+                }
+            },
+            "appsink" : {
+                "property" : {
+                   "sync" : false,
+                   "drop" : true
+                }
+            }
+        },
+        "bins" : [
+            "udpsrc ! queue ! tsdemux name=demuxer",
+            "demuxer.video ! queue ! mpeg2dec ! queue ! appsink name = video"/*,
+            "demuxer.audio ! queue ! mpegaudioparse ! queue ! avdec_mp2float ! queue ! appsink name = audio"*/
+        ]
+    },
+    "encoders" : [
+        {
+            "elements" : {
+                "appsrc" : {
+                    "property" : {
+                        "format" : 3,
+                        "is-live" : true
+                    }
+                },
+                "x264enc" : {
+                    "property" : {
+                        "name" : "x264enc",
+                        "bitrate" : 1500,
+                        "bframes" : 3
+                    }
+                },
+                "appsink" : {
+                    "property" : {
+                        "sync" : false
+                    }
+                }
+            },
+            "bins" : [
+                "appsrc name=video ! queue ! x264enc ! queue ! muxer.",
+                /*"appsrc name=audio ! queue ! audioconvert ! queue ! voaacenc ! queue ! aacparse ! queue ! muxer.",*/
+                "mpegtsmux name=muxer ! queue ! appsink" 
+            ]
+        }
+    ],
+    "m3u8streaming" : {
+        "version" : 3,
+        "window-size" : 10,
+        "segment-duration" : 3.00
+    },
+    "dvr_duration": 86400
+}
+
