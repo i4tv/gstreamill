@@ -1102,8 +1102,8 @@ static PESParsingResult parse_pes_header (TsSegment *tssegment)
     }
 
     pes_header->stream_id = val32 & 0x000000ff;
-    if (pes_header->stream_id != 0xE0) {
-        GST_WARNING ("Not H.264 video PES packet");
+    if (pes_header->stream_id & 0x000000f0 != 0xE0) {
+        GST_WARNING ("stream_id is 0x%x, Not a mpeg video PES packet", pes_header->stream_id);
         return PES_PARSING_BAD;
     }
 
