@@ -36,12 +36,6 @@
                         "bframes" : 3
                     }
                 },
-                "faac" : {
-                    "property" : {
-                        "name" : "faac",
-                        "outputformat" : 1
-                    }
-                },
                 "appsink" : {
                     "property" : {
                         "sync" : false
