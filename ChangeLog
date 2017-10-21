@@ -1,5 +1,8 @@
 releases are sorted from youngest to oldest.
 
+v-0.9.2 2017-10-20
+- stream_id 0xea cause tssegment failure bug #103 fix
+
 v-0.9.1 2017-06-26
 - removing dvr directory bug fix
 
