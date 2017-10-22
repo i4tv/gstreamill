@@ -445,8 +445,8 @@ static void pad_added_callback (GstElement *src, GstPad *pad, gpointer data)
     bin = NULL;
     while (bins != NULL) {
         bin = bins->data;
-        if (g_str_has_prefix (caps_str, bin->name) ||
-            (g_strcmp0 (src_pad_name, bin->name) == 0)) {
+        if ((bin->previous != NULL) && (g_str_has_prefix (src_pad_name, bin->previous->src_pad_name))) {
+            GST_INFO ("sometimes pad: %s found", src_pad_name);
             break;
 
         } else {
@@ -459,7 +459,6 @@ static void pad_added_callback (GstElement *src, GstPad *pad, gpointer data)
         GST_WARNING ("skip sometimes pad: %s", src_pad_name);
         return;
     }
-    GST_INFO ("sometimes pad: %s found", src_pad_name);
 
     pipeline = (GstElement *)gst_element_get_parent (src);
     elements = bin->elements;
