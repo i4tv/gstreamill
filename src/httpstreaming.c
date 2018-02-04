@@ -582,24 +582,22 @@ static gchar * get_m3u8playlist (RequestData *request_data, EncoderOutput *encod
         return NULL;
     }
 
-    now = g_get_real_time () / 1000000;
+    now = encoder_output->last_timestamp / 1000000;
     /* time shift? */
     if ((g_strrstr (request_data->parameters, "timeshift") != NULL) ||
         (g_strrstr (request_data->parameters, "position") != NULL)){
-        gint64 offset;
+        gint64 offset, list_window_length;
         time_t shift_position;
 
+        list_window_length = encoder_output->playlist_window_size * encoder_output->segment_duration / GST_SECOND;
         if (g_strrstr (request_data->parameters, "timeshift") != NULL) {
-            offset = get_gint64_parameter (request_data->parameters, "timeshift") +
-                 encoder_output->playlist_window_size * encoder_output->segment_duration / GST_SECOND;
+            offset = get_gint64_parameter (request_data->parameters, "timeshift") + list_window_length;
             shift_position = now - offset;
 
         } else {
-            shift_position = get_gint64_parameter (request_data->parameters, "position") +
-                 encoder_output->playlist_window_size * encoder_output->segment_duration / GST_SECOND;
+            shift_position = get_gint64_parameter (request_data->parameters, "position") - list_window_length;
         }
-        if ((shift_position < now) &&
-            (shift_position > now - encoder_output->dvr_duration)) {
+        if ((shift_position < now) && (shift_position > now - encoder_output->dvr_duration)) {
             m3u8playlist = m3u8playlist_timeshift_get_playlist (encoder_output->record_path,
                                                             encoder_output->segment_duration,
                                                             encoder_output->version,
