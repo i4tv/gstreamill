@@ -258,7 +258,7 @@ static void rotate_log (Gstreamill *gstreamill, gchar *log_path, pid_t pid)
     g_stat (log_path, &st);
     if (st.st_size > LOG_SIZE) {
         datetime = g_date_time_new_now_local ();
-        date = g_date_time_format (datetime, "%m-%d_%T");
+        date = g_date_time_format (datetime, "%y-%m-%d_%T");
         name = g_strdup_printf ("%s_%s.%d", log_path, date, g_date_time_get_microsecond (datetime) / 1000);
         g_rename (log_path, name);
         g_free (name);
