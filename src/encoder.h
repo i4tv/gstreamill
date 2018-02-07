@@ -80,7 +80,6 @@ struct _Encoder {
     guint force_key_count; /* downstream force key unit count */
     GstClockTime segment_timestamp; /* segment timestamp */
     GstClockTime segment_duration; /* force key interval */
-    GstClockTime duration_accumulation; /* current segment duration accumulation */
 
     /* m3u8 playlist */
     gboolean has_video;

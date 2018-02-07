@@ -498,14 +498,6 @@ static void need_data_callback (GstAppSrc *src, guint length, gpointer user_data
                     encoder->last_running_time = running_time;
                 }
                 encoder->force_key_count++;
-                encoder->duration_accumulation = 0;
-            }
-
-            if (G_LIKELY (GST_BUFFER_DURATION (buffer) != GST_CLOCK_TIME_NONE)) {
-                encoder->duration_accumulation += GST_BUFFER_DURATION (buffer);
-
-            } else {
-                encoder->duration_accumulation = running_time - encoder->last_video_buffer_pts;
             }
         }
 
@@ -765,7 +757,6 @@ guint encoder_initialize (GArray *earray, gchar *job, EncoderOutput *encoders, S
         encoder->last_running_time = GST_CLOCK_TIME_NONE;
         encoder->output = &(encoders[i]);
         encoder->segment_duration = jobdesc_m3u8streaming_segment_duration (job);
-        encoder->duration_accumulation = 0;
         encoder->last_segment_duration = 0;
         encoder->force_key_count = 0;
         encoder->has_video = FALSE;
