@@ -759,7 +759,7 @@ static GstFlowReturn new_sample_callback (GstAppSink *elt, gpointer user_data)
     if ((stream->segment_duration != GST_CLOCK_TIME_NONE) &&
         (stream->state->last_heartbeat + GST_SECOND > stream->next_segment_timestamp)) {
         if  (G_UNLIKELY (stream->next_segment_timestamp == 0)) {
-            if ((stream->codec != NULL) && (stream->codec != NULL)) {
+            if (stream->codec != NULL) {
                 encoder = g_array_index (stream->encoders, gpointer, 0);
                 g_sprintf (encoder->encoder->output->codec, "%s", stream->codec);
             }
@@ -774,7 +774,7 @@ static GstFlowReturn new_sample_callback (GstAppSink *elt, gpointer user_data)
                 stream->last_segment_pts = GST_BUFFER_PTS (buffer);
             }
 
-        } else if ((stream->current_segment_duration == stream->segment_duration) ||
+        } else if ((stream->current_segment_duration >= stream->segment_duration) ||
             (stream->state->last_heartbeat - GST_SECOND > stream->next_segment_timestamp)) {
             if (!GST_BUFFER_FLAG_IS_SET (buffer, GST_BUFFER_FLAG_DELTA_UNIT) ||
                 GST_BUFFER_DURATION_IS_VALID (buffer)) {
