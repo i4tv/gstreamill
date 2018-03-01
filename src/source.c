@@ -777,6 +777,10 @@ static GstFlowReturn new_sample_callback (GstAppSink *elt, gpointer user_data)
             (stream->state->last_heartbeat - DELTA > stream->next_segment_timestamp)) {
             if (!GST_BUFFER_FLAG_IS_SET (buffer, GST_BUFFER_FLAG_DELTA_UNIT) ||
                 GST_BUFFER_DURATION_IS_VALID (buffer)) {
+                if (stream->state->last_heartbeat > (stream->next_segment_timestamp + stream->segment_duration)) {
+                    GST_WARNING ("last_hearbeat(%lld) left back next_segment_timestamp(%lld)",
+                                  stream->state->last_heartbeat, stream->next_segment_timestamp);
+                }
                 if ((stream->current_segment_duration > stream->segment_duration + GST_SECOND) ||
                     (stream->current_segment_duration + GST_SECOND < stream->segment_duration)) {
                     GST_WARNING ("duration != segment_duration(%ld != %ld), timestamp: %ld, last timestamp: %ld",
