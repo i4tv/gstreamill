@@ -14,6 +14,7 @@
 
 #define SOURCE_RING_SIZE 512
 #define STREAM_NAME_LEN 1024
+#define DELTA 30000000 /* 40ms */
 
 typedef struct _Source Source;
 typedef struct _SourceClass SourceClass;
@@ -75,6 +76,7 @@ typedef struct _SourceStream {
     GstClockTime next_segment_timestamp;
     GstClockTime current_segment_duration;
     GstClockTime segment_duration;
+    GstClockTime segment_duration_minus_delta;
     GstClockTime last_segment_pts;
     GArray *encoders;
 
