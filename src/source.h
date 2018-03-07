@@ -14,7 +14,7 @@
 
 #define SOURCE_RING_SIZE 512
 #define STREAM_NAME_LEN 1024
-#define DELTA 30000000 /* 40ms */
+#define DELTA 30000000 /* 30ms */
 
 typedef struct _Source Source;
 typedef struct _SourceClass SourceClass;
