@@ -439,7 +439,7 @@ gint job_initialize (Job *job, gint mode, gint shm_fd, gchar *shm_p)
 static gchar * get_bitrate (Job *job, gint index)
 {
     gchar *value, *pipeline, **bins, *p, **pp;
-    guint v_bitrate, a_bitrate, ts_bitrate;
+    guint v_bitrate, a_bitrate, ts_bitrate, a_count;
 
     v_bitrate = a_bitrate = ts_bitrate = 0;
     pipeline = g_strdup_printf ("encoder.%d", index);
@@ -483,11 +483,12 @@ static gchar * get_bitrate (Job *job, gint index)
     }
 
     if ((v_bitrate != 0) || (a_bitrate != 0)) {
+        a_count = jobdesc_astreams_count (job->description, index);
         if (v_bitrate != 0) {
-            ts_bitrate = v_bitrate + a_bitrate;
+            ts_bitrate = v_bitrate + a_bitrate * a_count;
 
         } else if ((ts_bitrate == 0) && (a_bitrate != 0)) {
-            ts_bitrate = a_bitrate;
+            ts_bitrate = a_bitrate * a_count;
         }
     }
 

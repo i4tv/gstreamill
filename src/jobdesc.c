@@ -104,6 +104,33 @@ gint jobdesc_streams_count (gchar *job, gchar *pipeline)
     return count;
 }
 
+gint jobdesc_astreams_count (gchar *job, gint index)
+{
+    JSON_Value *val;
+    JSON_Object *obj;
+    JSON_Array *array;
+    gsize size, i;
+    gint count;
+    gchar *bin;
+
+    val = json_parse_string_with_comments (job);
+    obj = json_value_get_object (val);
+    array = json_object_dotget_array (obj, "encoders");
+    obj = json_array_get_object (array, index);
+    array = json_object_dotget_array (obj, "bins");
+    size = json_array_get_count (array);
+    count = 0;
+    for (i = 0; i < size; i++) {
+        bin = (gchar *)json_array_get_string (array, i);
+        if (g_strrstr (bin, "voaacenc") != NULL) {
+            count += 1;
+        }
+    }
+    json_value_free (val);
+
+    return count;
+}
+
 gint jobdesc_encoders_count (gchar *job)
 {
     JSON_Value *val;

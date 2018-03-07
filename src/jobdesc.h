@@ -14,6 +14,7 @@ gboolean jobdesc_is_valid (gchar *job);
 gchar * jobdesc_get_name (gchar *job);
 gint jobdesc_encoders_count (gchar *job);
 gint jobdesc_streams_count (gchar *job, gchar *pipeline);
+gint jobdesc_astreams_count (gchar *job, gint index);
 gboolean jobdesc_is_live (gchar *job);
 gchar * jobdesc_get_debug (gchar *job);
 gchar * jobdesc_get_log_path (gchar *job);
