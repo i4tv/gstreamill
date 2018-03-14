@@ -18,8 +18,8 @@
         }, 
         "bins": [
             "udpsrc ! queue ! decodebin name=decodebin", 
-            "decodebin.src ! queue ! appsink name = audio",
-            "decodebin.src ! queue ! appsink name = video" 
+            "decodebin.src_1 ! queue ! appsink name = audio",
+            "decodebin.src_0 ! queue ! appsink name = video" 
         ]
     },
     "encoders" : [
