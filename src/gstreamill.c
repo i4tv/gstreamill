@@ -1198,12 +1198,12 @@ static void child_watch_cb (GPid pid, gint status, Job *job)
 
     } else if (WIFSIGNALED (status)) {
         if (!job->is_live) {
-            GST_WARNING ("Nonlive job %s exit on an unhandled signal.", job->name);
+            GST_WARNING ("Nonlive job %s exit on an unhandled signal %d.", job->name, WTERMSIG(status));
             *(job->output->state) = JOB_STATE_STOPED;
             job->eos = TRUE;
 
         } else {
-            GST_WARNING ("Live job %s exit on an unhandled signal, restart.", job->name);
+            GST_WARNING ("Live job %s exit on an unhandled signal %d, restart.", job->name, WTERMSIG(status));
             job_reset (job);
             if (create_job_process (job) == JOB_STATE_PLAYING) {
                 GST_WARNING ("Restart job %s success", job->name);
