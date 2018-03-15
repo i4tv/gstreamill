@@ -1,5 +1,8 @@
 releases are sorted from youngest to oldest.
 
+v-1.0.0-rc2 2018-03-15
+- add signal number to log message when subprocess terminated by signal
+
 v-1.0.0-rc1 2018
 - log rotate bug across year
 - timeshift exceed live bug fix
