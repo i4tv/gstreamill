@@ -200,10 +200,18 @@ gint log_set_log_handler (Log *log)
     log->func = log_func;
 
     log->log_hd = fopen (log->log_path, "ae");
+    if (log->log_hd == NULL) {
+        GST_ERROR ("open log file error: %s", g_strerror (errno));
+        return 1;
+    }
     setvbuf (log->log_hd, NULL, _IOLBF, 0);
 
     if (log->access_path != NULL) {
         log->access_hd = fopen (log->access_path, "ae");
+        if (log->log_hd == NULL) {
+            GST_ERROR ("open access file error: %s", g_strerror (errno));
+            return 1;
+        }
         setvbuf (log->access_hd, NULL, _IOLBF, 0);
     }
 
