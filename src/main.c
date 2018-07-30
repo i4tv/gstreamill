@@ -384,7 +384,7 @@ int main (int argc, char *argv[])
         sigaddset(&set, SIGTERM);
         sigaddset(&set, SIGUSR1);
         if (sigprocmask (SIG_UNBLOCK, &set, NULL) != 0) {
-            g_printf ("sigprocmask failure: %s", strerror (errno));
+            GST_ERROR ("sigprocmask failure: %s", strerror (errno));
             exit (-1);
         }
 
@@ -398,10 +398,19 @@ int main (int argc, char *argv[])
         /* read job description from share memory */
         job_desc = NULL;
         fd = shm_open (shm_name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+        if (fd == -1) {
+            GST_ERROR ("shm_open error");
+            exit (5);
+        }
         if (ftruncate (fd, shm_length) == -1) {
+            GST_ERROR ("ftruncate error");
             exit (5);
         }
         p = mmap (NULL, shm_length, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+        if (p == MAP_FAILED) {
+            GST_ERROR ("mmap error: %s", g_strerror (errno));
+            exit (5);
+        }
         job_desc = g_strndup (p, job_length);
 
         if ((job_desc != NULL) && (!jobdesc_is_valid (job_desc))) {

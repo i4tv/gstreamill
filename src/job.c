@@ -365,6 +365,10 @@ gint job_initialize (Job *job, gint mode, gint shm_fd, gchar *shm_p)
             return 1;
         }
         p = mmap (NULL, job->output_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+        if (p == MAP_FAILED) {
+            GST_ERROR ("mmap error: %s", g_strerror (errno));
+            return 1;
+        }
         job->output_fd = fd;
 
     } else {
