@@ -1,5 +1,9 @@
 releases are sorted from youngest to oldest.
 
+v-1.0.0-rc3 2018-07-30
+- #108 check fopen return
+- #109 check mmap return
+
 v-1.0.0-rc2 2018-03-15
 - add signal number to log message when subprocess terminated by signal
 
