@@ -319,12 +319,25 @@ static void clean_job_list (Gstreamill *gstreamill)
     gboolean done;
     GSList *list;
     Job *job;
+    struct timespec ts;
 
     done = FALSE;
     while (!done) {
         list = gstreamill->job_list;
         while (list != NULL) {
             job = list->data;
+            if (clock_gettime (CLOCK_REALTIME, &ts) == -1) {
+                GST_ERROR ("clean_job_list clock_gettime error: %s", g_strerror (errno));
+                continue;
+            }
+            ts.tv_sec += 2;
+            if (sem_timedwait (job->output->semaphore, &ts) == -1) {
+                if (errno == EINTR) {
+                    continue;
+                }
+                GST_ERROR ("clean_job_list sem_timedwait failure: %s", g_strerror (errno));
+                break;
+            }
             if (job->is_live && job->stoping) {
                 GST_WARNING ("stoping %s ...", job->name);
                 job_stop (job, SIGTERM);
@@ -346,6 +359,7 @@ static void clean_job_list (Gstreamill *gstreamill)
                 break;
             }
 
+            sem_post (job->output->semaphore);
             list = list->next;
         }
         if (list == NULL) {
