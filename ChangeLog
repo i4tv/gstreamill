@@ -1,5 +1,8 @@
 releases are sorted from youngest to oldest.
 
+v-1.0.0-rc4 2018-07-31
+- #53 lock sempore when clean_job_list
+
 v-1.0.0-rc3 2018-07-30
 - #108 check fopen return
 - #109 check mmap return
