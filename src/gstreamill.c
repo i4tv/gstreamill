@@ -904,11 +904,31 @@ static void dvr_record_segment (Gstreamill *gstreamill, EncoderOutput *encoder_o
     g_mutex_unlock (&(gstreamill->record_queue_mutex));
 }
 
+static gint get_encoder_index (gchar *uri)
+{
+    guint index;
+    GRegex *regex = NULL;
+    GMatchInfo *match_info = NULL;
+    gchar *e;
+
+    index = -1;
+    regex = g_regex_new ("^/.*/encoder/(?<encoder>[0-9]+).*", G_REGEX_OPTIMIZE, 0, NULL);
+    g_regex_match (regex, uri, 0, &match_info);
+    if (g_match_info_matches (match_info)) {
+        e = g_match_info_fetch_named (match_info, "encoder");
+        index = g_ascii_strtoll (e, NULL, 10);
+        g_free (e);
+    }
+
+    return index; 
+}
+
 static gpointer msg_thread (gpointer data)
 {
     Gstreamill *gstreamill = (Gstreamill *)data;
+    Job *job;
     struct sockaddr_un msg_sock_addr;
-    gint msg_sock, epoll_fd, n;
+    gint msg_sock, epoll_fd, n, index;
     struct epoll_event event, event_list[32];
     gchar msg[128];
     ssize_t size;
@@ -966,11 +986,29 @@ static gpointer msg_thread (gpointer data)
             }
             msg[size] = '\0';
             sscanf (msg, "%[^:]:%lu$", uri, &duration);
-            encoder_output = gstreamill_get_encoder_output (gstreamill, uri);
-            if (encoder_output == NULL) {
-                GST_ERROR ("Encoder not found: %s", uri);
+
+            job = gstreamill_get_job (gstreamill, uri);
+            if (job == NULL) {
+                GST_WARNING ("Job %s not found.", uri);
                 continue;
             }
+            g_mutex_lock (&(job->access_mutex));
+
+            if (*(job->output->state) != JOB_STATE_PLAYING) {
+                GST_WARNING ("FATAL: Job %s state is not playing", job->name);
+                g_object_unref (job);
+                g_mutex_unlock (&(job->access_mutex));
+                continue;
+            }
+
+            index = get_encoder_index (uri);
+            if (index >= job->output->encoder_count) {
+                GST_WARNING ("Encoder %s not found.", uri);
+                g_object_unref (job);
+                g_mutex_unlock (&(job->access_mutex));
+                continue;
+            }
+            encoder_output = &job->output->encoders[index];
 
             if (clock_gettime (CLOCK_REALTIME, &ts) == -1) {
                 GST_ERROR ("dvr_record_segment clock_gettime error: %s", g_strerror (errno));
@@ -1001,7 +1039,8 @@ static gpointer msg_thread (gpointer data)
             sem_post (encoder_output->semaphore);
 
 semaphore_failure:
-            gstreamill_unaccess (gstreamill, uri);
+            g_object_unref (job);
+            g_mutex_unlock (&(job->access_mutex));
         }
     }
 
