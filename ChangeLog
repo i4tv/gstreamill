@@ -1,5 +1,8 @@
 releases are sorted from youngest to oldest.
 
+v-1.0.0-rc5 2018-08-06
+- #53 lock job mutex when reset job
+
 v-1.0.0-rc4 2018-07-31
 - #53 lock sempore when clean_job_list
 
