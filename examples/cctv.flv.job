@@ -1,0 +1,47 @@
+{
+    "name" : "cctv",
+    "source" : {
+        "elements" : {
+            "souphttpsrc" : {
+                "property" : {
+                    "is-live" : true,
+                    "location" : "http://tv.cdn.site:9000/flv?app=live&stream=drmcctv3_1_1500"
+                }
+            }
+        },
+        "bins" : [
+            "souphttpsrc ! flvdemux name=flvdemux",
+            "flvdemux.video ! appsink name=video",
+            "flvdemux.audio ! appsink name=audio"
+        ]
+    },
+    "encoders" : [
+        {
+            "elements": {
+                "appsrc" : {
+                    "property" : {
+                        "format" : 3,
+                        "is-live" : true
+                    }
+                },
+                "appsink" : {
+                    "property" : {
+                        "sync" : false
+                    }
+                }
+            },
+            "bins" : [
+                "appsrc name=video ! h264parse ! muxer.",
+                "appsrc name=audio ! aacparse ! muxer.",
+                "mpegtsmux name=muxer ! queue ! appsink sync=FALSE"
+            ]
+        }
+    ],
+    "m3u8streaming" : {
+        "version" : 3,
+        "window-size" : 10,
+        "segment-duration" : 3.00
+    },
+    "dvr_duration": 86400
+}
+
