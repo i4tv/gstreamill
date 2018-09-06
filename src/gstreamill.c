@@ -930,7 +930,7 @@ static gpointer msg_thread (gpointer data)
     struct sockaddr_un msg_sock_addr;
     gint msg_sock, epoll_fd, n, index;
     struct epoll_event event, event_list[32];
-    gchar msg[128];
+    gchar msg[1024];
     ssize_t size;
 
     unlink (MSG_SOCK_PATH);
@@ -975,7 +975,7 @@ static gpointer msg_thread (gpointer data)
             continue;
         }
         for (;;) {
-            size = read (msg_sock, msg, 128);
+            size = read (msg_sock, msg, 1023/* 1024-1 */);
             if ((size == -1) && (errno == EAGAIN)) {
                 GST_DEBUG ("msg_trhead read complete");
                 break;
