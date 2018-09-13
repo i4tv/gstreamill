@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([gstreamill], [1.0.0-rc5], [BUG-REPORT-ADDRESS])
+AC_INIT([gstreamill], [1.0.0-rc6], [BUG-REPORT-ADDRESS])
 AC_CONFIG_SRCDIR([src/main.c])
 AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE([foreign])
