@@ -131,8 +131,6 @@ typedef struct _TsSegment {
     gsize pes_packet_size, pes_payload_size;
     guint8 *pes_packet, *pes_payload;
     GstClockTime pes_packet_duration;
-    //GstClockTime current_pts;
-    GstClockTime duration;
 
     GstH264NalParser *h264parser;
     GstH264SPS sps;
