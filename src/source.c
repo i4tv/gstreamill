@@ -773,7 +773,8 @@ static GstFlowReturn new_sample_callback (GstAppSink *elt, gpointer user_data)
                 stream->last_segment_pts = GST_BUFFER_PTS (buffer);
             }
 
-        } else if ((stream->current_segment_duration >= stream->segment_duration_minus_delta) ||
+        } else if (((stream->current_segment_duration >= stream->segment_duration_minus_delta) &&
+            (stream->state->last_heartbeat + DELTA >= stream->next_segment_timestamp)) ||
             (stream->state->last_heartbeat - DELTA > stream->next_segment_timestamp)) {
             if (!GST_BUFFER_FLAG_IS_SET (buffer, GST_BUFFER_FLAG_DELTA_UNIT) ||
                 GST_BUFFER_DURATION_IS_VALID (buffer)) {
