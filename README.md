@@ -139,9 +139,13 @@ default management port is 20118, use curl to invoke test job via management int
 
 ## Management interface
 
-* start a job over http use curl
+* start a job over http
 
         curl -H "Content-Type: application/json" --data @examples/test.job http://localhost:20118/admin/start
+
+        or
+
+        http http://localhost:20118/admin/start < tssegment.job
 
 test.job is job description in json, can be found in examples directory.
 
