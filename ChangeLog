@@ -1,5 +1,8 @@
 releases are sorted from youngest to oldest.
 
+v-1.0.0 2019-04-14
+- generate segment ahead clock time bug fixed
+
 v-1.0.0-rc6 2018-09-13
 - #53 if ((size == -1) && (errno == EAGAIN)) segment fault fixed
 
