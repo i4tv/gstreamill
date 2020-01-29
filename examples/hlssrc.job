@@ -1,0 +1,40 @@
+{
+    "name" : "hlssrc",
+    "is-live" : true,
+    "source" : {
+        "elements" : {
+            "souphttpsrc" : {
+                "property" : {
+                    "location" : "http://1.11.111.5/000010_01/playlist.m3u8?CONTENTID=000010_01"
+                }
+            },
+            "appsink" : {
+                "property" : {
+                   "sync" : false,
+                   "drop" : true
+                }
+            }
+        },
+        "bins" : [
+            "souphttpsrc ! queue ! hlsdemux name=hlssrc",
+            "hlssrc.src_0 ! queue ! appsink name=mpegts"
+        ]
+    },
+    "encoders" : [
+        {
+            "elements" : {
+                "appsrc" : {
+                    "property" : {
+                        "is-live" : true,
+                        "format" : 3
+                    }
+                }
+            },
+            "bins" : [
+                "appsrc name=mpegts ! queue ! appsink sync=FALSE"
+            ],
+            "udpstreaming" : "127.0.0.1:12345"
+        }
+    ]
+}
+

@@ -1,0 +1,48 @@
+{
+    "name" : "rtmpsrc",
+    "is-live" : true,
+    "source" : {
+        "elements" : {
+            "rtmpsrc" : {
+                "property" : {
+                    "location" : "rtmp://58.200.131.2:1935/livetv/hunantv"
+                }
+            },
+            "appsink" : {
+                "property" : {
+                   "sync" : false,
+                   "drop" : true
+                }
+            }
+        },
+        "bins" : [
+            "rtmpsrc ! queue ! flvdemux name=flvsrc",
+            "flvsrc.video ! queue ! appsink name=video",
+            "flvsrc.audio ! queue ! appsink name=audio"
+        ]
+    },
+    "encoders" : [
+        {
+            "elements" : {
+                "appsrc" : {
+                    "property" : {
+                        "is-live" : true,
+                        "format" : 3
+                    }
+                }
+            },
+            "bins" : [
+                "appsrc name=video ! queue ! h264parse ! queue ! mpegts.",
+                "appsrc name=audio ! queue ! mpegts.",
+                "mpegtsmux name=mpegts ! queue ! appsink sync=FALSE"
+            ],
+            "udpstreaming" : "127.0.0.1:12345"
+        }
+    ],
+    "m3u8streaming" : {
+        "version" : 3,
+        "window-size" : 4,
+        "segment-duration" : 5.00
+    }
+}
+
