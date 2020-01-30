@@ -20,7 +20,8 @@ RUN apt-get install -y libpango1.0-dev libasound2-dev && \
         make && \
         make install && \
 	cd / && rm -rf gst-plugins-base
-RUN git clone git://anongit.freedesktop.org/gstreamer/gst-plugins-good && \
+RUN apt-get install -y libsoup2.4-dev && \
+        RUN git clone git://anongit.freedesktop.org/gstreamer/gst-plugins-good && \
         cd gst-plugins-good && \
         git checkout 1.16.2 && \
         ./autogen.sh --prefix=/usr --disable-gtk-doc-pdf --disable-gtk-doc && \
@@ -35,7 +36,7 @@ RUN apt-get install -y libmpeg2-4-dev libmad-ocaml-dev libmp3lame-dev liba52-0.7
         make && \
         make install && \
 	cd / && rm -rf gst-plugins-ugly
-RUN apt-get install -y libvoaacenc-ocaml-dev libsoup2.4-dev librtmp-dev libx265-dev --fix-missing && \
+RUN apt-get install -y libvoaacenc-ocaml-dev librtmp-dev libx265-dev --fix-missing && \
         git clone git://anongit.freedesktop.org/gstreamer/gst-plugins-bad && \
         cd gst-plugins-bad && \
         git checkout 1.16.2 && \
