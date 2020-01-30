@@ -36,7 +36,7 @@ RUN apt-get install -y libmpeg2-4-dev libmad-ocaml-dev libmp3lame-dev liba52-0.7
         make && \
         make install && \
 	cd / && rm -rf gst-plugins-ugly
-RUN apt-get install -y libvoaacenc-ocaml-dev librtmp-dev libx265-dev --fix-missing && \
+RUN apt-get install -y libvoaacenc-ocaml-dev librtmp-dev libx265-dev openssl libssl-dev --fix-missing && \
         git clone git://anongit.freedesktop.org/gstreamer/gst-plugins-bad && \
         cd gst-plugins-bad && \
         git checkout 1.16.2 && \
