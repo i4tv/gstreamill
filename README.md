@@ -1,19 +1,19 @@
 # Table of Contents
 
-* [INTRODUCTION] (#introduction)
-  * [Overview] (#overview)
-  * [Highlight] (#highlight)
-  * [Application] (#application)
-* [INSTALL] (#install)
-  * [Prerequisites] (#prerequisites)
-  * [Compile and install] (#compile-and-install)
-* [USING GSTREAMILL] (#using-gstreamill)
-  * [Prerequisites] (#prerequisites)
-  * [B/S Management URL] (#b/s-management-url)
-  * [Command line] (#command-line)
-  * [Management interface] (#management-interface)
-  * [Output] (#output)
-* [JOB DESCRIPTION] (#job-description)
+* [INTRODUCTION](#introduction)
+  * [Overview](#overview)
+  * [Highlight](#highlight)
+  * [Application](#application)
+* [INSTALL](#install)
+  * [Prerequisites](#prerequisites)
+  * [Compile and install](#compile-and-install)
+* [USING GSTREAMILL](#using-gstreamill)
+  * [Prerequisites](#prerequisites)
+  * [B/S Management URL](#b/s-management-url)
+  * [Command line](#command-line)
+  * [Management interface](#management-interface)
+  * [Output](#output)
+* [JOB DESCRIPTION](#job-description)
 
 # INTRODUCTION
 
